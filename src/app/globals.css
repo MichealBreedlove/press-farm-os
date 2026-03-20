@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+
+  html {
+    /* Prevent font scaling in landscape on iOS */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+
+  /* Minimum touch target size (WCAG 2.5.5) */
+  button, a, input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

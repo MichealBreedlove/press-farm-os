@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(printf 'y\\\\n')",
+      "Bash(npx --yes create-next-app@14 . --typescript --tailwind --app --src-dir --no-git --eslint --import-alias \"@/*\")"
+    ]
+  }
+}
