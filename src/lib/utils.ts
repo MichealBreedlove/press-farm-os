@@ -10,6 +10,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Format a date string for short display.
+ * @example formatDate("2026-03-19") → "Mar 19"
+ */
+export function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + "T12:00:00");
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/**
  * Format a date string for display.
  * @example formatDeliveryDate("2026-03-19") → "Thursday, Mar 19"
  */

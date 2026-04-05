@@ -3,6 +3,9 @@
  *
  * Manually maintained until `supabase gen types` is run against the actual project.
  * After connecting Supabase: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
+ *
+ * NOTE: Enum types are inlined as string literal unions (required for Supabase TS inference).
+ * Tables must include Relationships: [] to satisfy GenericTable constraint.
  */
 
 export type Json =
@@ -40,6 +43,7 @@ export interface Database {
           monthly_operating_cost?: number | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       restaurants: {
         Row: {
@@ -65,6 +69,15 @@ export interface Database {
           slug?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_farm_id_fkey";
+            columns: ["farm_id"];
+            isOneToOne: false;
+            referencedRelation: "farms";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       profiles: {
         Row: {
@@ -89,6 +102,7 @@ export interface Database {
           is_active?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
       };
       restaurant_users: {
         Row: {
@@ -107,14 +121,30 @@ export interface Database {
           user_id?: string;
           restaurant_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_users_restaurant_id_fkey";
+            columns: ["restaurant_id"];
+            isOneToOne: false;
+            referencedRelation: "restaurants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "restaurant_users_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       items: {
         Row: {
           id: string;
           farm_id: string;
           name: string;
-          category: ItemCategory;
-          unit_type: UnitType;
+          category: "flowers" | "micros_leaves" | "herbs_leaves" | "fruit_veg" | "kits";
+          unit_type: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           default_price: number | null;
           chef_notes: string | null;
           internal_notes: string | null;
@@ -128,8 +158,8 @@ export interface Database {
           id?: string;
           farm_id: string;
           name: string;
-          category: ItemCategory;
-          unit_type: UnitType;
+          category: "flowers" | "micros_leaves" | "herbs_leaves" | "fruit_veg" | "kits";
+          unit_type: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           default_price?: number | null;
           chef_notes?: string | null;
           internal_notes?: string | null;
@@ -142,8 +172,8 @@ export interface Database {
         Update: {
           farm_id?: string;
           name?: string;
-          category?: ItemCategory;
-          unit_type?: UnitType;
+          category?: "flowers" | "micros_leaves" | "herbs_leaves" | "fruit_veg" | "kits";
+          unit_type?: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           default_price?: number | null;
           chef_notes?: string | null;
           internal_notes?: string | null;
@@ -152,27 +182,37 @@ export interface Database {
           sort_order?: number | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "items_farm_id_fkey";
+            columns: ["farm_id"];
+            isOneToOne: false;
+            referencedRelation: "farms";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       delivery_dates: {
         Row: {
           id: string;
           date: string;
-          day_of_week: DayOfWeek;
+          day_of_week: "thursday" | "saturday" | "monday" | "custom";
           ordering_open: boolean;
           created_at: string;
         };
         Insert: {
           id?: string;
           date: string;
-          day_of_week: DayOfWeek;
+          day_of_week: "thursday" | "saturday" | "monday" | "custom";
           ordering_open?: boolean;
           created_at?: string;
         };
         Update: {
           date?: string;
-          day_of_week?: DayOfWeek;
+          day_of_week?: "thursday" | "saturday" | "monday" | "custom";
           ordering_open?: boolean;
         };
+        Relationships: [];
       };
       availability_items: {
         Row: {
@@ -180,7 +220,7 @@ export interface Database {
           item_id: string;
           restaurant_id: string;
           delivery_date: string;
-          status: AvailabilityStatus;
+          status: "available" | "limited" | "unavailable";
           limited_qty: number | null;
           cycle_notes: string | null;
           created_at: string;
@@ -191,18 +231,34 @@ export interface Database {
           item_id: string;
           restaurant_id: string;
           delivery_date: string;
-          status?: AvailabilityStatus;
+          status?: "available" | "limited" | "unavailable";
           limited_qty?: number | null;
           cycle_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
-          status?: AvailabilityStatus;
+          status?: "available" | "limited" | "unavailable";
           limited_qty?: number | null;
           cycle_notes?: string | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "availability_items_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "availability_items_restaurant_id_fkey";
+            columns: ["restaurant_id"];
+            isOneToOne: false;
+            referencedRelation: "restaurants";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       orders: {
         Row: {
@@ -210,7 +266,7 @@ export interface Database {
           restaurant_id: string;
           chef_id: string;
           delivery_date: string;
-          status: OrderStatus;
+          status: "draft" | "submitted" | "in_progress" | "fulfilled" | "cancelled";
           freeform_notes: string | null;
           submitted_at: string | null;
           fulfilled_at: string | null;
@@ -223,7 +279,7 @@ export interface Database {
           restaurant_id: string;
           chef_id: string;
           delivery_date: string;
-          status?: OrderStatus;
+          status?: "draft" | "submitted" | "in_progress" | "fulfilled" | "cancelled";
           freeform_notes?: string | null;
           submitted_at?: string | null;
           fulfilled_at?: string | null;
@@ -232,13 +288,29 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
-          status?: OrderStatus;
+          status?: "draft" | "submitted" | "in_progress" | "fulfilled" | "cancelled";
           freeform_notes?: string | null;
           submitted_at?: string | null;
           fulfilled_at?: string | null;
           closed_for_ordering?: boolean;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "orders_chef_id_fkey";
+            columns: ["chef_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey";
+            columns: ["restaurant_id"];
+            isOneToOne: false;
+            referencedRelation: "restaurants";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       order_items: {
         Row: {
@@ -273,6 +345,22 @@ export interface Database {
           unit_price_at_order?: number | null;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "order_items_availability_item_id_fkey";
+            columns: ["availability_item_id"];
+            isOneToOne: false;
+            referencedRelation: "availability_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       price_history: {
         Row: {
@@ -291,38 +379,40 @@ export interface Database {
           set_by: string;
           created_at?: string;
         };
-        Update: never;
+        Update: Record<string, never>;
+        Relationships: [];
       };
       price_catalog: {
         Row: {
           id: string;
           item_id: string;
-          unit: UnitType;
+          unit: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           price_per_unit: number;
           effective_date: string;
-          source: PriceSource;
+          source: "market" | "custom";
           created_at: string;
         };
         Insert: {
           id?: string;
           item_id: string;
-          unit: UnitType;
+          unit: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           price_per_unit: number;
           effective_date?: string;
-          source?: PriceSource;
+          source?: "market" | "custom";
           created_at?: string;
         };
         Update: {
           price_per_unit?: number;
-          source?: PriceSource;
+          source?: "market" | "custom";
         };
+        Relationships: [];
       };
       deliveries: {
         Row: {
           id: string;
           delivery_date: string;
           restaurant_id: string;
-          status: DeliveryStatus;
+          status: "pending" | "logged" | "finalized";
           total_value: number | null;
           notes: string | null;
           created_at: string;
@@ -332,18 +422,19 @@ export interface Database {
           id?: string;
           delivery_date: string;
           restaurant_id: string;
-          status?: DeliveryStatus;
+          status?: "pending" | "logged" | "finalized";
           total_value?: number | null;
           notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
-          status?: DeliveryStatus;
+          status?: "pending" | "logged" | "finalized";
           total_value?: number | null;
           notes?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       delivery_items: {
         Row: {
@@ -351,7 +442,7 @@ export interface Database {
           delivery_id: string;
           item_id: string;
           quantity: number;
-          unit: UnitType;
+          unit: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           unit_price: number;
           line_total: number;
           created_at: string;
@@ -361,15 +452,16 @@ export interface Database {
           delivery_id: string;
           item_id: string;
           quantity: number;
-          unit: UnitType;
+          unit: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           unit_price: number;
           created_at?: string;
         };
         Update: {
           quantity?: number;
-          unit?: UnitType;
+          unit?: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           unit_price?: number;
         };
+        Relationships: [];
       };
       farm_expenses: {
         Row: {
@@ -402,14 +494,15 @@ export interface Database {
           receipt_url?: string | null;
           updated_at?: string;
         };
+        Relationships: [];
       };
       notifications: {
         Row: {
           id: string;
-          type: NotificationType;
+          type: "order_submitted" | "order_confirmed" | "shortage" | "fulfilled" | "availability_published";
           recipient_id: string;
           order_id: string | null;
-          channel: NotificationChannel;
+          channel: "email" | "sms";
           subject: string | null;
           body_preview: string | null;
           sent_at: string | null;
@@ -418,10 +511,10 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          type: NotificationType;
+          type: "order_submitted" | "order_confirmed" | "shortage" | "fulfilled" | "availability_published";
           recipient_id: string;
           order_id?: string | null;
-          channel?: NotificationChannel;
+          channel?: "email" | "sms";
           subject?: string | null;
           body_preview?: string | null;
           sent_at?: string | null;
@@ -432,6 +525,7 @@ export interface Database {
           sent_at?: string | null;
           error?: string | null;
         };
+        Relationships: [];
       };
     };
     Views: {
@@ -445,18 +539,20 @@ export interface Database {
           total_expenses: number;
           delivery_count: number;
         };
+        Relationships: [];
       };
       most_ordered_items: {
         Row: {
           item_id: string;
           item_name: string;
-          category: ItemCategory;
-          unit_type: UnitType;
+          category: "flowers" | "micros_leaves" | "herbs_leaves" | "fruit_veg" | "kits";
+          unit_type: "ea" | "sm" | "lg" | "lbs" | "bu" | "qt" | "bx" | "cs" | "pt" | "kit";
           order_frequency: number;
           total_quantity_requested: number;
           total_quantity_fulfilled: number;
           total_value: number;
         };
+        Relationships: [];
       };
     };
     Functions: {
@@ -469,12 +565,12 @@ export interface Database {
         Returns: string[];
       };
     };
-    Enums: Record<PropertyKey, never>;
+    Enums: Record<string, never>;
   };
 }
 
 // ============================================
-// Enum types used in the database
+// Named type aliases (for use in app code)
 // ============================================
 
 export type ItemCategory =
