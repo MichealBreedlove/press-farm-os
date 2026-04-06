@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayISODate } from "@/lib/utils";
 
 export default async function AdminAvailabilityPage() {
   const supabase = await createClient();
 
   // Get upcoming delivery dates (next 30 days)
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISODate();
   const { data: deliveryDates } = await supabase
     .from("delivery_dates")
     .select("*")

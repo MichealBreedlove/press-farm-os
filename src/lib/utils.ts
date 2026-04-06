@@ -88,7 +88,33 @@ export function getNextDeliveryDates(count = 3): Date[] {
  * Format a date as YYYY-MM-DD (ISO date string).
  */
 export function toISODate(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get today's local date as YYYY-MM-DD.
+ */
+export function todayISODate(): string {
+  return toISODate(new Date());
+}
+
+/**
+ * Format a date as YYYY-MM (ISO month string).
+ */
+export function toISOMonth(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+/**
+ * Get current local month as YYYY-MM.
+ */
+export function currentISOMonth(): string {
+  return toISOMonth(new Date());
 }
 
 /**

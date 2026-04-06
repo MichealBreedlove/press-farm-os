@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { currentISOMonth } from "@/lib/utils";
 
 /**
  * GET /api/reports/monthly?month=2026-02 — Monthly value report
@@ -19,7 +20,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { searchParams } = new URL(request.url);
-  const month = searchParams.get("month") ?? new Date().toISOString().slice(0, 7);
+  const month = searchParams.get("month") ?? currentISOMonth();
 
   const {
     data: { user },

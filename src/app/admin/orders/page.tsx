@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, todayISODate } from "@/lib/utils";
 
 export default async function AdminOrdersPage() {
   const supabase = await createClient();
   const admin = createAdminClient();
 
   // Get next 4 upcoming delivery dates
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISODate();
   const { data: deliveryDates } = await supabase
     .from("delivery_dates")
     .select("*")
