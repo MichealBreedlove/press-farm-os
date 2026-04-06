@@ -47,21 +47,32 @@ CREATE POLICY "Admin can manage notifications" ON notifications
 -- ============================================
 CREATE OR REPLACE VIEW financial_periods AS
 SELECT
-  date_trunc('month', d.delivery_date) AS period_start,
+  d_agg.period_start,
   'monthly'::text AS period_type,
-  d.restaurant_id,
-  r.name AS restaurant_name,
-  COALESCE(SUM(d.total_value), 0) AS total_delivery_value,
-  (
-    SELECT COALESCE(SUM(fe.amount), 0)
-    FROM farm_expenses fe
-    WHERE date_trunc('month', fe.date) = date_trunc('month', d.delivery_date)
-  ) AS total_expenses,
-  COUNT(DISTINCT d.delivery_date) AS delivery_count
-FROM deliveries d
-JOIN restaurants r ON r.id = d.restaurant_id
-WHERE d.status = 'finalized'
-GROUP BY date_trunc('month', d.delivery_date), d.restaurant_id, r.name;
+  d_agg.restaurant_id,
+  d_agg.restaurant_name,
+  d_agg.total_delivery_value,
+  COALESCE(fe_agg.total_expenses, 0) AS total_expenses,
+  d_agg.delivery_count
+FROM (
+  SELECT
+    date_trunc('month', d.delivery_date) AS period_start,
+    d.restaurant_id,
+    r.name AS restaurant_name,
+    COALESCE(SUM(d.total_value), 0) AS total_delivery_value,
+    COUNT(DISTINCT d.delivery_date) AS delivery_count
+  FROM deliveries d
+  JOIN restaurants r ON r.id = d.restaurant_id
+  WHERE d.status = 'finalized'
+  GROUP BY date_trunc('month', d.delivery_date), d.restaurant_id, r.name
+) d_agg
+LEFT JOIN (
+  SELECT
+    date_trunc('month', fe.date) AS period_start,
+    COALESCE(SUM(fe.amount), 0) AS total_expenses
+  FROM farm_expenses fe
+  GROUP BY date_trunc('month', fe.date)
+) fe_agg ON fe_agg.period_start = d_agg.period_start;
 
 -- ============================================
 -- most_ordered_items VIEW
