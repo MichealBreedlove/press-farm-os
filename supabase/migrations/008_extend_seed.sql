@@ -33,7 +33,7 @@ SELECT
   i.name,
   i.category,
   i.unit_type,
-  i.default_price,
+  i.default_price::decimal(10,2),
   i.chef_notes,
   i.sort_order
 FROM farms f
@@ -109,6 +109,7 @@ CROSS JOIN (VALUES
   ('Zucchini', 'fruit_veg', 'ea', NULL, NULL, 280)
 ) AS i(name, category, unit_type, default_price, chef_notes, sort_order)
 WHERE f.name = 'Press Farm'
+  AND f.id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM items ex
     WHERE ex.farm_id = f.id
