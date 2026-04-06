@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayISODate } from "@/lib/utils";
 import OrderFormClient from "./client";
 
 export default async function OrderPage() {
@@ -30,7 +30,7 @@ export default async function OrderPage() {
   const restaurant = restaurantUser.restaurants as { id: string; name: string; slug: string };
 
   // Get next open delivery date
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISODate();
   const { data: deliveryDate } = await supabase
     .from("delivery_dates")
     .select("*")
