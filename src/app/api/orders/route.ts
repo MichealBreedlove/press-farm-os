@@ -2,6 +2,56 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 /**
+ * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
+ *
+ * Returns orders with restaurant, chef profile, and order_items count.
+ */
+export async function GET(request: Request) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify admin
+  const { data: profileRaw } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profileRaw || profileRaw.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const date = searchParams.get("date");
+  if (!date) {
+    return NextResponse.json({ error: "Missing date query param" }, { status: 400 });
+  }
+
+  const { data: orders, error } = await (supabase as any)
+    .from("orders")
+    .select(`
+      id, delivery_date, status, freeform_notes, submitted_at,
+      restaurant:restaurants(id, name),
+      chef:profiles!orders_chef_id_fkey(id, full_name),
+      order_items(id)
+    `)
+    .eq("delivery_date", date);
+
+  if (error) {
+    console.error("Orders fetch error:", error);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+  }
+
+  return NextResponse.json({ data: orders ?? [], error: null });
+}
+
+/**
  * POST /api/orders — Submit or update an order
  *
  * Body: { restaurant_id, delivery_date, items: [{availability_item_id, quantity, unit_price}], freeform_notes }
