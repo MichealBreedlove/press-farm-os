@@ -80,7 +80,8 @@ export default function OrderReviewPage() {
         return;
       }
 
-      // Clear session storage and navigate to confirmation
+      // Store the delivery date for the confirmation page, then clear order
+      sessionStorage.setItem("press_farm_order_confirmed_date", deliveryDateFormatted);
       sessionStorage.removeItem("press_farm_order");
       router.push("/order/confirmed");
     } catch {
