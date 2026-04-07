@@ -60,22 +60,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Wordmark */}
         <div className="text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="h-px w-8 bg-farm-green/40" />
-            <div className="w-8 h-8 rounded-full bg-farm-green flex items-center justify-center">
-              <Leaf className="w-4 h-4 text-white" />
-            </div>
-            <div className="h-px w-8 bg-farm-green/40" />
-          </div>
-          <h1 className="font-playfair text-4xl font-normal tracking-[0.12em] uppercase text-farm-dark">
-            Press Farm
+          <h1 className="font-syncopate text-3xl font-normal tracking-[0.3em] uppercase text-black">
+            PRESS FARM
           </h1>
-          <div className="flex items-center justify-center gap-3 mt-2">
-            <div className="h-px flex-1 bg-farm-dark/10" />
-            <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-farm-muted">
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <div className="h-px flex-1 bg-black/15" />
+            <p className="text-[9px] tracking-[0.3em] uppercase text-black/40 font-sans">
               Kitchen Portal
             </p>
-            <div className="h-px flex-1 bg-farm-dark/10" />
+            <div className="h-px flex-1 bg-black/15" />
           </div>
         </div>
 
