@@ -1,19 +1,69 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
 /**
  * /order/confirmed — Post-submit success screen
  *
- * Shown after chef successfully submits an order.
- *
- * TODO: Build confirmation UI
+ * Reads delivery date from sessionStorage (if available) for the message.
+ * Cleans up any lingering order data.
  */
 export default function OrderConfirmedPage() {
+  const [deliveryDateFormatted, setDeliveryDateFormatted] = useState<string>("");
+
+  useEffect(() => {
+    // Try to read delivery date for the confirmation message
+    // (sessionStorage was cleared after submit, but attempt anyway)
+    const raw = sessionStorage.getItem("press_farm_order_confirmed_date");
+    if (raw) {
+      setDeliveryDateFormatted(raw);
+      sessionStorage.removeItem("press_farm_order_confirmed_date");
+    }
+    // Clean up any stray session data
+    sessionStorage.removeItem("press_farm_order");
+  }, []);
+
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="text-center">
-        <div className="text-5xl mb-4">✓</div>
-        <h1 className="text-2xl font-semibold text-farm-green mb-2">Order Submitted</h1>
-        <p className="text-gray-500">
+    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+      <div className="text-center max-w-sm">
+        {/* Success icon */}
+        <div className="w-20 h-20 bg-farm-green rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg
+            className="w-10 h-10 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Submitted!</h1>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          {deliveryDateFormatted
+            ? `Your order for ${deliveryDateFormatted} has been sent to Micheal.`
+            : "Your order has been sent to Micheal."}
+        </p>
+        <p className="text-gray-400 text-xs mt-2">
           You&apos;ll receive a confirmation email shortly.
         </p>
+
+        <div className="mt-8 flex flex-col gap-3">
+          <Link
+            href="/order"
+            className="block w-full bg-farm-green text-white font-semibold py-3 rounded-xl min-h-[44px] flex items-center justify-center"
+          >
+            Back to Order
+          </Link>
+          <Link
+            href="/history"
+            className="block w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl min-h-[44px] flex items-center justify-center"
+          >
+            View Order History
+          </Link>
+        </div>
       </div>
     </main>
   );
