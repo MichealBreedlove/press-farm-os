@@ -60,7 +60,7 @@ export default async function HistoryPage() {
     .order("delivery_date", { ascending: false }) as any;
 
   return (
-    <main className="min-h-screen bg-farm-cream">
+    <main className="min-h-screen bg-farm-cream pb-20">
       <header className="page-header">
         <h1 className="page-title">Order History</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
