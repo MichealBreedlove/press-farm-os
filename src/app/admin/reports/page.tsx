@@ -77,16 +77,18 @@ export default async function AdminReportsPage() {
     .sort((a, b) => a.month.localeCompare(b.month))
     .map((m) => ({ ...m, net_value: m.total_value - m.total_expenses }));
 
-  // Current month summary
-  const currentData = monthMap[currentMonth] ?? {
+  // Current month summary — fall back to most recent month with data
+  const latestMonth = Object.keys(monthMap).sort().at(-1) ?? currentMonth;
+  const displayMonth = monthMap[currentMonth] ? currentMonth : latestMonth;
+  const currentData = monthMap[displayMonth] ?? {
     total_value: 0,
     total_expenses: 0,
     net_value: 0,
     by_restaurant: {},
   };
 
-  // YTD
-  const ytdYear = today.slice(0, 4);
+  // YTD — use year of the display month
+  const ytdYear = displayMonth.slice(0, 4);
   const ytdValue = Object.entries(monthMap)
     .filter(([m]) => m.startsWith(ytdYear))
     .reduce((sum, [, v]) => sum + v.total_value, 0);
@@ -130,7 +132,7 @@ export default async function AdminReportsPage() {
       </header>
 
       <ReportsDashboard
-        currentMonth={currentMonth}
+        currentMonth={displayMonth}
         currentData={{
           total_value: currentData.total_value,
           total_expenses: currentData.total_expenses,
