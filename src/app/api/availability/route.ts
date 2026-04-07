@@ -61,6 +61,16 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(delivery_date)) {
+    return NextResponse.json({ error: "Invalid delivery_date format" }, { status: 400 });
+  }
+
+  const VALID_STATUSES = ['available', 'limited', 'unavailable'];
+  const invalidItems = items.filter((item: any) => !VALID_STATUSES.includes(item.status));
+  if (invalidItems.length > 0) {
+    return NextResponse.json({ error: "Invalid status value in items" }, { status: 400 });
+  }
+
   // Use admin client to bypass RLS for upsert
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminClient = createAdminClient() as any;

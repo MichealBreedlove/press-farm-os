@@ -327,7 +327,7 @@ export function AvailabilityEditor({
       </div>
 
       {/* Sticky bottom action bar */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-3 space-y-2">
+      <div className="sticky bottom-16 bg-white border-t border-gray-200 px-4 py-3 space-y-2">
         {saveError && (
           <p className="text-xs text-red-600 text-center">{saveError}</p>
         )}

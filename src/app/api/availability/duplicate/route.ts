@@ -53,6 +53,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
+    return NextResponse.json({ error: "Invalid target_date format" }, { status: 400 });
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminClient = createAdminClient() as any;
 
@@ -62,7 +66,8 @@ export async function POST(request: Request) {
     .select("delivery_date, item_id, status, limited_qty, cycle_notes")
     .eq("restaurant_id", restaurant_id)
     .lt("delivery_date", target_date)
-    .order("delivery_date", { ascending: false });
+    .order("delivery_date", { ascending: false })
+    .limit(500);
   const lastRows = rawLastRows as Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes">[] | null;
 
   if (findError) {
@@ -79,10 +84,10 @@ export async function POST(request: Request) {
 
   // Get the most recent date's rows
   const mostRecentDate = lastRows[0].delivery_date;
-  const sourcRows = lastRows.filter((r) => r.delivery_date === mostRecentDate);
+  const sourceRows = lastRows.filter((r) => r.delivery_date === mostRecentDate);
 
   // Build upsert rows for target_date
-  const upsertRows = sourcRows.map((row) => ({
+  const upsertRows = sourceRows.map((row) => ({
     item_id: row.item_id,
     restaurant_id,
     delivery_date: target_date,

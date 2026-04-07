@@ -46,14 +46,21 @@ export default async function AdminAvailabilityPage() {
   if (dateStrings.length > 0) {
     const { data: availCounts } = await supabase
       .from("availability_items")
-      .select("delivery_date, status")
+      .select("delivery_date, item_id, status")
       .in("delivery_date", dateStrings)
       .eq("status", "available");
 
     if (availCounts) {
-      for (const row of availCounts as Array<{ delivery_date: string; status: string }>) {
-        availabilityCountsByDate[row.delivery_date] =
-          (availabilityCountsByDate[row.delivery_date] ?? 0) + 1;
+      // Deduplicate by item_id per date to avoid double-counting across restaurants
+      const seenByDate: Record<string, Set<string>> = {};
+      for (const row of availCounts as Array<{ delivery_date: string; item_id: string; status: string }>) {
+        if (!seenByDate[row.delivery_date]) {
+          seenByDate[row.delivery_date] = new Set();
+        }
+        seenByDate[row.delivery_date].add(row.item_id);
+      }
+      for (const [date, itemIds] of Object.entries(seenByDate)) {
+        availabilityCountsByDate[date] = itemIds.size;
       }
     }
   }
