@@ -44,6 +44,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Missing items array" }, { status: 400 });
   }
 
+  const invalidItems = items.filter((item: any) =>
+    !item.order_item_id ||
+    typeof item.quantity_fulfilled !== 'number' ||
+    !Number.isFinite(item.quantity_fulfilled) ||
+    item.quantity_fulfilled < 0
+  );
+  if (invalidItems.length > 0) {
+    return NextResponse.json({ error: 'Invalid shortage item data' }, { status: 400 });
+  }
+
   const adminClient = createAdminClient();
 
   // Verify the order exists
