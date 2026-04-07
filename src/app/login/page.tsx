@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Leaf } from "lucide-react";
+
+const BANK_GOTHIC: React.CSSProperties = {
+  fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif",
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -34,19 +37,24 @@ export default function LoginPage() {
 
   if (sent) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-farm-green-light flex items-center justify-center mx-auto">
-            <Leaf className="w-7 h-7 text-farm-green" />
+      <main className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: "#212326" }}>
+        <div className="w-full max-w-xs text-center space-y-6">
+          <div>
+            <h1 className="text-2xl font-normal tracking-[0.35em] uppercase text-white" style={BANK_GOTHIC}>
+              PRESS FARM
+            </h1>
+            <div className="mt-3 h-px bg-white/15" />
           </div>
-          <h2 className="text-xl font-semibold text-farm-dark">Check your email</h2>
-          <p className="text-farm-muted text-sm leading-relaxed">
-            We sent a sign-in link to<br />
-            <strong className="text-farm-dark">{email}</strong>
-          </p>
+          <div className="space-y-3">
+            <p className="text-xs tracking-[0.2em] uppercase text-white/50">Check your email</p>
+            <p className="text-sm text-white/70 leading-relaxed">
+              We sent a sign-in link to<br />
+              <span className="text-white">{email}</span>
+            </p>
+          </div>
           <button
             onClick={() => { setSent(false); setEmail(""); }}
-            className="text-sm text-farm-muted underline underline-offset-2 mt-2 min-h-0"
+            className="text-xs tracking-[0.15em] uppercase text-white/40 hover:text-white/70 transition-colors min-h-0"
           >
             Use a different email
           </button>
@@ -56,38 +64,36 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
-      <div className="w-full max-w-sm space-y-8">
+    <main className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: "#212326" }}>
+      <div className="w-full max-w-xs space-y-10">
+
         {/* Wordmark */}
-        <div className="text-center">
-          <h1
-            className="text-3xl font-normal tracking-[0.35em] uppercase text-black"
-            style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
-          >
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-normal tracking-[0.35em] uppercase text-white" style={BANK_GOTHIC}>
             PRESS FARM
           </h1>
-          <div className="flex items-center justify-center gap-3 mt-3">
-            <div className="h-px flex-1 bg-black/15" />
-            <p className="text-[9px] tracking-[0.3em] uppercase text-black/40 font-sans">
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-white/20" />
+            <span className="text-[9px] tracking-[0.3em] uppercase text-white/40">
               Kitchen Portal
-            </p>
-            <div className="h-px flex-1 bg-black/15" />
+            </span>
+            <div className="h-px flex-1 bg-white/20" />
           </div>
         </div>
 
-        {/* Card */}
-        <div className="card p-6 space-y-5">
-          {/* Tab toggle */}
-          <div className="flex rounded-xl bg-gray-50 border border-gray-100 p-1 gap-1">
+        {/* Form */}
+        <div className="space-y-5">
+          {/* Mode toggle */}
+          <div className="flex border border-white/15 rounded-sm overflow-hidden">
             {(["magic", "password"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(null); }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all min-h-0 ${
+                className={`flex-1 py-2.5 text-xs tracking-[0.15em] uppercase transition-all min-h-0 ${
                   mode === m
-                    ? "bg-white text-farm-dark shadow-sm border border-gray-100"
-                    : "text-farm-muted hover:text-farm-dark"
+                    ? "bg-white/10 text-white"
+                    : "text-white/35 hover:text-white/60"
                 }`}
               >
                 {m === "magic" ? "Magic Link" : "Password"}
@@ -96,8 +102,8 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-farm-dark mb-1.5">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50">
                 Email
               </label>
               <input
@@ -106,13 +112,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@pressfarm.app"
-                className="input-field"
+                className="w-full bg-transparent border-b border-white/20 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/60 transition-colors"
+                style={{ fontSize: "16px" }}
               />
             </div>
 
             {mode === "password" && (
-              <div>
-                <label className="block text-sm font-medium text-farm-dark mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-white/50">
                   Password
                 </label>
                 <input
@@ -121,31 +128,37 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field"
+                  className="w-full bg-transparent border-b border-white/20 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/60 transition-colors"
+                  style={{ fontSize: "16px" }}
                 />
               </div>
             )}
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 border border-red-100">
+              <p className="text-xs text-red-400 border border-red-400/30 px-3 py-2.5">
                 {error}
               </p>
             )}
 
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "…" : mode === "magic" ? "Send Magic Link" : "Sign In"}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 mt-2 text-xs tracking-[0.2em] uppercase border border-white/30 text-white hover:bg-white hover:text-[#212326] transition-all disabled:opacity-40 min-h-0"
+            >
+              {loading ? "…" : mode === "magic" ? "Send Link" : "Sign In"}
             </button>
           </form>
 
           {mode === "magic" && (
-            <p className="text-xs text-farm-muted text-center">
-              We&apos;ll send a sign-in link — no password needed
+            <p className="text-[10px] text-white/30 text-center tracking-wide">
+              We&apos;ll email you a sign-in link
             </p>
           )}
         </div>
 
-        <p className="text-center text-xs text-farm-muted/60">
-          Press Farm · Yountville, CA
+        {/* Footer */}
+        <p className="text-center text-[9px] tracking-[0.25em] uppercase text-white/20">
+          Yountville · California
         </p>
       </div>
     </main>
