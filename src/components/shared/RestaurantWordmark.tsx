@@ -1,8 +1,7 @@
-/**
- * Styled wordmarks matching each restaurant's brand identity.
- * Press: wide-spaced thin caps (pressnapavalley.com)
- * Under-Study: white circle ampersand + spaced serif caps on farm-green (under-study.com)
- */
+import Image from "next/image";
+
+// Press logo: 472×49px (wide horizontal wordmark)
+// Under-Study logo: 276×140px (stacked mark + wordmark)
 
 interface RestaurantWordmarkProps {
   name: string;
@@ -13,37 +12,30 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   const normalized = name.toLowerCase().replace(/[-\s]/g, "");
 
   if (normalized === "press") {
-    const textSize =
-      size === "sm" ? "text-xs" : size === "lg" ? "text-base" : "text-sm";
+    const height = size === "sm" ? 14 : size === "lg" ? 24 : 18;
+    const width = Math.round(height * (472 / 49));
     return (
-      <span
-        className={`font-sans font-light tracking-[0.35em] uppercase text-farm-dark ${textSize}`}
-      >
-        Press
-      </span>
+      <Image
+        src="/logo-press.png"
+        alt="Press"
+        width={width}
+        height={height}
+        className="object-contain"
+      />
     );
   }
 
   if (normalized === "understudy") {
-    const circleSize =
-      size === "sm" ? "w-6 h-6 text-xs" : size === "lg" ? "w-10 h-10 text-lg" : "w-8 h-8 text-base";
-    const textSize =
-      size === "sm" ? "text-[10px]" : size === "lg" ? "text-sm" : "text-xs";
-
+    const height = size === "sm" ? 40 : size === "lg" ? 64 : 52;
+    const width = Math.round(height * (276 / 140));
     return (
-      <span className="inline-flex items-center gap-2 bg-farm-green rounded-lg px-3 py-1.5">
-        <span
-          className={`inline-flex items-center justify-center rounded-full bg-white text-farm-green font-display flex-shrink-0 ${circleSize}`}
-          style={{ fontStyle: "italic" }}
-        >
-          &amp;
-        </span>
-        <span
-          className={`font-display tracking-[0.18em] uppercase text-white ${textSize}`}
-        >
-          Under-Study
-        </span>
-      </span>
+      <Image
+        src="/logo-under-study.png"
+        alt="Under-Study"
+        width={width}
+        height={height}
+        className="object-contain"
+      />
     );
   }
 
