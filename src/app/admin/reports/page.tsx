@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import ReportsDashboard from "./ReportsDashboard";
+import dynamic from "next/dynamic";
+
+const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
 export default async function AdminReportsPage() {
   const supabase = await createClient();
@@ -26,9 +28,9 @@ export default async function AdminReportsPage() {
 
   const { data: expenses } = await (admin as any)
     .from("farm_expenses")
-    .select("expense_date, amount, category")
-    .gte("expense_date", startStr)
-    .order("expense_date", { ascending: true });
+    .select("date, amount, category")
+    .gte("date", startStr)
+    .order("date", { ascending: true });
 
   // Top items (all time from start)
   const { data: deliveryItems } = await (admin as any)
@@ -62,7 +64,7 @@ export default async function AdminReportsPage() {
   }
 
   for (const e of expenses ?? []) {
-    const m = e.expense_date.slice(0, 7);
+    const m = e.date.slice(0, 7);
     if (!monthMap[m]) {
       const [y, mo] = m.split("-").map(Number);
       const label = new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
@@ -117,7 +119,7 @@ export default async function AdminReportsPage() {
   // Expense breakdown for current month
   const monthExpenseBreakdown: Record<string, number> = {};
   for (const e of expenses ?? []) {
-    if (!e.expense_date.startsWith(currentMonth)) continue;
+    if (!e.date.startsWith(currentMonth)) continue;
     monthExpenseBreakdown[e.category] = (monthExpenseBreakdown[e.category] ?? 0) + e.amount;
   }
 

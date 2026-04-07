@@ -43,9 +43,9 @@ export async function GET(request: Request) {
   // Fetch expenses for the same range
   const { data: expenses } = await (admin as any)
     .from("farm_expenses")
-    .select("expense_date, amount, category")
-    .gte("expense_date", startStr)
-    .order("expense_date", { ascending: true });
+    .select("date, amount, category")
+    .gte("date", startStr)
+    .order("date", { ascending: true });
 
   // Aggregate by month
   const monthMap: Record<string, {
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
   }
 
   for (const e of expenses ?? []) {
-    const m = e.expense_date.slice(0, 7);
+    const m = e.date.slice(0, 7);
     if (!monthMap[m]) {
       monthMap[m] = { month: m, total_value: 0, total_expenses: 0, net_value: 0, by_restaurant: {} };
     }
