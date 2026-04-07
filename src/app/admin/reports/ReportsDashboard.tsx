@@ -44,12 +44,20 @@ type TopItem = {
   total_qty: number;
 };
 
+type AnnualPoint = {
+  year: string;
+  revenue: number;
+  expenses: number;
+  net: number;
+};
+
 export default function ReportsDashboard({
   currentMonth,
   currentData,
   ytdValue,
   ytdExpenses,
   monthlyData,
+  annualData,
   topItems,
   expenseBreakdown,
 }: {
@@ -58,6 +66,7 @@ export default function ReportsDashboard({
   ytdValue: number;
   ytdExpenses: number;
   monthlyData: MonthlyPoint[];
+  annualData: AnnualPoint[];
   topItems: TopItem[];
   expenseBreakdown: Record<string, number>;
 }) {
@@ -118,7 +127,7 @@ export default function ReportsDashboard({
       {/* Monthly value bar chart */}
       {monthlyData.length > 0 && (
         <div className="card p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Monthly Delivery Value</p>
+          <p className="text-sm font-semibold text-gray-700 mb-4">Monthly Revenue (All Time)</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -142,7 +151,7 @@ export default function ReportsDashboard({
       {/* YTD running total line chart */}
       {runningData.length > 0 && (
         <div className="card p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Cumulative Value (12mo)</p>
+          <p className="text-sm font-semibold text-gray-700 mb-4">Cumulative Value (All Time)</p>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={runningData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -222,6 +231,31 @@ export default function ReportsDashboard({
               <p className="text-sm font-semibold text-gray-900">{fmtFull(item.total_value)}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Year-over-Year */}
+      {annualData.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-sm font-semibold text-farm-dark">Year-over-Year</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            <div className="px-4 py-2 grid grid-cols-4 gap-1 text-xs font-medium text-gray-400">
+              <span>Year</span>
+              <span className="text-right">Revenue</span>
+              <span className="text-right">Expenses</span>
+              <span className="text-right">Net</span>
+            </div>
+            {annualData.map((row) => (
+              <div key={row.year} className="px-4 py-3 grid grid-cols-4 gap-1 text-sm items-center">
+                <span className="font-semibold text-farm-dark">{row.year}</span>
+                <span className="text-right text-farm-green">{fmt(row.revenue)}</span>
+                <span className="text-right text-red-500">{fmt(row.expenses)}</span>
+                <span className={`text-right font-medium ${row.net >= 0 ? "text-farm-dark" : "text-red-600"}`}>{fmt(row.net)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
