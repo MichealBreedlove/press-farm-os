@@ -124,6 +124,22 @@ export default async function AdminReportsPage() {
         <h1 className="page-title">Reports</h1>
       </header>
 
+      {/* Executive Summary CTA */}
+      <div className="px-4 pt-4">
+        <a
+          href="/admin/reports/executive"
+          className="card-interactive flex items-center justify-between px-4 py-4 mb-0"
+        >
+          <div>
+            <p className="text-sm font-semibold text-farm-dark">Executive Summary</p>
+            <p className="text-xs text-gray-400 mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
+          </div>
+          <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+
       <ReportsDashboard
         currentMonth={displayMonth}
         currentData={{

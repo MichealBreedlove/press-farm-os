@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, CalendarDays, PackageOpen, Leaf, BarChart3 } from "lucide-react";
+import { ClipboardList, CalendarDays, PackageOpen, Leaf, BarChart3, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
   { label: "Orders", Icon: ClipboardList, href: "/admin/orders" },
-  { label: "Availability", Icon: CalendarDays, href: "/admin/availability" },
+  { label: "Avail.", Icon: CalendarDays, href: "/admin/availability" },
   { label: "Deliveries", Icon: PackageOpen, href: "/admin/deliveries" },
-  { label: "Items", Icon: Leaf, href: "/admin/items" },
   { label: "Reports", Icon: BarChart3, href: "/admin/reports" },
+  { label: "Settings", Icon: Settings, href: "/admin/settings" },
 ];
 
 export function BottomNav() {

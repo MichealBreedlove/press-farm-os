@@ -101,3 +101,31 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+@media print {
+  /* Hide navigation and non-content elements */
+  nav, .bottom-nav, header .print-hide, .print-hide { display: none !important; }
+
+  /* Remove sticky headers for print */
+  header { position: static !important; }
+
+  /* Ensure full width */
+  body, main { background: white !important; }
+
+  /* Page breaks */
+  .print-break-before { page-break-before: always; }
+  .print-break-avoid { page-break-inside: avoid; }
+
+  /* Show all chart content */
+  .recharts-wrapper { width: 100% !important; }
+
+  /* Cards look clean on paper */
+  .card, .card-interactive {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Bottom padding not needed for print */
+  .pb-24 { padding-bottom: 0 !important; }
+}
