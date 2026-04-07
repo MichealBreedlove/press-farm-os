@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Baskervville } from "next/font/google";
+import { Roboto, Baskervville, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -14,6 +14,14 @@ const baskervville = Baskervville({
   weight: ["400"],
   style: ["normal", "italic"],
   variable: "--font-baskervville",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -41,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
+    <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${playfair.variable}`}>
       <body>{children}</body>
     </html>
   );

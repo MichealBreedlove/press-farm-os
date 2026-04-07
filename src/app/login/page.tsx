@@ -59,16 +59,24 @@ export default function LoginPage() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
       <div className="w-full max-w-sm space-y-8">
         {/* Wordmark */}
-        <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-full bg-farm-green flex items-center justify-center">
-              <Leaf className="w-5 h-5 text-white" />
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="h-px w-8 bg-farm-green/40" />
+            <div className="w-8 h-8 rounded-full bg-farm-green flex items-center justify-center">
+              <Leaf className="w-4 h-4 text-white" />
             </div>
+            <div className="h-px w-8 bg-farm-green/40" />
           </div>
-          <h1 className="brand-wordmark text-3xl">Press Farm</h1>
-          <p className="text-farm-muted text-sm tracking-wide uppercase text-xs font-medium">
-            Kitchen Portal
-          </p>
+          <h1 className="font-playfair text-4xl font-normal tracking-[0.12em] uppercase text-farm-dark">
+            Press Farm
+          </h1>
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <div className="h-px flex-1 bg-farm-dark/10" />
+            <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-farm-muted">
+              Kitchen Portal
+            </p>
+            <div className="h-px flex-1 bg-farm-dark/10" />
+          </div>
         </div>
 
         {/* Card */}
