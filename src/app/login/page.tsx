@@ -60,7 +60,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Wordmark */}
         <div className="text-center">
-          <h1 className="font-syncopate text-3xl font-normal tracking-[0.3em] uppercase text-black">
+          <h1
+            className="text-3xl font-normal tracking-[0.35em] uppercase text-black"
+            style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
+          >
             PRESS FARM
           </h1>
           <div className="flex items-center justify-center gap-3 mt-3">

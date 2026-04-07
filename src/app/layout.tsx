@@ -57,6 +57,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${playfair.variable} ${syncopate.variable}`}>
+      <head>
+        <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/bank-gothic" />
+      </head>
       <body>{children}</body>
     </html>
   );
