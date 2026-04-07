@@ -36,7 +36,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-farm-cream">
       {/* Main content — padded bottom for bottom nav */}
       <div className="pb-20">{children}</div>
       <BottomNav />

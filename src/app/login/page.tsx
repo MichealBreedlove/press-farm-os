@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Leaf } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,44 +16,37 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     const supabase = createClient();
-
     if (mode === "magic") {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-      if (error) {
-        setError(error.message);
-      } else {
-        setSent(true);
-      }
+      if (error) setError(error.message);
+      else setSent(true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-      } else {
-        window.location.href = "/";
-      }
+      if (error) setError(error.message);
+      else window.location.href = "/";
     }
-
     setLoading(false);
   }
 
   if (sent) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#f5f0e8] px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="text-4xl mb-4">📬</div>
-          <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
-          <p className="text-gray-500 text-sm mt-2">
-            We sent a magic link to <strong>{email}</strong>.<br />
-            Tap it to sign in.
+      <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
+        <div className="w-full max-w-sm text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-farm-green-light flex items-center justify-center mx-auto">
+            <Leaf className="w-7 h-7 text-farm-green" />
+          </div>
+          <h2 className="text-xl font-semibold text-farm-dark">Check your email</h2>
+          <p className="text-farm-muted text-sm leading-relaxed">
+            We sent a sign-in link to<br />
+            <strong className="text-farm-dark">{email}</strong>
           </p>
           <button
             onClick={() => { setSent(false); setEmail(""); }}
-            className="mt-6 text-sm text-gray-400 underline"
+            className="text-sm text-farm-muted underline underline-offset-2 mt-2 min-h-0"
           >
             Use a different email
           </button>
@@ -62,43 +56,44 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#f5f0e8] px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-green-900">Press Farm OS</h1>
-          <p className="text-gray-500 mt-1 text-sm">Farm-to-kitchen ordering</p>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
+      <div className="w-full max-w-sm space-y-8">
+        {/* Wordmark */}
+        <div className="text-center space-y-1">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-full bg-farm-green flex items-center justify-center">
+              <Leaf className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <h1 className="brand-wordmark text-3xl">Press Farm</h1>
+          <p className="text-farm-muted text-sm tracking-wide uppercase text-xs font-medium">
+            Kitchen Portal
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          {/* Mode toggle */}
-          <div className="flex rounded-lg bg-gray-100 p-1 mb-5">
-            <button
-              type="button"
-              onClick={() => { setMode("magic"); setError(null); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                mode === "magic"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500"
-              }`}
-            >
-              Magic Link
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode("password"); setError(null); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                mode === "password"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500"
-              }`}
-            >
-              Password
-            </button>
+        {/* Card */}
+        <div className="card p-6 space-y-5">
+          {/* Tab toggle */}
+          <div className="flex rounded-xl bg-gray-50 border border-gray-100 p-1 gap-1">
+            {(["magic", "password"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => { setMode(m); setError(null); }}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all min-h-0 ${
+                  mode === m
+                    ? "bg-white text-farm-dark shadow-sm border border-gray-100"
+                    : "text-farm-muted hover:text-farm-dark"
+                }`}
+              >
+                {m === "magic" ? "Magic Link" : "Password"}
+              </button>
+            ))}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-farm-dark mb-1.5">
                 Email
               </label>
               <input
@@ -106,14 +101,14 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                placeholder="you@pressfarm.app"
+                className="input-field"
               />
             </div>
 
             {mode === "password" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-farm-dark mb-1.5">
                   Password
                 </label>
                 <input
@@ -122,36 +117,32 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                  className="input-field"
                 />
               </div>
             )}
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+              <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 border border-red-100">
                 {error}
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-green-800 text-white rounded-xl text-sm font-semibold hover:bg-green-900 active:bg-green-950 disabled:opacity-50 transition-colors"
-            >
-              {loading
-                ? "..."
-                : mode === "magic"
-                ? "Send Magic Link"
-                : "Sign In"}
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? "…" : mode === "magic" ? "Send Magic Link" : "Sign In"}
             </button>
           </form>
 
           {mode === "magic" && (
-            <p className="text-xs text-gray-400 text-center mt-4">
-              We'll email you a link — no password needed
+            <p className="text-xs text-farm-muted text-center">
+              We'll send a sign-in link — no password needed
             </p>
           )}
         </div>
+
+        <p className="text-center text-xs text-farm-muted/60">
+          Press Farm · Yountville, CA
+        </p>
       </div>
     </main>
   );

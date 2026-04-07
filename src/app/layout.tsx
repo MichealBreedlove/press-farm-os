@@ -1,5 +1,21 @@
 import type { Metadata, Viewport } from "next";
+import { Roboto, Baskervville } from "next/font/google";
 import "./globals.css";
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-roboto",
+  display: "swap",
+});
+
+const baskervville = Baskervville({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-baskervville",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Press Farm OS",
@@ -15,8 +31,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, // Prevent auto-zoom on iOS inputs
-  themeColor: "#2d6a4f",
+  maximumScale: 1,
+  themeColor: "#00774A",
 };
 
 export default function RootLayout({
@@ -25,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
       <body>{children}</body>
     </html>
   );
