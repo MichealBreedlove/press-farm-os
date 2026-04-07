@@ -1,5 +1,6 @@
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
@@ -23,6 +24,7 @@ interface OrderReceivedProps {
   }[];
   freeformNotes?: string;
   submittedAt: string;
+  appUrl?: string;
 }
 
 /**
@@ -41,6 +43,7 @@ export default function OrderReceived({
   items,
   freeformNotes,
   submittedAt,
+  appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://press-farm-fu0whefyn-micheal-breedloves-projects.vercel.app",
 }: OrderReceivedProps) {
   return (
     <Html>
@@ -79,8 +82,25 @@ export default function OrderReceived({
             )}
           </Section>
 
+          <Button
+            href={`${appUrl}/admin/orders/${deliveryDate}`}
+            style={{
+              backgroundColor: "#166534",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              textDecoration: "none",
+              display: "inline-block",
+              marginTop: "20px",
+            }}
+          >
+            View Order in Admin
+          </Button>
+
           <Text style={{ color: "#999", fontSize: "12px", marginTop: "24px" }}>
-            Press Farm OS — review in the admin portal
+            Press Farm OS
           </Text>
         </Container>
       </Body>

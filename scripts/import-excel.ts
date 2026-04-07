@@ -215,6 +215,79 @@ async function importDeliveryHistory(wb: XLSX.WorkBook) {
   console.log(`Done: ${importedDeliveries} deliveries, ${importedLines} lines, ${lineErrors} errors, ${skippedItems} items not in catalog`);
 }
 
+// ---- Expense category detection ----
+// Valid: Seeds, Soil, Amendments, Equipment, Gas, Transport, Supplies, Labor, Other
+function detectExpenseCategory(item: string): string {
+  const n = item.toLowerCase();
+  if (/seed/.test(n)) return "Seeds";
+  if (/coir|perlite|soil|compost|substrate|mix/.test(n)) return "Soil";
+  if (/amendment|fertilizer|nutrient|lime|sulfur/.test(n)) return "Amendments";
+  if (/timer|tool|equipment|tiller|pump|bag|pot|tray|greenhouse|hardware|part|filter|tube|hose|sprinkler|irrigation/.test(n)) return "Equipment";
+  if (/gas|fuel|propane/.test(n)) return "Gas";
+  if (/transport|delivery|shipping|freight/.test(n)) return "Transport";
+  if (/supply|supplies|label|tape|box|packaging|bag|glove|sanitiz/.test(n)) return "Supplies";
+  if (/labor|worker|wage|pay|salary/.test(n)) return "Labor";
+  return "Other";
+}
+
+async function importFarmExpenses(wb: XLSX.WorkBook) {
+  console.log("\n=== Farm Expenses Import ===");
+  const sheetName = wb.SheetNames.find((n) => n.trim().toUpperCase().includes("FARM EXPENSE"));
+  if (!sheetName) { console.log("FARM EXPENSES tab not found. Tabs:", wb.SheetNames.join(", ")); return; }
+
+  const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "", cellDates: true } as any);
+  console.log(`Rows found: ${rows.length}`);
+
+  // Row 0 has header names as values (FARM EXPENSE TRACKER = "DATE", __EMPTY = "ITEM", etc.)
+  // Skip row 0 and any row where the date column is the string "DATE"
+  const { data: farm } = await admin.from("farms").select("id").single();
+  if (!farm) { console.error("No farm found"); return; }
+
+  function parseDate(raw: unknown): string | null {
+    if (!raw) return null;
+    if (raw instanceof Date) return raw.toISOString().slice(0, 10);
+    const s = String(raw).trim();
+    if (s === "DATE" || s === "") return null;
+    const num = Number(raw);
+    if (!isNaN(num) && num > 40000) {
+      const d = XLSX.SSF.parse_date_code(num);
+      return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return null;
+  }
+
+  let imported = 0, errors = 0, skipped = 0;
+  for (const row of rows) {
+    const date = parseDate(row["FARM EXPENSE TRACKER"] ?? row["Date"] ?? row["DATE"] ?? "");
+    if (!date) { skipped++; continue; }
+
+    const itemName = String(row["__EMPTY"] ?? row["Item"] ?? row["ITEM"] ?? "").trim();
+    const vendor = String(row["__EMPTY_1"] ?? row["Vendor"] ?? "").trim();
+    const details = String(row["__EMPTY_2"] ?? row["Details"] ?? row["Description"] ?? "").trim();
+    const amountRaw = row["__EMPTY_3"] ?? row["Amount"] ?? row["AMOUNT"] ?? 0;
+    const amount = parseFloat(String(amountRaw).replace(/[^0-9.]/g, ""));
+
+    if (!itemName || isNaN(amount) || amount <= 0) { skipped++; continue; }
+
+    const description = [itemName, vendor, details].filter(Boolean).join(" — ");
+    const category = detectExpenseCategory(itemName);
+
+    const { error } = await admin.from("farm_expenses" as any).insert({
+      farm_id: (farm as any).id,
+      date,
+      category,
+      description,
+      amount,
+    });
+
+    if (error) { errors++; console.error(`  Expense error [${date}/${itemName}]:`, error.message); }
+    else imported++;
+  }
+  console.log(`Done: ${imported} imported, ${errors} errors, ${skipped} skipped`);
+}
+
 async function main() {
   console.log("Reading:", FILE);
   const wb = XLSX.readFile(FILE, { cellDates: true });
@@ -222,6 +295,7 @@ async function main() {
 
   await importKeyTab(wb);
   await importDeliveryHistory(wb);
+  await importFarmExpenses(wb);
 
   console.log("\nAll done.");
 }

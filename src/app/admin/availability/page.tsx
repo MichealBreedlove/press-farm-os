@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DeliveryDate } from "@/types";
+import { AddDatesButton } from "./AddDatesButton";
 
 /**
  * /admin/availability — Availability dashboard
@@ -129,18 +130,7 @@ export default async function AdminAvailabilityPage() {
 
       {/* Add Delivery Dates section */}
       <div className="px-4 pb-6 mt-2">
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 px-4 py-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-1">Add Delivery Dates</h2>
-          <p className="text-xs text-gray-500 mb-3">
-            Adds the next 4 dates following the Thu / Sat / Mon schedule.
-          </p>
-          <button
-            disabled
-            className="w-full py-3 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed"
-          >
-            Add Next 4 Dates (coming soon)
-          </button>
-        </div>
+        <AddDatesButton />
       </div>
     </main>
   );

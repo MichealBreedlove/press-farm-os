@@ -95,9 +95,9 @@ async function main() {
   console.log('\nExisting latest delivery dates:');
   existing?.forEach((d) => console.log(`  ${d.date} (${d.day_of_week})`));
 
-  // Generate 8 dates starting April 7, 2026
+  // Generate dates through end of 2026 — ~120 dates covers Thu/Sat/Mon through Dec 31
   const startDate = new Date('2026-04-07T00:00:00Z');
-  const datesToAdd = generateDeliveryDates(startDate, 8);
+  const datesToAdd = generateDeliveryDates(startDate, 120);
 
   console.log('\nDates to add:');
   datesToAdd.forEach((d) => console.log(`  ${d.date} (${d.day_of_week})`));
