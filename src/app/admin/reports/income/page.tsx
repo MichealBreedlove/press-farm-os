@@ -14,8 +14,35 @@ const MONTH_LABELS: Record<string, string> = {
   "10": "Oct", "11": "Nov", "12": "Dec",
 };
 
-// Q1 2026 benchmark
-const BENCHMARK = { revenue: 21633, expenses: 1536, farmerPay: 12000 };
+// Farmer pay is a fixed operating expense, $12K per quarter
+const FARMER_PAY_PER_QUARTER = 12000;
+
+// Industry benchmarks for market farms
+const BENCHMARKS = {
+  grossMargin: { label: "Gross Margin", range: "50–70%", min: 0.5, max: 0.7 },
+  operatingMargin: { label: "Operating Margin", range: "30–50%", min: 0.3, max: 0.5 },
+  netMargin: { label: "Net Margin", range: "20–40%", min: 0.2, max: 0.4 },
+  acreProduction: { label: "Production / Acre", national: 100000 },
+};
+
+const FARM_ACRES = 0.5;
+
+function fmt(n: number) {
+  const abs = Math.abs(n);
+  const str = abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n < 0 ? `($${str})` : `$${str}`;
+}
+
+function pct(n: number, total: number) {
+  if (!total) return "—";
+  return ((n / total) * 100).toFixed(1) + "%";
+}
+
+function marginColor(value: number, min: number, max: number) {
+  if (value >= min) return "text-farm-green";
+  if (value >= min * 0.7) return "text-amber-600";
+  return "text-red-600";
+}
 
 export default async function AdminIncomeStatementPage({ searchParams }: Props) {
   const { year: yearParam, quarter: quarterParam } = await searchParams;
@@ -24,9 +51,31 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const admin = createAdminClient();
   const now = new Date();
-  const year = parseInt(yearParam ?? String(now.getFullYear()));
-  const quarter = parseInt(quarterParam ?? String(Math.ceil((now.getMonth() + 1) / 3)));
+
+  // Default to most recent quarter with data
+  let year = parseInt(yearParam ?? "0");
+  let quarter = parseInt(quarterParam ?? "0");
+
+  if (!yearParam || !quarterParam) {
+    // Find most recent quarter with delivery data
+    const { data: latestDelivery } = await (admin as any)
+      .from("deliveries")
+      .select("delivery_date")
+      .order("delivery_date", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestDelivery?.delivery_date) {
+      const d = new Date(latestDelivery.delivery_date);
+      year = d.getFullYear();
+      quarter = Math.ceil((d.getMonth() + 1) / 3);
+    } else {
+      year = now.getFullYear();
+      quarter = Math.ceil((now.getMonth() + 1) / 3);
+    }
+  }
 
   const startMonth = (quarter - 1) * 3 + 1;
   const endMonth = startMonth + 2;
@@ -34,7 +83,6 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const lastDay = new Date(year, endMonth, 0).getDate();
   const end = `${year}-${String(endMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  const admin = createAdminClient();
   const [{ data: deliveries }, { data: expenses }] = await Promise.all([
     (admin as any)
       .from("deliveries")
@@ -48,7 +96,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
       .lte("date", end),
   ]);
 
-  // Build monthly data
+  // Monthly rollup
   const months = Array.from({ length: 3 }, (_, i) => {
     const m = startMonth + i;
     return `${year}-${String(m).padStart(2, "0")}`;
@@ -75,37 +123,52 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
     byRestaurant[name] = (byRestaurant[name] ?? 0) + (d.total_value ?? 0);
   }
 
-  const totalRevenue = Object.values(monthData).reduce((s, m) => s + m.revenue, 0);
-  const totalExpenses = Object.values(monthData).reduce((s, m) => s + m.expenses, 0);
-  const netMargin = totalRevenue - totalExpenses;
+  // P&L calculations
+  const revenue = Object.values(monthData).reduce((s, m) => s + m.revenue, 0);
+  const cogs = Object.values(monthData).reduce((s, m) => s + m.expenses, 0);
+  const grossProfit = revenue - cogs;
+  const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
+  const operatingExpenses = FARMER_PAY_PER_QUARTER;
+  const operatingProfit = grossProfit - operatingExpenses;
+  const operatingMargin = revenue > 0 ? operatingProfit / revenue : 0;
+  const netIncome = operatingProfit; // no other income/tax adjustments
+  const netMargin = revenue > 0 ? netIncome / revenue : 0;
+  const acreProduction = revenue / FARM_ACRES;
 
   // Quarter nav
   const prevQ = quarter === 1 ? { year: year - 1, quarter: 4 } : { year, quarter: quarter - 1 };
   const nextQ = quarter === 4 ? { year: year + 1, quarter: 1 } : { year, quarter: quarter + 1 };
-  const isCurrentQ = year === now.getFullYear() && quarter === Math.ceil((now.getMonth() + 1) / 3);
+  const currentQ = Math.ceil((now.getMonth() + 1) / 3);
+  const isCurrentQ = year === now.getFullYear() && quarter === currentQ;
 
-  const isBenchmark = year === 2026 && quarter === 1;
+  const hasData = revenue > 0 || cogs > 0;
 
   return (
-    <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-900">Income Statement</h1>
+    <main className="pb-24 bg-farm-cream min-h-screen">
+      <header className="page-header">
+        <div className="flex items-center gap-2">
+          <Link href="/admin/reports" className="text-gray-400 hover:text-farm-dark">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <h1 className="page-title">Income Statement</h1>
+        </div>
 
-        {/* Quarter nav */}
         <div className="flex items-center justify-between mt-2">
           <Link
             href={`/admin/reports/income?year=${prevQ.year}&quarter=${prevQ.quarter}`}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-gray-900"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-farm-dark"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-medium text-gray-900">Q{quarter} {year}</span>
+          <span className="text-sm font-semibold text-farm-dark">Q{quarter} {year}</span>
           <Link
             href={isCurrentQ ? "#" : `/admin/reports/income?year=${nextQ.year}&quarter=${nextQ.quarter}`}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
-              isCurrentQ ? "text-gray-200" : "text-gray-500 hover:text-gray-900"
+              isCurrentQ ? "text-gray-200 pointer-events-none" : "text-gray-400 hover:text-farm-dark"
             }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -115,118 +178,201 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
         </div>
       </header>
 
-      <div className="px-4 py-6 space-y-5">
-        {/* Benchmark note */}
-        {isBenchmark && (
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
-            Benchmark: ${BENCHMARK.revenue.toLocaleString()} revenue · ${BENCHMARK.expenses.toLocaleString()} expenses · ${BENCHMARK.farmerPay.toLocaleString()} farmer pay
-          </div>
-        )}
-
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-            <p className="text-xs text-green-700 font-medium">Production Value</p>
-            <p className="text-xl font-bold text-green-900 mt-1">${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            {isBenchmark && <p className="text-xs text-green-600 mt-0.5">Benchmark ${BENCHMARK.revenue.toLocaleString()}</p>}
-          </div>
-          <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-            <p className="text-xs text-orange-700 font-medium">Expenses</p>
-            <p className="text-xl font-bold text-orange-900 mt-1">${totalExpenses.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            {isBenchmark && <p className="text-xs text-orange-600 mt-0.5">Benchmark ${BENCHMARK.expenses.toLocaleString()}</p>}
-          </div>
-          <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 flex justify-between items-center">
-            <div>
-              <p className="text-xs text-blue-700 font-medium">Net Margin</p>
-              <p className="text-xl font-bold text-blue-900 mt-1">${netMargin.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-            </div>
-            {totalRevenue > 0 && (
-              <div className="text-right">
-                <p className="text-2xl font-bold text-blue-800">
-                  {((netMargin / totalRevenue) * 100).toFixed(1)}%
-                </p>
-                <p className="text-xs text-blue-500">margin</p>
-              </div>
-            )}
-          </div>
+      {!hasData ? (
+        <div className="px-4 py-12 text-center text-sm text-gray-400">
+          No data for Q{quarter} {year}.
         </div>
+      ) : (
+        <div className="px-4 py-6 space-y-4">
 
-        {/* Monthly breakdown */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="px-4 pt-3 pb-2 border-b border-gray-50">
-            <p className="text-sm font-semibold text-gray-900">Monthly Breakdown</p>
+          {/* Full P&L Statement */}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-farm-dark">Press Farm · Q{quarter} {year}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{FARM_ACRES} acre · Income Statement</p>
+            </div>
+
+            <div className="divide-y divide-gray-50 text-sm">
+              {/* Revenue */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Revenues</p>
+                <div className="flex justify-between">
+                  <span className="text-farm-dark">Farm Production</span>
+                  <span className="font-medium text-farm-dark">{fmt(revenue)}</span>
+                </div>
+              </div>
+
+              {/* COGS */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cost of Goods Sold</p>
+                <div className="flex justify-between">
+                  <span className="text-farm-dark">Farm Expenses</span>
+                  <span className="text-red-600">{fmt(-cogs)}</span>
+                </div>
+                {Object.entries(byExpenseCategory).map(([cat, amt]) => (
+                  <div key={cat} className="flex justify-between mt-1 pl-3">
+                    <span className="text-gray-400 text-xs">{cat}</span>
+                    <span className="text-gray-400 text-xs">{fmt(-amt)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gross Profit */}
+              <div className="px-4 py-3 bg-farm-green-light/40">
+                <div className="flex justify-between font-semibold">
+                  <span className="text-farm-dark">Gross Profit</span>
+                  <span className={grossProfit >= 0 ? "text-farm-green" : "text-red-600"}>{fmt(grossProfit)}</span>
+                </div>
+                <div className="flex justify-between mt-0.5">
+                  <span className="text-xs text-gray-400">Gross Margin</span>
+                  <span className={`text-xs font-medium ${marginColor(grossMargin, BENCHMARKS.grossMargin.min, BENCHMARKS.grossMargin.max)}`}>
+                    {pct(grossProfit, revenue)} <span className="text-gray-300">·</span> <span className="text-gray-400">target {BENCHMARKS.grossMargin.range}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Operating Expenses */}
+              <div className="px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Operating Expenses</p>
+                <div className="flex justify-between">
+                  <span className="text-farm-dark">Farmer Pay</span>
+                  <span className="text-red-600">{fmt(-operatingExpenses)}</span>
+                </div>
+              </div>
+
+              {/* Operating Profit */}
+              <div className="px-4 py-3 bg-farm-green-light/40">
+                <div className="flex justify-between font-semibold">
+                  <span className="text-farm-dark">Operating Profit</span>
+                  <span className={operatingProfit >= 0 ? "text-farm-green" : "text-red-600"}>{fmt(operatingProfit)}</span>
+                </div>
+                <div className="flex justify-between mt-0.5">
+                  <span className="text-xs text-gray-400">Operating Margin</span>
+                  <span className={`text-xs font-medium ${marginColor(operatingMargin, BENCHMARKS.operatingMargin.min, BENCHMARKS.operatingMargin.max)}`}>
+                    {pct(operatingProfit, revenue)} <span className="text-gray-300">·</span> <span className="text-gray-400">target {BENCHMARKS.operatingMargin.range}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Net Income */}
+              <div className="px-4 py-4 bg-farm-dark">
+                <div className="flex justify-between font-bold">
+                  <span className="text-white">Net Income</span>
+                  <span className={netIncome >= 0 ? "text-farm-gold" : "text-red-300"}>{fmt(netIncome)}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-gray-400">Net Margin</span>
+                  <span className={`text-xs font-medium ${netIncome >= 0 ? "text-farm-gold" : "text-red-300"}`}>
+                    {pct(netIncome, revenue)} <span className="text-gray-600">·</span> <span className="text-gray-500">target {BENCHMARKS.netMargin.range}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="divide-y divide-gray-50">
-            {months.map((m) => {
-              const { revenue, expenses } = monthData[m];
-              const net = revenue - expenses;
-              const mo = m.slice(5, 7);
-              return (
-                <div key={m} className="px-4 py-3 flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-gray-700 w-10">{MONTH_LABELS[mo]}</span>
-                  <div className="flex-1 grid grid-cols-3 gap-2 text-right text-sm">
-                    <span className="text-green-700">${revenue.toFixed(0)}</span>
-                    <span className="text-orange-600">-${expenses.toFixed(0)}</span>
-                    <span className={net >= 0 ? "text-blue-700 font-medium" : "text-red-600 font-medium"}>
-                      ${net.toFixed(0)}
+
+          {/* Monthly Breakdown */}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-farm-dark">Monthly Breakdown</p>
+              <div className="grid grid-cols-4 gap-1 mt-1 text-xs text-gray-400">
+                <span></span>
+                <span className="text-right">Revenue</span>
+                <span className="text-right">Expenses</span>
+                <span className="text-right">Net</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {months.map((m) => {
+                const { revenue: r, expenses: e } = monthData[m];
+                const net = r - e;
+                const mo = m.slice(5, 7);
+                return (
+                  <div key={m} className="px-4 py-3 grid grid-cols-4 gap-1 text-sm items-center">
+                    <span className="font-medium text-farm-dark">{MONTH_LABELS[mo]}</span>
+                    <span className="text-right text-farm-green">{r > 0 ? `$${r.toFixed(0)}` : "—"}</span>
+                    <span className="text-right text-red-500">{e > 0 ? `-$${e.toFixed(0)}` : "—"}</span>
+                    <span className={`text-right font-medium ${net > 0 ? "text-farm-dark" : net < 0 ? "text-red-600" : "text-gray-300"}`}>
+                      {r > 0 || e > 0 ? `$${net.toFixed(0)}` : "—"}
                     </span>
                   </div>
-                </div>
-              );
-            })}
-            <div className="px-4 py-3 flex items-center justify-between gap-2 bg-gray-50">
-              <span className="text-sm font-semibold text-gray-700 w-10">Total</span>
-              <div className="flex-1 grid grid-cols-3 gap-2 text-right text-sm font-semibold">
-                <span className="text-green-700">${totalRevenue.toFixed(0)}</span>
-                <span className="text-orange-600">-${totalExpenses.toFixed(0)}</span>
-                <span className={netMargin >= 0 ? "text-blue-700" : "text-red-600"}>${netMargin.toFixed(0)}</span>
+                );
+              })}
+              <div className="px-4 py-3 grid grid-cols-4 gap-1 text-sm font-semibold bg-gray-50">
+                <span className="text-farm-dark">Total</span>
+                <span className="text-right text-farm-green">${revenue.toFixed(0)}</span>
+                <span className="text-right text-red-500">-${cogs.toFixed(0)}</span>
+                <span className={`text-right ${(revenue - cogs) >= 0 ? "text-farm-dark" : "text-red-600"}`}>${(revenue - cogs).toFixed(0)}</span>
               </div>
             </div>
           </div>
+
+          {/* Revenue by Restaurant */}
+          {Object.keys(byRestaurant).length > 0 && (
+            <div className="card overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-sm font-semibold text-farm-dark">Revenue by Restaurant</p>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {Object.entries(byRestaurant)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([name, value]) => (
+                    <div key={name} className="px-4 py-3 flex justify-between items-center text-sm">
+                      <span className="text-farm-dark">{name}</span>
+                      <span className="font-medium text-farm-green">{fmt(value)}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Industry Benchmarks */}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-farm-dark">vs. Industry Benchmarks</p>
+              <p className="text-xs text-gray-400 mt-0.5">National avg · Market farms</p>
+            </div>
+            <div className="divide-y divide-gray-50 text-sm">
+              <div className="px-4 py-3 flex justify-between items-center">
+                <span className="text-gray-600">Gross Margin</span>
+                <div className="text-right">
+                  <span className={`font-medium ${marginColor(grossMargin, BENCHMARKS.grossMargin.min, BENCHMARKS.grossMargin.max)}`}>
+                    {pct(grossProfit, revenue)}
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.grossMargin.range}</span>
+                </div>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <span className="text-gray-600">Operating Margin</span>
+                <div className="text-right">
+                  <span className={`font-medium ${marginColor(operatingMargin, BENCHMARKS.operatingMargin.min, BENCHMARKS.operatingMargin.max)}`}>
+                    {pct(operatingProfit, revenue)}
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.operatingMargin.range}</span>
+                </div>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <span className="text-gray-600">Net Margin</span>
+                <div className="text-right">
+                  <span className={`font-medium ${marginColor(netMargin, BENCHMARKS.netMargin.min, BENCHMARKS.netMargin.max)}`}>
+                    {pct(netIncome, revenue)}
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.netMargin.range}</span>
+                </div>
+              </div>
+              <div className="px-4 py-3 flex justify-between items-center">
+                <span className="text-gray-600">Production / Acre</span>
+                <div className="text-right">
+                  <span className={`font-medium ${acreProduction >= BENCHMARKS.acreProduction.national ? "text-farm-green" : "text-amber-600"}`}>
+                    {fmt(acreProduction)}
+                  </span>
+                  <span className="text-gray-400 text-xs ml-2">target $100K</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-
-        {/* Revenue by restaurant */}
-        {Object.keys(byRestaurant).length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="px-4 pt-3 pb-2 border-b border-gray-50">
-              <p className="text-sm font-semibold text-gray-900">Revenue by Restaurant</p>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {Object.entries(byRestaurant)
-                .sort(([, a], [, b]) => b - a)
-                .map(([name, value]) => (
-                  <div key={name} className="px-4 py-3 flex justify-between items-center text-sm">
-                    <span className="text-gray-700">{name}</span>
-                    <span className="font-medium text-gray-900">${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* Expense breakdown */}
-        {Object.keys(byExpenseCategory).length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="px-4 pt-3 pb-2 border-b border-gray-50">
-              <p className="text-sm font-semibold text-gray-900">Expense Breakdown</p>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {Object.entries(byExpenseCategory)
-                .sort(([, a], [, b]) => b - a)
-                .map(([cat, amount]) => (
-                  <div key={cat} className="px-4 py-3 flex justify-between items-center text-sm">
-                    <span className="text-gray-700">{cat}</span>
-                    <span className="font-medium text-orange-700">${amount.toFixed(2)}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
-        {totalRevenue === 0 && totalExpenses === 0 && (
-          <p className="text-center text-sm text-gray-400 py-6">No data for Q{quarter} {year}.</p>
-        )}
-      </div>
+      )}
     </main>
   );
 }
