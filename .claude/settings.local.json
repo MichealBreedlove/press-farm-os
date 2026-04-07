@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(printf 'y\\\\n')",
-      "Bash(npx --yes create-next-app@14 . --typescript --tailwind --app --src-dir --no-git --eslint --import-alias \"@/*\")"
+      "Bash(npx --yes create-next-app@14 . --typescript --tailwind --app --src-dir --no-git --eslint --import-alias \"@/*\")",
+      "Read(//d/LLM/LLM Projects/press-farm-os//**)",
+      "Read(//d/LLM/LLM Projects/press-farm-os/**)",
+      "Bash(npm install:*)",
+      "Bash(tsx --version)",
+      "Bash(npx --yes tsx --version)",
+      "Bash(npm root:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node -e \"const path = require\\(''path''\\); console.log\\(path.resolve\\(process.cwd\\(\\), ''../../../.env.local''\\)\\);\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://rxdfjaseilmjvcwamqyx.supabase.co/rest/v1/\")",
+      "Bash(curl -v \"https://rxdfjaseilmjvcwamqyx.supabase.co\")",
+      "Bash(curl -s \"https://api.supabase.com\")",
+      "Bash(curl -s --max-time 5 \"https://www.google.com\")",
+      "Bash(node -e \"require\\(''https''\\).get\\(''https://supabase.com'', \\(r\\) => { console.log\\(''OK:'', r.statusCode\\); r.destroy\\(\\); }\\).on\\(''error'', \\(e\\) => console.error\\(''FAIL:'', e.message\\)\\);\")",
+      "Bash(node -e \"require\\(''https''\\).get\\(''https://rxdfjaseilmjvcwamqyx.supabase.co'', \\(r\\) => { console.log\\(''OK:'', r.statusCode\\); r.destroy\\(\\); }\\).on\\(''error'', \\(e\\) => console.error\\(''FAIL:'', e.message\\)\\);\")"
     ]
   }
 }

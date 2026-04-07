@@ -6,7 +6,7 @@
  */
 
 import { render } from "@react-email/render";
-import { resend } from "@/lib/resend/client";
+import { getResendClient } from "@/lib/resend/client";
 import { ADMIN_EMAIL, FROM_EMAIL } from "@/lib/constants";
 import OrderReceived from "@/emails/order-received";
 import OrderFulfilled from "@/emails/order-fulfilled";
@@ -74,7 +74,7 @@ async function sendOrLog(params: {
   }
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
       to,
       subject,
