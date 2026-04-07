@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendOrderSubmittedEmail } from "@/lib/email";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -183,6 +184,53 @@ export async function POST(request: Request) {
       console.error("Order items insert error:", itemsError);
       return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
     }
+  }
+
+  // Send email notification to admin — non-blocking, errors do not fail the response
+  try {
+    // Fetch restaurant name
+    const { data: restaurant } = await (supabase.from("restaurants") as any)
+      .select("name")
+      .eq("id", restaurant_id)
+      .single();
+
+    // Fetch chef profile name
+    const { data: chefProfile } = await (supabase.from("profiles") as any)
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    // Fetch item details for ordered items (join availability_items → items)
+    const orderedAvailIds = orderItems.map((oi) => oi.availability_item_id);
+    const { data: availDetails } = orderedAvailIds.length > 0
+      ? await (supabase.from("availability_items") as any)
+          .select("id, item:items(name, unit)")
+          .in("id", orderedAvailIds)
+      : { data: [] };
+
+    const availMap = new Map(
+      (availDetails ?? []).map((a: any) => [a.id, a.item])
+    );
+
+    const emailItems = orderItems.map((oi) => {
+      const item = availMap.get(oi.availability_item_id) as any;
+      return {
+        itemName: item?.name ?? "Unknown item",
+        quantity: oi.quantity_requested,
+        unit: item?.unit ?? "",
+      };
+    });
+
+    await sendOrderSubmittedEmail({
+      restaurantName: restaurant?.name ?? "Unknown restaurant",
+      chefName: chefProfile?.full_name ?? "Chef",
+      deliveryDate: delivery_date,
+      items: emailItems,
+      freeformNotes: freeform_notes,
+      submittedAt: new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
+    });
+  } catch (emailErr) {
+    console.error("[EMAIL] Failed to send order submitted email:", emailErr);
   }
 
   return NextResponse.json({ data: { orderId: order.id }, error: null }, { status: 200 });

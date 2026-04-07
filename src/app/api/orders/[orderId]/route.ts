@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types";
+import { sendOrderConfirmedEmail } from "@/lib/email";
 
 /**
  * PATCH /api/orders/[orderId] — Update order status (admin only)
@@ -56,6 +57,55 @@ export async function PATCH(
   if (error || !order) {
     console.error("Order update error:", error);
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+  }
+
+  // When status changes to 'fulfilled', send confirmation email to the chef
+  if (status === "fulfilled") {
+    try {
+      // Fetch order with order_items, restaurant, chef profile, and item details
+      const { data: fullOrder } = await (adminClient.from("orders") as any)
+        .select(`
+          delivery_date,
+          restaurant:restaurants(name),
+          chef:profiles!orders_chef_id_fkey(full_name),
+          order_items(
+            quantity_requested,
+            quantity_fulfilled,
+            is_shorted,
+            availability_item:availability_items(
+              item:items(name, unit)
+            )
+          )
+        `)
+        .eq("id", orderId)
+        .single();
+
+      if (fullOrder) {
+        // Fetch chef's email via admin auth API (bypasses RLS)
+        const { data: chefUserData } = await adminClient.auth.admin.getUserById(order.chef_id);
+        const chefEmail = chefUserData?.user?.email;
+
+        if (chefEmail) {
+          const items = (fullOrder.order_items ?? []).map((oi: any) => ({
+            itemName: oi.availability_item?.item?.name ?? "Unknown item",
+            requestedQty: oi.quantity_requested,
+            fulfilledQty: oi.quantity_fulfilled ?? oi.quantity_requested,
+            unit: oi.availability_item?.item?.unit ?? "",
+            isShorted: oi.is_shorted ?? false,
+          }));
+
+          await sendOrderConfirmedEmail({
+            toEmail: chefEmail,
+            chefName: fullOrder.chef?.full_name ?? "Chef",
+            restaurantName: fullOrder.restaurant?.name ?? "Restaurant",
+            deliveryDate: fullOrder.delivery_date,
+            items,
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error("[EMAIL] Failed to send order confirmed email:", emailErr);
+    }
   }
 
   return NextResponse.json({ data: order, error: null });

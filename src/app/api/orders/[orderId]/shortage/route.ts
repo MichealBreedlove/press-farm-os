@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { sendShortageEmail } from "@/lib/email";
 
 /**
  * PATCH /api/orders/[orderId]/shortage — Mark order items as shorted (admin only)
@@ -86,14 +87,60 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update shortage info" }, { status: 500 });
   }
 
-  // Fetch updated order with items
+  // Fetch updated order with full details (for response + email)
   const { data: updatedOrder, error: fetchError } = await (adminClient.from("orders") as any)
-    .select("*, order_items(*)")
+    .select(`
+      *,
+      delivery_date,
+      chef_id,
+      restaurant:restaurants(name),
+      chef:profiles!orders_chef_id_fkey(full_name),
+      order_items(
+        id,
+        quantity_requested,
+        quantity_fulfilled,
+        is_shorted,
+        shortage_reason,
+        availability_item:availability_items(
+          item:items(name, unit)
+        )
+      )
+    `)
     .eq("id", orderId)
     .single();
 
   if (fetchError) {
     return NextResponse.json({ error: "Failed to fetch updated order" }, { status: 500 });
+  }
+
+  // Send shortage notice email to the chef — non-blocking, errors do not fail the response
+  try {
+    const shortedItems = (updatedOrder?.order_items ?? []).filter((oi: any) => oi.is_shorted);
+
+    if (shortedItems.length > 0 && updatedOrder?.chef_id) {
+      const { data: chefUserData } = await adminClient.auth.admin.getUserById(updatedOrder.chef_id);
+      const chefEmail = chefUserData?.user?.email;
+
+      if (chefEmail) {
+        const shortages = shortedItems.map((oi: any) => ({
+          itemName: oi.availability_item?.item?.name ?? "Unknown item",
+          requestedQty: oi.quantity_requested,
+          fulfilledQty: oi.quantity_fulfilled ?? 0,
+          unit: oi.availability_item?.item?.unit ?? "",
+          reason: oi.shortage_reason ?? "",
+        }));
+
+        await sendShortageEmail({
+          toEmail: chefEmail,
+          chefName: updatedOrder.chef?.full_name ?? "Chef",
+          restaurantName: updatedOrder.restaurant?.name ?? "Restaurant",
+          deliveryDate: updatedOrder.delivery_date,
+          shortages,
+        });
+      }
+    }
+  } catch (emailErr) {
+    console.error("[EMAIL] Failed to send shortage notice email:", emailErr);
   }
 
   return NextResponse.json({ data: updatedOrder, error: null });
