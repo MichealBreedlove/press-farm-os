@@ -1,7 +1,7 @@
 /**
  * Styled wordmarks matching each restaurant's brand identity.
  * Press: wide-spaced thin caps (pressnapavalley.com)
- * Under-Study: script ampersand + spaced caps (under-study.com)
+ * Under-Study: white circle ampersand + spaced serif caps on farm-green (under-study.com)
  */
 
 interface RestaurantWordmarkProps {
@@ -25,20 +25,21 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   }
 
   if (normalized === "understudy") {
-    const symbolSize =
-      size === "sm" ? "text-base" : size === "lg" ? "text-2xl" : "text-xl";
+    const circleSize =
+      size === "sm" ? "w-6 h-6 text-xs" : size === "lg" ? "w-10 h-10 text-lg" : "w-8 h-8 text-base";
     const textSize =
       size === "sm" ? "text-[10px]" : size === "lg" ? "text-sm" : "text-xs";
+
     return (
-      <span className="inline-flex items-center gap-1.5">
-        <em
-          className={`font-display not-italic text-farm-green leading-none ${symbolSize}`}
+      <span className="inline-flex items-center gap-2 bg-farm-green rounded-lg px-3 py-1.5">
+        <span
+          className={`inline-flex items-center justify-center rounded-full bg-white text-farm-green font-display flex-shrink-0 ${circleSize}`}
           style={{ fontStyle: "italic" }}
         >
           &amp;
-        </em>
+        </span>
         <span
-          className={`font-sans font-light tracking-[0.2em] uppercase text-farm-dark ${textSize}`}
+          className={`font-display tracking-[0.18em] uppercase text-white ${textSize}`}
         >
           Under-Study
         </span>
@@ -46,7 +47,6 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     );
   }
 
-  // Fallback for any other restaurant
   return (
     <span className="font-sans font-semibold text-farm-dark">{name}</span>
   );
