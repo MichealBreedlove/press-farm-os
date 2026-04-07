@@ -64,6 +64,17 @@ export default async function OrderDetailPage({
     notFound();
   }
 
+  // Check if ordering is still open for this delivery date
+  const { data: deliveryDateRow } = await supabase
+    .from("delivery_dates")
+    .select("ordering_open")
+    .eq("date", order.delivery_date)
+    .single() as any;
+
+  const canEdit =
+    ["submitted", "draft"].includes(order.status) &&
+    deliveryDateRow?.ordering_open === true;
+
   const status = order.status as OrderStatus;
   const restaurant = (order.restaurants as any)?.name ?? "Restaurant";
   const orderItems = (order.order_items ?? []) as any[];
@@ -95,7 +106,17 @@ export default async function OrderDetailPage({
           </h1>
           <p className="text-sm text-gray-500">{restaurant}</p>
         </div>
-        <StatusPill status={status} />
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {canEdit && (
+            <Link
+              href={`/order?edit=${order.id}`}
+              className="text-sm font-medium text-farm-green border border-farm-green rounded-lg px-3 py-1.5 min-h-0 hover:bg-farm-green-light transition-colors"
+            >
+              Edit
+            </Link>
+          )}
+          <StatusPill status={status} />
+        </div>
       </header>
 
       <div className="px-4 py-4 space-y-4">

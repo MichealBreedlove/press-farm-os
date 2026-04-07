@@ -40,7 +40,8 @@ export default function OrderReviewPage() {
     );
   }
 
-  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate } = orderData;
+  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId } = orderData;
+  const isEditing = !!editingOrderId;
 
   const total = items.reduce((sum, item) => {
     if (item.unitPrice !== null) {
@@ -94,14 +95,14 @@ export default function OrderReviewPage() {
     <main className="min-h-screen bg-farm-cream pb-32">
       <header className="page-header flex items-center gap-3">
         <button
-          onClick={() => router.push('/order')}
+          onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2"
           aria-label="Go back"
         >
           ‹
         </button>
         <div>
-          <h1 className="page-title">Review Order</h1>
+          <h1 className="page-title">{isEditing ? "Review Changes" : "Review Order"}</h1>
           <p className="text-sm text-gray-500">{deliveryDateFormatted}</p>
         </div>
       </header>
@@ -173,7 +174,7 @@ export default function OrderReviewPage() {
       <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4 safe-area-bottom">
         <div className="flex gap-3">
           <button
-            onClick={() => router.push('/order')}
+            onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
             disabled={isSubmitting}
             className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl min-h-[44px] disabled:opacity-40 transition-opacity"
           >
@@ -184,7 +185,7 @@ export default function OrderReviewPage() {
             disabled={isSubmitting}
             className="flex-[2] bg-farm-green text-white font-semibold py-3 rounded-xl min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           >
-            {isSubmitting ? "Submitting..." : "Submit Order"}
+            {isSubmitting ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update Order" : "Submit Order")}
           </button>
         </div>
       </div>

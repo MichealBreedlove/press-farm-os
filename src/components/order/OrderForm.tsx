@@ -12,6 +12,9 @@ interface OrderFormProps {
   restaurantName: string;
   deliveryDate: string;
   deliveryDateFormatted: string;
+  initialQuantities?: Record<string, number>;
+  initialNotes?: string;
+  editingOrderId?: string;
 }
 
 export interface OrderFormData {
@@ -28,6 +31,7 @@ export interface OrderFormData {
     itemNote: string;
   }[];
   freeformNotes: string;
+  editingOrderId?: string;
 }
 
 export function OrderForm({
@@ -36,11 +40,14 @@ export function OrderForm({
   restaurantName,
   deliveryDate,
   deliveryDateFormatted,
+  initialQuantities = {},
+  initialNotes = "",
+  editingOrderId,
 }: OrderFormProps) {
   const router = useRouter();
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [freeformNotes, setFreeformNotes] = useState("");
+  const [freeformNotes, setFreeformNotes] = useState(initialNotes);
 
   // Filter to only available/limited items
   const visibleItems = availabilityItems.filter((ai) => ai.status !== "unavailable");
@@ -83,6 +90,7 @@ export function OrderForm({
       deliveryDateFormatted,
       items: orderedItems,
       freeformNotes,
+      editingOrderId,
     };
 
     sessionStorage.setItem("press_farm_order", JSON.stringify(formData));
@@ -91,6 +99,11 @@ export function OrderForm({
 
   return (
     <div className="flex flex-col min-h-screen bg-farm-cream">
+      {editingOrderId && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2">
+          <span className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</span>
+        </div>
+      )}
       <div className="flex-1 px-4 py-4 pb-32">
         {visibleItems.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm">
@@ -147,7 +160,7 @@ export function OrderForm({
           disabled={!hasAnyOrdered}
           className="w-full bg-farm-green text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] transition-opacity"
         >
-          Review Order
+          {editingOrderId ? "Review Changes" : "Review Order"}
         </button>
       </div>
     </div>

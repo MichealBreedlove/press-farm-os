@@ -10,7 +10,12 @@ import type { AvailabilityItemWithItem } from "@/types";
  * Fetches the next open delivery date, availability items, and renders
  * the interactive OrderForm client component.
  */
-export default async function OrderPage() {
+export default async function OrderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const { edit: editOrderId } = await searchParams;
   const supabase = await createClient();
 
   // Auth check
@@ -44,15 +49,58 @@ export default async function OrderPage() {
   const restaurant = restaurantUser.restaurants;
   const today = new Date().toISOString().split("T")[0];
 
-  // Find next open delivery date
-  const { data: deliveryDate } = await supabase
-    .from("delivery_dates")
-    .select("id, date, day_of_week, ordering_open")
-    .gte("date", today)
-    .eq("ordering_open", true)
-    .order("date", { ascending: true })
-    .limit(1)
-    .single() as any;
+  // If editing, fetch the existing order to get its delivery date and quantities
+  let initialQuantities: Record<string, number> = {};
+  let initialNotes = "";
+  let targetDate: string | null = null;
+
+  if (editOrderId) {
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select(`
+        id, delivery_date, freeform_notes, status,
+        order_items(quantity_requested, availability_items(id))
+      `)
+      .eq("id", editOrderId)
+      .single() as any;
+
+    if (existingOrder && ["submitted", "draft"].includes(existingOrder.status)) {
+      targetDate = existingOrder.delivery_date;
+      initialNotes = existingOrder.freeform_notes ?? "";
+      for (const oi of existingOrder.order_items ?? []) {
+        const aiId = oi.availability_items?.id;
+        if (aiId) initialQuantities[aiId] = oi.quantity_requested;
+      }
+    }
+  }
+
+  // Find the delivery date to show: the edited order's date (if still open) OR the next open date
+  let deliveryDate: any = null;
+
+  if (targetDate) {
+    const { data: editDate } = await supabase
+      .from("delivery_dates")
+      .select("id, date, day_of_week, ordering_open")
+      .eq("date", targetDate)
+      .eq("ordering_open", true)
+      .single() as any;
+    deliveryDate = editDate;
+  }
+
+  if (!deliveryDate) {
+    // Fall back to next open date (edit date closed or not editing)
+    initialQuantities = {};
+    initialNotes = "";
+    const { data: nextDate } = await supabase
+      .from("delivery_dates")
+      .select("id, date, day_of_week, ordering_open")
+      .gte("date", today)
+      .eq("ordering_open", true)
+      .order("date", { ascending: true })
+      .limit(1)
+      .single() as any;
+    deliveryDate = nextDate;
+  }
 
   if (!deliveryDate) {
     return (
@@ -111,11 +159,12 @@ export default async function OrderPage() {
   );
 
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
+  const isEditing = editOrderId && targetDate === deliveryDate.date;
 
   return (
     <main className="min-h-screen bg-farm-cream">
       <header className="page-header">
-        <h1 className="page-title">Order for {deliveryDateFormatted}</h1>
+        <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
 
@@ -125,6 +174,9 @@ export default async function OrderPage() {
         restaurantName={restaurant.name}
         deliveryDate={deliveryDate.date}
         deliveryDateFormatted={deliveryDateFormatted}
+        initialQuantities={isEditing ? initialQuantities : undefined}
+        initialNotes={isEditing ? initialNotes : undefined}
+        editingOrderId={isEditing ? editOrderId : undefined}
       />
     </main>
   );
