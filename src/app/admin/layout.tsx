@@ -23,7 +23,6 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
     .select("role, is_active")

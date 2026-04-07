@@ -13,7 +13,6 @@ import type { Profile, AvailabilityItem } from "@/types";
  * Admin only.
  */
 export async function POST(request: Request) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createClient()) as any;
 
   const {
@@ -57,7 +56,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid target_date format" }, { status: 400 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminClient = createAdminClient() as any;
 
   // Find the most recent delivery date before target_date that has availability rows

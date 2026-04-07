@@ -22,7 +22,6 @@ function formatDeliveryDate(dateStr: string): string {
 }
 
 export default async function AdminAvailabilityPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createClient()) as any;
   const today = new Date().toISOString().split("T")[0];
 

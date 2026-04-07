@@ -135,7 +135,7 @@ export default function LoginPage() {
 
           {mode === "magic" && (
             <p className="text-xs text-farm-muted text-center">
-              We'll send a sign-in link — no password needed
+              We&apos;ll send a sign-in link — no password needed
             </p>
           )}
         </div>

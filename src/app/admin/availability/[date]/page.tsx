@@ -33,7 +33,6 @@ export default async function AdminAvailabilityEditorPage({
     notFound();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createClient()) as any;
 
   // Verify this is a real delivery date

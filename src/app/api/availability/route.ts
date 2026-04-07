@@ -12,7 +12,6 @@ import type { Profile } from "@/types";
  * Admin only.
  */
 export async function POST(request: Request) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createClient()) as any;
 
   const {
@@ -72,7 +71,6 @@ export async function POST(request: Request) {
   }
 
   // Use admin client to bypass RLS for upsert
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminClient = createAdminClient() as any;
 
   // Upsert availability_items
