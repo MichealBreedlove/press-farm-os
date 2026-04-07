@@ -36,7 +36,7 @@ export function AddDatesButton() {
         Adds the next 4 dates following the Thu / Sat / Mon schedule.
       </p>
       {result && (
-        <p className="text-xs text-green-700 font-medium mb-2">{result}</p>
+        <p className="text-xs text-farm-green font-medium mb-2">{result}</p>
       )}
       {error && (
         <p className="text-xs text-red-600 mb-2">{error}</p>
@@ -44,7 +44,7 @@ export function AddDatesButton() {
       <button
         onClick={handleAdd}
         disabled={isPending}
-        className="w-full py-3 rounded-lg bg-farm-green text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed active:bg-green-800 transition-colors"
+        className="btn-primary w-full py-3 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? "Adding…" : "Add Next 4 Dates"}
       </button>

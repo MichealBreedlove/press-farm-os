@@ -41,7 +41,7 @@ type AvailMap = Record<string, { status: AvailabilityStatus; limited_qty: string
 const STATUS_CYCLE: AvailabilityStatus[] = ["available", "limited", "unavailable"];
 
 const STATUS_STYLES: Record<AvailabilityStatus, string> = {
-  available: "bg-green-100 text-green-800 border-green-200",
+  available: "bg-farm-green-light text-farm-green border-farm-green/20",
   limited: "bg-yellow-100 text-yellow-800 border-yellow-200",
   unavailable: "bg-red-100 text-red-600 border-red-200 line-through",
 };
@@ -331,7 +331,7 @@ export default function AvailabilityEditorClient({
             onClick={handlePublish}
             disabled={saving}
             className={`flex-1 text-white text-sm font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50 ${
-              saved ? "bg-green-600" : "bg-farm-green"
+              saved ? "bg-farm-green-dark" : "bg-farm-green"
             }`}
           >
             {saving ? "Saving..." : saved ? "✓ Saved" : "Save Availability"}

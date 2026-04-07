@@ -36,7 +36,7 @@ export default async function AdminUsersPage() {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <header className="page-header">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/settings"
@@ -46,7 +46,7 @@ export default async function AdminUsersPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900">Users</h1>
+          <h1 className="page-title">Users</h1>
         </div>
       </header>
 

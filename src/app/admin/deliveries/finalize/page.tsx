@@ -65,7 +65,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <header className="page-header">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/deliveries"
@@ -75,7 +75,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="text-lg font-semibold text-gray-900">Finalize Month</h1>
+          <h1 className="page-title">Finalize Month</h1>
         </div>
 
         {/* Month nav */}
@@ -104,7 +104,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
 
       <div className="px-4 py-6 space-y-4">
         {/* Summary card */}
-        <div className={`rounded-2xl p-5 text-white ${allFinalized ? "bg-gray-700" : "bg-green-800"}`}>
+        <div className={`rounded-2xl p-5 text-white ${allFinalized ? "bg-gray-700" : "bg-farm-green"}`}>
           <p className="text-sm opacity-75">{monthLabel} Total</p>
           <p className="text-3xl font-bold mt-1">{formatCurrency(grandTotal)}</p>
           <div className="flex items-center justify-between mt-3 text-sm">
@@ -123,12 +123,12 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         {/* Status breakdown */}
         {rows.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl border border-gray-100 p-3">
+            <div className="card p-3">
               <p className="text-xs text-gray-500">Logged</p>
-              <p className="text-lg font-bold text-gray-900">{logged.length}</p>
-              <p className="text-xs text-green-700 mt-0.5">{formatCurrency(loggedTotal)}</p>
+              <p className="text-lg font-bold text-farm-dark">{logged.length}</p>
+              <p className="text-xs text-farm-green mt-0.5">{formatCurrency(loggedTotal)}</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-3">
+            <div className="card p-3">
               <p className="text-xs text-gray-500">Finalized</p>
               <p className="text-lg font-bold text-gray-900">{finalized.length}</p>
               <p className="text-xs text-gray-400 mt-0.5">
@@ -148,7 +148,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
               <Link
                 key={d.id}
                 href={`/admin/deliveries/${d.delivery_date}`}
-                className="block bg-white rounded-xl border border-gray-100 p-4 hover:border-gray-200 transition-colors"
+                className="block card-interactive p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -162,11 +162,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
                     <p className="text-sm font-semibold text-gray-900">
                       {formatCurrency(d.total_value ?? 0)}
                     </p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      d.status === "finalized"
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-green-100 text-green-700"
-                    }`}>
+                    <span className={d.status === "finalized" ? "badge-gray" : "badge-green"}>
                       {d.status}
                     </span>
                   </div>

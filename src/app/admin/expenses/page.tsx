@@ -56,8 +56,8 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-900">Expenses</h1>
+      <header className="page-header">
+        <h1 className="page-title">Expenses</h1>
 
         {/* Month navigation */}
         <div className="flex items-center justify-between mt-2">

@@ -75,24 +75,24 @@ export default async function AdminDeliveriesPage() {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold">Deliveries</h1>
+      <header className="page-header">
+        <h1 className="page-title">Deliveries</h1>
       </header>
 
       <div className="px-4 py-4 space-y-4">
         {/* Current month summary card */}
-        <div className="bg-green-800 text-white rounded-2xl p-5">
-          <p className="text-sm text-green-200">{monthLabel(today)} Total</p>
+        <div className="bg-farm-green text-white rounded-2xl p-5">
+          <p className="text-sm text-farm-green-light">{monthLabel(today)} Total</p>
           <p className="text-3xl font-bold mt-1">{formatCurrency(monthTotal)}</p>
           <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-green-300">
+            <p className="text-sm text-farm-green-light">
               {monthDeliveries.length} delivery{monthDeliveries.length !== 1 ? "s" : ""} logged
             </p>
             {monthDeliveries.length > 0 && !allFinalized && (
               <FinalizeButton month={currentMonth} />
             )}
             {allFinalized && (
-              <span className="text-xs bg-green-700 text-green-200 px-2 py-1 rounded-full">
+              <span className="badge-green">
                 Finalized
               </span>
             )}
@@ -110,21 +110,21 @@ export default async function AdminDeliveriesPage() {
                 <Link
                   key={d.date}
                   href={`/admin/deliveries/${d.date}`}
-                  className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+                  className="flex items-center justify-between card px-4 py-3"
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       {formatDate(d.date)}
                     </p>
                     {loggedDates.has(d.date) && (
-                      <p className="text-xs text-green-600 mt-0.5">Logged</p>
+                      <p className="text-xs text-farm-green mt-0.5">Logged</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {loggedDates.has(d.date) ? (
                       <span className="text-xs text-gray-400">Edit</span>
                     ) : (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                      <span className="badge-green">
                         + Log
                       </span>
                     )}
@@ -187,7 +187,7 @@ export default async function AdminDeliveriesPage() {
                                 <p className={`text-xs ${
                                   d.status === "finalized"
                                     ? "text-gray-400"
-                                    : "text-green-600"
+                                    : "text-farm-green"
                                 }`}>
                                   {d.status}
                                 </p>

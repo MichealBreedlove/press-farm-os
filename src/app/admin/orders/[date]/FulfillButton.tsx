@@ -41,7 +41,7 @@ export function FulfillButton({ orderId }: FulfillButtonProps) {
       <button
         onClick={handleFulfill}
         disabled={loading}
-        className="min-h-[44px] px-4 rounded-xl bg-green-700 text-white text-sm font-medium hover:bg-green-800 active:bg-green-900 disabled:opacity-60 transition-colors"
+        className="btn-primary min-h-[44px] px-4 text-sm font-medium disabled:opacity-60"
       >
         {loading ? "Saving..." : "Mark as Fulfilled"}
       </button>

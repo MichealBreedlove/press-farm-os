@@ -48,7 +48,7 @@ export function OrderingToggle({ deliveryDateId, orderingOpen }: OrderingToggleP
         className={`min-h-[44px] px-4 rounded-xl text-sm font-medium transition-colors disabled:opacity-60 ${
           open
             ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-            : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+            : "bg-farm-green-light text-farm-green border border-farm-green/20 hover:opacity-80"
         }`}
       >
         {loading ? "..." : open ? "Close Ordering" : "Open Ordering"}

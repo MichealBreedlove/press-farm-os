@@ -87,7 +87,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
       {categoriesWithData.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {categoriesWithData.map((cat) => (
-            <div key={cat} className="bg-white rounded-xl border border-gray-100 p-3">
+            <div key={cat} className="card p-3">
               <p className="text-xs text-gray-500">{cat}</p>
               <p className="text-base font-semibold text-gray-900 mt-0.5">
                 ${totalByCategory[cat].toFixed(2)}
@@ -113,7 +113,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+        <form onSubmit={handleAdd} className="card p-4 space-y-3">
           <h3 className="font-semibold text-gray-900 text-sm">New Expense</h3>
 
           <div>
@@ -170,7 +170,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           <button
             type="submit"
             disabled={saving}
-            className="w-full min-h-[44px] bg-green-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-green-800 active:bg-green-900 transition-colors"
+            className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save Expense"}
           </button>
@@ -183,10 +183,10 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           <p className="text-center text-sm text-gray-400 py-8">No expenses logged for this month.</p>
         )}
         {expenses.map((exp) => (
-          <div key={exp.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-start gap-3">
+          <div key={exp.id} className="card p-4 flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                <span className="badge-gray">
                   {exp.category}
                 </span>
                 <span className="text-xs text-gray-400">

@@ -53,7 +53,7 @@ function StatusToggle({
   onChange: (v: AvailabilityStatus) => void;
 }) {
   const options: { value: AvailabilityStatus; label: string; activeClass: string }[] = [
-    { value: "available", label: "✓", activeClass: "bg-green-600 text-white" },
+    { value: "available", label: "✓", activeClass: "bg-farm-green text-white" },
     { value: "limited", label: "⚠", activeClass: "bg-yellow-500 text-white" },
     { value: "unavailable", label: "✗", activeClass: "bg-gray-300 text-gray-600" },
   ];
@@ -223,7 +223,7 @@ export function AvailabilityEditor({
               onClick={() => setActiveRestaurantId(r.id)}
               className={`flex-1 py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
                 activeRestaurantId === r.id
-                  ? "border-green-600 text-green-700"
+                  ? "border-farm-green text-farm-green"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -238,7 +238,7 @@ export function AvailabilityEditor({
         <button
           type="button"
           onClick={() => markAll("available")}
-          className="flex-1 py-2 rounded-lg bg-green-100 text-green-800 text-xs font-semibold active:bg-green-200 transition-colors"
+          className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold active:opacity-80 transition-colors"
         >
           Mark All Available
         </button>
@@ -314,7 +314,7 @@ export function AvailabilityEditor({
                           onChange={(e) =>
                             updateItem(item.id, { cycle_notes: e.target.value })
                           }
-                          className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 placeholder:text-gray-400"
+                          className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green bg-gray-50 placeholder:text-gray-400"
                         />
                       </div>
                     </div>
@@ -332,7 +332,7 @@ export function AvailabilityEditor({
           <p className="text-xs text-red-600 text-center">{saveError}</p>
         )}
         {saveSuccess && (
-          <p className="text-xs text-green-700 text-center font-medium">
+          <p className="text-xs text-farm-green text-center font-medium">
             Saved successfully
           </p>
         )}
@@ -340,7 +340,7 @@ export function AvailabilityEditor({
           <p className="text-xs text-red-600 text-center">{duplicateError}</p>
         )}
         {duplicateSuccess && (
-          <p className="text-xs text-green-700 text-center font-medium">
+          <p className="text-xs text-farm-green text-center font-medium">
             Duplicated from last cycle
           </p>
         )}
@@ -358,7 +358,7 @@ export function AvailabilityEditor({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 py-3 rounded-xl bg-green-700 text-sm font-semibold text-white active:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? "Saving…" : "Save & Publish"}
           </button>

@@ -31,7 +31,7 @@ export default async function OrderPage() {
 
   if (!restaurantUser?.restaurants) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-farm-cream flex items-center justify-center px-4">
         <div className="text-center">
           <p className="text-gray-500 text-sm">
             No restaurant found for your account. Please contact Micheal.
@@ -56,9 +56,9 @@ export default async function OrderPage() {
 
   if (!deliveryDate) {
     return (
-      <main className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-100 px-4 py-4">
-          <h1 className="text-lg font-semibold">Order</h1>
+      <main className="min-h-screen bg-farm-cream">
+        <header className="page-header">
+          <h1 className="page-title">Order</h1>
           <p className="text-sm text-gray-500">{restaurant.name}</p>
         </header>
         <div className="flex items-center justify-center h-64 px-4">
@@ -113,9 +113,9 @@ export default async function OrderPage() {
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
-        <h1 className="text-lg font-semibold">Order for {deliveryDateFormatted}</h1>
+    <main className="min-h-screen bg-farm-cream">
+      <header className="page-header">
+        <h1 className="page-title">Order for {deliveryDateFormatted}</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
 

@@ -21,9 +21,9 @@ export default async function AdminItemsPage() {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <header className="page-header">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">Item Catalog</h1>
+          <h1 className="page-title">Item Catalog</h1>
           <Link
             href="/admin/items/new"
             className="min-h-[36px] px-4 flex items-center bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"

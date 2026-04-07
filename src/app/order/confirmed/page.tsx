@@ -25,7 +25,7 @@ export default function OrderConfirmedPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+    <main className="min-h-screen bg-farm-cream flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-sm">
         {/* Success icon */}
         <div className="w-20 h-20 bg-farm-green rounded-full flex items-center justify-center mx-auto mb-6">
@@ -40,7 +40,7 @@ export default function OrderConfirmedPage() {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Submitted!</h1>
+        <h1 className="text-2xl font-bold text-farm-dark mb-2">Order Submitted!</h1>
         <p className="text-gray-500 text-sm leading-relaxed">
           {deliveryDateFormatted
             ? `Your order for ${deliveryDateFormatted} has been sent to Micheal.`

@@ -68,8 +68,8 @@ export default async function AdminAvailabilityPage() {
 
   return (
     <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
-        <h1 className="text-lg font-semibold text-gray-900">Availability</h1>
+      <header className="page-header">
+        <h1 className="page-title">Availability</h1>
         <p className="text-sm text-gray-500 mt-0.5">
           Tap a date to set item availability
         </p>
@@ -89,11 +89,11 @@ export default async function AdminAvailabilityPage() {
             <Link
               key={dd.id}
               href={`/admin/availability/${dd.date}`}
-              className="block bg-white rounded-xl border border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors"
+              className="block card-interactive px-4 py-4"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-base">
+                  <p className="font-semibold text-farm-dark text-base">
                     {formatDeliveryDate(dd.date)}
                   </p>
                   <p className="text-sm text-gray-500 mt-0.5">
@@ -104,11 +104,7 @@ export default async function AdminAvailabilityPage() {
                 </div>
                 <div className="flex flex-col items-end gap-1.5 ml-3 shrink-0">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      dd.ordering_open
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                    className={dd.ordering_open ? "badge-green" : "badge-red"}
                   >
                     {dd.ordering_open ? "Open" : "Closed"}
                   </span>

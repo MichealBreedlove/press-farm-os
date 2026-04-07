@@ -111,7 +111,7 @@ export default async function AdminAvailabilityEditorPage({
             Ordering is{" "}
             <span
               className={
-                deliveryDate.ordering_open ? "text-green-700 font-medium" : "text-red-600 font-medium"
+                deliveryDate.ordering_open ? "text-farm-green font-medium" : "text-red-600 font-medium"
               }
             >
               {deliveryDate.ordering_open ? "open" : "closed"}

@@ -42,7 +42,7 @@ export default function FinalizeButton({ month }: { month: string }) {
       <button
         onClick={handleFinalize}
         disabled={loading}
-        className="text-xs bg-white text-green-800 px-3 py-1.5 rounded-full font-semibold disabled:opacity-50"
+        className="text-xs bg-white text-farm-green px-3 py-1.5 rounded-full font-semibold disabled:opacity-50"
       >
         {loading ? "..." : "Finalize Month"}
       </button>

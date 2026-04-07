@@ -9,11 +9,11 @@ interface OrderCardProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-600",
-  submitted: "bg-blue-50 text-blue-700",
-  in_progress: "bg-yellow-50 text-yellow-700",
-  fulfilled: "bg-green-50 text-green-700",
-  cancelled: "bg-red-50 text-red-600",
+  draft: "badge-gray",
+  submitted: "badge-blue",
+  in_progress: "badge-gold",
+  fulfilled: "badge-green",
+  cancelled: "badge-red",
 };
 
 /**
@@ -48,8 +48,8 @@ export function OrderCard({ order }: OrderCardProps) {
         </div>
         <span
           className={cn(
-            "text-xs px-2 py-1 rounded-full font-medium flex-shrink-0",
-            STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600"
+            "flex-shrink-0",
+            STATUS_COLORS[order.status] ?? "badge-gray"
           )}
         >
           {ORDER_STATUS_LABELS[order.status]}

@@ -34,7 +34,7 @@ export default function OrderReviewPage() {
 
   if (!orderData) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main className="min-h-screen bg-farm-cream flex items-center justify-center">
         <p className="text-gray-400 text-sm">Loading...</p>
       </main>
     );
@@ -91,8 +91,8 @@ export default function OrderReviewPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-32">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <main className="min-h-screen bg-farm-cream pb-32">
+      <header className="page-header flex items-center gap-3">
         <button
           onClick={() => router.push('/order')}
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2"
@@ -101,14 +101,14 @@ export default function OrderReviewPage() {
           ‹
         </button>
         <div>
-          <h1 className="text-lg font-semibold">Review Order</h1>
+          <h1 className="page-title">Review Order</h1>
           <p className="text-sm text-gray-500">{deliveryDateFormatted}</p>
         </div>
       </header>
 
       <div className="px-4 py-4">
         {/* Order items table */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden mb-4">
+        <div className="card overflow-hidden mb-4">
           <div className="px-4 py-3 border-b border-gray-50">
             <h2 className="text-sm font-semibold text-gray-700">
               Items ({items.length})
@@ -155,7 +155,7 @@ export default function OrderReviewPage() {
 
         {/* Notes */}
         {freeformNotes && (
-          <div className="bg-white rounded-xl border border-gray-100 px-4 py-4 mb-4">
+          <div className="card px-4 py-4 mb-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-1">Notes for Micheal</h2>
             <p className="text-sm text-gray-600 whitespace-pre-wrap">{freeformNotes}</p>
           </div>

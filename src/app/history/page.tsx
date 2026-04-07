@@ -30,9 +30,9 @@ export default async function HistoryPage() {
 
   if (!restaurantUser?.restaurants) {
     return (
-      <main className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-100 px-4 py-4">
-          <h1 className="text-lg font-semibold">Order History</h1>
+      <main className="min-h-screen bg-farm-cream">
+        <header className="page-header">
+          <h1 className="page-title">Order History</h1>
         </header>
         <div className="flex items-center justify-center h-64 px-4">
           <p className="text-center text-gray-500 text-sm">
@@ -60,9 +60,9 @@ export default async function HistoryPage() {
     .order("delivery_date", { ascending: false }) as any;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
-        <h1 className="text-lg font-semibold">Order History</h1>
+    <main className="min-h-screen bg-farm-cream">
+      <header className="page-header">
+        <h1 className="page-title">Order History</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
 
@@ -81,10 +81,10 @@ export default async function HistoryPage() {
                 <li key={order.id}>
                   <Link
                     href={`/history/${order.id}`}
-                    className="flex items-center justify-between bg-white rounded-xl border border-gray-100 px-4 py-4 min-h-[64px] active:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between card-interactive px-4 py-4 min-h-[64px]"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-farm-dark">
                         {formatDeliveryDate(order.delivery_date)}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -108,17 +108,15 @@ export default async function HistoryPage() {
 
 function StatusPill({ status }: { status: OrderStatus }) {
   const colors: Record<OrderStatus, string> = {
-    draft: "bg-gray-100 text-gray-500",
-    submitted: "bg-blue-50 text-blue-600",
-    in_progress: "bg-yellow-50 text-yellow-700",
-    fulfilled: "bg-green-50 text-green-700",
-    cancelled: "bg-red-50 text-red-600",
+    draft: "badge-gray",
+    submitted: "badge-blue",
+    in_progress: "badge-gold",
+    fulfilled: "badge-green",
+    cancelled: "badge-red",
   };
 
   return (
-    <span
-      className={`text-xs font-medium px-2.5 py-1 rounded-full ${colors[status] ?? "bg-gray-100 text-gray-500"}`}
-    >
+    <span className={colors[status] ?? "badge-gray"}>
       {ORDER_STATUS_LABELS[status] ?? status}
     </span>
   );

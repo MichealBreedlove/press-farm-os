@@ -106,7 +106,7 @@ export function ItemForm({ item }: Props) {
           value={form.name}
           onChange={(e) => set("name", e.target.value)}
           placeholder="e.g. Nasturtium, Basil, Heirloom Tomato"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -116,7 +116,7 @@ export function ItemForm({ item }: Props) {
         <select
           value={form.category}
           onChange={(e) => set("category", e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         >
           {ITEM_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
@@ -130,7 +130,7 @@ export function ItemForm({ item }: Props) {
         <select
           value={form.unit_type}
           onChange={(e) => set("unit_type", e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         >
           {UNIT_TYPES.map((u) => (
             <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
@@ -148,7 +148,7 @@ export function ItemForm({ item }: Props) {
           value={form.default_price}
           onChange={(e) => set("default_price", e.target.value)}
           placeholder="0.00"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -160,7 +160,7 @@ export function ItemForm({ item }: Props) {
           value={form.chef_notes}
           onChange={(e) => set("chef_notes", e.target.value)}
           placeholder="Visible to chefs when ordering"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -172,7 +172,7 @@ export function ItemForm({ item }: Props) {
           value={form.internal_notes}
           onChange={(e) => set("internal_notes", e.target.value)}
           placeholder="Admin-only notes"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -184,7 +184,7 @@ export function ItemForm({ item }: Props) {
           value={form.source}
           onChange={(e) => set("source", e.target.value)}
           placeholder="e.g. Baker Creek, Johnny's Seeds"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -194,7 +194,7 @@ export function ItemForm({ item }: Props) {
       <button
         type="submit"
         disabled={saving}
-        className="w-full min-h-[48px] bg-green-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-green-800 transition-colors"
+        className="btn-primary w-full min-h-[48px] text-sm font-semibold disabled:opacity-50"
       >
         {saving ? "Saving…" : isNew ? "Create Item" : "Save Changes"}
       </button>
@@ -207,7 +207,7 @@ export function ItemForm({ item }: Props) {
           disabled={archiving}
           className={`w-full min-h-[48px] rounded-xl border text-sm font-medium disabled:opacity-50 transition-colors ${
             item!.is_archived
-              ? "border-green-200 text-green-700 hover:bg-green-50"
+              ? "border-farm-green text-farm-green hover:bg-farm-green-light"
               : "border-gray-200 text-gray-500 hover:bg-gray-50"
           }`}
         >

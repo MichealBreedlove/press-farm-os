@@ -9,10 +9,10 @@ interface StatusBadgeProps {
 
 const STATUS_CONFIG = {
   available: {
-    dot: "bg-green-500",
+    dot: "bg-farm-green",
     label: "Available",
-    text: "text-green-700",
-    bg: "bg-green-50",
+    text: "text-farm-green",
+    bg: "bg-farm-green-light",
   },
   limited: {
     dot: "bg-yellow-400",

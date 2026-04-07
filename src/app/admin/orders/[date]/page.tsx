@@ -10,11 +10,11 @@ interface AdminOrdersByDatePageProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-600",
-  submitted: "bg-blue-50 text-blue-700",
-  in_progress: "bg-yellow-50 text-yellow-700",
-  fulfilled: "bg-green-50 text-green-700",
-  cancelled: "bg-red-50 text-red-600",
+  draft: "badge-gray",
+  submitted: "badge-blue",
+  in_progress: "badge-gold",
+  fulfilled: "badge-green",
+  cancelled: "badge-red",
 };
 
 /**
@@ -47,7 +47,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
   return (
     <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
+      <header className="page-header">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
@@ -57,7 +57,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
             ←
           </Link>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">
+            <h1 className="page-title">
               Orders — {formatDeliveryDate(date)}
             </h1>
             <p className="text-sm text-gray-500">{orders.length} restaurant{orders.length !== 1 ? "s" : ""}</p>
@@ -88,11 +88,11 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           const shortedItems = order.order_items?.filter((i: any) => i.is_shorted) ?? [];
 
           return (
-            <section key={order.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <section key={order.id} className="card overflow-hidden">
               {/* Restaurant header */}
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-semibold text-gray-900">
+                  <h2 className="font-semibold text-farm-dark">
                     {order.restaurant?.name ?? "Restaurant"}
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">
@@ -108,9 +108,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      STATUS_COLORS[order.status] ?? "bg-gray-100 text-gray-600"
-                    }`}
+                    className={STATUS_COLORS[order.status] ?? "badge-gray"}
                   >
                     {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
                   </span>
@@ -213,7 +211,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         {orders.length > 0 && (
           <Link
             href={`/admin/orders/harvest?date=${date}`}
-            className="flex items-center justify-center min-h-[44px] w-full bg-green-700 text-white rounded-xl text-sm font-medium hover:bg-green-800 transition-colors"
+            className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
           >
             View Harvest List
           </Link>

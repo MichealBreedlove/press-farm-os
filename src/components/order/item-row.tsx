@@ -54,7 +54,7 @@ export function ItemRow({
               {UNIT_LABELS[item.unit_type]}
             </span>
             {isLimited && (
-              <span className="text-xs font-semibold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full flex-shrink-0">
+              <span className="badge-gold flex-shrink-0">
                 LIMITED
               </span>
             )}

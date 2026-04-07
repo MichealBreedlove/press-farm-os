@@ -90,7 +90,7 @@ export function OrderForm({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-farm-cream">
       <div className="flex-1 px-4 py-4 pb-32">
         {visibleItems.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm">
@@ -115,7 +115,7 @@ export function OrderForm({
             })}
 
             {/* General notes */}
-            <div className="bg-white rounded-xl border border-gray-100 px-4 py-4 mt-2">
+            <div className="card px-4 py-4 mt-2">
               <label
                 htmlFor="freeform-notes"
                 className="block text-sm font-semibold text-gray-900 mb-2"

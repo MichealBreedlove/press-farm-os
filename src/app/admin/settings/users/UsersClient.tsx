@@ -83,9 +83,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
     <div className="space-y-4">
       {/* Success banner */}
       {success && (
-        <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-green-700 flex justify-between">
+        <div className="bg-farm-green-light border border-farm-green/20 rounded-xl px-4 py-3 text-sm text-farm-green flex justify-between">
           {success}
-          <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-green-600">✕</button>
+          <button onClick={() => setSuccess(null)} className="text-farm-green/60 hover:text-farm-green">✕</button>
         </div>
       )}
 
@@ -99,7 +99,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
       {/* Invite form */}
       {showInvite && (
-        <form onSubmit={handleInvite} className="bg-white rounded-xl border border-gray-100 p-4 space-y-3">
+        <form onSubmit={handleInvite} className="card p-4 space-y-3">
           <h3 className="text-sm font-semibold text-gray-900">Invite Chef</h3>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Full Name</label>
@@ -139,7 +139,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
           <button
             type="submit"
             disabled={inviting}
-            className="w-full min-h-[44px] bg-green-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-green-800 transition-colors"
+            className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
           >
             {inviting ? "Sending invite…" : "Send Magic Link Invite"}
           </button>
@@ -151,7 +151,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         <div>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Admin</h2>
           {admins.map((u) => (
-            <div key={u.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between gap-3">
+            <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{u.full_name ?? "Admin"}</p>
                 <p className="text-xs text-gray-400 truncate">{u.email}</p>
@@ -183,7 +183,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`text-xs px-2 py-1 rounded-full ${u.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                <span className={u.is_active ? "badge-green" : "badge-gray"}>
                   {u.is_active ? "Active" : "Inactive"}
                 </span>
                 {u.id !== currentUserId && (

@@ -81,8 +81,8 @@ export default function AdminImportPage() {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-900">Data Import</h1>
+      <header className="page-header">
+        <h1 className="page-title">Data Import</h1>
         <p className="text-sm text-gray-500">One-time migration from Excel</p>
       </header>
 
@@ -153,7 +153,7 @@ export default function AdminImportPage() {
             <button
               onClick={handleImport}
               disabled={loading}
-              className="flex-1 min-h-[44px] bg-green-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-green-800 transition-colors"
+              className="btn-primary flex-1 min-h-[44px] text-sm font-medium disabled:opacity-50"
             >
               {loading && preview ? "Importing…" : "Import"}
             </button>
@@ -226,7 +226,7 @@ export default function AdminImportPage() {
             <button
               onClick={handleImport}
               disabled={loading}
-              className="w-full min-h-[44px] bg-green-700 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-green-800 transition-colors"
+              className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
             >
               {loading ? "Importing…" : "Confirm Import"}
             </button>
@@ -235,11 +235,11 @@ export default function AdminImportPage() {
 
         {/* Success result */}
         {result && (
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4 space-y-2">
-            <p className="text-sm font-semibold text-green-900">Import Complete</p>
+          <div className="bg-farm-green-light border border-farm-green/20 rounded-xl p-4 space-y-2">
+            <p className="text-sm font-semibold text-farm-green">Import Complete</p>
             {target === "key-tab" ? (
               <>
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-farm-green">
                   <strong>{result.imported}</strong> items imported
                 </p>
                 {(result.errors ?? 0) > 0 && (
@@ -248,7 +248,7 @@ export default function AdminImportPage() {
               </>
             ) : (
               <>
-                <p className="text-sm text-green-700">
+                <p className="text-sm text-farm-green">
                   <strong>{result.importedDeliveries}</strong> deliveries,{" "}
                   <strong>{result.importedLines}</strong> line items imported
                 </p>
@@ -262,7 +262,7 @@ export default function AdminImportPage() {
             )}
             <button
               onClick={reset}
-              className="w-full min-h-[44px] bg-white border border-green-200 text-green-800 rounded-xl text-sm font-medium hover:bg-green-50 transition-colors mt-2"
+              className="btn-secondary w-full min-h-[44px] text-sm font-medium mt-2"
             >
               Import Another File
             </button>

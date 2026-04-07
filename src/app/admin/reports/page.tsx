@@ -125,8 +125,8 @@ export default async function AdminReportsPage() {
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold">Reports</h1>
+      <header className="page-header">
+        <h1 className="page-title">Reports</h1>
       </header>
 
       <ReportsDashboard

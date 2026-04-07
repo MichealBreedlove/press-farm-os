@@ -305,7 +305,7 @@ export default function DeliveryLogForm({
                         value={line.quantity}
                         onChange={(e) => updateLine(idx, "quantity", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400"
                       />
                     </div>
                     <div className="w-16">
@@ -315,7 +315,7 @@ export default function DeliveryLogForm({
                         value={line.unit}
                         onChange={(e) => updateLine(idx, "unit", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:bg-gray-50 disabled:text-gray-400 uppercase"
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400 uppercase"
                       />
                     </div>
                     <div className="flex-1">
@@ -327,7 +327,7 @@ export default function DeliveryLogForm({
                         value={line.unit_price}
                         onChange={(e) => updateLine(idx, "unit_price", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-green-700 disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400"
                       />
                     </div>
                     <div className="text-right pt-4">
@@ -354,7 +354,7 @@ export default function DeliveryLogForm({
         <button
           type="button"
           onClick={() => setShowItemPicker(true)}
-          className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-green-300 hover:text-green-700 transition-colors"
+          className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-farm-green hover:text-farm-green transition-colors"
         >
           + Add Item
         </button>
@@ -383,7 +383,7 @@ export default function DeliveryLogForm({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-700"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
               />
             </div>
             <div className="overflow-y-auto flex-1 px-4 pb-4">
@@ -431,7 +431,7 @@ export default function DeliveryLogForm({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="Any delivery notes..."
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-700 resize-none"
+            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green resize-none"
           />
         </div>
       )}
@@ -441,7 +441,7 @@ export default function DeliveryLogForm({
       )}
 
       {saved && (
-        <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2">
+        <p className="text-sm text-farm-green bg-farm-green-light rounded-lg px-3 py-2">
           Delivery saved!
         </p>
       )}
@@ -459,7 +459,7 @@ export default function DeliveryLogForm({
               type="button"
               onClick={handleSave}
               disabled={saving || lines.length === 0}
-              className="px-6 py-3 bg-green-800 text-white rounded-xl text-sm font-semibold hover:bg-green-900 disabled:opacity-50 transition-colors"
+              className="btn-primary px-6 py-3 text-sm font-semibold disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Delivery"}
             </button>
