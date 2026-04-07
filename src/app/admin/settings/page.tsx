@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { SignOutButton } from "./SignOutButton";
 
 interface NavCard {
   href: string;
@@ -41,6 +42,10 @@ export default async function AdminSettingsPage() {
             </svg>
           </Link>
         ))}
+
+        <div className="pt-2">
+          <SignOutButton />
+        </div>
       </div>
     </main>
   );
