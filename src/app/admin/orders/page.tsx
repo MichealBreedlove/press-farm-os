@@ -3,6 +3,7 @@ import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
+import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
 import Link from "next/link";
 
 interface AdminOrdersPageProps {
@@ -103,7 +104,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-farm-dark">{restaurant.name}</h3>
+                    <h3><RestaurantWordmark name={restaurant.name} size="md" /></h3>
                     <p className="text-sm text-gray-400 mt-0.5">Awaiting order</p>
                   </div>
                   <span className="badge-gray">
