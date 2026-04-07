@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { OrderStatus } from "@/types";
+import { sendOrderConfirmedEmail } from "@/lib/email";
 
 /**
- * PATCH /api/orders/[orderId] — Update order status, notes, or fulfillment
+ * PATCH /api/orders/[orderId] — Update order status (admin only)
  *
- * Used by admin to: close ordering, mark in_progress, mark fulfilled.
- * Used by chef to: update freeform notes.
- *
- * TODO: Implement order update logic
+ * Body: { status: OrderStatus }
  */
 export async function PATCH(
   request: Request,
@@ -24,7 +24,89 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // TODO: Update order by orderId
-  void orderId;
-  return NextResponse.json({ error: "Not implemented" }, { status: 501 });
+  // Verify admin
+  const { data: profileRaw } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profileRaw || profileRaw.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: { status: OrderStatus };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { status } = body;
+  const validStatuses: OrderStatus[] = ["draft", "submitted", "in_progress", "fulfilled", "cancelled"];
+  if (!status || !validStatuses.includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const adminClient = createAdminClient();
+  const { data: order, error } = await (adminClient.from("orders") as any)
+    .update({ status })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error || !order) {
+    console.error("Order update error:", error);
+    return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
+  }
+
+  // When status changes to 'fulfilled', send confirmation email to the chef
+  if (status === "fulfilled") {
+    try {
+      // Fetch order with order_items, restaurant, chef profile, and item details
+      const { data: fullOrder } = await (adminClient.from("orders") as any)
+        .select(`
+          delivery_date,
+          restaurant:restaurants(name),
+          chef:profiles!orders_chef_id_fkey(full_name),
+          order_items(
+            quantity_requested,
+            quantity_fulfilled,
+            is_shorted,
+            availability_item:availability_items(
+              item:items(name, unit)
+            )
+          )
+        `)
+        .eq("id", orderId)
+        .single();
+
+      if (fullOrder) {
+        // Fetch chef's email via admin auth API (bypasses RLS)
+        const { data: chefUserData } = await adminClient.auth.admin.getUserById(order.chef_id);
+        const chefEmail = chefUserData?.user?.email;
+
+        if (chefEmail) {
+          const items = (fullOrder.order_items ?? []).map((oi: any) => ({
+            itemName: oi.availability_item?.item?.name ?? "Unknown item",
+            requestedQty: oi.quantity_requested,
+            fulfilledQty: oi.quantity_fulfilled ?? oi.quantity_requested,
+            unit: oi.availability_item?.item?.unit ?? "",
+            isShorted: oi.is_shorted ?? false,
+          }));
+
+          await sendOrderConfirmedEmail({
+            toEmail: chefEmail,
+            chefName: fullOrder.chef?.full_name ?? "Chef",
+            restaurantName: fullOrder.restaurant?.name ?? "Restaurant",
+            deliveryDate: fullOrder.delivery_date,
+            items,
+          });
+        }
+      }
+    } catch (emailErr) {
+      console.error("[EMAIL] Failed to send order confirmed email:", emailErr);
+    }
+  }
+
+  return NextResponse.json({ data: order, error: null });
 }

@@ -1,20 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
 /**
  * Server-side Supabase client using anon key.
  * Use in Server Components, Server Actions, and Route Handlers.
  * Respects RLS — user's session is read from cookies.
- *
- * Explicit return type annotation required to resolve TypeScript generic
- * inference issue between @supabase/ssr and @supabase/supabase-js versions.
  */
-export async function createClient(): Promise<SupabaseClient<Database, "public", Database["public"]>> {
+export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient<Database, "public", Database["public"]>(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -22,7 +18,7 @@ export async function createClient(): Promise<SupabaseClient<Database, "public",
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)

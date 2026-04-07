@@ -10,22 +10,24 @@ interface CategorySectionProps {
   category: ItemCategory;
   items: AvailabilityItemWithItem[];
   quantities: Record<string, number>;
+  itemNotes: Record<string, string>;
   onQuantityChange: (id: string, qty: number) => void;
+  onNoteChange: (id: string, note: string) => void;
 }
 
 /**
  * CategorySection — collapsible category of items in the chef order form.
  *
- * Shows category name + item count. Expands to show ItemRow list.
+ * Shows category name + item count badge. Expands to show ItemRow list.
  * Defaults to expanded.
- *
- * TODO: Add animation for expand/collapse
  */
 export function CategorySection({
   category,
   items,
   quantities,
+  itemNotes,
   onQuantityChange,
+  onNoteChange,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -34,11 +36,13 @@ export function CategorySection({
   return (
     <section className="mb-4">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-gray-100",
-          "min-h-[44px] text-left"
+          "w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-100 text-left transition-colors",
+          isOpen ? "rounded-t-xl border-b-0" : "rounded-xl"
         )}
+        style={{ minHeight: "44px" }}
       >
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm text-gray-900">
@@ -50,7 +54,9 @@ export function CategorySection({
             </span>
           )}
         </div>
-        <span className="text-gray-400 text-sm">{isOpen ? "▲" : "▼"}</span>
+        <span className="text-gray-400 text-sm" aria-hidden>
+          {isOpen ? "▲" : "▼"}
+        </span>
       </button>
 
       {isOpen && (
@@ -60,7 +66,9 @@ export function CategorySection({
               key={item.id}
               availabilityItem={item}
               quantity={quantities[item.id] ?? 0}
+              itemNote={itemNotes[item.id] ?? ""}
               onQuantityChange={onQuantityChange}
+              onNoteChange={onNoteChange}
             />
           ))}
         </div>

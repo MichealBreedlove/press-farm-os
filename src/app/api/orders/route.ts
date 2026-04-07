@@ -1,120 +1,237 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { sendOrderReceivedEmail, sendOrderConfirmationEmail } from "@/lib/notifications";
+import { sendOrderSubmittedEmail } from "@/lib/email";
 
 /**
- * POST /api/orders — Submit or update a chef's order
+ * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
  *
- * Body: { restaurant_id, delivery_date, items: [{availability_item_id, quantity_requested}], freeform_notes, order_id? }
+ * Returns orders with restaurant, chef profile, and order_items count.
+ */
+export async function GET(request: Request) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify admin
+  const { data: profileRaw } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profileRaw || profileRaw.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const date = searchParams.get("date");
+  if (!date) {
+    return NextResponse.json({ error: "Missing date query param" }, { status: 400 });
+  }
+
+  const { data: orders, error } = await (supabase as any)
+    .from("orders")
+    .select(`
+      id, delivery_date, status, freeform_notes, submitted_at,
+      restaurant:restaurants(id, name),
+      chef:profiles!orders_chef_id_fkey(id, full_name),
+      order_items(id)
+    `)
+    .eq("delivery_date", date);
+
+  if (error) {
+    console.error("Orders fetch error:", error);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+  }
+
+  return NextResponse.json({ data: orders ?? [], error: null });
+}
+
+/**
+ * POST /api/orders — Submit or update an order
  *
- * Creates order + order_items (upserts if order already exists).
- * Sends email notifications via Resend.
+ * Body: { restaurant_id, delivery_date, items: [{availability_item_id, quantity, unit_price}], freeform_notes }
+ *
+ * Upserts order and order_items (one order per restaurant per delivery date).
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const admin = createAdminClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   let body: {
     restaurant_id: string;
     delivery_date: string;
-    items: { availability_item_id: string; quantity_requested: number }[];
-    freeform_notes?: string | null;
-    order_id?: string | null;
+    items: { availability_item_id: string; quantity: number; unit_price?: number | null }[];
+    freeform_notes?: string;
   };
 
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { restaurant_id, delivery_date, items, freeform_notes, order_id } = body;
+  const { restaurant_id, delivery_date, items, freeform_notes } = body;
+
   if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing required fields: restaurant_id, delivery_date, items" },
+      { status: 400 }
+    );
   }
 
-  // Verify chef belongs to this restaurant
-  const { data: membership } = await supabase
-    .from("restaurant_users")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("restaurant_id", restaurant_id)
+  // Fix 2: Validate each item has a valid structure
+  const invalidItems = items.filter((item: any) =>
+    !item.availability_item_id ||
+    typeof item.quantity !== 'number' ||
+    item.quantity < 0 ||
+    !Number.isFinite(item.quantity)
+  );
+  if (invalidItems.length > 0) {
+    return NextResponse.json({ error: 'Invalid item data' }, { status: 400 });
+  }
+
+  // Fix 1: Verify user belongs to this restaurant
+  const { data: restaurantMembership } = await supabase
+    .from('restaurant_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', restaurant_id)
     .single();
 
-  if (!membership) {
-    return NextResponse.json({ error: "Not authorized for this restaurant" }, { status: 403 });
+  if (!restaurantMembership) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Verify ordering is open
-  const { data: dd } = await supabase
+  // Verify delivery date is still open
+  const { data: deliveryDate } = await supabase
     .from("delivery_dates")
-    .select("ordering_open")
+    .select("id, ordering_open")
     .eq("date", delivery_date)
-    .single();
+    .single() as any;
 
-  if (!dd?.ordering_open) {
-    return NextResponse.json({ error: "Ordering is closed for this date" }, { status: 400 });
+  if (!deliveryDate?.ordering_open) {
+    return NextResponse.json(
+      { error: "Ordering is closed for this delivery date" },
+      { status: 409 }
+    );
   }
 
-  let orderId = order_id;
-
-  if (orderId) {
-    // Update existing order
-    const { error } = await admin
-      .from("orders")
-      .update({
-        freeform_notes: freeform_notes ?? null,
-        status: "submitted",
-        submitted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    // Delete old items and re-insert
-    await admin.from("order_items").delete().eq("order_id", orderId);
-  } else {
-    // Create new order
-    const { data: newOrder, error } = await admin
-      .from("orders")
-      .insert({
+  // Upsert order (one per restaurant per delivery date — unique constraint handles conflict)
+  const { data: order, error: orderError } = await (supabase
+    .from("orders") as any)
+    .upsert(
+      {
         restaurant_id,
         chef_id: user.id,
         delivery_date,
         status: "submitted",
         freeform_notes: freeform_notes ?? null,
         submitted_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    orderId = newOrder.id;
+      },
+      {
+        onConflict: "restaurant_id,delivery_date",
+        ignoreDuplicates: false,
+      }
+    )
+    .select("id")
+    .single();
+
+  if (orderError || !order) {
+    console.error("Order upsert error:", orderError);
+    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
   }
 
-  // Insert order items
-  if (items.length > 0) {
-    const orderItems = items.map((item) => ({
-      order_id: orderId!,
+  // Fix 4: Get canonical prices from availability_items → items (do not trust client-supplied unit_price)
+  const { data: availItems } = await (supabase
+    .from('availability_items') as any)
+    .select('id, item:items(default_price)')
+    .in('id', items.map((i: any) => i.availability_item_id));
+
+  const priceMap = new Map(
+    (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null])
+  );
+
+  // Delete existing order items then reinsert (simplest approach for re-orders)
+  await supabase.from("order_items").delete().eq("order_id", order.id);
+
+  // Insert new order items (skip zero-qty items)
+  const orderItems = items
+    .filter((item) => item.quantity > 0)
+    .map((item) => ({
+      order_id: order.id,
       availability_item_id: item.availability_item_id,
-      quantity_requested: item.quantity_requested,
+      quantity_requested: item.quantity,
+      unit_price_at_order: priceMap.get(item.availability_item_id) ?? null,
     }));
-    const { error } = await admin.from("order_items").insert(orderItems);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (orderItems.length > 0) {
+    const { error: itemsError } = await (supabase.from("order_items") as any).insert(orderItems);
+
+    if (itemsError) {
+      console.error("Order items insert error:", itemsError);
+      return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
+    }
   }
 
-  // Send notifications (non-blocking)
+  // Send email notification to admin — non-blocking, errors do not fail the response
   try {
-    await Promise.allSettled([
-      sendOrderReceivedEmail({ orderId: orderId!, restaurantId: restaurant_id, deliveryDate: delivery_date }),
-      sendOrderConfirmationEmail({ userId: user.id, orderId: orderId!, deliveryDate: delivery_date }),
-    ]);
-  } catch {
-    // Notifications are best-effort — don't fail the order
+    // Fetch restaurant name
+    const { data: restaurant } = await (supabase.from("restaurants") as any)
+      .select("name")
+      .eq("id", restaurant_id)
+      .single();
+
+    // Fetch chef profile name
+    const { data: chefProfile } = await (supabase.from("profiles") as any)
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    // Fetch item details for ordered items (join availability_items → items)
+    const orderedAvailIds = orderItems.map((oi) => oi.availability_item_id);
+    const { data: availDetails } = orderedAvailIds.length > 0
+      ? await (supabase.from("availability_items") as any)
+          .select("id, item:items(name, unit)")
+          .in("id", orderedAvailIds)
+      : { data: [] };
+
+    const availMap = new Map(
+      (availDetails ?? []).map((a: any) => [a.id, a.item])
+    );
+
+    const emailItems = orderItems.map((oi) => {
+      const item = availMap.get(oi.availability_item_id) as any;
+      return {
+        itemName: item?.name ?? "Unknown item",
+        quantity: oi.quantity_requested,
+        unit: item?.unit ?? "",
+      };
+    });
+
+    await sendOrderSubmittedEmail({
+      restaurantName: restaurant?.name ?? "Unknown restaurant",
+      chefName: chefProfile?.full_name ?? "Chef",
+      deliveryDate: delivery_date,
+      items: emailItems,
+      freeformNotes: freeform_notes,
+      submittedAt: new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
+    });
+  } catch (emailErr) {
+    console.error("[EMAIL] Failed to send order submitted email:", emailErr);
   }
 
-  return NextResponse.json({ order_id: orderId }, { status: 200 });
+  return NextResponse.json({ data: { orderId: order.id }, error: null }, { status: 200 });
 }

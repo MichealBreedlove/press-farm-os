@@ -1,25 +1,43 @@
-/**
- * /admin/items — Item catalog management
- *
- * Lists all items grouped by category.
- * Add/edit/archive items.
- * Price catalog management.
- *
- * TODO: Build item catalog UI
- */
-export default function AdminItemsPage() {
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ItemsClient } from "./ItemsClient";
+
+export default async function AdminItemsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const admin = createAdminClient();
+
+  const { data: itemsRaw } = await (admin as any)
+    .from("items")
+    .select("id, name, category, unit_type, default_price, is_archived")
+    .order("category")
+    .order("name");
+
+  const items = itemsRaw ?? [];
+
   return (
-    <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Item Catalog</h1>
-        {/* TODO: "Add Item" button */}
+    <main className="pb-24">
+      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-gray-900">Item Catalog</h1>
+          <Link
+            href="/admin/items/new"
+            className="min-h-[36px] px-4 flex items-center bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+          >
+            + Add Item
+          </Link>
+        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          {items.filter((i: any) => !i.is_archived).length} active items
+        </p>
       </header>
 
       <div className="px-4 py-6">
-        {/* TODO: Item list by category */}
-        <p className="text-center text-gray-400 text-sm">
-          Item catalog — coming in Phase 1 build
-        </p>
+        <ItemsClient items={items} />
       </div>
     </main>
   );

@@ -1,76 +1,116 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Profile } from "@/types";
 
 /**
- * POST /api/availability — Save/publish availability for a delivery date + restaurant
+ * POST /api/availability — Publish availability for a delivery date
  *
- * Body: { date, restaurantId, items: [{ item_id, status, limited_qty, cycle_notes }], allItemIds }
+ * Body: { restaurant_id, delivery_date, items: [{ item_id, status, limited_qty, cycle_notes }] }
  *
+ * Upserts availability_items. Sets delivery_dates.ordering_open = true.
  * Admin only.
  */
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const admin = createAdminClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (await createClient()) as any;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify admin role
+  const { data: profileRaw } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("id", user.id)
     .single();
-  if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const profile = profileRaw as Pick<Profile, "role" | "is_active"> | null;
 
-  type AvailStatus = "available" | "limited" | "unavailable";
+  if (!profile || profile.role !== "admin" || !profile.is_active) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let body: {
-    date: string;
-    restaurantId: string;
-    items: { item_id: string; status: AvailStatus; limited_qty: number | null; cycle_notes: string | null }[];
-    allItemIds: string[];
+    restaurant_id: string;
+    delivery_date: string;
+    items: Array<{
+      item_id: string;
+      status: string;
+      limited_qty?: number | null;
+      cycle_notes?: string | null;
+    }>;
   };
+
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { date, restaurantId, items, allItemIds } = body;
-  if (!date || !restaurantId || !Array.isArray(items)) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const { restaurant_id, delivery_date, items } = body;
+
+  if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
+    return NextResponse.json(
+      { error: "Missing required fields: restaurant_id, delivery_date, items" },
+      { status: 400 }
+    );
   }
 
-  // Build upsert payload: explicit items + default "available" for the rest
-  const explicitItemIds = new Set(items.map((i) => i.item_id));
-  const defaultItems = (allItemIds ?? [])
-    .filter((id) => !explicitItemIds.has(id))
-    .map((id) => ({
-      item_id: id,
-      restaurant_id: restaurantId,
-      delivery_date: date,
-      status: "available",
-      limited_qty: null,
-      cycle_notes: null,
-    }));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(delivery_date)) {
+    return NextResponse.json({ error: "Invalid delivery_date format" }, { status: 400 });
+  }
 
-  const explicitRows = items.map((item) => ({
+  const VALID_STATUSES = ['available', 'limited', 'unavailable'];
+  const invalidItems = items.filter((item: any) => !VALID_STATUSES.includes(item.status));
+  if (invalidItems.length > 0) {
+    return NextResponse.json({ error: "Invalid status value in items" }, { status: 400 });
+  }
+
+  // Use admin client to bypass RLS for upsert
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adminClient = createAdminClient() as any;
+
+  // Upsert availability_items
+  const upsertRows = items.map((item) => ({
     item_id: item.item_id,
-    restaurant_id: restaurantId,
-    delivery_date: date,
-    status: item.status,
-    limited_qty: item.limited_qty,
-    cycle_notes: item.cycle_notes,
+    restaurant_id,
+    delivery_date,
+    status: item.status as "available" | "limited" | "unavailable",
+    limited_qty: item.limited_qty ?? null,
+    cycle_notes: item.cycle_notes ?? null,
+    updated_at: new Date().toISOString(),
   }));
 
-  const allRows = [...explicitRows, ...defaultItems];
+  const { error: upsertError } = await adminClient
+    .from("availability_items")
+    .upsert(upsertRows, {
+      onConflict: "item_id,restaurant_id,delivery_date",
+      ignoreDuplicates: false,
+    });
 
-  if (allRows.length > 0) {
-    const { error } = await admin
-      .from("availability_items")
-      .upsert(allRows, { onConflict: "item_id,restaurant_id,delivery_date" });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (upsertError) {
+    console.error("Upsert availability error:", upsertError);
+    return NextResponse.json(
+      { error: "Failed to save availability" },
+      { status: 500 }
+    );
   }
 
-  return NextResponse.json({ ok: true });
+  // Set ordering_open = true on the delivery date
+  const { error: dateError } = await adminClient
+    .from("delivery_dates")
+    .update({ ordering_open: true })
+    .eq("date", delivery_date);
+
+  if (dateError) {
+    console.error("Update delivery_dates error:", dateError);
+    // Non-fatal — availability was saved, just log it
+  }
+
+  return NextResponse.json({ success: true });
 }

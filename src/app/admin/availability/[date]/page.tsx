@@ -1,77 +1,130 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { redirect } from "next/navigation";
-import { formatDate } from "@/lib/utils";
-import AvailabilityEditorClient from "./client";
-import type { Database } from "@/types/database";
+import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
+import type { Item, Restaurant, AvailabilityItem } from "@/types";
 
-type DeliveryDateRow = Database["public"]["Tables"]["delivery_dates"]["Row"];
+/**
+ * /admin/availability/[date] — Edit availability for a delivery date
+ *
+ * Server Component: fetches all items, restaurants, and existing availability.
+ * Renders AvailabilityEditor client component for interactive editing.
+ */
 
-interface Props {
-  params: Promise<{ date: string }>;
+function formatPageTitle(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 }
 
-export default async function AvailabilityDatePage({ params }: Props) {
+export default async function AdminAvailabilityEditorPage({
+  params,
+}: {
+  params: Promise<{ date: string }>;
+}) {
   const { date } = await params;
-  const supabase = await createClient();
-  const admin = createAdminClient();
 
-  // Verify delivery date exists
-  const { data: ddData } = await supabase
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    notFound();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (await createClient()) as any;
+
+  // Verify this is a real delivery date
+  const { data: rawDeliveryDate } = await supabase
     .from("delivery_dates")
-    .select("*")
+    .select("id, date, ordering_open")
     .eq("date", date)
     .single();
+  const deliveryDate = rawDeliveryDate as { id: string; date: string; ordering_open: boolean } | null;
 
-  if (!ddData) redirect("/admin/availability");
+  if (!deliveryDate) {
+    notFound();
+  }
 
-  const deliveryDate = ddData as DeliveryDateRow;
-
-  // Get all active items
-  const { data: items } = await admin
+  // Fetch all non-archived items, ordered by sort_order + name
+  const { data: rawItems, error: itemsError } = await supabase
     .from("items")
-    .select("*")
+    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, created_at, updated_at")
     .eq("is_archived", false)
-    .order("category")
-    .order("sort_order")
-    .order("name");
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+  const items: Item[] = rawItems ?? [];
 
-  // Get all restaurants
-  const { data: restaurants } = await admin
+  if (itemsError) {
+    console.error("Error fetching items:", itemsError);
+  }
+
+  // Fetch restaurants (both Press + Understudy) for the farm
+  const { data: rawRestaurants, error: restaurantsError } = await supabase
     .from("restaurants")
-    .select("id, name, slug")
-    .order("name");
+    .select("id, name, slug, farm_id, created_at, updated_at")
+    .order("name", { ascending: true });
+  const restaurants: Restaurant[] = rawRestaurants ?? [];
 
-  // Get existing availability for this date
-  const { data: availability } = await admin
+  if (restaurantsError) {
+    console.error("Error fetching restaurants:", restaurantsError);
+  }
+
+  // Fetch existing availability_items for this date across all restaurants
+  const { data: rawAvailability, error: availError } = await supabase
     .from("availability_items")
-    .select("*")
+    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, created_at, updated_at")
     .eq("delivery_date", date);
+  const availability: AvailabilityItem[] = rawAvailability ?? [];
+
+  if (availError) {
+    console.error("Error fetching availability:", availError);
+  }
+
+  const pageTitle = formatPageTitle(date);
 
   return (
     <main>
-      <header className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <a href="/admin/availability" className="text-farm-green text-sm">‹ Back</a>
-        </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-lg font-semibold capitalize">
-              {deliveryDate.day_of_week} · {formatDate(date)}
-            </h1>
-            <p className={`text-xs font-medium ${deliveryDate.ordering_open ? "text-green-600" : "text-gray-400"}`}>
-              {deliveryDate.ordering_open ? "Ordering open" : "Ordering closed"}
-            </p>
-          </div>
+      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+        <Link
+          href="/admin/availability"
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          aria-label="Back to availability"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-semibold text-gray-900 truncate">
+            {pageTitle}
+          </h1>
+          <p className="text-xs text-gray-500">
+            Ordering is{" "}
+            <span
+              className={
+                deliveryDate.ordering_open ? "text-green-700 font-medium" : "text-red-600 font-medium"
+              }
+            >
+              {deliveryDate.ordering_open ? "open" : "closed"}
+            </span>
+          </p>
         </div>
       </header>
 
-      <AvailabilityEditorClient
+      <AvailabilityEditor
+        items={items}
+        availability={availability}
         date={date}
-        orderingOpen={deliveryDate.ordering_open}
-        items={items ?? []}
-        restaurants={restaurants ?? []}
-        initialAvailability={availability ?? []}
+        restaurants={restaurants}
       />
     </main>
   );
