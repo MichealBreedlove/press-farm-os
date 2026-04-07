@@ -1,29 +1,45 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AdminBottomNav from "@/components/admin/bottom-nav";
+import { BottomNav } from "@/components/admin/BottomNav";
+import type { Profile } from "@/types";
 
+/**
+ * Admin layout — wraps all /admin/* pages.
+ * Auth check: redirects non-admins to /order, unauthenticated to /login.
+ * Includes BottomNav client component for tab navigation.
+ */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
+  if (!user) {
+    redirect("/login");
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileRaw } = await (supabase as any)
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("id", user.id)
     .single();
+  const profile = profileRaw as Pick<Profile, "role" | "is_active"> | null;
 
-  if (profile?.role !== "admin") redirect("/order");
+  if (!profile || profile.role !== "admin" || !profile.is_active) {
+    redirect("/order");
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Main content — padded bottom for bottom nav */}
       <div className="pb-20">{children}</div>
-      <AdminBottomNav />
+      <BottomNav />
     </div>
   );
 }

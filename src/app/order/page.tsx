@@ -1,111 +1,130 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { formatDate } from "@/lib/utils";
-import OrderFormClient from "./client";
+import { createClient } from "@/lib/supabase/server";
+import { formatDeliveryDate } from "@/lib/utils";
+import { OrderForm } from "@/components/order/OrderForm";
+import type { AvailabilityItemWithItem } from "@/types";
 
+/**
+ * /order — Chef main ordering interface (Server Component)
+ *
+ * Fetches the next open delivery date, availability items, and renders
+ * the interactive OrderForm client component.
+ */
 export default async function OrderPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+
+  // Auth check
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   // Get chef's restaurant
   const { data: restaurantUser } = await supabase
     .from("restaurant_users")
-    .select("restaurant_id, restaurants(id, name, slug)")
+    .select("restaurant_id, restaurants(id, name)")
     .eq("user_id", user.id)
-    .single();
+    .single() as any;
 
-  if (!restaurantUser) {
+  if (!restaurantUser?.restaurants) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-4">
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-3xl mb-3">🌿</p>
-          <p className="text-gray-600">Your account isn&apos;t linked to a restaurant yet.</p>
-          <p className="text-sm text-gray-400 mt-1">Contact your farm admin.</p>
+          <p className="text-gray-500 text-sm">
+            No restaurant found for your account. Please contact Micheal.
+          </p>
         </div>
       </main>
     );
   }
 
-  const restaurant = restaurantUser.restaurants as { id: string; name: string; slug: string };
-
-  // Get next open delivery date
+  const restaurant = restaurantUser.restaurants;
   const today = new Date().toISOString().split("T")[0];
+
+  // Find next open delivery date
   const { data: deliveryDate } = await supabase
     .from("delivery_dates")
-    .select("*")
-    .eq("ordering_open", true)
+    .select("id, date, day_of_week, ordering_open")
     .gte("date", today)
+    .eq("ordering_open", true)
     .order("date", { ascending: true })
     .limit(1)
-    .single();
+    .single() as any;
 
   if (!deliveryDate) {
     return (
       <main className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-100 px-4 pt-12 pb-4">
+        <header className="bg-white border-b border-gray-100 px-4 py-4">
           <h1 className="text-lg font-semibold">Order</h1>
           <p className="text-sm text-gray-500">{restaurant.name}</p>
         </header>
-        <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-          <p className="text-4xl mb-4">🔒</p>
-          <p className="font-semibold text-gray-700">Ordering is closed</p>
-          <p className="text-sm text-gray-400 mt-1">Check back before the next delivery.</p>
+        <div className="flex items-center justify-center h-64 px-4">
+          <p className="text-center text-gray-500 text-sm">
+            No upcoming delivery dates open for ordering.
+            <br />
+            Check back soon or contact Micheal.
+          </p>
         </div>
       </main>
     );
   }
 
-  // Get availability items for this restaurant + date
-  const { data: availability } = await supabase
+  // Fetch availability items for this date + restaurant (exclude unavailable)
+  const { data: rawItems } = await supabase
     .from("availability_items")
     .select(`
       id,
+      item_id,
+      restaurant_id,
+      delivery_date,
       status,
       limited_qty,
       cycle_notes,
-      item_id,
-      items(id, name, category, unit_type, chef_notes, default_price)
+      created_at,
+      updated_at,
+      item:items(
+        id,
+        farm_id,
+        name,
+        category,
+        unit_type,
+        default_price,
+        chef_notes,
+        internal_notes,
+        source,
+        is_archived,
+        sort_order,
+        created_at,
+        updated_at
+      )
     `)
-    .eq("restaurant_id", restaurant.id)
     .eq("delivery_date", deliveryDate.date)
+    .eq("restaurant_id", restaurant.id)
     .neq("status", "unavailable")
-    .order("items(category)")
-    .order("items(sort_order)")
-    .order("items(name)");
+    .order("item(sort_order)", { ascending: true }) as any;
 
-  // Get existing order if any
-  const { data: existingOrder } = await supabase
-    .from("orders")
-    .select(`
-      id, status, freeform_notes,
-      order_items(id, availability_item_id, quantity_requested)
-    `)
-    .eq("restaurant_id", restaurant.id)
-    .eq("delivery_date", deliveryDate.date)
-    .single();
+  const availabilityItems: AvailabilityItemWithItem[] = (rawItems ?? []).filter(
+    (ai: any) => ai.item && !ai.item.is_archived
+  );
+
+  const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold capitalize">
-              {deliveryDate.day_of_week} · {formatDate(deliveryDate.date)}
-            </h1>
-            <p className="text-sm text-gray-500">{restaurant.name}</p>
-          </div>
-          <a href="/history" className="text-sm text-farm-green font-medium">History</a>
-        </div>
+      <header className="bg-white border-b border-gray-100 px-4 py-4">
+        <h1 className="text-lg font-semibold">Order for {deliveryDateFormatted}</h1>
+        <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
 
-      <OrderFormClient
+      <OrderForm
+        availabilityItems={availabilityItems}
         restaurantId={restaurant.id}
         restaurantName={restaurant.name}
         deliveryDate={deliveryDate.date}
-        availabilityItems={availability ?? []}
-        existingOrder={existingOrder ?? null}
-        userId={user.id}
+        deliveryDateFormatted={deliveryDateFormatted}
       />
     </main>
   );

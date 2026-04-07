@@ -1,92 +1,120 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Profile, AvailabilityItem } from "@/types";
 
 /**
- * POST /api/availability/duplicate — Copy previous cycle's availability to a new date
+ * POST /api/availability/duplicate — Duplicate last cycle's availability
  *
- * Body: { date, restaurantId }
+ * Body: { restaurant_id, target_date }
+ *
+ * Finds most recent availability for restaurant before target_date,
+ * copies all rows to target_date. Copies: item_id, status, limited_qty, cycle_notes.
  * Admin only.
  */
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const admin = createAdminClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (await createClient()) as any;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify admin role
+  const { data: profileRaw } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("id", user.id)
     .single();
-  if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const profile = profileRaw as Pick<Profile, "role" | "is_active"> | null;
 
-  let body: { date: string; restaurantId: string };
+  if (!profile || profile.role !== "admin" || !profile.is_active) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: { restaurant_id: string; target_date: string };
+
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { date, restaurantId } = body;
-  if (!date || !restaurantId) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const { restaurant_id, target_date } = body;
+
+  if (!restaurant_id || !target_date) {
+    return NextResponse.json(
+      { error: "Missing required fields: restaurant_id, target_date" },
+      { status: 400 }
+    );
   }
 
-  // Find the most recent previous availability for this restaurant
-  const { data: lastAvail } = await admin
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
+    return NextResponse.json({ error: "Invalid target_date format" }, { status: 400 });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adminClient = createAdminClient() as any;
+
+  // Find the most recent delivery date before target_date that has availability rows
+  const { data: rawLastRows, error: findError } = await adminClient
     .from("availability_items")
-    .select("item_id, status, limited_qty, cycle_notes")
-    .eq("restaurant_id", restaurantId)
-    .lt("delivery_date", date)
-    .order("delivery_date", { ascending: false });
-
-  if (!lastAvail?.length) {
-    return NextResponse.json({ error: "No previous availability found" }, { status: 404 });
-  }
-
-  // Use only the most recent date's items
-  const { data: lastDate } = await admin
-    .from("availability_items")
-    .select("delivery_date")
-    .eq("restaurant_id", restaurantId)
-    .lt("delivery_date", date)
+    .select("delivery_date, item_id, status, limited_qty, cycle_notes")
+    .eq("restaurant_id", restaurant_id)
+    .lt("delivery_date", target_date)
     .order("delivery_date", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(500);
+  const lastRows = rawLastRows as Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes">[] | null;
 
-  const { data: lastCycle } = await admin
-    .from("availability_items")
-    .select("item_id, status, limited_qty, cycle_notes")
-    .eq("restaurant_id", restaurantId)
-    .eq("delivery_date", lastDate!.delivery_date);
-
-  if (!lastCycle?.length) {
-    return NextResponse.json({ error: "No previous availability found" }, { status: 404 });
+  if (findError) {
+    console.error("Find last cycle error:", findError);
+    return NextResponse.json({ error: "Failed to find last cycle" }, { status: 500 });
   }
 
-  const newRows = lastCycle.map((row) => ({
+  if (!lastRows || lastRows.length === 0) {
+    return NextResponse.json(
+      { error: "No previous availability found for this restaurant" },
+      { status: 404 }
+    );
+  }
+
+  // Get the most recent date's rows
+  const mostRecentDate = lastRows[0].delivery_date;
+  const sourceRows = lastRows.filter((r) => r.delivery_date === mostRecentDate);
+
+  // Build upsert rows for target_date
+  const upsertRows = sourceRows.map((row) => ({
     item_id: row.item_id,
-    restaurant_id: restaurantId,
-    delivery_date: date,
+    restaurant_id,
+    delivery_date: target_date,
     status: row.status,
     limited_qty: row.limited_qty,
     cycle_notes: row.cycle_notes,
+    updated_at: new Date().toISOString(),
   }));
 
-  const { error } = await admin
+  const { error: upsertError } = await adminClient
     .from("availability_items")
-    .upsert(newRows, { onConflict: "item_id,restaurant_id,delivery_date" });
+    .upsert(upsertRows, {
+      onConflict: "item_id,restaurant_id,delivery_date",
+      ignoreDuplicates: false,
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (upsertError) {
+    console.error("Duplicate upsert error:", upsertError);
+    return NextResponse.json(
+      { error: "Failed to duplicate availability" },
+      { status: 500 }
+    );
+  }
 
-  // Return the new availability
-  const { data: availability } = await admin
-    .from("availability_items")
-    .select("*")
-    .eq("restaurant_id", restaurantId)
-    .eq("delivery_date", date);
-
-  return NextResponse.json({ availability });
+  return NextResponse.json({
+    success: true,
+    source_date: mostRecentDate,
+    rows_copied: upsertRows.length,
+  });
 }

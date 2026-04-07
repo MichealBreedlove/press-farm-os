@@ -22,9 +22,9 @@ export default async function RootPage() {
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .single() as any;
 
-  if (profile?.role === "admin") {
+  if ((profile as any)?.role === "admin") {
     redirect("/admin/orders");
   }
 
