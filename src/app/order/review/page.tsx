@@ -94,7 +94,7 @@ export default function OrderReviewPage() {
     <main className="min-h-screen bg-gray-50 pb-32">
       <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/order')}
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2"
           aria-label="Go back"
         >
@@ -173,7 +173,7 @@ export default function OrderReviewPage() {
       <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4 safe-area-bottom">
         <div className="flex gap-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/order')}
             disabled={isSubmitting}
             className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl min-h-[44px] disabled:opacity-40 transition-opacity"
           >

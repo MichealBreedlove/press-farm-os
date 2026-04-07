@@ -41,6 +41,29 @@ export async function POST(request: Request) {
     );
   }
 
+  // Fix 2: Validate each item has a valid structure
+  const invalidItems = items.filter((item: any) =>
+    !item.availability_item_id ||
+    typeof item.quantity !== 'number' ||
+    item.quantity < 0 ||
+    !Number.isFinite(item.quantity)
+  );
+  if (invalidItems.length > 0) {
+    return NextResponse.json({ error: 'Invalid item data' }, { status: 400 });
+  }
+
+  // Fix 1: Verify user belongs to this restaurant
+  const { data: restaurantMembership } = await supabase
+    .from('restaurant_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', restaurant_id)
+    .single();
+
+  if (!restaurantMembership) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   // Verify delivery date is still open
   const { data: deliveryDate } = await supabase
     .from("delivery_dates")
@@ -80,6 +103,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
   }
 
+  // Fix 4: Get canonical prices from availability_items → items (do not trust client-supplied unit_price)
+  const { data: availItems } = await (supabase
+    .from('availability_items') as any)
+    .select('id, item:items(default_price)')
+    .in('id', items.map((i: any) => i.availability_item_id));
+
+  const priceMap = new Map(
+    (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null])
+  );
+
   // Delete existing order items then reinsert (simplest approach for re-orders)
   await supabase.from("order_items").delete().eq("order_id", order.id);
 
@@ -90,7 +123,7 @@ export async function POST(request: Request) {
       order_id: order.id,
       availability_item_id: item.availability_item_id,
       quantity_requested: item.quantity,
-      unit_price_at_order: item.unit_price ?? null,
+      unit_price_at_order: priceMap.get(item.availability_item_id) ?? null,
     }));
 
   if (orderItems.length > 0) {
