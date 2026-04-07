@@ -9,7 +9,7 @@ type Item = {
   id: string;
   name: string;
   category: string;
-  default_unit: string;
+  unit_type: string;
   default_price: number | null;
 };
 type DeliveryItem = {
@@ -157,7 +157,7 @@ export default function DeliveryLogForm({
         name: item.name,
         category: item.category,
         quantity: "1",
-        unit: item.default_unit,
+        unit: item.unit_type,
         unit_price: String(item.default_price ?? 0),
       },
     ]);
@@ -407,7 +407,7 @@ export default function DeliveryLogForm({
                         >
                           <span className="text-sm text-gray-900">{item.name}</span>
                           <span className="text-xs text-gray-400">
-                            {formatCurrency(item.default_price ?? 0)} / {item.default_unit}
+                            {formatCurrency(item.default_price ?? 0)} / {item.unit_type}
                           </span>
                         </button>
                       ))}

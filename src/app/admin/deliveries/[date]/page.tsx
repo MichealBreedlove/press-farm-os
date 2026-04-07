@@ -27,8 +27,8 @@ export default async function AdminDeliveryLogPage({
   // Load all items for the form
   const { data: items } = await (admin as any)
     .from("items")
-    .select("id, name, category, default_unit, default_price")
-    .eq("is_active", true)
+    .select("id, name, category, unit_type, default_price")
+    .eq("is_archived", false)
     .order("category")
     .order("name");
 

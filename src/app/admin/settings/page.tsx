@@ -1,26 +1,46 @@
-/**
- * /admin/settings — Settings overview
- *
- * Links to: User Management, Farm Settings, Data Import.
- * Farm operating cost update.
- *
- * TODO: Build settings UI
- */
-export default function AdminSettingsPage() {
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
+interface NavCard {
+  href: string;
+  title: string;
+  description: string;
+}
+
+const NAV_CARDS: NavCard[] = [
+  { href: "/admin/settings/users", title: "User Management", description: "Invite chefs, manage accounts, assign restaurants" },
+  { href: "/admin/settings/import", title: "Data Import", description: "Import items and delivery history from Excel" },
+  { href: "/admin/items", title: "Item Catalog", description: "Add, edit, and archive items" },
+];
+
+export default async function AdminSettingsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
   return (
-    <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4">
-        <h1 className="text-lg font-semibold">Settings</h1>
+    <main className="pb-24">
+      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+        <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
       </header>
 
       <div className="px-4 py-6 space-y-3">
-        {/* TODO: Settings nav cards */}
-        {/* - User Management */}
-        {/* - Farm Settings (operating cost) */}
-        {/* - Data Import */}
-        <p className="text-center text-gray-400 text-sm">
-          Settings — coming in Phase 1 build
-        </p>
+        {NAV_CARDS.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="flex items-center justify-between bg-white rounded-xl border border-gray-100 px-4 py-4 hover:border-gray-200 active:bg-gray-50 transition-colors"
+          >
+            <div>
+              <p className="text-sm font-semibold text-gray-900">{card.title}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{card.description}</p>
+            </div>
+            <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        ))}
       </div>
     </main>
   );

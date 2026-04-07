@@ -158,7 +158,7 @@ export async function POST(request: Request) {
     const { data: item, error: itemErr } = await (admin as any)
       .from("items")
       .upsert(
-        { farm_id: farm.id, name: row.name, category: row.category, default_unit: row.unit, is_active: true },
+        { farm_id: farm.id, name: row.name, category: row.category, unit_type: row.unit, is_archived: false },
         { onConflict: "farm_id,name", ignoreDuplicates: false }
       )
       .select("id")

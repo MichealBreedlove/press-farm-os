@@ -35,9 +35,9 @@ export default async function AdminDeliveriesPage() {
   const today = new Date().toISOString().slice(0, 10);
   const { data: upcomingDates } = await (admin as any)
     .from("delivery_dates")
-    .select("delivery_date, ordering_open")
-    .gte("delivery_date", today)
-    .order("delivery_date", { ascending: true })
+    .select("date, ordering_open")
+    .gte("date", today)
+    .order("date", { ascending: true })
     .limit(6);
 
   // All logged deliveries, most recent first
@@ -108,20 +108,20 @@ export default async function AdminDeliveriesPage() {
             <div className="space-y-2">
               {(upcomingDates as any[]).map((d: any) => (
                 <Link
-                  key={d.delivery_date}
-                  href={`/admin/deliveries/${d.delivery_date}`}
+                  key={d.date}
+                  href={`/admin/deliveries/${d.date}`}
                   className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {formatDate(d.delivery_date)}
+                      {formatDate(d.date)}
                     </p>
-                    {loggedDates.has(d.delivery_date) && (
+                    {loggedDates.has(d.date) && (
                       <p className="text-xs text-green-600 mt-0.5">Logged</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {loggedDates.has(d.delivery_date) ? (
+                    {loggedDates.has(d.date) ? (
                       <span className="text-xs text-gray-400">Edit</span>
                     ) : (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
