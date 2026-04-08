@@ -45,7 +45,7 @@ export function CategorySection({
         style={{ minHeight: "44px" }}
       >
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-gray-900">
+          <span className="font-display text-sm text-gray-900 tracking-tight">
             {CATEGORY_LABELS[category]}
           </span>
           {orderedCount > 0 && (

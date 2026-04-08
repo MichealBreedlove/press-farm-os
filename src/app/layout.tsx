@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Baskervville, Playfair_Display, Syncopate } from "next/font/google";
+import { Roboto, Baskervville } from "next/font/google";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -17,20 +17,7 @@ const baskervville = Baskervville({
   display: "swap",
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-playfair",
-  display: "swap",
-});
 
-const syncopate = Syncopate({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-syncopate",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Press Farm OS",
@@ -56,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${playfair.variable} ${syncopate.variable}`}>
+    <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
       <head>
         <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/bank-gothic" />
       </head>

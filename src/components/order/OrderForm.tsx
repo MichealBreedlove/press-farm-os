@@ -153,7 +153,7 @@ export function OrderForm({
       </div>
 
       {/* Sticky review button */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 px-4 py-4 safe-area-bottom">
+      <div className="fixed bottom-0 inset-x-0 bg-white shadow-nav px-4 py-4 safe-area-bottom">
         <button
           type="button"
           onClick={handleReview}

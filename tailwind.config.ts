@@ -24,13 +24,12 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-roboto)", "system-ui", "sans-serif"],
         display: ["var(--font-baskervville)", "Georgia", "serif"],
-        playfair: ["var(--font-playfair)", "Georgia", "serif"],
-        syncopate: ["var(--font-syncopate)", "Arial", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-        "card-hover": "0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)",
-        "card-active": "0 1px 2px rgba(0,0,0,0.04)",
+        card: "0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03)",
+        "card-hover": "0 6px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+        "card-active": "0 1px 2px rgba(0,0,0,0.06)",
+        "nav": "0 -2px 8px rgba(0,0,0,0.06)",
       },
     },
   },

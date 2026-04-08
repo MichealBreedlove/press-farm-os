@@ -91,8 +91,8 @@ export default async function OrderDetailPage({
   const hasPrices = orderItems.some((oi: any) => oi.unit_price_at_order != null);
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-8">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <main className="min-h-screen bg-farm-cream pb-20">
+      <header className="page-header flex items-center gap-3">
         <Link
           href="/history"
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2 text-2xl"
@@ -130,7 +130,7 @@ export default async function OrderDetailPage({
         )}
 
         {/* Order items */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
             <h2 className="text-sm font-semibold text-gray-700">
               Items ({orderItems.length})
@@ -199,14 +199,14 @@ export default async function OrderDetailPage({
 
         {/* Freeform notes */}
         {order.freeform_notes && (
-          <div className="bg-white rounded-xl border border-gray-100 px-4 py-4">
+          <div className="card px-4 py-4">
             <h2 className="text-sm font-semibold text-gray-700 mb-1">Notes for Micheal</h2>
             <p className="text-sm text-gray-600 whitespace-pre-wrap">{order.freeform_notes}</p>
           </div>
         )}
 
         {/* Order metadata */}
-        <div className="bg-white rounded-xl border border-gray-100 px-4 py-4 space-y-2">
+        <div className="card px-4 py-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Status</span>
             <span className="font-medium text-gray-900">{ORDER_STATUS_LABELS[status]}</span>

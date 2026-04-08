@@ -19,7 +19,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 safe-bottom"
+      className="fixed bottom-0 left-0 right-0 bg-white shadow-nav z-50 safe-bottom"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex items-stretch h-16">
@@ -30,7 +30,7 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium min-h-[44px] transition-colors",
+                "relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium min-h-[44px] transition-colors",
                 isActive ? "text-farm-green" : "text-gray-400"
               )}
             >
@@ -39,6 +39,9 @@ export function BottomNav() {
                 strokeWidth={isActive ? 2.5 : 1.5}
               />
               <span>{label}</span>
+              {isActive && (
+                <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-farm-green" />
+              )}
             </Link>
           );
         })}
