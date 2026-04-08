@@ -297,7 +297,7 @@ export default async function AdminExecutiveReportsPage() {
       <header className="page-header print-hide">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <a href="/admin/reports" className="text-gray-400 hover:text-farm-dark">
+            <a href="/admin/reports" className="text-white/70 hover:text-white">
               <svg
                 className="w-5 h-5"
                 fill="none"

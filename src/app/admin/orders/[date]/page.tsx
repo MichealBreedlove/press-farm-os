@@ -52,7 +52,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-700 -ml-2"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
             aria-label="Back to orders"
           >
             ←

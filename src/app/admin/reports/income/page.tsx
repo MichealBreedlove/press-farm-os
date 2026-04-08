@@ -147,7 +147,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
     <main className="pb-24 bg-farm-cream min-h-screen">
       <header className="page-header">
         <div className="flex items-center gap-2">
-          <Link href="/admin/reports" className="text-gray-400 hover:text-farm-dark">
+          <Link href="/admin/reports" className="text-white/70 hover:text-white">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -158,17 +158,17 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
         <div className="flex items-center justify-between mt-2">
           <Link
             href={`/admin/reports/income?year=${prevQ.year}&quarter=${prevQ.quarter}`}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-farm-dark"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-white/70 hover:text-white"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-semibold text-farm-dark">Q{quarter} {year}</span>
+          <span className="text-sm font-semibold text-white">Q{quarter} {year}</span>
           <Link
             href={isCurrentQ ? "#" : `/admin/reports/income?year=${nextQ.year}&quarter=${nextQ.quarter}`}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
-              isCurrentQ ? "text-gray-200 pointer-events-none" : "text-gray-400 hover:text-farm-dark"
+              isCurrentQ ? "text-white/30 pointer-events-none" : "text-white/70 hover:text-white"
             }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

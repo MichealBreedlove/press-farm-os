@@ -96,7 +96,7 @@ export default function OrderReviewPage() {
       <header className="page-header flex items-center gap-3">
         <button
           onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
           aria-label="Go back"
         >
           ‹

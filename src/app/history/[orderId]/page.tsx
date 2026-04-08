@@ -95,7 +95,7 @@ export default async function OrderDetailPage({
       <header className="page-header flex items-center gap-3">
         <Link
           href="/history"
-          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-500 -ml-2 text-2xl"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2 text-2xl"
           aria-label="Back to history"
         >
           ‹
@@ -110,7 +110,7 @@ export default async function OrderDetailPage({
           {canEdit && (
             <Link
               href={`/order?edit=${order.id}`}
-              className="text-sm font-medium text-farm-green border border-farm-green rounded-lg px-3 py-1.5 min-h-0 hover:bg-farm-green-light transition-colors"
+              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 py-1.5 min-h-0 hover:bg-white/20 transition-colors"
             >
               Edit
             </Link>
