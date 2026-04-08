@@ -45,24 +45,24 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
   for (const r of data.restaurantByYear) restByYear[r.year] = r.by_restaurant;
 
   return (
-    <div className="exec-report">
+    <div className="exec-report px-4 py-4">
       {/* ── Print-only header ── */}
-      <div className="hidden print:block mb-3">
+      <div className="hidden print:block mb-2">
         <div className="flex justify-between items-end border-b-2 border-black pb-1">
           <div>
-            <h1 className="text-lg font-bold tracking-wide" style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}>
+            <h1 className="text-base font-bold tracking-wide" style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}>
               PRESS FARM
             </h1>
-            <p className="text-[8px] text-gray-500 tracking-wider uppercase">Executive Summary</p>
+            <p className="text-[7px] text-gray-500 tracking-wider uppercase">Executive Summary</p>
           </div>
-          <p className="text-[8px] text-gray-400">
+          <p className="text-[7px] text-gray-400">
             Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>
 
       {/* ── Row 1: KPI strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 print:grid-cols-4 print:gap-1 print:mb-2">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "8px" }}>
         <KpiCard
           label={latest ? `FY${latest.year} Revenue` : "Revenue"}
           value={latest ? fmtK(latest.revenue) : "—"}
@@ -90,21 +90,17 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
         />
       </div>
 
-      {/* ── Row 2: P&L + Restaurant + Benchmarks ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3 print:grid-cols-3 print:gap-1 print:mb-2">
-        {/* P&L */}
-        <div className="lg:col-span-2 print:col-span-2">
-          <CompactPL years={years} byYear={byYear} />
-        </div>
-        {/* Restaurant + Benchmarks stacked */}
-        <div className="space-y-2 print:space-y-1">
+      {/* ── Row 2: P&L (2/3) + Restaurant & Benchmarks (1/3) ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "8px", marginBottom: "8px" }}>
+        <CompactPL years={years} byYear={byYear} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <CompactRestaurant years={years} allRestaurants={allRestaurants} restByYear={restByYear} />
           <CompactBenchmarks years={years} byYear={byYear} />
         </div>
       </div>
 
-      {/* ── Row 3: Top items side-by-side + Expenses ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 print:grid-cols-3 print:gap-1">
+      {/* ── Row 3: Top items + Expenses (3 col) ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
         <CompactTopItems items={data.topItemsByRevenue.slice(0, 10)} title="Top 10 by Revenue" sortKey="revenue" />
         <CompactTopItems items={data.topItemsByQty.slice(0, 10)} title="Top 10 by Quantity" sortKey="qty" />
         <CompactExpenses categories={data.expenseCategories} />
