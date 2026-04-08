@@ -116,9 +116,6 @@
   .print-break-before { page-break-before: always; }
   .print-break-avoid { page-break-inside: avoid; }
 
-  /* Show all chart content */
-  .recharts-wrapper { width: 100% !important; }
-
   /* Cards look clean on paper */
   .card, .card-interactive {
     border: 1px solid #e5e7eb !important;
@@ -128,4 +125,16 @@
 
   /* Bottom padding not needed for print */
   .pb-24 { padding-bottom: 0 !important; }
+
+  /* ── Executive report: fit on one page ── */
+  @page { size: letter portrait; margin: 0.4in; }
+
+  .exec-report {
+    font-size: 8px !important;
+    padding: 0 !important;
+  }
+
+  .exec-report * {
+    break-inside: avoid;
+  }
 }

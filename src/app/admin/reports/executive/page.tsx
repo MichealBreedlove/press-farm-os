@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
 import { PrintButton } from "@/components/shared/PrintButton";
-
-const ExecutiveDashboard = dynamic(() => import("./ExecutiveDashboard"), { ssr: false });
+import ExecutiveDashboard from "./ExecutiveDashboard";
 
 const FARMER_PAY_PER_QUARTER = 12000;
 const FARM_ACRES = 0.5;
