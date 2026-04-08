@@ -127,25 +127,27 @@
   .pb-24 { padding-bottom: 0 !important; }
 
   /* ── Executive report: fit on one page ── */
-  @page { size: letter portrait; margin: 0.3in 0.35in; }
+  @page { size: letter portrait; margin: 0.25in 0.3in; }
+
+  main:has(.exec-report) {
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+    background: white !important;
+  }
 
   .exec-report {
-    font-size: 7.5px !important;
-    padding: 0 !important;
-    line-height: 1.3 !important;
+    font-size: 7px !important;
+    padding: 4px !important;
+    line-height: 1.25 !important;
   }
 
   .exec-report * {
-    break-inside: avoid;
     box-shadow: none !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 
-  /* Compress all gaps for print */
-  .exec-report [style*="gap"] {
-    gap: 4px !important;
-  }
-
-  .exec-report [style*="marginBottom"] {
-    margin-bottom: 4px !important;
+  .exec-report .rounded-lg {
+    border-radius: 2px !important;
   }
 }
