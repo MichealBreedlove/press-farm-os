@@ -110,3 +110,46 @@ export async function PATCH(
 
   return NextResponse.json({ data: order, error: null });
 }
+
+/**
+ * DELETE /api/orders/[orderId] — Delete an order and its items (admin only)
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ orderId: string }> }
+) {
+  const supabase = await createClient();
+  const { orderId } = await params;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: profileRaw } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profileRaw || profileRaw.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const adminClient = createAdminClient();
+
+  // Delete order_items first (FK constraint)
+  await (adminClient.from("order_items") as any).delete().eq("order_id", orderId);
+
+  // Delete the order
+  const { error } = await (adminClient.from("orders") as any).delete().eq("id", orderId);
+
+  if (error) {
+    console.error("Order delete error:", error);
+    return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

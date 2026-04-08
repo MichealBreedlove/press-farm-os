@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate, formatQty } from "@/lib/utils";
 import { UNIT_LABELS, ORDER_STATUS_LABELS, CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
+import { DeleteOrderButton } from "./DeleteOrderButton";
 import Link from "next/link";
 import type { ItemCategory } from "@/types";
 
@@ -199,11 +200,14 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
               </div>
 
               {/* Actions */}
-              {order.status !== "fulfilled" && order.status !== "cancelled" && (
-                <div className="px-4 py-3 border-t border-gray-100">
+              <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                {order.status !== "fulfilled" && order.status !== "cancelled" ? (
                   <FulfillButton orderId={order.id} />
-                </div>
-              )}
+                ) : (
+                  <span />
+                )}
+                <DeleteOrderButton orderId={order.id} restaurantName={order.restaurant?.name ?? "this"} />
+              </div>
             </section>
           );
         })}
