@@ -51,6 +51,13 @@ type AnnualPoint = {
   net: number;
 };
 
+type ForecastPoint = {
+  month: string;
+  label: string;
+  revenue: number;
+  expenses: number;
+};
+
 export default function ReportsDashboard({
   currentMonth,
   currentData,
@@ -60,6 +67,7 @@ export default function ReportsDashboard({
   annualData,
   topItems,
   expenseBreakdown,
+  forecast = [],
 }: {
   currentMonth: string;
   currentData: { total_value: number; total_expenses: number; net_value: number; by_restaurant: Record<string, number> };
@@ -69,6 +77,7 @@ export default function ReportsDashboard({
   annualData: AnnualPoint[];
   topItems: TopItem[];
   expenseBreakdown: Record<string, number>;
+  forecast?: ForecastPoint[];
 }) {
   const restaurantNames = Array.from(
     new Set(monthlyData.flatMap((m) => Object.keys(m.by_restaurant)))
@@ -255,6 +264,39 @@ export default function ReportsDashboard({
                 <span className={`text-right font-medium ${row.net >= 0 ? "text-farm-dark" : "text-red-600"}`}>{fmt(row.net)}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Revenue Forecast */}
+      {forecast.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="font-display text-sm text-farm-dark">Revenue Forecast</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Based on 3-month trailing average</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {forecast.map((f) => {
+              const net = f.revenue - f.expenses;
+              return (
+                <div key={f.month} className="px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-farm-dark">{f.label}</p>
+                    <p className="text-xs text-gray-400">Projected</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-farm-green">{fmt(f.revenue)}</p>
+                    <p className="text-xs text-gray-400">Net: {fmt(net)}</p>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="px-4 py-3 bg-farm-green-light/30 flex items-center justify-between">
+              <p className="text-sm font-semibold text-farm-dark">3-Month Total</p>
+              <p className="text-sm font-bold text-farm-green">
+                {fmt(forecast.reduce((s, f) => s + f.revenue, 0))}
+              </p>
+            </div>
           </div>
         </div>
       )}

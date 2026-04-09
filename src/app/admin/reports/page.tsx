@@ -118,6 +118,26 @@ export default async function AdminReportsPage() {
     monthExpenseBreakdown[e.category] = (monthExpenseBreakdown[e.category] ?? 0) + e.amount;
   }
 
+  // Revenue forecast: 3-month trailing average projected forward 3 months
+  const sortedMonths = allMonthlyData.filter(m => m.total_value > 0);
+  const last3 = sortedMonths.slice(-3);
+  const avgMonthlyRevenue = last3.length > 0 ? last3.reduce((s, m) => s + m.total_value, 0) / last3.length : 0;
+  const avgMonthlyExpenses = last3.length > 0 ? last3.reduce((s, m) => s + m.total_expenses, 0) / last3.length : 0;
+
+  // Generate next 3 months
+  const forecastMonths: { month: string; label: string; revenue: number; expenses: number }[] = [];
+  if (last3.length > 0) {
+    const lastM = sortedMonths[sortedMonths.length - 1].month;
+    const [ly, lm] = lastM.split("-").map(Number);
+    for (let i = 1; i <= 3; i++) {
+      const fm = lm + i > 12 ? lm + i - 12 : lm + i;
+      const fy = lm + i > 12 ? ly + 1 : ly;
+      const mStr = `${fy}-${String(fm).padStart(2, "0")}`;
+      const label = new Date(fy, fm - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      forecastMonths.push({ month: mStr, label, revenue: avgMonthlyRevenue, expenses: avgMonthlyExpenses });
+    }
+  }
+
   return (
     <main className="pb-24">
       <header className="page-header">
@@ -154,6 +174,7 @@ export default async function AdminReportsPage() {
         annualData={annualData}
         topItems={topItems}
         expenseBreakdown={monthExpenseBreakdown}
+        forecast={forecastMonths}
       />
     </main>
   );
