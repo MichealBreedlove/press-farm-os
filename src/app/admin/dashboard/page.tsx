@@ -14,6 +14,7 @@ import {
   Users,
   Upload,
   Settings,
+  Sprout,
 } from "lucide-react";
 
 interface DashCard {
@@ -64,6 +65,7 @@ export default async function AdminDashboardPage() {
       title: "Farm Management",
       cards: [
         { href: "/admin/items", title: "Items", description: "Catalog & photos", icon: <Leaf className="w-5 h-5" />, color: "bg-green-600" },
+        { href: "/admin/crop-plan", title: "Crop Plan", description: "Seasonal schedule", icon: <Sprout className="w-5 h-5" />, color: "bg-lime-600" },
         { href: "/admin/labor", title: "Labor", description: "Track hours", icon: <Clock className="w-5 h-5" />, color: "bg-purple-500" },
         { href: "/admin/expenses", title: "Expenses", description: "Track costs", icon: <DollarSign className="w-5 h-5" />, color: "bg-red-500" },
         { href: "/admin/notes", title: "Notes", description: "Field observations", icon: <FileText className="w-5 h-5" />, color: "bg-cyan-500" },
