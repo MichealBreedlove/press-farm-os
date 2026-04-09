@@ -38,7 +38,7 @@ export default async function AdminDeliveryLogPage({
     .select(`
       id, restaurant_id, status, notes, total_value,
       delivery_items (
-        id, item_id, quantity, unit, unit_price, line_total
+        id, item_id, quantity, unit, unit_price, line_total, is_bonus, bonus_note
       )
     `)
     .eq("delivery_date", date);
@@ -57,16 +57,16 @@ export default async function AdminDeliveryLogPage({
 
   return (
     <main className="pb-24">
-      <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <header className="page-header">
         <div className="flex items-center gap-3">
-          <a href="/admin/deliveries" className="text-gray-400 hover:text-gray-600">
+          <a href="/admin/deliveries" className="text-white/70 hover:text-white">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </a>
           <div>
-            <h1 className="text-lg font-semibold">Log Delivery</h1>
-            <p className="text-xs text-gray-400">
+            <h1 className="page-title">Log Delivery</h1>
+            <p className="text-xs text-white/60">
               {new Date(date + "T00:00:00").toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "long",

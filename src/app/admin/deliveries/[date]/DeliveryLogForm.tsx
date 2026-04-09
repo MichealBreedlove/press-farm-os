@@ -46,6 +46,8 @@ type LineItem = {
   quantity: string;
   unit: string;
   unit_price: string;
+  is_bonus: boolean;
+  bonus_note: string;
 };
 
 function formatCurrency(n: number) {
@@ -89,7 +91,7 @@ export default function DeliveryLogForm({
     // Check for existing delivery
     const existing = existingDeliveries.find((d) => d.restaurant_id === restId);
     if (existing?.delivery_items?.length) {
-      return existing.delivery_items.map((di) => {
+      return existing.delivery_items.map((di: any) => {
         const item = itemMap[di.item_id];
         return {
           item_id: di.item_id,
@@ -98,6 +100,8 @@ export default function DeliveryLogForm({
           quantity: String(di.quantity),
           unit: di.unit,
           unit_price: String(di.unit_price),
+          is_bonus: di.is_bonus ?? false,
+          bonus_note: di.bonus_note ?? "",
         };
       });
     }
@@ -115,6 +119,8 @@ export default function DeliveryLogForm({
             quantity: String(oi.quantity_fulfilled ?? oi.quantity_ordered),
             unit: oi.unit,
             unit_price: String(oi.unit_price ?? item?.default_price ?? 0),
+            is_bonus: false,
+            bonus_note: "",
           };
         });
     }
@@ -135,7 +141,7 @@ export default function DeliveryLogForm({
     0
   );
 
-  function updateLine(idx: number, field: keyof LineItem, value: string) {
+  function updateLine(idx: number, field: keyof LineItem, value: string | boolean) {
     setLines((prev) =>
       prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l))
     );
@@ -159,6 +165,8 @@ export default function DeliveryLogForm({
         quantity: "1",
         unit: item.unit_type,
         unit_price: String(item.default_price ?? 0),
+        is_bonus: false,
+        bonus_note: "",
       },
     ]);
     setShowItemPicker(false);
@@ -192,6 +200,8 @@ export default function DeliveryLogForm({
             quantity: parseFloat(l.quantity),
             unit: l.unit,
             unit_price: parseFloat(l.unit_price),
+            is_bonus: l.is_bonus,
+            bonus_note: l.bonus_note || null,
           })),
         }),
       });
@@ -280,9 +290,36 @@ export default function DeliveryLogForm({
                   className="px-4 py-3 border-b border-gray-50 last:border-0"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-900 flex-1 pr-2">
-                      {line.name}
-                    </p>
+                    <div className="flex-1 pr-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900">{line.name}</p>
+                        {line.is_bonus && <span className="badge-gold">Bonus</span>}
+                      </div>
+                      {!isFinalized && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => updateLine(idx, "is_bonus" as any, (!line.is_bonus) as any)}
+                            className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
+                              line.is_bonus
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-400 hover:bg-amber-50 hover:text-amber-600"
+                            }`}
+                          >
+                            {line.is_bonus ? "Bonus item" : "Mark as bonus"}
+                          </button>
+                          {line.is_bonus && (
+                            <input
+                              type="text"
+                              value={line.bonus_note}
+                              onChange={(e) => updateLine(idx, "bonus_note" as any, e.target.value)}
+                              placeholder="e.g. Sample, Family meal..."
+                              className="text-xs border border-gray-200 rounded px-2 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-farm-green"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {!isFinalized && (
                       <button
                         type="button"

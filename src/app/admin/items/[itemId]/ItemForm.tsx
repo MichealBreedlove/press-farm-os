@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ITEM_CATEGORIES, UNIT_TYPES } from "@/lib/constants";
+import { ITEM_CATEGORIES, UNIT_TYPES, SEASON_STATUSES } from "@/lib/constants";
 
 interface Item {
   id: string;
@@ -14,6 +14,9 @@ interface Item {
   internal_notes: string | null;
   source: string | null;
   is_archived: boolean;
+  image_url?: string | null;
+  season_status?: string | null;
+  season_note?: string | null;
 }
 
 interface Props {
@@ -32,6 +35,9 @@ export function ItemForm({ item }: Props) {
     chef_notes: item?.chef_notes ?? "",
     internal_notes: item?.internal_notes ?? "",
     source: item?.source ?? "",
+    image_url: item?.image_url ?? "",
+    season_status: item?.season_status ?? "available",
+    season_note: item?.season_note ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -55,6 +61,9 @@ export function ItemForm({ item }: Props) {
         chef_notes: form.chef_notes || null,
         internal_notes: form.internal_notes || null,
         source: form.source || null,
+        image_url: form.image_url || null,
+        season_status: form.season_status || "available",
+        season_note: form.season_note || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -186,6 +195,49 @@ export function ItemForm({ item }: Props) {
           placeholder="e.g. Baker Creek, Johnny's Seeds"
           className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
+      </div>
+
+      {/* Image URL */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Photo URL</label>
+        <input
+          type="url"
+          value={form.image_url}
+          onChange={(e) => set("image_url", e.target.value)}
+          placeholder="https://... (paste image link)"
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+        />
+        {form.image_url && (
+          <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+            <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
+          </div>
+        )}
+      </div>
+
+      {/* Season Status */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Season Status</label>
+          <select
+            value={form.season_status}
+            onChange={(e) => set("season_status", e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          >
+            {SEASON_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Season Note</label>
+          <input
+            type="text"
+            value={form.season_note}
+            onChange={(e) => set("season_note", e.target.value)}
+            placeholder="e.g. 2 weeks left"
+            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          />
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
