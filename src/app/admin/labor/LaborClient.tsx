@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Send } from "lucide-react";
 
 interface LaborEntry {
   id: string;
@@ -17,6 +17,8 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const [workerName, setWorkerName] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -56,12 +58,36 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
     router.refresh();
   }
 
-  // Group entries by week
+  // Current week entries (Mon-Sun of the most recent week with data)
   const totalHours = entries.reduce((s, e) => s + e.hours, 0);
   const totalCost = entries.reduce((s, e) => s + e.hours * (e.hourly_rate ?? 0), 0);
-
-  // Unique workers
   const workers = Array.from(new Set(entries.map(e => e.worker_name)));
+
+  // Get this week's entries for the timesheet report
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  const mondayStr = monday.toISOString().split("T")[0];
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const sundayStr = sunday.toISOString().split("T")[0];
+
+  const thisWeekEntries = entries.filter(e => e.date >= mondayStr && e.date <= sundayStr);
+
+  async function handleSendTimesheet() {
+    setSending(true);
+    setSent(false);
+    const res = await fetch("/api/labor/send-timesheet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ week_start: mondayStr, entries: thisWeekEntries }),
+    });
+    if (res.ok) setSent(true);
+    else alert("Failed to send — check email settings");
+    setSending(false);
+  }
 
   return (
     <div className="space-y-4">
@@ -80,6 +106,29 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
           <p className="text-xs text-gray-400">Workers</p>
         </div>
       </div>
+
+      {/* Send Timesheet */}
+      {thisWeekEntries.length > 0 && (
+        <button
+          onClick={handleSendTimesheet}
+          disabled={sending}
+          className="w-full card-interactive px-4 py-3 flex items-center justify-between"
+        >
+          <div>
+            <p className="text-sm font-medium text-farm-dark">
+              {sent ? "Timesheet Sent" : `Send Timesheet — Week of ${new Date(mondayStr + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}`}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {thisWeekEntries.length} {thisWeekEntries.length === 1 ? "entry" : "entries"} · {thisWeekEntries.reduce((s, e) => s + e.hours, 0)}h total
+            </p>
+          </div>
+          {sent ? (
+            <span className="badge-green">Sent</span>
+          ) : (
+            <Send className="w-4 h-4 text-farm-green" />
+          )}
+        </button>
+      )}
 
       {/* Add entry button */}
       {!showForm && (

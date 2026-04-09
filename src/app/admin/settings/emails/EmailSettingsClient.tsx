@@ -6,10 +6,10 @@ import { Mail, Save, Check } from "lucide-react";
 
 const EMAIL_FIELDS = [
   {
-    key: "email_labor_reminder",
-    label: "Saturday Labor Reminder",
-    description: "Receives weekly labor reminder emails every Saturday",
-    placeholder: "helper@example.com",
+    key: "email_labor_report",
+    label: "Weekly Timesheet Report",
+    description: "Supervisor who receives the weekly labor timesheet (sent Saturdays)",
+    placeholder: "supervisor@pressnapavalley.com",
   },
   {
     key: "email_availability_updates",
