@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     .from("delivery_items")
     .select(`
       item_id, quantity, line_total,
-      items ( id, name, category, default_unit ),
+      items ( id, name, category, unit_type ),
       deliveries ( delivery_date )
     `);
 
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
         item_id: id,
         name: di.items.name,
         category: di.items.category,
-        unit: di.items.default_unit,
+        unit: di.items.unit_type,
         total_quantity: 0,
         total_value: 0,
         order_count: 0,

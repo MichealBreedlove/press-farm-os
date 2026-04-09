@@ -30,7 +30,7 @@ export default async function AdminReportsPage() {
       .from("delivery_items")
       .select(`
         item_id, quantity, line_total,
-        items ( name, category, default_unit ),
+        items ( name, category, unit_type ),
         deliveries ( delivery_date )
       `),
   ]);
@@ -99,7 +99,7 @@ export default async function AdminReportsPage() {
     itemAgg[di.item_id] ??= {
       name: (di.items as any).name,
       category: (di.items as any).category,
-      unit: (di.items as any).default_unit,
+      unit: (di.items as any).unit_type,
       total_value: 0,
       total_qty: 0,
     };
