@@ -17,6 +17,7 @@ export const ITEM_CATEGORIES: { value: ItemCategory; label: string }[] = [
   { value: "herbs_leaves", label: "Herbs & Leaves" },
   { value: "fruit_veg", label: "Fruit & Veg" },
   { value: "kits", label: "Kits" },
+  { value: "family_meal", label: "Family Meal" },
 ];
 
 export const CATEGORY_LABELS: Record<ItemCategory, string> = {
@@ -25,6 +26,7 @@ export const CATEGORY_LABELS: Record<ItemCategory, string> = {
   herbs_leaves: "Herbs & Leaves",
   fruit_veg: "Fruit & Veg",
   kits: "Kits",
+  family_meal: "Family Meal",
 };
 
 // Category display order for chef order form
@@ -34,6 +36,18 @@ export const CATEGORY_ORDER: ItemCategory[] = [
   "herbs_leaves",
   "fruit_veg",
   "kits",
+  "family_meal",
+];
+
+// ============================================
+// Season Statuses
+// ============================================
+
+export const SEASON_STATUSES: { value: string; label: string; color: string }[] = [
+  { value: "available", label: "Available", color: "badge-green" },
+  { value: "ending_soon", label: "Ending Soon", color: "badge-orange" },
+  { value: "coming_soon", label: "Coming Soon", color: "badge-blue" },
+  { value: "out_of_season", label: "Out of Season", color: "badge-gray" },
 ];
 
 // ============================================

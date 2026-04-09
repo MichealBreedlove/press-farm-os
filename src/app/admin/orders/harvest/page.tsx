@@ -118,20 +118,50 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
   const sortedCategories = CATEGORY_ORDER.filter((c) => byCategory[c]);
   const totalItems = itemMap.size;
 
+  // ── Container calculator ──
+  // Count how many of each container type are needed based on unit_type totals
+  const containerCounts: Record<string, { label: string; count: number; icon: string }> = {};
+  const CONTAINER_MAP: Record<string, { label: string; icon: string }> = {
+    lg: { label: "Large To-Go", icon: "📦" },
+    sm: { label: "Small To-Go", icon: "📦" },
+    lbs: { label: "Green Bin", icon: "🟩" },
+    bx: { label: "Box", icon: "📦" },
+    bu: { label: "Bunch", icon: "🌿" },
+    qt: { label: "Quart", icon: "🥤" },
+    pt: { label: "Pint", icon: "🥤" },
+    cs: { label: "Case", icon: "📦" },
+    kit: { label: "Kit", icon: "🧰" },
+  };
+
+  for (const row of Array.from(itemMap.values())) {
+    const unit = row.unit;
+    if (unit === "ea") continue; // Individual items don't need containers
+    const container = CONTAINER_MAP[unit];
+    if (!container) continue;
+    if (!containerCounts[unit]) {
+      containerCounts[unit] = { label: container.label, count: 0, icon: container.icon };
+    }
+    containerCounts[unit].count += row.total;
+  }
+
+  const containerList = Object.entries(containerCounts)
+    .filter(([, v]) => v.count > 0)
+    .sort((a, b) => b[1].count - a[1].count);
+
   return (
     <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4 print:hidden">
+      <header className="page-header print:hidden">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-700 -ml-2"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
             aria-label="Back to orders"
           >
             ←
           </Link>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-gray-900">Harvest List</h1>
-            <p className="text-sm text-gray-500">{formatDeliveryDate(activeDate)} · {totalItems} items</p>
+            <h1 className="page-title">Harvest List</h1>
+            <p className="text-sm text-white/60">{formatDeliveryDate(activeDate)} · {totalItems} items</p>
           </div>
           <PrintButton />
         </div>
@@ -142,6 +172,28 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
         <h1 className="text-xl font-bold">HARVEST LIST — {formatDeliveryDate(activeDate)}</h1>
         <p className="text-sm text-gray-600">{totalItems} items</p>
       </div>
+
+      {/* Container summary */}
+      {containerList.length > 0 && (
+        <div className="px-4 pt-4 print:pt-2">
+          <div className="card p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+              Containers Needed
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {containerList.map(([unit, { label, count, icon }]) => (
+                <div key={unit} className="flex items-center gap-2 bg-farm-green-light rounded-lg px-3 py-2">
+                  <span className="text-lg">{icon}</span>
+                  <div>
+                    <p className="text-lg font-bold text-farm-green leading-tight">{count}</p>
+                    <p className="text-[10px] text-farm-green/70 uppercase tracking-wide">{label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-4 py-4 space-y-6 print:py-2 print:space-y-4">
         {totalItems === 0 && (

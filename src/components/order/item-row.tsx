@@ -46,6 +46,18 @@ export function ItemRow({
       )}
     >
       <div className="flex items-center gap-3">
+        {/* Item photo */}
+        {(item as any).image_url && (
+          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+            <img
+              src={(item as any).image_url}
+              alt={item.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
+
         {/* Item info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -58,6 +70,12 @@ export function ItemRow({
                 LIMITED
               </span>
             )}
+            {(item as any).season_status === "ending_soon" && (
+              <span className="badge-orange flex-shrink-0">ENDING SOON</span>
+            )}
+            {(item as any).season_status === "coming_soon" && (
+              <span className="badge-blue flex-shrink-0">COMING SOON</span>
+            )}
           </div>
           {/* Micheal's cycle note (read-only hint) */}
           {cycle_notes && (
@@ -65,6 +83,9 @@ export function ItemRow({
           )}
           {!cycle_notes && item.chef_notes && (
             <p className="text-xs text-gray-400 italic mt-0.5 truncate">{item.chef_notes}</p>
+          )}
+          {(item as any).season_note && (
+            <p className="text-xs text-orange-500 mt-0.5 truncate">{(item as any).season_note}</p>
           )}
         </div>
 

@@ -482,7 +482,8 @@ export type ItemCategory =
   | "micros_leaves"
   | "herbs_leaves"
   | "fruit_veg"
-  | "kits";
+  | "kits"
+  | "family_meal";
 
 export type UnitType =
   | "ea"
