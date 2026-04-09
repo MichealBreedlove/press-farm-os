@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
+import { SendAvailabilityButton } from "../SendAvailabilityButton";
 import type { Item, Restaurant, AvailabilityItem } from "@/types";
 
 /**
@@ -86,36 +87,27 @@ export default async function AdminAvailabilityEditorPage({
 
   return (
     <main>
-      <header className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
-        <Link
-          href="/admin/availability"
-          className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-          aria-label="Back to availability"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+      <header className="page-header">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/availability"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-white/70 hover:text-white transition-colors"
+            aria-label="Back to availability"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold text-gray-900 truncate">
-            {pageTitle}
-          </h1>
-          <p className="text-xs text-gray-500">
-            Ordering is{" "}
-            <span
-              className={
-                deliveryDate.ordering_open ? "text-farm-green font-medium" : "text-red-600 font-medium"
-              }
-            >
-              {deliveryDate.ordering_open ? "open" : "closed"}
-            </span>
-          </p>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <div className="flex-1 min-w-0">
+            <h1 className="page-title truncate">{pageTitle}</h1>
+            <p className="text-xs text-white/60">
+              Ordering is{" "}
+              <span className={deliveryDate.ordering_open ? "text-green-200 font-medium" : "text-red-300 font-medium"}>
+                {deliveryDate.ordering_open ? "open" : "closed"}
+              </span>
+            </p>
+          </div>
+          <SendAvailabilityButton date={date} itemCount={availability.length} />
         </div>
       </header>
 

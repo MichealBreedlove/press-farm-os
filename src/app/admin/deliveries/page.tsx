@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import FinalizeButton from "./FinalizeButton";
+import { CalendarView } from "./CalendarView";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -73,6 +74,15 @@ export default async function AdminDeliveriesPage() {
   // Dates already logged (set of delivery_date strings)
   const loggedDates = new Set((deliveries ?? []).map((d: any) => d.delivery_date));
 
+  // Calendar data
+  const calendarDeliveries = (deliveries ?? []).map((d: any) => ({
+    date: d.delivery_date,
+    total: d.total_value ?? 0,
+    status: d.status,
+    restaurant: d.restaurants?.name ?? "",
+  }));
+  const calendarDates = (upcomingDates ?? []).map((d: any) => d.date);
+
   return (
     <main className="pb-24">
       <header className="page-header">
@@ -98,6 +108,9 @@ export default async function AdminDeliveriesPage() {
             )}
           </div>
         </div>
+
+        {/* Calendar view */}
+        <CalendarView deliveries={calendarDeliveries} deliveryDates={calendarDates} />
 
         {/* Upcoming dates needing log entry */}
         {upcomingDates && upcomingDates.length > 0 && (
