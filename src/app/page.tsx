@@ -25,7 +25,7 @@ export default async function RootPage() {
     .single() as any;
 
   if ((profile as any)?.role === "admin") {
-    redirect("/admin/orders");
+    redirect("/admin/dashboard");
   }
 
   redirect("/order");

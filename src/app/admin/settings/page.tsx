@@ -12,10 +12,6 @@ interface NavCard {
 const NAV_CARDS: NavCard[] = [
   { href: "/admin/settings/users", title: "User Management", description: "Invite chefs, manage accounts, assign restaurants" },
   { href: "/admin/settings/import", title: "Data Import", description: "Import items and delivery history from Excel" },
-  { href: "/admin/items", title: "Item Catalog", description: "Add, edit, and archive items" },
-  { href: "/admin/labor", title: "Labor Tracker", description: "Log hours for helpers and team members" },
-  { href: "/admin/expenses", title: "Expenses", description: "Track and categorize farm expenses" },
-  { href: "/admin/notes", title: "Notes & Observations", description: "Track field observations and season updates" },
 ];
 
 export default async function AdminSettingsPage() {
