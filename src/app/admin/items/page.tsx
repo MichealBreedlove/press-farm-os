@@ -26,7 +26,7 @@ export default async function AdminItemsPage() {
           <h1 className="page-title">Item Catalog</h1>
           <Link
             href="/admin/items/new"
-            className="min-h-[36px] px-4 flex items-center bg-white text-farm-green rounded-xl text-sm font-medium hover:bg-green-50 transition-colors"
+            className="min-h-[36px] px-4 flex items-center bg-white text-farm-green rounded-lg text-sm font-semibold shadow-sm hover:bg-green-50 transition-colors"
           >
             + Add Item
           </Link>
