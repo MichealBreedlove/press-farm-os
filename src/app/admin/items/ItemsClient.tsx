@@ -14,6 +14,7 @@ interface Item {
   default_price: number | null;
   is_archived: boolean;
   chef_notes: string | null;
+  image_url: string | null;
 }
 
 interface Props {
@@ -123,8 +124,20 @@ export function ItemsClient({ items }: Props) {
                   item.is_archived ? "border-gray-100 opacity-50" : "border-gray-100"
                 }`}
               >
-                <div className="flex-1 px-4 py-3 min-h-[48px]">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-3 min-h-[48px]">
+                  <div className="flex items-center gap-3">
+                    {/* Photo thumbnail */}
+                    <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
+                      {item.image_url ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-300 text-lg">🌿</span>
+                        </div>
+                      )}
+                    </Link>
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
                       <p className="text-xs text-gray-400 mt-0.5">

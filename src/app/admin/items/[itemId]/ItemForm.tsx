@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ITEM_CATEGORIES, UNIT_TYPES, SEASON_STATUSES } from "@/lib/constants";
+import { PhotoPicker } from "@/components/admin/PhotoPicker";
 
 interface Item {
   id: string;
@@ -197,22 +198,11 @@ export function ItemForm({ item }: Props) {
         />
       </div>
 
-      {/* Image URL */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Photo URL</label>
-        <input
-          type="url"
-          value={form.image_url}
-          onChange={(e) => set("image_url", e.target.value)}
-          placeholder="https://... (paste image link)"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
-        />
-        {form.image_url && (
-          <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-            <img src={form.image_url} alt="Preview" className="w-full h-full object-cover" />
-          </div>
-        )}
-      </div>
+      {/* Photo picker */}
+      <PhotoPicker
+        value={form.image_url || null}
+        onChange={(url) => set("image_url", url ?? "")}
+      />
 
       {/* Season Status */}
       <div className="grid grid-cols-2 gap-3">
