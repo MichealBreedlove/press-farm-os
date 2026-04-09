@@ -15,6 +15,7 @@ const NAV_CARDS: NavCard[] = [
   { href: "/admin/items", title: "Item Catalog", description: "Add, edit, and archive items" },
   { href: "/admin/labor", title: "Labor Tracker", description: "Log hours for helpers and team members" },
   { href: "/admin/expenses", title: "Expenses", description: "Track and categorize farm expenses" },
+  { href: "/admin/notes", title: "Notes & Observations", description: "Track field observations and season updates" },
 ];
 
 export default async function AdminSettingsPage() {

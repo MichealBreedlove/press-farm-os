@@ -63,17 +63,17 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
         <div className="flex items-center justify-between mt-2">
           <Link
             href={`/admin/expenses?month=${prevMonth}`}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-gray-900"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-white/70 hover:text-white"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-medium text-gray-900">{monthLabel}</span>
+          <span className="text-sm font-medium text-white">{monthLabel}</span>
           <Link
             href={isCurrentMonth ? "#" : `/admin/expenses?month=${nextMonth}`}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
-              isCurrentMonth ? "text-gray-200" : "text-gray-500 hover:text-gray-900"
+              isCurrentMonth ? "text-white/30" : "text-white/70 hover:text-white"
             }`}
             aria-disabled={isCurrentMonth}
           >
