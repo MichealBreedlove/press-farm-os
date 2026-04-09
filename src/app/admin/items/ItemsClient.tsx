@@ -13,6 +13,7 @@ interface Item {
   unit_type: string;
   default_price: number | null;
   is_archived: boolean;
+  chef_notes: string | null;
 }
 
 interface Props {
@@ -24,6 +25,29 @@ export function ItemsClient({ items }: Props) {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [noteValue, setNoteValue] = useState("");
+  const [savingNote, setSavingNote] = useState<string | null>(null);
+
+  function startEditNote(item: Item) {
+    setEditingNote(item.id);
+    setNoteValue(item.chef_notes ?? "");
+  }
+
+  async function saveNote(itemId: string) {
+    setSavingNote(itemId);
+    try {
+      await fetch(`/api/items/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chef_notes: noteValue || null }),
+      });
+      router.refresh();
+    } finally {
+      setSavingNote(null);
+      setEditingNote(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -99,22 +123,61 @@ export function ItemsClient({ items }: Props) {
                   item.is_archived ? "border-gray-100 opacity-50" : "border-gray-100"
                 }`}
               >
-                <Link
-                  href={`/admin/items/${item.id}`}
-                  className="flex-1 flex items-center gap-3 px-4 py-3 min-h-[48px]"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {item.unit_type.toUpperCase()}
-                      {item.default_price != null && ` · $${item.default_price.toFixed(2)}`}
-                      {item.is_archived && " · Archived"}
-                    </p>
+                <div className="flex-1 px-4 py-3 min-h-[48px]">
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {item.unit_type.toUpperCase()}
+                        {item.default_price != null && ` · $${item.default_price.toFixed(2)}`}
+                        {item.is_archived && " · Archived"}
+                      </p>
+                    </Link>
+                    <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
+                      <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
                   </div>
-                  <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                  {/* Inline chef notes */}
+                  {editingNote === item.id ? (
+                    <div className="mt-1.5 flex gap-1.5">
+                      <input
+                        type="text"
+                        value={noteValue}
+                        onChange={(e) => setNoteValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveNote(item.id); if (e.key === "Escape") setEditingNote(null); }}
+                        placeholder="Chef note..."
+                        autoFocus
+                        className="flex-1 text-xs border border-farm-green rounded-lg px-2 py-1.5 min-h-0 focus:outline-none focus:ring-1 focus:ring-farm-green"
+                      />
+                      <button
+                        onClick={() => saveNote(item.id)}
+                        disabled={savingNote === item.id}
+                        className="text-xs text-white bg-farm-green rounded-lg px-2.5 py-1.5 min-h-0 min-w-0 font-medium disabled:opacity-50"
+                      >
+                        {savingNote === item.id ? "…" : "Save"}
+                      </button>
+                      <button
+                        onClick={() => setEditingNote(null)}
+                        className="text-xs text-gray-400 min-h-0 min-w-0 px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startEditNote(item)}
+                      className="mt-1 text-xs min-h-0 min-w-0 text-left w-full truncate transition-colors"
+                    >
+                      {item.chef_notes ? (
+                        <span className="text-blue-600 italic">{item.chef_notes}</span>
+                      ) : (
+                        <span className="text-gray-300 hover:text-gray-500">+ Add chef note</span>
+                      )}
+                    </button>
+                  )}
+                </div>
                 <button
                   onClick={() => toggleArchive(item)}
                   disabled={archiving === item.id}
