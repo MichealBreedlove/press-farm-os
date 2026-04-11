@@ -17,9 +17,9 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
   useEffect(() => {
     if (open && photos.length === 0) {
       setLoading(true);
-      fetch("/api/photos")
+      fetch("/photo-index.json")
         .then((r) => r.json())
-        .then((data) => setPhotos(data.photos ?? []))
+        .then((data) => setPhotos(Array.isArray(data) ? data : []))
         .finally(() => setLoading(false));
     }
   }, [open]);

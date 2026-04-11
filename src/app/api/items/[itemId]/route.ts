@@ -71,6 +71,9 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.internal_notes !== undefined) updates.internal_notes = body.internal_notes || null;
   if (body.source !== undefined) updates.source = body.source || null;
   if (body.is_archived !== undefined) updates.is_archived = Boolean(body.is_archived);
+  if (body.image_url !== undefined) updates.image_url = body.image_url || null;
+  if (body.season_status !== undefined) updates.season_status = body.season_status || "available";
+  if (body.season_note !== undefined) updates.season_note = body.season_note || null;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
