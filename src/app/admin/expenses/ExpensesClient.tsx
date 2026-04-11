@@ -32,7 +32,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
 
   const [form, setForm] = useState({
     date: `${month}-01`,
-    category: EXPENSE_CATEGORIES[0] as string,
+    categories: [EXPENSE_CATEGORIES[0]] as string[],
     description: "",
     vendor: "",
     amount: "",
@@ -42,16 +42,24 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   const knownVendors = Array.from(new Set(expenses.map((e) => e.vendor).filter(Boolean))) as string[];
 
   function resetForm() {
-    setForm({ date: `${month}-01`, category: EXPENSE_CATEGORIES[0], description: "", vendor: "", amount: "" });
+    setForm({ date: `${month}-01`, categories: [EXPENSE_CATEGORIES[0]], description: "", vendor: "", amount: "" });
     setEditingId(null);
     setShowForm(false);
     setError(null);
   }
 
+  function toggleCategory(cat: string) {
+    setForm((f) => {
+      const has = f.categories.includes(cat);
+      const next = has ? f.categories.filter((c) => c !== cat) : [...f.categories, cat];
+      return { ...f, categories: next.length > 0 ? next : [cat] };
+    });
+  }
+
   function startEdit(exp: Expense) {
     setForm({
       date: exp.date,
-      category: exp.category,
+      categories: exp.category ? exp.category.split(", ") : [EXPENSE_CATEGORIES[0]],
       description: exp.description ?? "",
       vendor: exp.vendor ?? "",
       amount: String(exp.amount),
@@ -68,7 +76,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
     try {
       const body = {
         date: form.date,
-        category: form.category,
+        category: form.categories.join(", "),
         description: form.description || null,
         vendor: form.vendor || null,
         amount: parseFloat(form.amount),
@@ -169,26 +177,39 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
-              <select value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                className="input-field">
-                {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Categories</label>
+            <div className="flex flex-wrap gap-1.5">
+              {EXPENSE_CATEGORIES.map((cat) => {
+                const selected = form.categories.includes(cat);
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
+                      selected
+                        ? "bg-farm-green text-white"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
-              <input type="text" value={form.vendor}
-                onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
-                placeholder="e.g. Amazon, Home Depot"
-                list="vendor-suggestions"
-                className="input-field" />
-              <datalist id="vendor-suggestions">
-                {knownVendors.map((v) => <option key={v} value={v} />)}
-              </datalist>
-            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+            <input type="text" value={form.vendor}
+              onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
+              placeholder="e.g. Amazon, Home Depot"
+              list="vendor-suggestions"
+              className="input-field" />
+            <datalist id="vendor-suggestions">
+              {knownVendors.map((v) => <option key={v} value={v} />)}
+            </datalist>
           </div>
 
           <div>
@@ -216,8 +237,10 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           <div key={exp.id} className="card px-4 py-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="badge-gray">{exp.category}</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {exp.category.split(", ").map((cat) => (
+                    <span key={cat} className="badge-gray">{cat}</span>
+                  ))}
                   {exp.vendor && <span className="text-xs text-blue-600 font-medium">{exp.vendor}</span>}
                   <span className="text-xs text-gray-400">
                     {new Date(exp.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
