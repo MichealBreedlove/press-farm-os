@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Camera, X, Search } from "lucide-react";
+import { Camera, X, Search, Upload } from "lucide-react";
+import { useRef } from "react";
 
 interface PhotoPickerProps {
   value: string | null;
@@ -13,6 +14,27 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) {
+        onChange(data.url);
+        setPhotos((prev) => [data.url, ...prev]);
+        setOpen(false);
+      }
+    } catch {}
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   useEffect(() => {
     if (open && photos.length === 0) {
@@ -89,8 +111,8 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
               </button>
             </div>
 
-            {/* Search */}
-            <div className="px-4 py-2">
+            {/* Search + Upload */}
+            <div className="px-4 py-2 space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -102,6 +124,16 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
                   className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-farm-green hover:text-farm-green transition-colors min-h-0"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? "Uploading..." : "Upload New Photo"}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
             </div>
 
             {/* Photo grid */}

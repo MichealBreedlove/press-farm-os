@@ -74,6 +74,13 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.image_url !== undefined) updates.image_url = body.image_url || null;
   if (body.season_status !== undefined) updates.season_status = body.season_status || "available";
   if (body.season_note !== undefined) updates.season_note = body.season_note || null;
+  if (body.days_to_maturity !== undefined) updates.days_to_maturity = body.days_to_maturity;
+  if (body.sow_depth !== undefined) updates.sow_depth = body.sow_depth || null;
+  if (body.plant_spacing !== undefined) updates.plant_spacing = body.plant_spacing || null;
+  if (body.sun_requirement !== undefined) updates.sun_requirement = body.sun_requirement || null;
+  if (body.sow_method !== undefined) updates.sow_method = body.sow_method || null;
+  if (body.indoor_start_weeks !== undefined) updates.indoor_start_weeks = body.indoor_start_weeks;
+  if (body.growing_notes !== undefined) updates.growing_notes = body.growing_notes || null;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

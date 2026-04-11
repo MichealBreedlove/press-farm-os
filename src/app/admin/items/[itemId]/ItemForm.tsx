@@ -18,6 +18,13 @@ interface Item {
   image_url?: string | null;
   season_status?: string | null;
   season_note?: string | null;
+  days_to_maturity?: number | null;
+  sow_depth?: string | null;
+  plant_spacing?: string | null;
+  sun_requirement?: string | null;
+  sow_method?: string | null;
+  indoor_start_weeks?: number | null;
+  growing_notes?: string | null;
 }
 
 interface Props {
@@ -39,6 +46,13 @@ export function ItemForm({ item }: Props) {
     image_url: item?.image_url ?? "",
     season_status: item?.season_status ?? "available",
     season_note: item?.season_note ?? "",
+    days_to_maturity: item?.days_to_maturity != null ? String(item.days_to_maturity) : "",
+    sow_depth: item?.sow_depth ?? "",
+    plant_spacing: item?.plant_spacing ?? "",
+    sun_requirement: item?.sun_requirement ?? "",
+    sow_method: item?.sow_method ?? "",
+    indoor_start_weeks: item?.indoor_start_weeks != null ? String(item.indoor_start_weeks) : "",
+    growing_notes: item?.growing_notes ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -65,6 +79,13 @@ export function ItemForm({ item }: Props) {
         image_url: form.image_url || null,
         season_status: form.season_status || "available",
         season_note: form.season_note || null,
+        days_to_maturity: form.days_to_maturity ? parseInt(form.days_to_maturity) : null,
+        sow_depth: form.sow_depth || null,
+        plant_spacing: form.plant_spacing || null,
+        sun_requirement: form.sun_requirement || null,
+        sow_method: form.sow_method || null,
+        indoor_start_weeks: form.indoor_start_weeks ? parseInt(form.indoor_start_weeks) : null,
+        growing_notes: form.growing_notes || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -203,6 +224,54 @@ export function ItemForm({ item }: Props) {
         value={form.image_url || null}
         onChange={(url) => set("image_url", url ?? "")}
       />
+
+      {/* Growing Conditions */}
+      <div className="border-t border-gray-100 pt-4 mt-2">
+        <h3 className="font-display text-sm text-farm-dark mb-3">Growing Conditions</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Days to Maturity</label>
+            <input type="number" value={form.days_to_maturity} onChange={(e) => set("days_to_maturity", e.target.value)} placeholder="e.g. 60" className="input-field" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Sow Depth</label>
+            <input type="text" value={form.sow_depth} onChange={(e) => set("sow_depth", e.target.value)} placeholder="e.g. 1/4 in" className="input-field" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Plant Spacing</label>
+            <input type="text" value={form.plant_spacing} onChange={(e) => set("plant_spacing", e.target.value)} placeholder="e.g. 8-12 in" className="input-field" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Sun</label>
+            <select value={form.sun_requirement} onChange={(e) => set("sun_requirement", e.target.value)} className="input-field">
+              <option value="">Not set</option>
+              <option value="full_sun">Full Sun</option>
+              <option value="part_shade">Part Shade</option>
+              <option value="sun_part_shade">Sun/Part Shade</option>
+              <option value="shade">Shade</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Sow Method</label>
+            <select value={form.sow_method} onChange={(e) => set("sow_method", e.target.value)} className="input-field">
+              <option value="">Not set</option>
+              <option value="direct_seed">Direct Seed</option>
+              <option value="transplant">Transplant</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Start Indoors</label>
+            <input type="number" value={form.indoor_start_weeks} onChange={(e) => set("indoor_start_weeks", e.target.value)} placeholder="weeks" className="input-field" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Growing Notes</label>
+          <textarea value={form.growing_notes} onChange={(e) => set("growing_notes", e.target.value)} rows={2} placeholder="Cultivation tips, harvest info..." className="input-field resize-none" />
+        </div>
+      </div>
 
       {/* Season Status */}
       <div className="grid grid-cols-2 gap-3">
