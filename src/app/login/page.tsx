@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 const BANK_GOTHIC: React.CSSProperties = {
@@ -40,6 +41,7 @@ export default function LoginPage() {
       <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
         <div className="w-full max-w-sm text-center space-y-5">
           <div>
+            <Image src="/icon-192.png" alt="Press Farm" width={72} height={72} className="mx-auto mb-4" priority />
             <h1 className="text-2xl font-normal tracking-[0.3em] uppercase text-farm-dark" style={BANK_GOTHIC}>
               PRESS FARM
             </h1>
@@ -64,8 +66,9 @@ export default function LoginPage() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
       <div className="w-full max-w-sm space-y-8">
 
-        {/* Wordmark */}
+        {/* Logo + Wordmark */}
         <div className="text-center space-y-3">
+          <Image src="/icon-192.png" alt="Press Farm" width={80} height={80} className="mx-auto mb-2" priority />
           <h1 className="text-3xl font-normal tracking-[0.35em] uppercase text-farm-dark" style={BANK_GOTHIC}>
             PRESS FARM
           </h1>
