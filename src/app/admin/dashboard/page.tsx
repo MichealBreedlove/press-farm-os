@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -92,15 +91,7 @@ export default async function AdminDashboardPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <div className="flex items-center gap-3">
-          <Image src="/icon-192.png" alt="Press Farm" width={40} height={40} className="rounded-full" />
-          <h1
-            className="text-xl font-normal text-white tracking-wide"
-            style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
-          >
-            PRESS FARM
-          </h1>
-        </div>
+        <h1 className="page-title">Dashboard</h1>
         {nextDeliveryLabel && (
           <p className="text-sm text-green-200 mt-1">
             Next delivery: <span className="font-medium text-white">{nextDeliveryLabel}</span>

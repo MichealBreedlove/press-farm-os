@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/admin/BottomNav";
+import { TopBar } from "@/components/shared/TopBar";
 import type { Profile } from "@/types";
 
 /**
@@ -36,6 +37,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-farm-cream">
+      <TopBar href="/admin/dashboard" />
       {/* Main content — padded bottom for bottom nav */}
       <div className="pb-20">{children}</div>
       <BottomNav />
