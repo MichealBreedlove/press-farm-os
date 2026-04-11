@@ -91,12 +91,7 @@ export default async function AdminDashboardPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <h1
-          className="text-xl font-normal text-white tracking-wide"
-          style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
-        >
-          PRESS FARM
-        </h1>
+        <h1 className="page-title">Dashboard</h1>
         {nextDeliveryLabel && (
           <p className="text-sm text-green-200 mt-1">
             Next delivery: <span className="font-medium text-white">{nextDeliveryLabel}</span>

@@ -207,7 +207,7 @@ export async function POST(request: Request) {
     } else {
       const { data: newDel, error: delErr } = await (admin as any)
         .from("deliveries")
-        .insert({ farm_id: restMatch.farm_id, restaurant_id: restMatch.id, delivery_date: date, status: "finalized" })
+        .insert({ restaurant_id: restMatch.id, delivery_date: date, status: "finalized" })
         .select("id")
         .single();
       if (delErr || !newDel) { lineErrors += lineItems.length; continue; }

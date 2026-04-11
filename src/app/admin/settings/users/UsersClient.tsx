@@ -30,6 +30,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const [form, setForm] = useState({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "" });
   const [inviting, setInviting] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -73,6 +76,31 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       setError(err.message);
     } finally {
       setToggling(null);
+    }
+  }
+
+  async function handleResetPassword(userId: string) {
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to reset password");
+      setSuccess("Password updated successfully");
+      setResetUserId(null);
+      setNewPassword("");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -171,10 +199,11 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
           {chefs.map((u) => (
             <div
               key={u.id}
-              className={`bg-white rounded-xl border p-4 flex items-center gap-3 transition-opacity ${
+              className={`bg-white rounded-xl border p-4 transition-opacity ${
                 u.is_active ? "border-gray-100" : "border-gray-100 opacity-50"
               }`}
             >
+              <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{u.full_name ?? "(No name)"}</p>
                 <p className="text-xs text-gray-400 truncate">{u.email}</p>
@@ -187,15 +216,46 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                   {u.is_active ? "Active" : "Inactive"}
                 </span>
                 {u.id !== currentUserId && (
-                  <button
-                    onClick={() => handleToggle(u)}
-                    disabled={toggling === u.id || isPending}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-gray-700 disabled:opacity-50"
-                  >
-                    {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setResetUserId(resetUserId === u.id ? null : u.id);
+                        setNewPassword("");
+                        setError(null);
+                      }}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-gray-700"
+                    >
+                      {resetUserId === u.id ? "Cancel" : "Reset Pw"}
+                    </button>
+                    <button
+                      onClick={() => handleToggle(u)}
+                      disabled={toggling === u.id || isPending}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-gray-700 disabled:opacity-50"
+                    >
+                      {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                  </>
                 )}
               </div>
+              </div>
+              {resetUserId === u.id && (
+                <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (min 8 chars)"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                  <button
+                    onClick={() => handleResetPassword(u.id)}
+                    disabled={resetting}
+                    className="min-h-[44px] px-4 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {resetting ? "…" : "Set"}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
           {chefs.length === 0 && (

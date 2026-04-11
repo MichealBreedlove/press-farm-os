@@ -46,6 +46,8 @@ export default function RootLayout({
     <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
       <head>
         <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/bank-gothic" />
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>{children}</body>
     </html>

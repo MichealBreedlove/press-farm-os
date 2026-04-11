@@ -20,16 +20,34 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { is_active?: boolean };
+  let body: { is_active?: boolean; password?: string };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
   const { userId } = await params;
   if (userId === user.id) {
-    return NextResponse.json({ error: "Cannot deactivate your own account" }, { status: 400 });
+    return NextResponse.json({ error: "Cannot modify your own account" }, { status: 400 });
   }
 
   const admin = createAdminClient();
+
+  // Update password via Supabase Auth admin API
+  if (body.password) {
+    if (body.password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+    const { error: authError } = await admin.auth.admin.updateUserById(userId, {
+      password: body.password,
+    });
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
+
+    // If only password was sent, return early
+    if (body.is_active === undefined) {
+      return NextResponse.json({ success: true });
+    }
+  }
+
+  // Update profile active status
   const { data: updated, error } = await (admin as any)
     .from("profiles")
     .update({ is_active: body.is_active })
