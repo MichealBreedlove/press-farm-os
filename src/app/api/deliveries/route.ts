@@ -130,17 +130,9 @@ export async function POST(request: Request) {
       .update({ notes: notes ?? null, status: "logged" })
       .eq("id", deliveryId);
   } else {
-    // Get farm_id from restaurant
-    const { data: restaurant } = await (admin as any)
-      .from("restaurants")
-      .select("farm_id")
-      .eq("id", restaurant_id)
-      .single();
-
     const { data: newDelivery, error: deliveryError } = await (admin as any)
       .from("deliveries")
       .insert({
-        farm_id: restaurant.farm_id,
         restaurant_id,
         delivery_date,
         notes: notes ?? null,
