@@ -154,7 +154,8 @@ export async function POST(request: Request) {
     quantity: item.quantity,
     unit: item.unit,
     unit_price: item.unit_price,
-    line_total: Math.round(item.quantity * item.unit_price * 100) / 100,
+    is_bonus: item.is_bonus ?? false,
+    bonus_note: item.bonus_note ?? null,
   }));
 
   const { error: itemsError } = await (admin as any)
