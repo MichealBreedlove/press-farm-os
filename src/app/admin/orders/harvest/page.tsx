@@ -211,31 +211,27 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
               </h2>
 
               {/* Column headers */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 text-xs text-gray-400 font-medium mb-1 px-1">
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 text-xs text-gray-400 font-medium mb-1 px-1">
                 <span>Item</span>
-                <span className="w-10 text-right">Unit</span>
-                <span className="w-14 text-right">Press</span>
-                <span className="w-14 text-right">Und.</span>
-                <span className="w-14 text-right font-semibold">Total</span>
+                <span className="w-10 sm:w-14 text-right">P</span>
+                <span className="w-10 sm:w-14 text-right">U</span>
+                <span className="w-10 sm:w-14 text-right font-semibold">Tot</span>
               </div>
 
               <div className="space-y-0.5">
                 {rows.map((row) => (
                   <div
                     key={row.itemId}
-                    className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center py-2 px-1 rounded-lg odd:bg-gray-50 print:odd:bg-gray-100"
+                    className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-gray-50 print:odd:bg-gray-100"
                   >
                     <span className="text-sm text-gray-900 truncate">{row.name}</span>
-                    <span className="text-xs text-gray-400 w-10 text-right">
-                      {UNIT_LABELS[row.unit] ?? row.unit}
-                    </span>
-                    <span className="text-sm text-gray-600 w-14 text-right tabular-nums">
+                    <span className="text-sm text-gray-600 w-10 sm:w-14 text-right tabular-nums">
                       {row.pressQty != null ? formatQty(row.pressQty) : "—"}
                     </span>
-                    <span className="text-sm text-gray-600 w-14 text-right tabular-nums">
+                    <span className="text-sm text-gray-600 w-10 sm:w-14 text-right tabular-nums">
                       {row.understudyQty != null ? formatQty(row.understudyQty) : "—"}
                     </span>
-                    <span className="text-sm font-bold text-gray-900 w-14 text-right tabular-nums">
+                    <span className="text-sm font-bold text-gray-900 w-10 sm:w-14 text-right tabular-nums">
                       {formatQty(row.total)}
                     </span>
                   </div>

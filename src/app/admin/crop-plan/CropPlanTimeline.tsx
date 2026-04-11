@@ -172,10 +172,10 @@ export function CropPlanTimeline({
       </div>
 
       {/* Gantt Timeline */}
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden overflow-x-auto">
         {/* Month header */}
-        <div className="flex border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
-          <div className="w-40 flex-shrink-0 px-3 py-2 text-xs font-semibold text-gray-500">Crop</div>
+        <div className="flex border-b border-gray-100 bg-gray-50 sticky top-0 z-10 min-w-[600px]">
+          <div className="w-24 sm:w-40 flex-shrink-0 px-3 py-2 text-xs font-semibold text-gray-500">Crop</div>
           <div className="flex-1 flex">
             {MONTHS.map((m) => (
               <div key={m} className="flex-1 text-center py-2 text-[10px] font-medium text-gray-400 border-l border-gray-100">
@@ -205,8 +205,8 @@ export function CropPlanTimeline({
               return (
                 <div key={cropName}>
                   {/* Crop header row */}
-                  <div className="flex items-center hover:bg-gray-50/50 cursor-pointer" onClick={() => toggleExpand(cropName)}>
-                    <div className="w-40 flex-shrink-0 px-3 py-2.5 flex items-center gap-2">
+                  <div className="flex items-center hover:bg-gray-50/50 cursor-pointer min-w-[600px]" onClick={() => toggleExpand(cropName)}>
+                    <div className="w-24 sm:w-40 flex-shrink-0 px-3 py-2.5 flex items-center gap-2">
                       {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-gray-400" /> : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
                       <span className="text-xs font-medium text-farm-dark truncate">{cropName}</span>
                     </div>
@@ -259,10 +259,10 @@ export function CropPlanTimeline({
                   {isExpanded && cropPlantings.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center bg-gray-50/30 hover:bg-gray-100/50 cursor-pointer border-t border-gray-50"
+                      className="flex items-center bg-gray-50/30 hover:bg-gray-100/50 cursor-pointer border-t border-gray-50 min-w-[600px]"
                       onClick={() => setSelectedPlanting(p)}
                     >
-                      <div className="w-40 flex-shrink-0 pl-8 pr-3 py-2">
+                      <div className="w-24 sm:w-40 flex-shrink-0 pl-8 pr-3 py-2">
                         <p className="text-[11px] text-gray-600 truncate">{p.variety || p.crop_name}</p>
                         <p className="text-[9px] text-gray-400">{p.location ?? "No location"}</p>
                       </div>

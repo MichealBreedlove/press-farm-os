@@ -62,7 +62,7 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
       </div>
 
       {/* ── Row 1: KPI strip ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "8px" }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         <KpiCard
           label={latest ? `FY${latest.year} Revenue` : "Revenue"}
           value={latest ? fmtK(latest.revenue) : "—"}
@@ -91,16 +91,16 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
       </div>
 
       {/* ── Row 2: P&L (2/3) + Restaurant & Benchmarks (1/3) ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "8px", marginBottom: "8px" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-2 mb-2">
         <CompactPL years={years} byYear={byYear} />
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div className="flex flex-col gap-2">
           <CompactRestaurant years={years} allRestaurants={allRestaurants} restByYear={restByYear} />
           <CompactBenchmarks years={years} byYear={byYear} />
         </div>
       </div>
 
       {/* ── Row 3: Top items + Expenses (3 col) ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <CompactTopItems items={data.topItemsByRevenue.slice(0, 10)} title="Top 10 by Revenue" sortKey="revenue" />
         <CompactTopItems items={data.topItemsByQty.slice(0, 10)} title="Top 10 by Quantity" sortKey="qty" />
         <CompactExpenses categories={data.expenseCategories} />
@@ -140,7 +140,7 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
   ];
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden text-[11px] print:text-[8px]">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
         <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Annual P&amp;L</span>
         <span className="text-[9px] text-gray-400 print:text-[7px]">All figures USD</span>
@@ -191,7 +191,7 @@ function CompactRestaurant({ years, allRestaurants, restByYear }: {
   years: string[]; allRestaurants: string[]; restByYear: Record<string, Record<string, number>>;
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden text-[11px] print:text-[8px]">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
         <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Revenue by Restaurant</span>
       </div>
@@ -222,7 +222,7 @@ function CompactBenchmarks({ years, byYear }: { years: string[]; byYear: Record<
   ];
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden text-[11px] print:text-[8px]">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
         <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Benchmarks vs Industry</span>
       </div>
@@ -253,7 +253,7 @@ function CompactTopItems({ items, title, sortKey }: {
   items: ExecutiveData["topItemsByRevenue"]; title: string; sortKey: "revenue" | "qty";
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden text-[11px] print:text-[8px]">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
         <span className="font-semibold text-gray-700 text-xs print:text-[8px]">{title}</span>
       </div>
@@ -279,7 +279,7 @@ function CompactTopItems({ items, title, sortKey }: {
 function CompactExpenses({ categories }: { categories: ExecutiveData["expenseCategories"] }) {
   const total = categories.reduce((s, e) => s + e.total, 0);
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden text-[11px] print:text-[8px]">
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex justify-between">
         <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Expenses</span>
         <span className="font-semibold text-red-600 text-xs print:text-[8px]">{fmt(total)}</span>

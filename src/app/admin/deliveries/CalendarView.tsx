@@ -59,11 +59,11 @@ export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
     <div className="card overflow-hidden">
       {/* Month nav */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <button onClick={prev} className="p-2 text-gray-400 hover:text-farm-dark min-h-0 min-w-0">
+        <button onClick={prev} className="p-2 text-gray-400 hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h3 className="font-display text-sm text-farm-dark">{monthLabel}</h3>
-        <button onClick={next} className="p-2 text-gray-400 hover:text-farm-dark min-h-0 min-w-0">
+        <button onClick={next} className="p-2 text-gray-400 hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>

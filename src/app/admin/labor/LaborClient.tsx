@@ -224,7 +224,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
         <p className="text-center text-gray-400 text-sm py-8">No labor entries yet.</p>
       ) : (
         <div className="card overflow-hidden">
-          <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-400 grid grid-cols-[1fr_80px_60px_40px]">
+          <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-400 grid grid-cols-[1fr_60px_44px_44px]">
             <span>Worker</span>
             <span>Date</span>
             <span className="text-right">Hours</span>
@@ -233,7 +233,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="px-4 py-3 border-b border-gray-50 last:border-0 grid grid-cols-[1fr_80px_60px_40px] items-center"
+              className="px-4 py-3 border-b border-gray-50 last:border-0 grid grid-cols-[1fr_60px_44px_44px] items-center"
             >
               <div>
                 <p className="text-sm font-medium text-farm-dark">{entry.worker_name}</p>
