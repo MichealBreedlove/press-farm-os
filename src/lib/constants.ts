@@ -129,6 +129,7 @@ export const EXPENSE_CATEGORIES = [
   "Transport",
   "Supplies",
   "Labor",
+  "Software",
   "Other",
 ] as const;
 
