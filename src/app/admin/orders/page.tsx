@@ -75,15 +75,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   return (
     <main>
       <header className="page-header">
-        <div className="flex items-center justify-between">
-          <h1 className="page-title">Orders</h1>
-          {activeDateRecord && (
-            <OrderingToggle
-              deliveryDateId={activeDateRecord.id}
-              orderingOpen={activeDateRecord.ordering_open}
-            />
-          )}
-        </div>
+        <h1 className="page-title">Orders</h1>
         <DateNav
           currentDate={activeDate}
           prevDate={prevDate}
@@ -164,13 +156,19 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         )}
 
         {/* Actions */}
-        <div className="pt-2">
+        <div className="pt-2 space-y-3">
           <Link
             href={`/admin/orders/harvest?date=${activeDate}`}
             className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
           >
             View Harvest List
           </Link>
+          {activeDateRecord && (
+            <OrderingToggle
+              deliveryDateId={activeDateRecord.id}
+              orderingOpen={activeDateRecord.ordering_open}
+            />
+          )}
         </div>
       </div>
     </main>

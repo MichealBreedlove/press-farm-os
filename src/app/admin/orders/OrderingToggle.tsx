@@ -45,10 +45,10 @@ export function OrderingToggle({ deliveryDateId, orderingOpen }: OrderingToggleP
       <button
         onClick={handleToggle}
         disabled={loading}
-        className={`min-h-[44px] px-4 rounded-xl text-sm font-medium transition-colors disabled:opacity-60 ${
+        className={`w-full min-h-[44px] px-4 rounded-xl text-sm font-medium transition-colors disabled:opacity-60 ${
           open
-            ? "bg-white/20 text-white border border-white/30 hover:bg-white/30"
-            : "bg-white text-farm-green border border-white hover:opacity-90"
+            ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+            : "bg-farm-green-light text-farm-green border border-farm-green/20 hover:opacity-80"
         }`}
       >
         {loading ? "..." : open ? "Close Ordering" : "Open Ordering"}

@@ -82,7 +82,22 @@
 
   /* --- Page headers --- */
   .page-header {
-    @apply bg-farm-green px-4 pt-3 pb-3 z-10 text-white;
+    @apply bg-farm-green px-4 py-3 z-10 text-white relative;
+    padding-right: 48px;
+  }
+  .page-header::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background-image: url("/icon-192.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    opacity: 0.8;
   }
   .page-header .text-gray-500,
   .page-header .text-gray-400,

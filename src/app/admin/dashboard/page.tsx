@@ -91,20 +91,12 @@ export default async function AdminDashboardPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="page-title">Dashboard</h1>
-            {nextDeliveryLabel && (
-              <p className="text-sm text-green-200 mt-0.5">
-                Next delivery: <span className="font-medium text-white">{nextDeliveryLabel}</span>
-              </p>
-            )}
-          </div>
-          <a href="/admin/dashboard" className="flex items-center gap-2 ml-3 flex-shrink-0 min-h-0 opacity-80 hover:opacity-100">
-            <span className="text-[10px] font-normal text-white/70 tracking-[0.15em] uppercase hidden sm:inline" style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}>PRESS FARM</span>
-            <img src="/icon-192.png" alt="Press Farm" width={24} height={24} className="rounded-full" />
-          </a>
-        </div>
+        <h1 className="page-title">Dashboard</h1>
+        {nextDeliveryLabel && (
+          <p className="text-sm text-green-200 mt-0.5">
+            Next delivery: <span className="font-medium text-white">{nextDeliveryLabel}</span>
+          </p>
+        )}
       </header>
 
       <div className="px-4 py-5 space-y-6">
