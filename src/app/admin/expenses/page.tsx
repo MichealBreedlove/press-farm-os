@@ -38,7 +38,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
 
   const { data: expensesRaw } = await (admin as any)
     .from("farm_expenses")
-    .select("id, date, category, description, amount")
+    .select("id, date, category, description, amount, vendor")
     .gte("date", start)
     .lte("date", end)
     .order("date", { ascending: false });
