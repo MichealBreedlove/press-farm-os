@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import FinalizeButton from "./FinalizeButton";
 import { CalendarView } from "./CalendarView";
+import { LogPastDelivery } from "./LogPastDelivery";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -150,6 +151,9 @@ export default async function AdminDeliveriesPage() {
             </div>
           </section>
         )}
+
+        {/* Log past delivery */}
+        <LogPastDelivery />
 
         {/* Delivery history */}
         {Object.keys(grouped).length > 0 && (
