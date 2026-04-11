@@ -48,7 +48,7 @@ export function ItemRow({
       <div className="flex items-center gap-3">
         {/* Item photo */}
         {(item as any).image_url && (
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
             <img
               src={(item as any).image_url}
               alt={item.name}
