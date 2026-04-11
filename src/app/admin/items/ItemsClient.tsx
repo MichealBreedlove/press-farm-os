@@ -129,11 +129,11 @@ export function ItemsClient({ items }: Props) {
                     {/* Photo thumbnail */}
                     <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
                       {item.image_url ? (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100">
                           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center">
                           <span className="text-gray-300 text-lg">🌿</span>
                         </div>
                       )}

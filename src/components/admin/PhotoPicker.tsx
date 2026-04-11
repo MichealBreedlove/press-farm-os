@@ -46,7 +46,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-200 hover:border-farm-green flex items-center justify-center overflow-hidden transition-colors bg-gray-50 min-h-0 min-w-0 relative group"
+        className="w-32 h-32 rounded-xl border-2 border-dashed border-gray-200 hover:border-farm-green flex items-center justify-center overflow-hidden transition-colors bg-gray-50 min-h-0 min-w-0 relative group"
       >
         {value ? (
           <>
@@ -111,7 +111,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
               ) : filtered.length === 0 ? (
                 <p className="text-center text-gray-400 text-sm py-8">No photos found</p>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {filtered.map((photo) => {
                     const isSelected = photo === value;
                     const label = photo
