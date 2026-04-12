@@ -187,19 +187,19 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Sizes (multi-select) */}
+      {/* Sizes (multi-select + custom) */}
       <div>
         <label className="block text-xs font-medium text-gray-500 mb-1.5">Sizes</label>
         <div className="flex flex-wrap gap-1.5">
           {ITEM_SIZES.map((s) => {
-            const sizes = form.size ? form.size.split(", ") : [];
-            const selected = sizes.includes(s.value);
+            const sizes = form.size ? form.size.split(", ").filter(Boolean) : [];
+            const selected = sizes.includes(s.label);
             return (
               <button
                 key={s.value}
                 type="button"
                 onClick={() => {
-                  const next = selected ? sizes.filter((v) => v !== s.value) : [...sizes, s.value];
+                  const next = selected ? sizes.filter((v) => v !== s.label) : [...sizes, s.label];
                   set("size", next.join(", "));
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
@@ -211,6 +211,13 @@ export function ItemForm({ item }: Props) {
             );
           })}
         </div>
+        <input
+          type="text"
+          value={form.size}
+          onChange={(e) => set("size", e.target.value)}
+          placeholder="Or type custom sizes: e.g. Dime - Nickel, Quarter, Palm"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-farm-green text-gray-600"
+        />
       </div>
 
       {/* Default Price */}

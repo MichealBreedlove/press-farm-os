@@ -59,6 +59,22 @@ export const ITEM_SIZES = [
   { value: "small", label: "Small" },
   { value: "medium", label: "Medium" },
   { value: "large", label: "Large" },
+  { value: "dime-nickel", label: "Dime - Nickel" },
+  { value: "quarter", label: "Quarter" },
+  { value: "dollar", label: "Dollar" },
+  { value: "palm", label: "Palm" },
+  { value: "pencil-eraser", label: "Pencil Eraser" },
+  { value: "thumbnail", label: "Thumbnail" },
+  { value: "silver-dollar", label: "Silver Dollar" },
+  { value: "1-inch", label: "1 inch" },
+  { value: "2-inch", label: "2 inch" },
+  { value: "3-inch", label: "3 inch" },
+  { value: "baby", label: "Baby" },
+  { value: "crudite", label: "Crudite" },
+  { value: "micro", label: "Micro" },
+  { value: "microgreen", label: "Microgreen" },
+  { value: "heart-leaf", label: "Heart Leaf" },
+  { value: "palm-size", label: "Palm Size" },
 ] as const;
 
 export type ItemSize = (typeof ITEM_SIZES)[number]["value"];
