@@ -83,6 +83,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.growing_notes !== undefined) updates.growing_notes = body.growing_notes || null;
   if (body.size !== undefined) updates.size = body.size || null;
   if (body.variety !== undefined) updates.variety = body.variety || null;
+  if (body.color !== undefined) updates.color = body.color || null;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

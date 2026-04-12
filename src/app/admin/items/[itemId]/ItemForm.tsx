@@ -27,6 +27,7 @@ interface Item {
   growing_notes?: string | null;
   size?: string | null;
   variety?: string | null;
+  color?: string | null;
 }
 
 interface Props {
@@ -57,6 +58,7 @@ export function ItemForm({ item }: Props) {
     growing_notes: item?.growing_notes ?? "",
     size: item?.size ?? "",
     variety: item?.variety ?? "",
+    color: item?.color ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -92,6 +94,7 @@ export function ItemForm({ item }: Props) {
         growing_notes: form.growing_notes || null,
         size: form.size || null,
         variety: form.variety || null,
+        color: form.color || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -134,8 +137,8 @@ export function ItemForm({ item }: Props) {
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
-      {/* Type + Variety */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Type + Variety + Color */}
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Type *</label>
           <input
@@ -143,7 +146,7 @@ export function ItemForm({ item }: Props) {
             required
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
-            placeholder="e.g. Turnip, Basil, Tomato"
+            placeholder="e.g. Turnip, Basil"
             className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
@@ -153,7 +156,17 @@ export function ItemForm({ item }: Props) {
             type="text"
             value={form.variety}
             onChange={(e) => set("variety", e.target.value)}
-            placeholder="e.g. Hakurei, Genovese"
+            placeholder="e.g. Hakurei"
+            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
+          <input
+            type="text"
+            value={form.color}
+            onChange={(e) => set("color", e.target.value)}
+            placeholder="e.g. Purple, Red"
             className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
