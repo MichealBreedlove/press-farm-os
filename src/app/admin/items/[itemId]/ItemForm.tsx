@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ITEM_CATEGORIES, UNIT_TYPES, SEASON_STATUSES } from "@/lib/constants";
+import { ITEM_CATEGORIES, UNIT_TYPES, SEASON_STATUSES, ITEM_SIZES } from "@/lib/constants";
 import { PhotoPicker } from "@/components/admin/PhotoPicker";
 
 interface Item {
@@ -25,6 +25,8 @@ interface Item {
   sow_method?: string | null;
   indoor_start_weeks?: number | null;
   growing_notes?: string | null;
+  size?: string | null;
+  variety?: string | null;
 }
 
 interface Props {
@@ -53,6 +55,8 @@ export function ItemForm({ item }: Props) {
     sow_method: item?.sow_method ?? "",
     indoor_start_weeks: item?.indoor_start_weeks != null ? String(item.indoor_start_weeks) : "",
     growing_notes: item?.growing_notes ?? "",
+    size: item?.size ?? "",
+    variety: item?.variety ?? "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -86,6 +90,8 @@ export function ItemForm({ item }: Props) {
         sow_method: form.sow_method || null,
         indoor_start_weeks: form.indoor_start_weeks ? parseInt(form.indoor_start_weeks) : null,
         growing_notes: form.growing_notes || null,
+        size: form.size || null,
+        variety: form.variety || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -128,17 +134,29 @@ export function ItemForm({ item }: Props) {
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
-      {/* Name */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Item Name *</label>
-        <input
-          type="text"
-          required
-          value={form.name}
-          onChange={(e) => set("name", e.target.value)}
-          placeholder="e.g. Nasturtium, Basil, Heirloom Tomato"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
-        />
+      {/* Type + Variety */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Type *</label>
+          <input
+            type="text"
+            required
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="e.g. Turnip, Basil, Tomato"
+            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Variety</label>
+          <input
+            type="text"
+            value={form.variety}
+            onChange={(e) => set("variety", e.target.value)}
+            placeholder="e.g. Hakurei, Genovese"
+            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          />
+        </div>
       </div>
 
       {/* Category */}
@@ -165,6 +183,21 @@ export function ItemForm({ item }: Props) {
         >
           {UNIT_TYPES.map((u) => (
             <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Size */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 mb-1">Size</label>
+        <select
+          value={form.size}
+          onChange={(e) => set("size", e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+        >
+          <option value="">No size</option>
+          {ITEM_SIZES.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
       </div>

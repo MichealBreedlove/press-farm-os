@@ -54,6 +54,15 @@ export const SEASON_STATUSES: { value: string; label: string; color: string }[] 
 // Unit Types
 // ============================================
 
+export const ITEM_SIZES = [
+  { value: "tiny", label: "Tiny" },
+  { value: "small", label: "Small" },
+  { value: "medium", label: "Medium" },
+  { value: "large", label: "Large" },
+] as const;
+
+export type ItemSize = (typeof ITEM_SIZES)[number]["value"];
+
 export const UNIT_TYPES: { value: UnitType; label: string; description: string }[] = [
   { value: "ea", label: "EA", description: "Each" },
   { value: "sm", label: "SM", description: "Small To Go" },
