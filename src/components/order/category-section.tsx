@@ -11,23 +11,25 @@ interface CategorySectionProps {
   items: AvailabilityItemWithItem[];
   quantities: Record<string, number>;
   itemNotes: Record<string, string>;
+  itemSizes: Record<string, string>;
+  itemColors: Record<string, string>;
   onQuantityChange: (id: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
+  onSizeChange: (id: string, size: string) => void;
+  onColorChange: (id: string, color: string) => void;
 }
 
-/**
- * CategorySection — collapsible category of items in the chef order form.
- *
- * Shows category name + item count badge. Expands to show ItemRow list.
- * Defaults to expanded.
- */
 export function CategorySection({
   category,
   items,
   quantities,
   itemNotes,
+  itemSizes,
+  itemColors,
   onQuantityChange,
   onNoteChange,
+  onSizeChange,
+  onColorChange,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -67,8 +69,12 @@ export function CategorySection({
               availabilityItem={item}
               quantity={quantities[item.id] ?? 0}
               itemNote={itemNotes[item.id] ?? ""}
+              selectedSize={itemSizes[item.id] ?? ""}
+              selectedColor={itemColors[item.id] ?? ""}
               onQuantityChange={onQuantityChange}
               onNoteChange={onNoteChange}
+              onSizeChange={onSizeChange}
+              onColorChange={onColorChange}
             />
           ))}
         </div>

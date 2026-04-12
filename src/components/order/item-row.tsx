@@ -8,8 +8,12 @@ interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
   quantity: number;
   itemNote: string;
+  selectedSize: string;
+  selectedColor: string;
   onQuantityChange: (id: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
+  onSizeChange: (id: string, size: string) => void;
+  onColorChange: (id: string, color: string) => void;
 }
 
 /**
@@ -23,8 +27,12 @@ export function ItemRow({
   availabilityItem,
   quantity,
   itemNote,
+  selectedSize,
+  selectedColor,
   onQuantityChange,
   onNoteChange,
+  onSizeChange,
+  onColorChange,
 }: ItemRowProps) {
   const { item, status, limited_qty, cycle_notes } = availabilityItem;
   const isUnavailable = status === "unavailable";
@@ -87,14 +95,46 @@ export function ItemRow({
           {(item as any).season_note && (
             <p className="text-xs text-orange-500 mt-0.5 truncate">{(item as any).season_note}</p>
           )}
-          {/* Size and Color info */}
-          {((item as any).size || (item as any).color) && (
+          {/* Size selector — show when item has sizes and qty > 0 */}
+          {(item as any).size && quantity > 0 && (
+            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+              <span className="text-[10px] text-gray-400 mr-0.5">Size:</span>
+              {(item as any).size.split(", ").map((s: string) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onSizeChange(availabilityItem.id, selectedSize === s ? "" : s)}
+                  className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
+                    selectedSize === s ? "bg-farm-green text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >{s}</button>
+              ))}
+            </div>
+          )}
+          {/* Color selector — show when item has colors and qty > 0 */}
+          {(item as any).color && quantity > 0 && (
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              <span className="text-[10px] text-gray-400 mr-0.5">Color:</span>
+              {(item as any).color.split(", ").map((c: string) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => onColorChange(availabilityItem.id, selectedColor === c ? "" : c)}
+                  className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
+                    selectedColor === c ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                  }`}
+                >{c}</button>
+              ))}
+            </div>
+          )}
+          {/* Show available sizes/colors as preview when qty = 0 */}
+          {((item as any).size || (item as any).color) && quantity === 0 && (
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {(item as any).size && (item as any).size.split(", ").map((s: string) => (
-                <span key={s} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{s}</span>
+                <span key={s} className="text-[10px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded">{s}</span>
               ))}
               {(item as any).color && (
-                <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">{(item as any).color}</span>
+                <span className="text-[10px] bg-purple-50/50 text-purple-400 px-1.5 py-0.5 rounded">{(item as any).color}</span>
               )}
             </div>
           )}
