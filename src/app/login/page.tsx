@@ -68,7 +68,7 @@ export default function LoginPage() {
 
         {/* Logo + Wordmark */}
         <div className="text-center space-y-3">
-          <Image src="/icon-192.png" alt="Press Farm" width={80} height={80} className="mx-auto mb-2 rounded-full" priority />
+          <Image src="/icon-192.png" alt="Press Farm" width={80} height={80} className="mx-auto mb-2 rounded-full border-2 border-black" priority />
           <h1 className="text-3xl font-normal tracking-[0.35em] uppercase text-farm-dark" style={BANK_GOTHIC}>
             PRESS FARM
           </h1>
