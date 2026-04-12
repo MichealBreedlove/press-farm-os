@@ -11,12 +11,8 @@ interface CategorySectionProps {
   items: AvailabilityItemWithItem[];
   quantities: Record<string, number>;
   itemNotes: Record<string, string>;
-  itemSizes: Record<string, string>;
-  itemColors: Record<string, string>;
-  onQuantityChange: (id: string, qty: number) => void;
+  onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
-  onSizeChange: (id: string, size: string) => void;
-  onColorChange: (id: string, color: string) => void;
 }
 
 export function CategorySection({
@@ -24,16 +20,16 @@ export function CategorySection({
   items,
   quantities,
   itemNotes,
-  itemSizes,
-  itemColors,
   onQuantityChange,
   onNoteChange,
-  onSizeChange,
-  onColorChange,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
-  const orderedCount = items.filter((i) => (quantities[i.id] ?? 0) > 0).length;
+  const orderedCount = items.filter((i) => {
+    if ((quantities[i.id] ?? 0) > 0) return true;
+    const sizes = (i.item as any).size ? (i.item as any).size.split(", ") : [];
+    return sizes.some((s: string) => (quantities[`${i.id}__${s}`] ?? 0) > 0);
+  }).length;
 
   return (
     <section className="mb-4">
@@ -67,14 +63,10 @@ export function CategorySection({
             <ItemRow
               key={item.id}
               availabilityItem={item}
-              quantity={quantities[item.id] ?? 0}
+              quantities={quantities}
               itemNote={itemNotes[item.id] ?? ""}
-              selectedSize={itemSizes[item.id] ?? ""}
-              selectedColor={itemColors[item.id] ?? ""}
               onQuantityChange={onQuantityChange}
               onNoteChange={onNoteChange}
-              onSizeChange={onSizeChange}
-              onColorChange={onColorChange}
             />
           ))}
         </div>

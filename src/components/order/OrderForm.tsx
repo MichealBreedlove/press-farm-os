@@ -47,8 +47,6 @@ export function OrderForm({
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [itemSizes, setItemSizes] = useState<Record<string, string>>({});
-  const [itemColors, setItemColors] = useState<Record<string, string>>({});
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
 
   // Filter to only available/limited items
@@ -63,31 +61,61 @@ export function OrderForm({
     {} as Record<ItemCategory, AvailabilityItemWithItem[]>
   );
 
-  function handleQuantityChange(id: string, qty: number) {
-    setQuantities((prev) => ({ ...prev, [id]: qty }));
+  function handleQuantityChange(key: string, qty: number) {
+    setQuantities((prev) => ({ ...prev, [key]: qty }));
   }
 
   function handleNoteChange(id: string, note: string) {
     setItemNotes((prev) => ({ ...prev, [id]: note }));
   }
 
-  const hasAnyOrdered = visibleItems.some((ai) => (quantities[ai.id] ?? 0) > 0);
+  // Check if any item has quantity > 0 (direct or size-specific keys)
+  const hasAnyOrdered = visibleItems.some((ai) => {
+    if ((quantities[ai.id] ?? 0) > 0) return true;
+    const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ") : [];
+    return sizes.some((s: string) => (quantities[`${ai.id}__${s}`] ?? 0) > 0);
+  });
 
   function handleReview() {
-    const orderedItems = visibleItems
-      .filter((ai) => (quantities[ai.id] ?? 0) > 0)
-      .map((ai) => ({
-        availabilityItemId: ai.id,
-        itemName: ai.item.name,
-        unitType: ai.item.unit_type,
-        quantity: quantities[ai.id],
-        unitPrice: ai.item.default_price ?? null,
-        itemNote: [
-          itemSizes[ai.id] ? `Size: ${itemSizes[ai.id]}` : "",
-          itemColors[ai.id] ? `Color: ${itemColors[ai.id]}` : "",
-          itemNotes[ai.id] ?? "",
-        ].filter(Boolean).join(" | "),
-      }));
+    const orderedItems: {
+      availabilityItemId: string; itemName: string; unitType: string;
+      quantity: number; unitPrice: number | null; itemNote: string;
+    }[] = [];
+
+    for (const ai of visibleItems) {
+      const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
+      const note = itemNotes[ai.id] ?? "";
+
+      if (sizes.length > 0) {
+        // Create one order item per size that has quantity > 0
+        for (const size of sizes) {
+          const qty = quantities[`${ai.id}__${size}`] ?? 0;
+          if (qty > 0) {
+            orderedItems.push({
+              availabilityItemId: ai.id,
+              itemName: `${ai.item.name} (${size})`,
+              unitType: ai.item.unit_type,
+              quantity: qty,
+              unitPrice: ai.item.default_price ?? null,
+              itemNote: note,
+            });
+          }
+        }
+      } else {
+        // No sizes — single quantity
+        const qty = quantities[ai.id] ?? 0;
+        if (qty > 0) {
+          orderedItems.push({
+            availabilityItemId: ai.id,
+            itemName: ai.item.name,
+            unitType: ai.item.unit_type,
+            quantity: qty,
+            unitPrice: ai.item.default_price ?? null,
+            itemNote: note,
+          });
+        }
+      }
+    }
 
     const formData: OrderFormData = {
       restaurantId,
@@ -127,12 +155,8 @@ export function OrderForm({
                   items={catItems}
                   quantities={quantities}
                   itemNotes={itemNotes}
-                  itemSizes={itemSizes}
-                  itemColors={itemColors}
                   onQuantityChange={handleQuantityChange}
                   onNoteChange={handleNoteChange}
-                  onSizeChange={(id, size) => setItemSizes((prev) => ({ ...prev, [id]: size }))}
-                  onColorChange={(id, color) => setItemColors((prev) => ({ ...prev, [id]: color }))}
                 />
               );
             })}
