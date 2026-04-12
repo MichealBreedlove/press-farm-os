@@ -145,6 +145,11 @@ export default async function OrderPage({
         source,
         is_archived,
         sort_order,
+        image_url,
+        season_status,
+        season_note,
+        size,
+        color,
         created_at,
         updated_at
       )

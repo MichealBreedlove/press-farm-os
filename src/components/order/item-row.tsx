@@ -87,6 +87,17 @@ export function ItemRow({
           {(item as any).season_note && (
             <p className="text-xs text-orange-500 mt-0.5 truncate">{(item as any).season_note}</p>
           )}
+          {/* Size and Color info */}
+          {((item as any).size || (item as any).color) && (
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {(item as any).size && (item as any).size.split(", ").map((s: string) => (
+                <span key={s} className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{s}</span>
+              ))}
+              {(item as any).color && (
+                <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">{(item as any).color}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quantity stepper */}

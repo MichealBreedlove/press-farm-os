@@ -171,7 +171,7 @@ export default function OrderReviewPage() {
       </div>
 
       {/* Sticky action buttons */}
-      <div className="fixed bottom-0 inset-x-0 bg-white shadow-nav px-4 py-4 safe-area-bottom">
+      <div className="fixed bottom-16 inset-x-0 bg-white shadow-nav px-4 py-3 z-40">
         <div className="flex gap-3">
           <button
             onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}

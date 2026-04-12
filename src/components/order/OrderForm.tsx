@@ -152,8 +152,8 @@ export function OrderForm({
         )}
       </div>
 
-      {/* Sticky review button */}
-      <div className="fixed bottom-0 inset-x-0 bg-white shadow-nav px-4 py-4 safe-area-bottom">
+      {/* Sticky review button — above ChefNav (h-16 = 64px) */}
+      <div className="fixed bottom-16 inset-x-0 bg-white shadow-nav px-4 py-3 z-40">
         <button
           type="button"
           onClick={handleReview}
