@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { SuggestionBoxClient } from "./SuggestionBoxClient";
 
@@ -6,6 +7,16 @@ export default async function SuggestionsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const admin = createAdminClient();
+
+  const { data: suggestions } = await (admin as any)
+    .from("suggestions")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const farmId = farms?.[0]?.id ?? "";
 
   return (
     <main className="pb-24">
@@ -20,7 +31,7 @@ export default async function SuggestionsPage() {
         </div>
       </header>
       <div className="px-4 py-6">
-        <SuggestionBoxClient />
+        <SuggestionBoxClient suggestions={suggestions ?? []} farmId={farmId} />
       </div>
     </main>
   );
