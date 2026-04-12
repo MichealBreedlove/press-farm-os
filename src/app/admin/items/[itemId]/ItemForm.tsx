@@ -187,19 +187,30 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Size */}
+      {/* Sizes (multi-select) */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Size</label>
-        <select
-          value={form.size}
-          onChange={(e) => set("size", e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
-        >
-          <option value="">No size</option>
-          {ITEM_SIZES.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </select>
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">Sizes</label>
+        <div className="flex flex-wrap gap-1.5">
+          {ITEM_SIZES.map((s) => {
+            const sizes = form.size ? form.size.split(", ") : [];
+            const selected = sizes.includes(s.value);
+            return (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => {
+                  const next = selected ? sizes.filter((v) => v !== s.value) : [...sizes, s.value];
+                  set("size", next.join(", "));
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
+                  selected ? "bg-farm-green text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Default Price */}
