@@ -8,8 +8,10 @@ interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
   quantities: Record<string, number>; // keyed by availId or availId__size
   itemNote: string;
+  selectedColor: string;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
+  onColorChange: (id: string, color: string) => void;
 }
 
 function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
@@ -32,8 +34,10 @@ export function ItemRow({
   availabilityItem,
   quantities,
   itemNote,
+  selectedColor,
   onQuantityChange,
   onNoteChange,
+  onColorChange,
 }: ItemRowProps) {
   const { item, status, limited_qty, cycle_notes } = availabilityItem;
   const isUnavailable = status === "unavailable";
@@ -78,11 +82,24 @@ export function ItemRow({
           {!cycle_notes && item.chef_notes && <p className="text-xs text-gray-400 italic mt-0.5 truncate">{item.chef_notes}</p>}
           {(item as any).season_note && <p className="text-xs text-orange-500 mt-0.5 truncate">{(item as any).season_note}</p>}
 
-          {/* Color preview */}
-          {colors.length > 0 && (
+          {/* Color selector — selectable when qty > 0, preview when 0 */}
+          {colors.length > 0 && totalQty > 0 && (
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              <span className="text-[10px] text-gray-400 mr-0.5">Color:</span>
+              {colors.map((c: string) => (
+                <button key={c} type="button"
+                  onClick={() => onColorChange(availabilityItem.id, selectedColor === c ? "" : c)}
+                  className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
+                    selectedColor === c ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                  }`}
+                >{c}</button>
+              ))}
+            </div>
+          )}
+          {colors.length > 0 && totalQty === 0 && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {colors.map((c: string) => (
-                <span key={c} className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">{c}</span>
+                <span key={c} className="text-[10px] bg-purple-50/50 text-purple-400 px-1.5 py-0.5 rounded">{c}</span>
               ))}
             </div>
           )}

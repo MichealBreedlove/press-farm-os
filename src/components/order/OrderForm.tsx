@@ -47,6 +47,7 @@ export function OrderForm({
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
+  const [itemColors, setItemColors] = useState<Record<string, string>>({});
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
 
   // Filter to only available/limited items
@@ -84,7 +85,8 @@ export function OrderForm({
 
     for (const ai of visibleItems) {
       const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
-      const note = itemNotes[ai.id] ?? "";
+      const colorNote = itemColors[ai.id] ? `Color: ${itemColors[ai.id]}` : "";
+      const note = [colorNote, itemNotes[ai.id] ?? ""].filter(Boolean).join(" | ");
 
       if (sizes.length > 0) {
         // Create one order item per size that has quantity > 0
@@ -155,8 +157,10 @@ export function OrderForm({
                   items={catItems}
                   quantities={quantities}
                   itemNotes={itemNotes}
+                  itemColors={itemColors}
                   onQuantityChange={handleQuantityChange}
                   onNoteChange={handleNoteChange}
+                  onColorChange={(id, color) => setItemColors((prev) => ({ ...prev, [id]: color }))}
                 />
               );
             })}

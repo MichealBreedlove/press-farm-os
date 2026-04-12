@@ -11,8 +11,10 @@ interface CategorySectionProps {
   items: AvailabilityItemWithItem[];
   quantities: Record<string, number>;
   itemNotes: Record<string, string>;
+  itemColors: Record<string, string>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
+  onColorChange: (id: string, color: string) => void;
 }
 
 export function CategorySection({
@@ -20,8 +22,10 @@ export function CategorySection({
   items,
   quantities,
   itemNotes,
+  itemColors,
   onQuantityChange,
   onNoteChange,
+  onColorChange,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -65,8 +69,10 @@ export function CategorySection({
               availabilityItem={item}
               quantities={quantities}
               itemNote={itemNotes[item.id] ?? ""}
+              selectedColor={itemColors[item.id] ?? ""}
               onQuantityChange={onQuantityChange}
               onNoteChange={onNoteChange}
+              onColorChange={onColorChange}
             />
           ))}
         </div>
