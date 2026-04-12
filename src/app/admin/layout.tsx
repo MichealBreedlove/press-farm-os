@@ -42,7 +42,7 @@ export default async function AdminLayout({
         className="fixed top-3 right-3 z-20 flex items-center gap-1.5 opacity-85 hover:opacity-100 transition-opacity min-h-0 min-w-0"
       >
         <span
-          className="text-[9px] text-white/70 tracking-[0.15em] uppercase"
+          className="text-lg text-white/70 tracking-[0.15em] uppercase"
           style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
         >
           PRESS FARM
