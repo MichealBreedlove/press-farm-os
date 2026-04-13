@@ -37,12 +37,17 @@ export async function POST(request: Request) {
   let body: {
     restaurant_id: string;
     delivery_date: string;
+    restaurantId?: string;
+    date?: string;
     items: Array<{
       item_id: string;
       status: string;
       limited_qty?: number | null;
       cycle_notes?: string | null;
+      available_sizes?: string | null;
+      available_colors?: string | null;
     }>;
+    allItemIds?: string[];
   };
 
   try {
@@ -51,7 +56,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { restaurant_id, delivery_date, items } = body;
+  // Support both naming conventions from client
+  const restaurant_id = body.restaurant_id || body.restaurantId;
+  const delivery_date = body.delivery_date || body.date;
+  const { items } = body;
 
   if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
     return NextResponse.json(
@@ -81,6 +89,8 @@ export async function POST(request: Request) {
     status: item.status as "available" | "limited" | "unavailable",
     limited_qty: item.limited_qty ?? null,
     cycle_notes: item.cycle_notes ?? null,
+    available_sizes: item.available_sizes ?? null,
+    available_colors: item.available_colors ?? null,
     updated_at: new Date().toISOString(),
   }));
 

@@ -75,7 +75,7 @@ export default async function AdminAvailabilityEditorPage({
   // Fetch existing availability_items for this date across all restaurants
   const { data: rawAvailability, error: availError } = await supabase
     .from("availability_items")
-    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, created_at, updated_at")
+    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, created_at, updated_at")
     .eq("delivery_date", date);
   const availability: AvailabilityItem[] = rawAvailability ?? [];
 

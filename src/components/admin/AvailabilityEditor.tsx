@@ -13,6 +13,8 @@ interface ItemState {
   status: AvailabilityStatus;
   limited_qty: string; // string for controlled input
   cycle_notes: string;
+  available_sizes: string | null;  // comma-separated, null = all
+  available_colors: string | null; // comma-separated, null = all
 }
 
 type ItemStates = Record<string, ItemState>; // keyed by item_id
@@ -40,6 +42,8 @@ function buildInitialState(items: Item[], availability: AvailabilityItem[]): Ite
       status: existing?.status ?? "unavailable",
       limited_qty: existing?.limited_qty != null ? String(existing.limited_qty) : "",
       cycle_notes: existing?.cycle_notes ?? "",
+      available_sizes: (existing as any)?.available_sizes ?? null,
+      available_colors: (existing as any)?.available_colors ?? null,
     };
   }
   return state;
@@ -135,6 +139,26 @@ export function AvailabilityEditor({
     });
   }
 
+  function toggleSizeColor(itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) {
+    setAllStates((prev) => {
+      const current = prev[activeRestaurantId]?.[itemId];
+      if (!current) return prev;
+      const selected = current[field] === null
+        ? new Set(allValues)
+        : new Set(current[field]!.split(",").filter(Boolean));
+      if (selected.has(value)) selected.delete(value);
+      else selected.add(value);
+      const newVal = selected.size === allValues.length ? null : Array.from(selected).join(",");
+      return {
+        ...prev,
+        [activeRestaurantId]: {
+          ...prev[activeRestaurantId],
+          [itemId]: { ...current, [field]: newVal },
+        },
+      };
+    });
+  }
+
   function handleSave() {
     setSaveError(null);
     setSaveSuccess(false);
@@ -152,6 +176,8 @@ export function AvailabilityEditor({
               ? Number(s.limited_qty)
               : null,
           cycle_notes: s.cycle_notes || null,
+          available_sizes: s.available_sizes || null,
+          available_colors: s.available_colors || null,
         })),
       };
 
@@ -284,6 +310,50 @@ export function AvailabilityEditor({
                           <p className="text-xs text-gray-400">
                             {UNIT_LABELS[item.unit_type]}
                           </p>
+                          {/* Toggleable sizes */}
+                          {(item as any).size && (() => {
+                            const allSizes = ((item as any).size as string).split(", ").filter(Boolean);
+                            const sel = state.available_sizes === null
+                              ? new Set(allSizes)
+                              : new Set(state.available_sizes.split(",").filter(Boolean));
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-gray-400">Sizes:</span>
+                                {allSizes.map((s: string) => (
+                                  <button key={s} type="button"
+                                    onClick={() => toggleSizeColor(item.id, "available_sizes", s, allSizes)}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
+                                      sel.has(s)
+                                        ? "bg-farm-green text-white"
+                                        : "bg-gray-100 text-gray-400 line-through"
+                                    }`}
+                                  >{s}</button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                          {/* Toggleable colors */}
+                          {(item as any).color && (() => {
+                            const allColors = ((item as any).color as string).split(", ").filter(Boolean);
+                            const sel = state.available_colors === null
+                              ? new Set(allColors)
+                              : new Set(state.available_colors.split(",").filter(Boolean));
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-gray-400">Colors:</span>
+                                {allColors.map((c: string) => (
+                                  <button key={c} type="button"
+                                    onClick={() => toggleSizeColor(item.id, "available_colors", c, allColors)}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
+                                      sel.has(c)
+                                        ? "bg-purple-600 text-white"
+                                        : "bg-gray-100 text-gray-400 line-through"
+                                    }`}
+                                  >{c}</button>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Status toggle */}
