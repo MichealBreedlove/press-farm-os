@@ -22,7 +22,20 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
       <button type="button" onClick={() => onChange(Math.max(0, value - 1))} disabled={disabled || value <= 0}
         className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Decrease ${label}`}>&minus;</button>
-      <span className="w-8 text-center text-sm font-semibold text-gray-900 select-none">{value}</span>
+      <input
+        type="number"
+        min="0"
+        max={maxQty}
+        value={value || ""}
+        onChange={(e) => {
+          const v = parseInt(e.target.value) || 0;
+          onChange(Math.max(0, Math.min(v, maxQty)));
+        }}
+        disabled={disabled}
+        className="w-12 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-farm-green min-h-0"
+        placeholder="0"
+        aria-label={`Quantity for ${label}`}
+      />
       <button type="button" onClick={() => onChange(Math.min(maxQty, value + 1))} disabled={disabled || value >= maxQty}
         className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Increase ${label}`}>+</button>
@@ -61,7 +74,7 @@ export function ItemRow({
       <div className="flex items-center gap-3">
         {/* Photo */}
         {(item as any).image_url && (
-          <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+          <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
             <img src={(item as any).image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
           </div>
         )}
@@ -70,7 +83,7 @@ export function ItemRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-gray-900">{item.name}</span>
-            <span className="text-xs text-gray-400 flex-shrink-0">{UNIT_LABELS[item.unit_type]}</span>
+            <span className="text-xs text-gray-400 flex-shrink-0">{UNIT_LABELS[item.unit_type]} container</span>
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}

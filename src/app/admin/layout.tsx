@@ -39,7 +39,7 @@ export default async function AdminLayout({
       {/* Brand badge — fixed position, same spot on every page */}
       <a
         href="/admin/dashboard"
-        className="fixed top-3 right-3 z-20 flex items-center gap-1.5 opacity-85 hover:opacity-100 transition-opacity min-h-0 min-w-0"
+        className="fixed top-3 right-3 z-50 flex items-center gap-1.5 opacity-90 hover:opacity-100 transition-opacity min-h-0 min-w-0"
       >
         <span
           className="text-lg text-white/70 tracking-[0.15em] uppercase"
@@ -47,7 +47,7 @@ export default async function AdminLayout({
         >
           PRESS FARM
         </span>
-        <img src="/icon-192.png" alt="Press Farm" width={22} height={22} className="rounded-full" />
+        <img src="/icon-192.png" alt="Press Farm" width={22} height={22} className="rounded-full border border-black" />
       </a>
       {/* Main content — padded bottom for bottom nav */}
       <div className="pb-20">{children}</div>

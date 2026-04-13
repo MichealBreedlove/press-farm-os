@@ -107,7 +107,6 @@ export default async function AdminAvailabilityEditorPage({
               </span>
             </p>
           </div>
-          <SendAvailabilityButton date={date} itemCount={availability.length} />
         </div>
       </header>
 
@@ -117,6 +116,10 @@ export default async function AdminAvailabilityEditorPage({
         date={date}
         restaurants={restaurants}
       />
+
+      <div className="px-4 pb-24 pt-4">
+        <SendAvailabilityButton date={date} itemCount={availability.length} />
+      </div>
     </main>
   );
 }

@@ -122,35 +122,23 @@ export default function OrderReviewPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{item.itemName}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType}
-                      {item.unitPrice !== null && (
-                        <span className="ml-1">· {formatCurrency(item.unitPrice)} each</span>
-                      )}
+                      {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-semibold text-gray-900">
                       &times; {item.quantity}
                     </p>
-                    {item.unitPrice !== null && (
-                      <p className="text-xs text-gray-500">
-                        {formatCurrency(item.unitPrice * item.quantity)}
-                      </p>
-                    )}
                   </div>
                 </div>
               </li>
             ))}
           </ul>
 
-          {/* Total row */}
+          {/* Item count */}
           <div className="px-4 py-3 border-t border-gray-100 flex justify-between items-center">
-            <span className="text-sm font-semibold text-gray-700">
-              {hasPrices ? "Estimated Total" : "Total"}
-            </span>
-            <span className="text-base font-bold text-gray-900">
-              {hasPrices ? formatCurrency(total) : "—"}
-            </span>
+            <span className="text-sm font-semibold text-gray-700">Total Items</span>
+            <span className="text-base font-bold text-gray-900">{items.length}</span>
           </div>
         </div>
 

@@ -42,7 +42,7 @@ export function SendAvailabilityButton({ date, itemCount }: { date: string; item
       <button
         onClick={handleSend}
         disabled={sending || itemCount === 0}
-        className="flex items-center gap-1.5 bg-white text-farm-green text-xs font-medium rounded-lg px-3 py-1.5 min-h-0 hover:bg-green-50 transition-colors disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-1.5 bg-farm-green text-white text-sm font-medium rounded-xl px-4 py-3 min-h-[44px] hover:bg-farm-green-dark transition-colors disabled:opacity-50"
       >
         <Send className="w-3.5 h-3.5" />
         {sending ? "Sending..." : "Email Chefs"}
