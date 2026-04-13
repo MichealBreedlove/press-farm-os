@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const BUCKET = "item-photos";
 
 /**
- * POST /api/upload — Upload a photo to public/items/
+ * POST /api/upload — Upload a photo to Supabase Storage
  * Accepts multipart form data with a "file" field.
- * Returns the public URL path.
- *
- * Note: On Vercel, this writes to /tmp and returns a data URL.
- * For production, use Supabase Storage instead.
+ * Returns the public URL.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -31,7 +29,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Only image files allowed" }, { status: 400 });
     }
 
-    // Generate filename
+    // Validate size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+    }
+
+    // Generate a clean filename
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const cleanName = file.name
       .replace(/\.[^.]+$/, "")
@@ -39,32 +42,31 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]/g, "-")
       .replace(/-+/g, "-")
       .slice(0, 50);
-    const filename = `upload-${cleanName}-${Date.now()}.${ext}`;
+    const filename = `${cleanName}-${Date.now()}.${ext}`;
+    const storagePath = `items/${filename}`;
 
-    // Read file bytes
+    // Upload to Supabase Storage using admin client (bypasses RLS)
+    const admin = createAdminClient();
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
-    // Write to public/items/ (works locally, on Vercel use tmp)
-    const dir = path.join(process.cwd(), "public", "items");
-    try {
-      await mkdir(dir, { recursive: true });
-    } catch {}
+    const { data, error } = await admin.storage
+      .from(BUCKET)
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-    const filePath = path.join(dir, filename);
-    await writeFile(filePath, buffer);
+    if (error) {
+      console.error("Storage upload error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
-    // Also update the photo-index.json
-    const indexPath = path.join(process.cwd(), "public", "photo-index.json");
-    try {
-      const { readFile } = await import("fs/promises");
-      const existing = JSON.parse(await readFile(indexPath, "utf8"));
-      existing.push("/items/" + filename);
-      existing.sort();
-      await writeFile(indexPath, JSON.stringify(existing));
-    } catch {}
+    // Get public URL
+    const { data: urlData } = admin.storage
+      .from(BUCKET)
+      .getPublicUrl(data.path);
 
-    return NextResponse.json({ url: "/items/" + filename });
+    return NextResponse.json({ url: urlData.publicUrl });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
