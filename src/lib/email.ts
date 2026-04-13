@@ -73,15 +73,20 @@ async function sendOrLog(params: {
     return;
   }
 
+  // Use verified domain sender, or fallback to Resend's test address
+  const fromAddress = process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
+
   try {
-    const { error } = await getResendClient().emails.send({
-      from: FROM_EMAIL,
+    const { data: sendData, error } = await getResendClient().emails.send({
+      from: fromAddress,
       to,
       subject,
       react,
     });
     if (error) {
-      console.error("[EMAIL ERROR]", error);
+      console.error("[EMAIL ERROR]", JSON.stringify(error));
+    } else {
+      console.log("[EMAIL] Sent successfully:", sendData?.id, "to:", to);
     }
   } catch (err) {
     console.error("[EMAIL ERROR] Unexpected error sending email:", err);

@@ -130,7 +130,7 @@ export async function POST(request: Request) {
     const toEmail = settings?.value || ADMIN_EMAIL;
 
     await resend.emails.send({
-      from: "Press Farm <orders@pressfarm.app>",
+      from: process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.app>",
       to: toEmail,
       subject,
       text: body,

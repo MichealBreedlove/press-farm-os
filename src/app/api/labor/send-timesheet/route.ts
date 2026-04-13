@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: "Press Farm <orders@pressfarm.app>",
+      from: process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.app>",
       to: toEmail,
       subject: `Timesheet for week of ${weekLabel}`,
       text: body,

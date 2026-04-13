@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       const resend = new Resend(process.env.RESEND_API_KEY);
 
       await resend.emails.send({
-        from: "Press Farm <orders@pressfarm.app>",
+        from: process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.app>",
         to: email,
         subject: `New Availability — ${formattedDate}`,
         text: `Hi ${chefProfile.full_name},\n\nAvailability has been posted for ${restaurant.name} on ${formattedDate}. ${itemCount} items available.\n\nPlace your order at ${process.env.NEXT_PUBLIC_APP_URL}/order${seasonSection}\n\n— Press Farm`,
