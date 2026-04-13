@@ -12,7 +12,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   const normalized = name.toLowerCase().replace(/[-\s]/g, "");
 
   if (normalized === "press") {
-    const height = size === "sm" ? 14 : size === "lg" ? 24 : 18;
+    const height = size === "sm" ? 10 : size === "lg" ? 18 : 13;
     const width = Math.round(height * (472 / 49));
     return (
       <Image
@@ -40,7 +40,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   }
 
   if (normalized === "events") {
-    const px = size === "sm" ? 16 : size === "lg" ? 28 : 22;
+    const px = size === "sm" ? 9 : size === "lg" ? 16 : 12;
     return (
       <span
         className="font-normal text-farm-dark tracking-[0.25em] uppercase"
