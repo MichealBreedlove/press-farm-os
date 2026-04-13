@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { SendDigestButton } from "./SendDigestButton";
 import {
   ClipboardList,
   CalendarDays,
@@ -25,6 +26,10 @@ interface DashCard {
   color: string;
 }
 
+function formatCurrency(n: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,25 +37,34 @@ export default async function AdminDashboardPage() {
 
   const admin = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
+  const currentMonth = today.slice(0, 7);
+  const monthStart = `${currentMonth}-01`;
+  const [y, m] = currentMonth.split("-").map(Number);
+  const monthEnd = `${currentMonth}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
 
-  // Quick stats for the header
-  const { count: pendingOrders } = await (admin as any)
-    .from("orders")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "submitted");
-
-  const { data: nextDate } = await (admin as any)
-    .from("delivery_dates")
-    .select("date")
-    .gte("date", today)
-    .order("date", { ascending: true })
-    .limit(1)
-    .single();
+  // Parallel data fetches for stats
+  const [
+    { count: pendingOrders },
+    { data: nextDate },
+    { data: monthDeliveries },
+    { data: monthExpenses },
+    { data: weekLabor },
+  ] = await Promise.all([
+    (admin as any).from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    (admin as any).from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
+    (admin as any).from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
+    (admin as any).from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
+    (admin as any).from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
+  ]);
 
   const nextDeliveryDate = nextDate?.date;
   const nextDeliveryLabel = nextDeliveryDate
     ? new Date(nextDeliveryDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
     : null;
+
+  const monthRevenue = (monthDeliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
+  const monthExpenseTotal = (monthExpenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);
+  const weekLaborHours = (weekLabor ?? []).reduce((s: number, l: any) => s + (l.hours ?? 0), 0);
 
   const sections: { title: string; cards: DashCard[] }[] = [
     {
@@ -88,6 +102,8 @@ export default async function AdminDashboardPage() {
     },
   ];
 
+  const monthName = new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
+
   return (
     <main className="pb-24">
       <header className="page-header">
@@ -100,6 +116,33 @@ export default async function AdminDashboardPage() {
       </header>
 
       <div className="px-4 py-5 space-y-6">
+        {/* Live stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/admin/deliveries" className="card-interactive p-4">
+            <p className="text-xs text-gray-400">{monthName} Revenue</p>
+            <p className="text-2xl font-bold text-farm-green mt-1">{formatCurrency(monthRevenue)}</p>
+            <p className="text-[10px] text-gray-400 mt-1">{(monthDeliveries ?? []).length} deliveries</p>
+          </Link>
+          <Link href="/admin/expenses" className="card-interactive p-4">
+            <p className="text-xs text-gray-400">{monthName} Expenses</p>
+            <p className="text-2xl font-bold text-red-500 mt-1">{formatCurrency(monthExpenseTotal)}</p>
+            <p className="text-[10px] text-gray-400 mt-1">{(monthExpenses ?? []).length} entries</p>
+          </Link>
+          <Link href="/admin/orders" className="card-interactive p-4">
+            <p className="text-xs text-gray-400">Pending Orders</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{pendingOrders ?? 0}</p>
+            <p className="text-[10px] text-gray-400 mt-1">awaiting fulfillment</p>
+          </Link>
+          <Link href="/admin/labor" className="card-interactive p-4">
+            <p className="text-xs text-gray-400">Labor (7 days)</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{weekLaborHours.toFixed(1)}h</p>
+            <p className="text-[10px] text-gray-400 mt-1">this week</p>
+          </Link>
+        </div>
+
+        {/* Quick actions */}
+        <SendDigestButton />
+
         {sections.map((section) => (
           <div key={section.title}>
             <h2 className="font-display text-sm text-gray-500 uppercase tracking-wider mb-3">

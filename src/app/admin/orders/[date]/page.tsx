@@ -220,7 +220,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
               {/* Actions */}
               <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                 {order.status !== "fulfilled" && order.status !== "cancelled" ? (
-                  <FulfillButton orderId={order.id} />
+                  <FulfillButton orderId={order.id} currentStatus={order.status} />
                 ) : (
                   <span />
                 )}
