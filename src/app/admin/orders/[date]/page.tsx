@@ -3,6 +3,7 @@ import { formatDeliveryDate, formatQty } from "@/lib/utils";
 import { UNIT_LABELS, ORDER_STATUS_LABELS, CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
+import { ShortageEditor } from "./ShortageEditor";
 import Link from "next/link";
 import type { ItemCategory } from "@/types";
 
@@ -198,6 +199,23 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   );
                 })}
               </div>
+
+              {/* Shortage editor */}
+              {order.status !== "fulfilled" && order.status !== "cancelled" && (order.order_items?.length ?? 0) > 0 && (
+                <div className="px-4 py-3 border-t border-gray-100">
+                  <ShortageEditor
+                    orderId={order.id}
+                    orderItems={(order.order_items ?? []).map((oi: any) => ({
+                      id: oi.id,
+                      itemName: oi.availability_item?.item?.name ?? "Unknown item",
+                      unit: UNIT_LABELS[oi.availability_item?.item?.unit_type as keyof typeof UNIT_LABELS] ?? "",
+                      quantityRequested: oi.quantity_requested,
+                      quantityFulfilled: oi.quantity_fulfilled,
+                      isShorted: oi.is_shorted,
+                    }))}
+                  />
+                </div>
+              )}
 
               {/* Actions */}
               <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">

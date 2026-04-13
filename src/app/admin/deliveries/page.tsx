@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import FinalizeButton from "./FinalizeButton";
 import { CalendarView } from "./CalendarView";
 import { LogPastDelivery } from "./LogPastDelivery";
+import { GenerateDatesButton } from "./GenerateDatesButton";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -152,7 +153,8 @@ export default async function AdminDeliveriesPage() {
           </section>
         )}
 
-        {/* Log past delivery */}
+        {/* Generate delivery dates + Log past delivery */}
+        <GenerateDatesButton />
         <LogPastDelivery />
 
         {/* Delivery history */}

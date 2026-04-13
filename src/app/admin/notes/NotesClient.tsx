@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 
 interface Note {
@@ -18,55 +19,50 @@ const NOTE_CATEGORIES = [
   { value: "general", label: "General" },
 ];
 
-// Simple localStorage-based notes for MVP
-// Can be migrated to a DB table later
-const STORAGE_KEY = "press_farm_notes";
-
-function loadNotes(): Note[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveNotes(notes: Note[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-}
-
-export function NotesClient() {
-  const [notes, setNotes] = useState<Note[]>([]);
+export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
+  const router = useRouter();
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [text, setText] = useState("");
   const [category, setCategory] = useState("observation");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [filter, setFilter] = useState("all");
 
-  useEffect(() => {
-    setNotes(loadNotes());
-  }, []);
-
-  function addNote() {
+  async function addNote() {
     if (!text.trim()) return;
-    const newNote: Note = {
-      id: Date.now().toString(),
-      date,
-      text: text.trim(),
-      category,
-    };
-    const updated = [newNote, ...notes];
-    setNotes(updated);
-    saveNotes(updated);
-    setText("");
-    setShowForm(false);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, text: text.trim(), category }),
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        setNotes((prev) => [data, ...prev]);
+        setText("");
+        setShowForm(false);
+        router.refresh();
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function deleteNote(id: string) {
-    const updated = notes.filter((n) => n.id !== id);
-    setNotes(updated);
-    saveNotes(updated);
+  async function deleteNote(id: string) {
+    if (!confirm("Delete this note?")) return;
+    try {
+      const res = await fetch(`/api/notes/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setNotes((prev) => prev.filter((n) => n.id !== id));
+        router.refresh();
+      }
+    } catch {
+      // Silently fail
+    }
   }
 
   const filtered = filter === "all" ? notes : notes.filter((n) => n.category === filter);
@@ -157,7 +153,9 @@ export function NotesClient() {
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={addNote} className="btn-primary flex-1">Save</button>
+            <button onClick={addNote} disabled={saving} className="btn-primary flex-1">
+              {saving ? "Saving..." : "Save"}
+            </button>
             <button onClick={() => setShowForm(false)} className="btn-ghost flex-1">Cancel</button>
           </div>
         </div>

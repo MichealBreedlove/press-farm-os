@@ -9,10 +9,10 @@ export default async function AdminNotesPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-
-  // Notes are stored in a simple table — for now we'll use farm_expenses description
-  // as a proxy, but ideally we'd have a notes table. Let's check if one exists.
-  // For MVP, we'll create a client-side notes system using localStorage + future DB table.
+  const { data: notes } = await (admin as any)
+    .from("farm_notes")
+    .select("id, date, text, category")
+    .order("date", { ascending: false });
 
   return (
     <main className="pb-24">
@@ -21,7 +21,7 @@ export default async function AdminNotesPage() {
         <p className="text-sm text-white/60">Track what you see in the field</p>
       </header>
       <div className="px-4 py-6">
-        <NotesClient />
+        <NotesClient initialNotes={notes ?? []} />
       </div>
     </main>
   );
