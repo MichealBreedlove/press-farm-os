@@ -181,6 +181,23 @@ export default function AvailabilityEditorClient({
     }
   }
 
+  async function handleCopyToRestaurant() {
+    const otherRestaurants = restaurants.filter((r) => r.id !== activeRestaurantId);
+    if (otherRestaurants.length === 0) return;
+    const target = otherRestaurants.length === 1
+      ? otherRestaurants[0]
+      : otherRestaurants.find((r) => confirm(`Copy availability to ${r.name}?`));
+    if (!target) return;
+
+    const currentAvail = availMaps[activeRestaurantId] ?? {};
+    const newMap: AvailMap = {};
+    for (const [itemId, val] of Object.entries(currentAvail)) {
+      newMap[itemId] = { ...val };
+    }
+    setAvailMaps((prev) => ({ ...prev, [target.id]: newMap }));
+    alert(`Copied to ${target.name}. Click Save to apply.`);
+  }
+
   async function handleToggleOrdering() {
     await fetch(`/api/availability/ordering`, {
       method: "POST",
@@ -323,10 +340,19 @@ export default function AvailabilityEditorClient({
           <button
             onClick={handleDuplicateLast}
             disabled={saving}
-            className="flex-1 bg-white border border-gray-200 text-gray-700 text-sm font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+            className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
           >
             Duplicate Last
           </button>
+          {restaurants.length > 1 && (
+            <button
+              onClick={handleCopyToRestaurant}
+              disabled={saving}
+              className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+            >
+              Copy to Other
+            </button>
+          )}
           <button
             onClick={handlePublish}
             disabled={saving}
