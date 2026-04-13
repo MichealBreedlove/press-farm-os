@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Roboto, Baskervville } from "next/font/google";
+import { ServiceWorkerRegistrar } from "@/components/shared/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -49,7 +50,10 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorkerRegistrar />
+      </body>
     </html>
   );
 }

@@ -14,27 +14,34 @@ function formatDate(d: string) {
 }
 
 /**
- * POST /api/reports/weekly-digest — Send weekly summary email to admin
+ * GET /api/reports/weekly-digest — Vercel Cron trigger
+ * POST /api/reports/weekly-digest — Manual trigger from dashboard
  *
- * Can be triggered manually from dashboard or via cron/scheduled task.
- * Summarizes: deliveries, revenue, expenses, labor, top items for the past 7 days.
+ * Summarizes: deliveries, revenue, expenses, labor for the past 7 days.
  */
-export async function POST(request: Request) {
-  // Auth check — allow both admin users and cron (via secret header)
-  const cronSecret = request.headers.get("x-cron-secret");
-  const isCron = cronSecret === process.env.CRON_SECRET;
-
-  if (!isCron) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { data: profile } = await (supabase as any)
-      .from("profiles").select("role").eq("id", user.id).single();
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+export async function GET(request: Request) {
+  // Vercel Cron sends authorization header
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  return sendDigest();
+}
+
+export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if (!profile || profile.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return sendDigest();
+}
+
+async function sendDigest() {
 
   const admin = createAdminClient();
 
