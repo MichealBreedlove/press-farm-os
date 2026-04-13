@@ -40,7 +40,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   }
 
   if (normalized === "events") {
-    const px = size === "sm" ? 14 : size === "lg" ? 24 : 18;
+    const px = size === "sm" ? 17 : size === "lg" ? 28 : 22;
     return (
       <span
         className="font-normal text-farm-dark tracking-[0.25em] uppercase"
