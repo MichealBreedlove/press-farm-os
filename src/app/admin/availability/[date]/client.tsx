@@ -10,6 +10,8 @@ interface Item {
   category: ItemCategory;
   unit_type: string;
   chef_notes: string | null;
+  size?: string | null;
+  color?: string | null;
 }
 
 interface Restaurant {
@@ -292,6 +294,16 @@ export default function AvailabilityEditorClient({
                           {item.name}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5 uppercase">{item.unit_type}</p>
+                        {(item.size || item.color) && (
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {item.size && item.size.split(", ").map((s) => (
+                              <span key={s} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{s}</span>
+                            ))}
+                            {item.color && item.color.split(", ").map((c) => (
+                              <span key={c} className="text-[9px] bg-purple-50 text-purple-500 px-1.5 py-0.5 rounded">{c}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => toggleStatus(item.id)}

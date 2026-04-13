@@ -166,20 +166,18 @@ export async function POST(request: Request) {
   // Load restaurants for name → id matching
   const { data: allRestaurants } = await (admin as any)
     .from("restaurants")
-    .select("id, name, farm_id");
-  const restaurantByName: Record<string, { id: string; farm_id: string }> = {};
+    .select("id, name");
+  const restaurantByName: Record<string, { id: string }> = {};
   for (const r of allRestaurants ?? []) {
-    restaurantByName[r.name.toLowerCase().trim()] = { id: r.id, farm_id: r.farm_id };
-    // Also try partial matches (e.g. "Press" matches "The Press")
+    restaurantByName[r.name.toLowerCase().trim()] = { id: r.id };
     const words = r.name.toLowerCase().split(/\s+/);
     for (const w of words) {
       if (w.length > 3 && !restaurantByName[w]) {
-        restaurantByName[w] = { id: r.id, farm_id: r.farm_id };
+        restaurantByName[w] = { id: r.id };
       }
     }
   }
 
-  // Fallback: use first restaurant
   const fallbackRestaurant = allRestaurants?.[0];
 
   let importedDeliveries = 0;
@@ -189,7 +187,7 @@ export async function POST(request: Request) {
   for (const [, lineItems] of Object.entries(grouped)) {
     const { date, restaurant } = lineItems[0];
     const restKey = restaurant.toLowerCase().trim();
-    const restMatch = restaurantByName[restKey] ?? (fallbackRestaurant ? { id: fallbackRestaurant.id, farm_id: fallbackRestaurant.farm_id } : null);
+    const restMatch = restaurantByName[restKey] ?? (fallbackRestaurant ? { id: fallbackRestaurant.id } : null);
     if (!restMatch) { lineErrors += lineItems.length; continue; }
 
     // Upsert delivery
@@ -225,7 +223,6 @@ export async function POST(request: Request) {
           quantity: li.quantity,
           unit: li.unit,
           unit_price: li.unitPrice,
-          line_total: Math.round(li.lineTotal * 100) / 100,
         };
       })
       .filter(Boolean);

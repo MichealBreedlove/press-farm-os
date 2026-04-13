@@ -51,7 +51,7 @@ export default async function AdminAvailabilityEditorPage({
   // Fetch all non-archived items, ordered by sort_order + name
   const { data: rawItems, error: itemsError } = await supabase
     .from("items")
-    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, created_at, updated_at")
+    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, size, color, created_at, updated_at")
     .eq("is_archived", false)
     .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name", { ascending: true });
