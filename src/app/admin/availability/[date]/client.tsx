@@ -200,6 +200,40 @@ export default function AvailabilityEditorClient({
     alert(`Copied to ${target.name}. Click Save to apply.`);
   }
 
+  async function handlePublishToAll() {
+    if (!confirm("Save and publish this availability to ALL restaurants?")) return;
+    setSaving(true);
+    try {
+      for (const r of restaurants) {
+        // Use current restaurant's availability for all
+        const map = availMaps[activeRestaurantId] ?? {};
+        const body = {
+          date,
+          restaurantId: r.id,
+          items: Object.entries(map).map(([itemId, v]) => ({
+            item_id: itemId,
+            status: v.status,
+            limited_qty: v.limited_qty ? parseFloat(v.limited_qty) : null,
+            cycle_notes: v.cycle_notes || null,
+          })),
+          allItemIds: items.map((i) => i.id),
+        };
+        const res = await fetch("/api/availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`Failed for ${r.name}`);
+      }
+      setSaved(true);
+    } catch (err) {
+      alert("Publish to all failed. Please try again.");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleToggleOrdering() {
     await fetch(`/api/availability/ordering`, {
       method: "POST",
@@ -346,25 +380,9 @@ export default function AvailabilityEditorClient({
         )}
       </div>
 
-      {/* Footer actions */}
-      <div className="sticky bottom-20 px-4 pb-4 pt-2 bg-gradient-to-t from-gray-50 to-transparent">
+      {/* Footer actions — fixed above bottom nav */}
+      <div className="fixed bottom-16 inset-x-0 px-4 py-3 bg-white shadow-nav z-40 space-y-2">
         <div className="flex gap-2">
-          <button
-            onClick={handleDuplicateLast}
-            disabled={saving}
-            className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
-          >
-            Duplicate Last
-          </button>
-          {restaurants.length > 1 && (
-            <button
-              onClick={handleCopyToRestaurant}
-              disabled={saving}
-              className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
-            >
-              Copy to Other
-            </button>
-          )}
           <button
             onClick={handlePublish}
             disabled={saving}
@@ -372,15 +390,42 @@ export default function AvailabilityEditorClient({
               saved ? "bg-farm-green-dark" : "bg-farm-green"
             }`}
           >
-            {saving ? "Saving..." : saved ? "✓ Saved" : "Save Availability"}
+            {saving ? "Saving..." : saved ? "✓ Saved" : "Save"}
+          </button>
+          {restaurants.length > 1 && (
+            <button
+              onClick={handlePublishToAll}
+              disabled={saving}
+              className="flex-1 bg-farm-green text-white text-sm font-medium py-3 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {saving ? "..." : "Save & Publish to All"}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleDuplicateLast}
+            disabled={saving}
+            className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
+          >
+            Duplicate Last
+          </button>
+          {restaurants.length > 1 && (
+            <button
+              onClick={handleCopyToRestaurant}
+              disabled={saving}
+              className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
+            >
+              Copy to Other
+            </button>
+          )}
+          <button
+            onClick={handleToggleOrdering}
+            className="flex-1 border border-gray-200 bg-white text-xs font-medium py-2.5 rounded-xl text-gray-600"
+          >
+            {orderingOpen ? "Close Ordering" : "Open Ordering"}
           </button>
         </div>
-        <button
-          onClick={handleToggleOrdering}
-          className="w-full mt-2 border border-gray-200 bg-white text-xs font-medium py-2.5 rounded-xl text-gray-500 active:scale-95 transition-transform"
-        >
-          {orderingOpen ? "Close Ordering for Chefs" : "Open Ordering for Chefs"}
-        </button>
       </div>
     </div>
   );

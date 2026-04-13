@@ -117,9 +117,8 @@ export default async function AdminAvailabilityEditorPage({
         restaurants={restaurants}
       />
 
-      <div className="px-4 pb-24 pt-4">
-        <SendAvailabilityButton date={date} itemCount={availability.length} />
-      </div>
+      {/* Spacer for fixed footer */}
+      <div className="h-40" />
     </main>
   );
 }
