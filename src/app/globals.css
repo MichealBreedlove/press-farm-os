@@ -89,7 +89,7 @@
   .page-header::before {
     content: "PRESS FARM";
     position: absolute;
-    right: 40px;
+    right: 56px;
     top: 50%;
     transform: translateY(-50%);
     font-family: 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif;
