@@ -83,17 +83,31 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 110px;
+    padding-right: 160px;
   }
-  /* Brand badge in header — scrolls with page */
+  /* "PRESS FARM" text in header */
+  .page-header::before {
+    content: "PRESS FARM";
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+  }
+  /* Olive branch icon in header */
   .page-header::after {
     content: "";
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     background-image: url("/icon-192.png");
     background-size: contain;
     background-repeat: no-repeat;
