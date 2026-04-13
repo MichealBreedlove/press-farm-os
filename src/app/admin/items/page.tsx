@@ -22,21 +22,19 @@ export default async function AdminItemsPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <div className="flex items-center justify-between">
-          <h1 className="page-title">Item Catalog</h1>
-          <Link
-            href="/admin/items/new"
-            className="min-h-[36px] px-4 flex items-center border-2 border-white text-white rounded-lg text-sm font-semibold hover:bg-white hover:text-farm-green transition-colors"
-          >
-            + Add Item
-          </Link>
-        </div>
+        <h1 className="page-title">Item Catalog</h1>
         <p className="text-xs text-gray-400 mt-1">
           {items.filter((i: any) => !i.is_archived).length} active items
         </p>
       </header>
 
-      <div className="px-4 py-6">
+      <div className="px-4 py-4">
+        <Link
+          href="/admin/items/new"
+          className="btn-primary w-full flex items-center justify-center gap-2 mb-4 text-sm font-semibold"
+        >
+          + Add Item
+        </Link>
         <ItemsClient items={items} />
       </div>
     </main>
