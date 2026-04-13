@@ -121,47 +121,56 @@ export default async function OrderPage({
   }
 
   // Fetch availability items for this date + restaurant (exclude unavailable)
+  const availSelect = `
+    id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
+    available_sizes, available_colors, created_at, updated_at,
+    item:items(
+      id, farm_id, name, category, unit_type, default_price, chef_notes,
+      internal_notes, source, is_archived, sort_order, image_url,
+      season_status, season_note, size, color, created_at, updated_at
+    )
+  `;
+
   const { data: rawItems } = await supabase
     .from("availability_items")
-    .select(`
-      id,
-      item_id,
-      restaurant_id,
-      delivery_date,
-      status,
-      limited_qty,
-      cycle_notes,
-      created_at,
-      updated_at,
-      item:items(
-        id,
-        farm_id,
-        name,
-        category,
-        unit_type,
-        default_price,
-        chef_notes,
-        internal_notes,
-        source,
-        is_archived,
-        sort_order,
-        image_url,
-        season_status,
-        season_note,
-        size,
-        color,
-        created_at,
-        updated_at
-      )
-    `)
+    .select(availSelect)
     .eq("delivery_date", deliveryDate.date)
     .eq("restaurant_id", restaurant.id)
     .neq("status", "unavailable")
     .order("item(sort_order)", { ascending: true }) as any;
 
-  const availabilityItems: AvailabilityItemWithItem[] = (rawItems ?? []).filter(
-    (ai: any) => ai.item && !ai.item.is_archived
-  );
+  // Also fetch Events availability (if chef's restaurant isn't Events)
+  // So Press/Under-Study chefs can order Events items too
+  let eventsItems: any[] = [];
+  const isEvents = restaurant.name.toLowerCase().includes("event");
+  if (!isEvents) {
+    const { data: eventsRestaurant } = await supabase
+      .from("restaurants")
+      .select("id")
+      .ilike("name", "%event%")
+      .single() as any;
+
+    if (eventsRestaurant) {
+      const { data: rawEventsItems } = await supabase
+        .from("availability_items")
+        .select(availSelect)
+        .eq("delivery_date", deliveryDate.date)
+        .eq("restaurant_id", eventsRestaurant.id)
+        .neq("status", "unavailable")
+        .order("item(sort_order)", { ascending: true }) as any;
+
+      // Only include Events items that aren't already in the restaurant's own list
+      const ownItemIds = new Set((rawItems ?? []).map((ai: any) => ai.item_id));
+      eventsItems = (rawEventsItems ?? [])
+        .filter((ai: any) => ai.item && !ai.item.is_archived && !ownItemIds.has(ai.item_id))
+        .map((ai: any) => ({ ...ai, _isEventsItem: true }));
+    }
+  }
+
+  const availabilityItems: AvailabilityItemWithItem[] = [
+    ...(rawItems ?? []).filter((ai: any) => ai.item && !ai.item.is_archived),
+    ...eventsItems,
+  ];
 
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
   const isEditing = editOrderId && targetDate === deliveryDate.date;

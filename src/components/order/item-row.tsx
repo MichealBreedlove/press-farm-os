@@ -84,6 +84,7 @@ export function ItemRow({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-gray-900">{item.name}</span>
             <span className="text-xs text-gray-400 flex-shrink-0">{UNIT_LABELS[item.unit_type]} container</span>
+            {(availabilityItem as any)._isEventsItem && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">Events</span>}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}

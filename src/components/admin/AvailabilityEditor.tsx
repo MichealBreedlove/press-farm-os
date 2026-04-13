@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import type { Item, AvailabilityItem, Restaurant } from "@/types";
 import type { AvailabilityStatus, ItemCategory } from "@/types/database";
 import { CATEGORY_ORDER, CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
@@ -11,13 +11,16 @@ import { CATEGORY_ORDER, CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
 
 interface ItemState {
   status: AvailabilityStatus;
-  limited_qty: string; // string for controlled input
+  limited_qty: string;
   cycle_notes: string;
-  available_sizes: string | null;  // comma-separated, null = all
-  available_colors: string | null; // comma-separated, null = all
+  available_sizes: string | null;
+  available_colors: string | null;
 }
 
-type ItemStates = Record<string, ItemState>; // keyed by item_id
+type ItemStates = Record<string, ItemState>;
+
+// Override = only the fields that differ from base
+type Overrides = Record<string, Record<string, Partial<ItemState>>>;
 
 interface AvailabilityEditorProps {
   items: Item[];
@@ -26,231 +29,326 @@ interface AvailabilityEditorProps {
   restaurants: Restaurant[];
 }
 
+const DEFAULT_STATE: ItemState = {
+  status: "unavailable",
+  limited_qty: "",
+  cycle_notes: "",
+  available_sizes: null,
+  available_colors: null,
+};
+
 // ============================================
 // Helpers
 // ============================================
 
-function buildInitialState(items: Item[], availability: AvailabilityItem[]): ItemStates {
+function buildStatesForRestaurant(items: Item[], availability: AvailabilityItem[]): ItemStates {
   const availMap: Record<string, AvailabilityItem> = {};
-  for (const a of availability) {
-    availMap[a.item_id] = a;
-  }
+  for (const a of availability) availMap[a.item_id] = a;
   const state: ItemStates = {};
   for (const item of items) {
-    const existing = availMap[item.id];
+    const e = availMap[item.id];
     state[item.id] = {
-      status: existing?.status ?? "unavailable",
-      limited_qty: existing?.limited_qty != null ? String(existing.limited_qty) : "",
-      cycle_notes: existing?.cycle_notes ?? "",
-      available_sizes: (existing as any)?.available_sizes ?? null,
-      available_colors: (existing as any)?.available_colors ?? null,
+      status: e?.status ?? "unavailable",
+      limited_qty: e?.limited_qty != null ? String(e.limited_qty) : "",
+      cycle_notes: e?.cycle_notes ?? "",
+      available_sizes: (e as any)?.available_sizes ?? null,
+      available_colors: (e as any)?.available_colors ?? null,
     };
   }
   return state;
 }
 
-function StatusToggle({
-  value,
-  onChange,
-}: {
-  value: AvailabilityStatus;
-  onChange: (v: AvailabilityStatus) => void;
-}) {
+function statesEqual(a: ItemState | undefined, b: ItemState | undefined): boolean {
+  if (!a || !b) return false;
+  return a.status === b.status
+    && a.limited_qty === b.limited_qty
+    && a.cycle_notes === b.cycle_notes
+    && a.available_sizes === b.available_sizes
+    && a.available_colors === b.available_colors;
+}
+
+// Derive base (most common state) and overrides from per-restaurant states
+function deriveBaseAndOverrides(
+  allStates: Record<string, ItemStates>,
+  restaurants: Restaurant[],
+  items: Item[]
+): { base: ItemStates; overrides: Overrides } {
+  const base: ItemStates = {};
+  const overrides: Overrides = {};
+  restaurants.forEach(r => { overrides[r.id] = {}; });
+
+  for (const item of items) {
+    // Use first restaurant's state as base
+    const firstState = allStates[restaurants[0]?.id]?.[item.id] ?? DEFAULT_STATE;
+    base[item.id] = { ...firstState };
+
+    // Check if other restaurants differ
+    for (const r of restaurants.slice(1)) {
+      const rState = allStates[r.id]?.[item.id] ?? DEFAULT_STATE;
+      if (!statesEqual(firstState, rState)) {
+        overrides[r.id][item.id] = { ...rState };
+      }
+    }
+  }
+  return { base, overrides };
+}
+
+function StatusToggle({ value, onChange }: { value: AvailabilityStatus; onChange: (v: AvailabilityStatus) => void }) {
   const options: { value: AvailabilityStatus; label: string; activeClass: string }[] = [
     { value: "available", label: "✓", activeClass: "bg-farm-green text-white" },
     { value: "limited", label: "⚠", activeClass: "bg-yellow-500 text-white" },
     { value: "unavailable", label: "✗", activeClass: "bg-gray-300 text-gray-600" },
   ];
-
   return (
     <div className="inline-flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
       {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          className={`min-w-[44px] min-h-[44px] px-3 text-sm font-bold transition-colors ${
-            value === opt.value
-              ? opt.activeClass
-              : "bg-white text-gray-400 hover:bg-gray-50 active:bg-gray-100"
+        <button key={opt.value} type="button" onClick={() => onChange(opt.value)}
+          className={`min-w-[36px] min-h-[36px] px-2 text-sm font-bold transition-colors ${
+            value === opt.value ? opt.activeClass : "bg-white text-gray-400 hover:bg-gray-50"
           }`}
           aria-label={opt.value}
-        >
-          {opt.label}
-        </button>
+        >{opt.label}</button>
       ))}
     </div>
   );
 }
 
+const STATUS_LABELS: Record<AvailabilityStatus, string> = {
+  available: "Available",
+  limited: "Limited",
+  unavailable: "Unavailable",
+};
+
+const STATUS_PILL: Record<AvailabilityStatus, string> = {
+  available: "bg-green-100 text-green-700",
+  limited: "bg-yellow-100 text-yellow-700",
+  unavailable: "bg-gray-100 text-gray-500",
+};
+
 // ============================================
 // Main component
 // ============================================
 
-export function AvailabilityEditor({
-  items,
-  availability,
-  date,
-  restaurants,
-}: AvailabilityEditorProps) {
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
-    restaurants[0]?.id ?? ""
-  );
-  // Per-restaurant state: outer key = restaurant_id, inner key = item_id
+export function AvailabilityEditor({ items, availability, date, restaurants }: AvailabilityEditorProps) {
+  // "all" = unified mode, or a restaurant ID for per-restaurant editing
+  const [editMode, setEditMode] = useState<"all" | string>("all");
+
+  // Per-restaurant states (used in single-restaurant mode)
   const [allStates, setAllStates] = useState<Record<string, ItemStates>>(() => {
     const result: Record<string, ItemStates> = {};
     for (const r of restaurants) {
-      const restaurantAvail = availability.filter((a) => a.restaurant_id === r.id);
-      result[r.id] = buildInitialState(items, restaurantAvail);
+      result[r.id] = buildStatesForRestaurant(items, availability.filter(a => a.restaurant_id === r.id));
     }
     return result;
   });
 
+  // "All" mode: base state + per-restaurant overrides
+  const [baseStates, setBaseStates] = useState<ItemStates>(() => {
+    const { base } = deriveBaseAndOverrides(allStates, restaurants, items);
+    return base;
+  });
+  const [overrides, setOverrides] = useState<Overrides>(() => {
+    const { overrides: ov } = deriveBaseAndOverrides(allStates, restaurants, items);
+    return ov;
+  });
+
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [duplicateError, setDuplicateError] = useState<string | null>(null);
-  const [duplicateSuccess, setDuplicateSuccess] = useState(false);
-
   const [isSaving, startSaving] = useTransition();
   const [isDuplicating, startDuplicating] = useTransition();
 
-  const currentState = allStates[activeRestaurantId] ?? {};
+  // ── All mode helpers ──
 
-  function updateItem(itemId: string, patch: Partial<ItemState>) {
-    setAllStates((prev) => ({
-      ...prev,
-      [activeRestaurantId]: {
-        ...prev[activeRestaurantId],
-        [itemId]: {
-          ...prev[activeRestaurantId]?.[itemId],
-          ...patch,
-        },
-      },
-    }));
-  }
+  const updateBase = useCallback((itemId: string, patch: Partial<ItemState>) => {
+    setBaseStates(prev => ({ ...prev, [itemId]: { ...prev[itemId], ...patch } }));
+    setSaveSuccess(false);
+  }, []);
 
-  function markAll(status: AvailabilityStatus) {
-    setAllStates((prev) => {
-      const updated: ItemStates = {};
-      for (const [id, s] of Object.entries(prev[activeRestaurantId] ?? {})) {
-        updated[id] = { ...s, status };
-      }
-      return { ...prev, [activeRestaurantId]: updated };
-    });
-  }
-
-  function toggleSizeColor(itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) {
-    setAllStates((prev) => {
-      const current = prev[activeRestaurantId]?.[itemId];
+  const toggleBaseSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) => {
+    setBaseStates(prev => {
+      const current = prev[itemId];
       if (!current) return prev;
-      const selected = current[field] === null
-        ? new Set(allValues)
-        : new Set(current[field]!.split(",").filter(Boolean));
-      if (selected.has(value)) selected.delete(value);
-      else selected.add(value);
-      const newVal = selected.size === allValues.length ? null : Array.from(selected).join(",");
-      return {
-        ...prev,
-        [activeRestaurantId]: {
-          ...prev[activeRestaurantId],
-          [itemId]: { ...current, [field]: newVal },
-        },
-      };
+      const selected = current[field] === null ? new Set(allValues) : new Set(current[field]!.split(",").filter(Boolean));
+      if (selected.has(value)) selected.delete(value); else selected.add(value);
+      return { ...prev, [itemId]: { ...current, [field]: selected.size === allValues.length ? null : Array.from(selected).join(",") } };
     });
-  }
+    setSaveSuccess(false);
+  }, []);
+
+  const addOverride = useCallback((restaurantId: string, itemId: string, status: AvailabilityStatus) => {
+    setOverrides(prev => ({
+      ...prev,
+      [restaurantId]: { ...prev[restaurantId], [itemId]: { status } },
+    }));
+    setSaveSuccess(false);
+  }, []);
+
+  const removeOverride = useCallback((restaurantId: string, itemId: string) => {
+    setOverrides(prev => {
+      const copy = { ...prev[restaurantId] };
+      delete copy[itemId];
+      return { ...prev, [restaurantId]: copy };
+    });
+    setSaveSuccess(false);
+  }, []);
+
+  // ── Single mode helpers ──
+
+  const updateSingleItem = useCallback((itemId: string, patch: Partial<ItemState>) => {
+    if (editMode === "all") return;
+    setAllStates(prev => ({
+      ...prev,
+      [editMode]: { ...prev[editMode], [itemId]: { ...prev[editMode]?.[itemId], ...patch } },
+    }));
+    setSaveSuccess(false);
+  }, [editMode]);
+
+  const toggleSingleSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) => {
+    if (editMode === "all") return;
+    setAllStates(prev => {
+      const current = prev[editMode]?.[itemId];
+      if (!current) return prev;
+      const selected = current[field] === null ? new Set(allValues) : new Set(current[field]!.split(",").filter(Boolean));
+      if (selected.has(value)) selected.delete(value); else selected.add(value);
+      return { ...prev, [editMode]: { ...prev[editMode], [itemId]: { ...current, [field]: selected.size === allValues.length ? null : Array.from(selected).join(",") } } };
+    });
+  }, [editMode]);
+
+  // ── Save ──
 
   function handleSave() {
     setSaveError(null);
     setSaveSuccess(false);
-
     startSaving(async () => {
-      const state = allStates[activeRestaurantId] ?? {};
-      const payload = {
-        restaurant_id: activeRestaurantId,
-        delivery_date: date,
-        items: Object.entries(state).map(([item_id, s]) => ({
-          item_id,
-          status: s.status,
-          limited_qty:
-            s.status === "limited" && s.limited_qty !== ""
-              ? Number(s.limited_qty)
-              : null,
-          cycle_notes: s.cycle_notes || null,
-          available_sizes: s.available_sizes || null,
-          available_colors: s.available_colors || null,
-        })),
-      };
-
       try {
-        const res = await fetch("/api/availability", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setSaveError(data?.error ?? "Failed to save. Please try again.");
+        if (editMode === "all") {
+          // Save all restaurants: base + overrides
+          for (const r of restaurants) {
+            const itemPayload = items.map(item => {
+              const base = baseStates[item.id] ?? DEFAULT_STATE;
+              const override = overrides[r.id]?.[item.id];
+              const merged = override ? { ...base, ...override } : base;
+              return {
+                item_id: item.id,
+                status: merged.status,
+                limited_qty: merged.status === "limited" && merged.limited_qty !== "" ? Number(merged.limited_qty) : null,
+                cycle_notes: merged.cycle_notes || null,
+                available_sizes: merged.available_sizes || null,
+                available_colors: merged.available_colors || null,
+              };
+            });
+            const res = await fetch("/api/availability", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ restaurant_id: r.id, delivery_date: date, items: itemPayload }),
+            });
+            if (!res.ok) throw new Error(`Failed for ${r.name}`);
+          }
         } else {
-          setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 3000);
+          // Save single restaurant
+          const state = allStates[editMode] ?? {};
+          const res = await fetch("/api/availability", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              restaurant_id: editMode,
+              delivery_date: date,
+              items: Object.entries(state).map(([item_id, s]) => ({
+                item_id,
+                status: s.status,
+                limited_qty: s.status === "limited" && s.limited_qty !== "" ? Number(s.limited_qty) : null,
+                cycle_notes: s.cycle_notes || null,
+                available_sizes: s.available_sizes || null,
+                available_colors: s.available_colors || null,
+              })),
+            }),
+          });
+          if (!res.ok) throw new Error("Failed to save");
         }
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
       } catch {
-        setSaveError("Network error. Please try again.");
+        setSaveError("Save failed. Please try again.");
       }
     });
   }
 
   function handleDuplicate() {
-    setDuplicateError(null);
-    setDuplicateSuccess(false);
-
     startDuplicating(async () => {
       try {
-        const res = await fetch("/api/availability/duplicate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurant_id: activeRestaurantId,
-            target_date: date,
-          }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setDuplicateError(data?.error ?? "Failed to duplicate. Please try again.");
+        if (editMode === "all") {
+          // Duplicate for all restaurants
+          for (const r of restaurants) {
+            await fetch("/api/availability/duplicate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ restaurant_id: r.id, target_date: date }),
+            });
+          }
         } else {
-          setDuplicateSuccess(true);
-          // Reload the page to show duplicated data
-          window.location.reload();
+          await fetch("/api/availability/duplicate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ restaurant_id: editMode, target_date: date }),
+          });
         }
+        window.location.reload();
       } catch {
-        setDuplicateError("Network error. Please try again.");
+        setSaveError("Duplicate failed.");
       }
     });
   }
 
-  // Group items by category
+  function markAllBase(status: AvailabilityStatus) {
+    if (editMode === "all") {
+      setBaseStates(prev => {
+        const updated: ItemStates = {};
+        for (const [id, s] of Object.entries(prev)) updated[id] = { ...s, status };
+        return updated;
+      });
+    } else {
+      setAllStates(prev => {
+        const updated: ItemStates = {};
+        for (const [id, s] of Object.entries(prev[editMode] ?? {})) updated[id] = { ...s, status };
+        return { ...prev, [editMode]: updated };
+      });
+    }
+  }
+
+  // ── Rendering ──
+
   const itemsByCategory: Partial<Record<ItemCategory, Item[]>> = {};
   for (const item of items) {
-    if (!itemsByCategory[item.category]) {
-      itemsByCategory[item.category] = [];
-    }
+    if (!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
     itemsByCategory[item.category]!.push(item);
   }
 
+  const isAllMode = editMode === "all";
+  const singleState = !isAllMode ? (allStates[editMode] ?? {}) : {};
+
+  // Short restaurant names for pills
+  const shortName = (name: string) => {
+    if (name.toLowerCase().includes("under")) return "US";
+    if (name.toLowerCase().includes("event")) return "Ev";
+    return name.slice(0, 2);
+  };
+
   return (
     <div>
-      {/* Restaurant Tabs */}
+      {/* Mode selector */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="flex">
-          {restaurants.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => setActiveRestaurantId(r.id)}
-              className={`flex-1 py-3 px-4 text-sm font-semibold border-b-2 transition-colors ${
-                activeRestaurantId === r.id
-                  ? "border-farm-green text-farm-green"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+          <button type="button" onClick={() => setEditMode("all")}
+            className={`flex-1 py-3 px-2 text-sm font-semibold border-b-2 transition-colors ${
+              isAllMode ? "border-farm-green text-farm-green" : "border-transparent text-gray-500"
+            }`}
+          >
+            All Restaurants
+          </button>
+          {restaurants.map(r => (
+            <button key={r.id} type="button" onClick={() => setEditMode(r.id)}
+              className={`flex-1 py-3 px-2 text-sm font-semibold border-b-2 transition-colors ${
+                editMode === r.id ? "border-farm-green text-farm-green" : "border-transparent text-gray-500"
               }`}
             >
               {r.name}
@@ -259,29 +357,21 @@ export function AvailabilityEditor({
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Bulk actions */}
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex gap-2">
-        <button
-          type="button"
-          onClick={() => markAll("available")}
-          className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold active:opacity-80 transition-colors"
-        >
-          Mark All Available
-        </button>
-        <button
-          type="button"
-          onClick={() => markAll("unavailable")}
-          className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 text-xs font-semibold active:bg-gray-300 transition-colors"
-        >
-          Mark All Unavailable
-        </button>
+        <button type="button" onClick={() => markAllBase("available")}
+          className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold"
+        >Mark All Available</button>
+        <button type="button" onClick={() => markAllBase("unavailable")}
+          className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 text-xs font-semibold"
+        >Mark All Unavailable</button>
       </div>
 
-      {/* Item List by Category */}
+      {/* Item list */}
       <div className="pb-4">
-        {CATEGORY_ORDER.map((category) => {
-          const categoryItems = itemsByCategory[category];
-          if (!categoryItems || categoryItems.length === 0) return null;
+        {CATEGORY_ORDER.map(category => {
+          const catItems = itemsByCategory[category];
+          if (!catItems?.length) return null;
 
           return (
             <div key={category}>
@@ -290,103 +380,103 @@ export function AvailabilityEditor({
                   {CATEGORY_LABELS[category]}
                 </h3>
               </div>
-
               <div className="divide-y divide-gray-100">
-                {categoryItems.map((item) => {
-                  const state = currentState[item.id] ?? {
-                    status: "unavailable" as AvailabilityStatus,
-                    limited_qty: "",
-                    cycle_notes: "",
-                  };
+                {catItems.map(item => {
+                  const state = isAllMode
+                    ? (baseStates[item.id] ?? DEFAULT_STATE)
+                    : (singleState[item.id] ?? DEFAULT_STATE);
+
+                  const itemOverrides = isAllMode
+                    ? restaurants.filter(r => overrides[r.id]?.[item.id]).map(r => ({
+                        restaurant: r,
+                        override: overrides[r.id][item.id],
+                      }))
+                    : [];
+
+                  const updateFn = isAllMode ? updateBase : updateSingleItem;
+                  const toggleFn = isAllMode ? toggleBaseSizeColor : toggleSingleSizeColor;
 
                   return (
                     <div key={item.id} className="px-4 py-3 bg-white">
                       <div className="flex items-center gap-3">
-                        {/* Item info */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {UNIT_LABELS[item.unit_type]}
-                          </p>
-                          {/* Toggleable sizes */}
+                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                          <p className="text-xs text-gray-400">{UNIT_LABELS[item.unit_type]}</p>
+
+                          {/* Sizes */}
                           {(item as any).size && (() => {
                             const allSizes = ((item as any).size as string).split(", ").filter(Boolean);
-                            const sel = state.available_sizes === null
-                              ? new Set(allSizes)
-                              : new Set(state.available_sizes.split(",").filter(Boolean));
+                            const sel = state.available_sizes === null ? new Set(allSizes) : new Set(state.available_sizes?.split(",").filter(Boolean) ?? []);
                             return (
                               <div className="flex items-center gap-1 mt-1 flex-wrap">
                                 <span className="text-[9px] text-gray-400">Sizes:</span>
-                                {allSizes.map((s: string) => (
-                                  <button key={s} type="button"
-                                    onClick={() => toggleSizeColor(item.id, "available_sizes", s, allSizes)}
-                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
-                                      sel.has(s)
-                                        ? "bg-farm-green text-white"
-                                        : "bg-gray-100 text-gray-400 line-through"
-                                    }`}
+                                {allSizes.map(s => (
+                                  <button key={s} type="button" onClick={() => toggleFn(item.id, "available_sizes", s, allSizes)}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(s) ? "bg-farm-green text-white" : "bg-gray-100 text-gray-400 line-through"}`}
                                   >{s}</button>
                                 ))}
                               </div>
                             );
                           })()}
-                          {/* Toggleable colors */}
+
+                          {/* Colors */}
                           {(item as any).color && (() => {
                             const allColors = ((item as any).color as string).split(", ").filter(Boolean);
-                            const sel = state.available_colors === null
-                              ? new Set(allColors)
-                              : new Set(state.available_colors.split(",").filter(Boolean));
+                            const sel = state.available_colors === null ? new Set(allColors) : new Set(state.available_colors?.split(",").filter(Boolean) ?? []);
                             return (
                               <div className="flex items-center gap-1 mt-1 flex-wrap">
                                 <span className="text-[9px] text-gray-400">Colors:</span>
-                                {allColors.map((c: string) => (
-                                  <button key={c} type="button"
-                                    onClick={() => toggleSizeColor(item.id, "available_colors", c, allColors)}
-                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
-                                      sel.has(c)
-                                        ? "bg-purple-600 text-white"
-                                        : "bg-gray-100 text-gray-400 line-through"
-                                    }`}
+                                {allColors.map(c => (
+                                  <button key={c} type="button" onClick={() => toggleFn(item.id, "available_colors", c, allColors)}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(c) ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400 line-through"}`}
                                   >{c}</button>
                                 ))}
                               </div>
                             );
                           })()}
+
+                          {/* Overrides (all mode only) */}
+                          {isAllMode && itemOverrides.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                              {itemOverrides.map(({ restaurant: r, override: ov }) => (
+                                <span key={r.id} className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${STATUS_PILL[ov.status ?? "unavailable"]}`}>
+                                  {shortName(r.name)}: {STATUS_LABELS[ov.status ?? "unavailable"]}
+                                  <button type="button" onClick={() => removeOverride(r.id, item.id)}
+                                    className="text-current opacity-60 hover:opacity-100 min-h-0 min-w-0 ml-0.5"
+                                  >✕</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add override button (all mode only) */}
+                          {isAllMode && itemOverrides.length < restaurants.length && (
+                            <OverrideAdder
+                              restaurants={restaurants.filter(r => !overrides[r.id]?.[item.id])}
+                              shortName={shortName}
+                              onAdd={(rId, status) => addOverride(rId, item.id, status)}
+                            />
+                          )}
                         </div>
 
-                        {/* Status toggle */}
-                        <StatusToggle
-                          value={state.status}
-                          onChange={(v) => updateItem(item.id, { status: v })}
-                        />
+                        <StatusToggle value={state.status} onChange={v => updateFn(item.id, { status: v })} />
                       </div>
 
-                      {/* Limited qty + notes row */}
-                      <div className="mt-2 flex gap-2">
-                        {state.status === "limited" && (
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="Qty"
-                            value={state.limited_qty}
-                            onChange={(e) =>
-                              updateItem(item.id, { limited_qty: e.target.value })
-                            }
-                            className="w-20 px-2 py-1.5 text-sm border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-yellow-50"
+                      {/* Limited qty + notes */}
+                      {(state.status === "limited" || state.cycle_notes) && (
+                        <div className="mt-2 flex gap-2">
+                          {state.status === "limited" && (
+                            <input type="number" min="0" placeholder="Qty" value={state.limited_qty}
+                              onChange={e => updateFn(item.id, { limited_qty: e.target.value })}
+                              className="w-20 px-2 py-1.5 text-sm border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-yellow-50"
+                            />
+                          )}
+                          <input type="text" placeholder="Notes (optional)" value={state.cycle_notes}
+                            onChange={e => updateFn(item.id, { cycle_notes: e.target.value })}
+                            className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green bg-gray-50 placeholder:text-gray-400"
                           />
-                        )}
-                        <input
-                          type="text"
-                          placeholder="Notes (optional)"
-                          value={state.cycle_notes}
-                          onChange={(e) =>
-                            updateItem(item.id, { cycle_notes: e.target.value })
-                          }
-                          className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green bg-gray-50 placeholder:text-gray-400"
-                        />
-                      </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -396,44 +486,58 @@ export function AvailabilityEditor({
         })}
       </div>
 
-      {/* Sticky bottom action bar */}
+      {/* Sticky bottom */}
       <div className="sticky bottom-16 bg-white border-t border-gray-200 px-4 py-3 space-y-2">
-        {saveError && (
-          <p className="text-xs text-red-600 text-center">{saveError}</p>
-        )}
-        {saveSuccess && (
-          <p className="text-xs text-farm-green text-center font-medium">
-            Saved successfully
-          </p>
-        )}
-        {duplicateError && (
-          <p className="text-xs text-red-600 text-center">{duplicateError}</p>
-        )}
-        {duplicateSuccess && (
-          <p className="text-xs text-farm-green text-center font-medium">
-            Duplicated from last cycle
-          </p>
-        )}
-
+        {saveError && <p className="text-xs text-red-600 text-center">{saveError}</p>}
+        {saveSuccess && <p className="text-xs text-farm-green text-center font-medium">Saved to {isAllMode ? "all restaurants" : "1 restaurant"}</p>}
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleDuplicate}
-            disabled={isDuplicating}
-            className="flex-1 py-3 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 bg-white active:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isDuplicating ? "Duplicating…" : "Duplicate Last Cycle"}
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? "Saving…" : "Save & Publish"}
-          </button>
+          <button type="button" onClick={handleDuplicate} disabled={isDuplicating}
+            className="flex-1 py-3 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 bg-white disabled:opacity-50"
+          >{isDuplicating ? "Duplicating…" : "Duplicate Last"}</button>
+          <button type="button" onClick={handleSave} disabled={isSaving}
+            className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50"
+          >{isSaving ? "Saving…" : isAllMode ? "Save All Restaurants" : "Save & Publish"}</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Override adder inline component ──
+
+function OverrideAdder({
+  restaurants,
+  shortName,
+  onAdd,
+}: {
+  restaurants: Restaurant[];
+  shortName: (name: string) => string;
+  onAdd: (restaurantId: string, status: AvailabilityStatus) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)}
+        className="text-[10px] text-gray-400 hover:text-farm-green mt-1 min-h-0 min-w-0"
+      >+ exception</button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+      {restaurants.map(r => (
+        <div key={r.id} className="inline-flex items-center gap-0.5 bg-gray-50 rounded-full px-1 py-0.5">
+          <span className="text-[9px] text-gray-500 px-1">{shortName(r.name)}:</span>
+          {(["available", "limited", "unavailable"] as AvailabilityStatus[]).map(s => (
+            <button key={s} type="button"
+              onClick={() => { onAdd(r.id, s); setOpen(false); }}
+              className={`text-[9px] px-1.5 py-0.5 rounded-full min-h-0 min-w-0 ${STATUS_PILL[s]}`}
+            >{s === "available" ? "✓" : s === "limited" ? "⚠" : "✗"}</button>
+          ))}
+        </div>
+      ))}
+      <button type="button" onClick={() => setOpen(false)} className="text-[9px] text-gray-400 min-h-0 min-w-0">cancel</button>
     </div>
   );
 }
