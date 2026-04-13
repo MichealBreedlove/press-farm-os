@@ -40,11 +40,11 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
   }
 
   if (normalized === "events") {
-    const fontSize = size === "sm" ? "text-sm" : size === "lg" ? "text-xl" : "text-base";
+    const px = size === "sm" ? 11 : size === "lg" ? 19 : 15;
     return (
       <span
-        className={`${fontSize} font-normal text-farm-dark tracking-[0.2em] uppercase`}
-        style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}
+        className="font-normal text-farm-dark tracking-[0.2em] uppercase"
+        style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
       >
         EVENTS
       </span>
