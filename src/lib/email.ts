@@ -7,7 +7,7 @@
 
 import { render } from "@react-email/render";
 import { getResendClient } from "@/lib/resend/client";
-import { ADMIN_EMAIL, FROM_EMAIL } from "@/lib/constants";
+import { ADMIN_EMAIL, FROM_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import OrderReceived from "@/emails/order-received";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
@@ -62,19 +62,20 @@ async function sendOrLog(params: {
   subject: string;
   react: React.ReactElement;
   fallbackText: string;
+  from?: string;
 }): Promise<void> {
-  const { to, subject, react, fallbackText } = params;
+  const { to, subject, react, fallbackText, from } = params;
 
   if (!hasResend()) {
     const html = await render(react);
     console.log(
-      `[EMAIL FALLBACK] To: ${to} | Subject: ${subject}\n${fallbackText}\n--- HTML preview (truncated) ---\n${html.slice(0, 500)}`
+      `[EMAIL FALLBACK] From: ${from ?? FROM_EMAIL} | To: ${to} | Subject: ${subject}\n${fallbackText}\n--- HTML preview (truncated) ---\n${html.slice(0, 500)}`
     );
     return;
   }
 
-  // Use verified domain sender, or fallback to Resend's test address
-  const fromAddress = process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
+  // Use type-specific from-address if provided, else fall back to env/default
+  const fromAddress = from || process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
 
   try {
     const { data: sendData, error } = await getResendClient().emails.send({
@@ -86,7 +87,7 @@ async function sendOrLog(params: {
     if (error) {
       console.error("[EMAIL ERROR]", JSON.stringify(error));
     } else {
-      console.log("[EMAIL] Sent successfully:", sendData?.id, "to:", to);
+      console.log("[EMAIL] Sent successfully:", sendData?.id, "from:", fromAddress, "to:", to);
     }
   } catch (err) {
     console.error("[EMAIL ERROR] Unexpected error sending email:", err);
@@ -121,6 +122,7 @@ export async function sendOrderSubmittedEmail(
     subject,
     react: OrderReceived(params) as React.ReactElement,
     fallbackText,
+    from: FROM_ADDRESSES.orders,
   });
 }
 
@@ -148,6 +150,7 @@ export async function sendOrderConfirmedEmail(
     subject,
     react: OrderFulfilled({ chefName, restaurantName, deliveryDate, items }) as React.ReactElement,
     fallbackText,
+    from: FROM_ADDRESSES.orders,
   });
 }
 
@@ -173,5 +176,6 @@ export async function sendShortageEmail(params: ShortageEmailParams): Promise<vo
     subject,
     react: ShortageNotice({ chefName, restaurantName, deliveryDate, shortages }) as React.ReactElement,
     fallbackText,
+    from: FROM_ADDRESSES.orders,
   });
 }

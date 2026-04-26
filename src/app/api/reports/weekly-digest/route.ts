@@ -136,8 +136,9 @@ async function sendDigest() {
 
     const toEmail = settings?.value || ADMIN_EMAIL;
 
+    const { FROM_ADDRESSES } = await import("@/lib/constants");
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.app>",
+      from: FROM_ADDRESSES.digest,
       to: toEmail,
       subject,
       text: body,

@@ -61,8 +61,9 @@ export async function POST(request: Request) {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
 
+    const { FROM_ADDRESSES } = await import("@/lib/constants");
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.app>",
+      from: FROM_ADDRESSES.timesheet,
       to: toEmail,
       subject: `Timesheet for week of ${weekLabel}`,
       text: body,

@@ -172,9 +172,28 @@ export const DELIVERY_DAYS = ["thursday", "saturday", "monday"] as const;
 
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-export const ADMIN_EMAIL = "micheal@pressfarm.app";
+export const ADMIN_EMAIL = "micheal@pressfarm.io";
 
-export const FROM_EMAIL = "orders@pressfarm.app";
+/**
+ * Per-purpose sender addresses. Each can be overridden by an env var.
+ * Falls back to RESEND_FROM_EMAIL, then to default @pressfarm.io.
+ */
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || "Press Farm <orders@pressfarm.io>";
+
+export const FROM_EMAIL = DEFAULT_FROM;
+
+export const FROM_ADDRESSES = {
+  /** Admin gets order submission notifications */
+  orders: process.env.RESEND_FROM_ORDERS || "Press Farm Orders <orders@pressfarm.io>",
+  /** Chef gets availability published notifications */
+  availability: process.env.RESEND_FROM_AVAILABILITY || "Press Farm <availability@pressfarm.io>",
+  /** Admin gets weekly summary email */
+  digest: process.env.RESEND_FROM_DIGEST || "Press Farm Reports <digest@pressfarm.io>",
+  /** Sent to weekly labor reviewer */
+  timesheet: process.env.RESEND_FROM_TIMESHEET || "Press Farm <timesheet@pressfarm.io>",
+  /** Chef gets order confirmation/shortage notices */
+  noreply: process.env.RESEND_FROM_NOREPLY || "Press Farm <noreply@pressfarm.io>",
+};
 
 /** Max characters for order freeform notes */
 export const MAX_NOTES_LENGTH = 1000;
