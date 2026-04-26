@@ -110,14 +110,21 @@ export function ItemsClient({ items }: Props) {
         {filtered.length} {filtered.length === 1 ? "item" : "items"}
       </p>
 
-      {/* Grouped list */}
-      {CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => (
-        <div key={cat}>
+      {/* When searching, show flat list. Otherwise, group by category. */}
+      {(search.trim()
+        ? [{ key: "search", items: filtered, label: `Search Results (${filtered.length})` }]
+        : CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => ({
+            key: cat as string,
+            items: grouped[cat],
+            label: `${CATEGORY_LABELS[cat]} (${grouped[cat].length})`,
+          }))
+      ).map(({ key, items: catItems, label }) => (
+        <div key={key}>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            {CATEGORY_LABELS[cat]} ({grouped[cat].length})
+            {label}
           </h2>
           <div className="space-y-1">
-            {grouped[cat].map((item) => (
+            {catItems.map((item) => (
               <div
                 key={item.id}
                 className={`bg-white rounded-xl border flex items-center gap-3 pr-2 transition-colors ${

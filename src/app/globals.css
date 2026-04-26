@@ -207,3 +207,15 @@
     border-radius: 2px !important;
   }
 }
+
+/* Safe area utilities for iPhone notch/Dynamic Island */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-nav-safe {
+    /* Sticky buttons that sit above the bottom nav (h-16 = 64px) */
+    /* Add safe-area-inset-bottom for iPhone home indicator */
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}

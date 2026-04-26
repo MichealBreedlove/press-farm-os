@@ -49,7 +49,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
   return (
     <main>
-      <header className="page-header">
+      <header className="page-header sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"

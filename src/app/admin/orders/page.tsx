@@ -74,7 +74,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   return (
     <main>
-      <header className="page-header">
+      <header className="page-header sticky top-0 z-30">
         <h1 className="page-title">Orders</h1>
         <DateNav
           currentDate={activeDate}

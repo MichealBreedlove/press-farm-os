@@ -44,16 +44,37 @@ export default async function AdminDeliveryLogPage({
     .eq("delivery_date", date);
 
   // Load fulfilled orders for this date (pre-populate source)
-  const { data: orders } = await (admin as any)
+  // order_items references availability_items which references items, so we need to join through
+  const { data: rawOrders } = await (admin as any)
     .from("orders")
     .select(`
       id, restaurant_id, status,
       order_items (
-        item_id, quantity_ordered, quantity_fulfilled, unit, unit_price
+        quantity_requested, quantity_fulfilled, unit_price_at_order,
+        availability_items (
+          item:items (id, name, unit_type, default_price)
+        )
       )
     `)
     .eq("delivery_date", date)
     .in("status", ["fulfilled", "in_progress", "submitted"]);
+
+  // Flatten the structure for the form: order_items[].item_id, quantity_ordered, quantity_fulfilled, unit, unit_price
+  const orders = (rawOrders ?? []).map((o: any) => ({
+    id: o.id,
+    restaurant_id: o.restaurant_id,
+    status: o.status,
+    order_items: (o.order_items ?? []).map((oi: any) => {
+      const item = oi.availability_items?.item;
+      return {
+        item_id: item?.id,
+        quantity_ordered: oi.quantity_requested,
+        quantity_fulfilled: oi.quantity_fulfilled,
+        unit: item?.unit_type ?? "ea",
+        unit_price: oi.unit_price_at_order ?? item?.default_price ?? 0,
+      };
+    }).filter((oi: any) => oi.item_id),
+  }));
 
   return (
     <main className="pb-24">

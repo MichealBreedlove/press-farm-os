@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,7 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
   return (
     <div className="flex items-center gap-1 flex-shrink-0">
       <button type="button" onClick={() => onChange(Math.max(0, value - 1))} disabled={disabled || value <= 0}
-        className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Decrease ${label}`}>&minus;</button>
       <input
         type="number"
@@ -32,12 +33,12 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
           onChange(Math.max(0, Math.min(v, maxQty)));
         }}
         disabled={disabled}
-        className="w-12 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-1 focus:ring-farm-green min-h-0"
+        className="w-14 h-11 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
         placeholder="0"
         aria-label={`Quantity for ${label}`}
       />
       <button type="button" onClick={() => onChange(Math.min(maxQty, value + 1))} disabled={disabled || value >= maxQty}
-        className="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-lg font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Increase ${label}`}>+</button>
     </div>
   );
@@ -65,6 +66,10 @@ export function ItemRow({
   const totalQty = hasSizes
     ? sizes.reduce((sum: number, s: string) => sum + (quantities[`${availabilityItem.id}__${s}`] ?? 0), 0)
     : (quantities[availabilityItem.id] ?? 0);
+
+  // Auto-expand sizes when something is ordered
+  const [sizesExpanded, setSizesExpanded] = useState(false);
+  const showSizes = sizesExpanded || totalQty > 0;
 
   const showDetails = totalQty > 0 || itemNote.length > 0;
 
@@ -103,7 +108,7 @@ export function ItemRow({
               {colors.map((c: string) => (
                 <button key={c} type="button"
                   onClick={() => onColorChange(availabilityItem.id, selectedColor === c ? "" : c)}
-                  className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
+                  className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
                     selectedColor === c ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"
                   }`}
                 >{c}</button>
@@ -114,15 +119,6 @@ export function ItemRow({
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {colors.map((c: string) => (
                 <span key={c} className="text-[10px] bg-purple-50/50 text-purple-400 px-1.5 py-0.5 rounded">{c}</span>
-              ))}
-            </div>
-          )}
-
-          {/* Size preview when no quantity ordered yet */}
-          {hasSizes && totalQty === 0 && (
-            <div className="flex items-center gap-1 mt-1 flex-wrap">
-              {sizes.map((s: string) => (
-                <span key={s} className="text-[10px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded">{s}</span>
               ))}
             </div>
           )}
@@ -138,17 +134,38 @@ export function ItemRow({
             label={item.name}
           />
         )}
+
+        {/* Expand button for items WITH sizes (when collapsed) */}
+        {hasSizes && !showSizes && !isUnavailable && (
+          <button
+            type="button"
+            onClick={() => setSizesExpanded(true)}
+            className="flex-shrink-0 min-h-[44px] min-w-[44px] px-3 rounded-full bg-farm-green-light text-farm-green text-sm font-semibold hover:bg-farm-green hover:text-white transition-colors"
+            aria-label={`Pick sizes for ${item.name}`}
+          >
+            {sizes.length} sizes
+          </button>
+        )}
       </div>
 
-      {/* Per-size quantity steppers — for items WITH sizes */}
-      {hasSizes && (
+      {/* Size preview when collapsed (no quantity yet) */}
+      {hasSizes && !showSizes && (
+        <div className="flex items-center gap-1 mt-1.5 ml-0 flex-wrap">
+          {sizes.map((s: string) => (
+            <span key={s} className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-md">{s}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Per-size quantity steppers — when expanded or items ordered */}
+      {hasSizes && showSizes && (
         <div className="mt-2 ml-0 space-y-1.5">
           {sizes.map((size: string) => {
             const key = `${availabilityItem.id}__${size}`;
             const sizeQty = quantities[key] ?? 0;
             return (
-              <div key={size} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-1.5">
-                <span className={cn("text-xs", sizeQty > 0 ? "text-farm-dark font-medium" : "text-gray-500")}>{size}</span>
+              <div key={size} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-gray-600")}>{size}</span>
                 <QuantityStepper
                   value={sizeQty}
                   onChange={(v) => onQuantityChange(key, v)}
@@ -159,6 +176,16 @@ export function ItemRow({
               </div>
             );
           })}
+          {/* Collapse button when nothing ordered */}
+          {totalQty === 0 && (
+            <button
+              type="button"
+              onClick={() => setSizesExpanded(false)}
+              className="text-xs text-gray-400 hover:text-gray-600 mt-1 min-h-0"
+            >
+              Hide sizes
+            </button>
+          )}
         </div>
       )}
 
@@ -171,7 +198,7 @@ export function ItemRow({
             onChange={(e) => onNoteChange(availabilityItem.id, e.target.value)}
             placeholder="Add a note..."
             maxLength={200}
-            className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 min-h-[36px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder-gray-300"
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder-gray-300"
           />
         </div>
       )}

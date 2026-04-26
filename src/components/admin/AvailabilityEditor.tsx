@@ -156,6 +156,13 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, startSaving] = useTransition();
   const [isDuplicating, startDuplicating] = useTransition();
+  const [search, setSearch] = useState("");
+
+  // Filter items by search query
+  const filteredItems = search.trim()
+    ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase().trim()))
+    : items;
+  const isSearching = search.trim().length > 0;
 
   // ── All mode helpers ──
 
@@ -318,7 +325,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   // ── Rendering ──
 
   const itemsByCategory: Partial<Record<ItemCategory, Item[]>> = {};
-  for (const item of items) {
+  for (const item of filteredItems) {
     if (!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
     itemsByCategory[item.category]!.push(item);
   }
@@ -355,6 +362,34 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Bulk actions */}
+      {/* Search */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="search"
+            placeholder="Search items..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
+            >✕</button>
+          )}
+        </div>
+        {isSearching && (
+          <p className="text-xs text-gray-500 mt-1.5 px-1">
+            {filteredItems.length} match{filteredItems.length !== 1 ? "es" : ""}
+          </p>
+        )}
       </div>
 
       {/* Bulk actions */}
@@ -487,7 +522,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
       </div>
 
       {/* Sticky bottom */}
-      <div className="sticky bottom-16 bg-white border-t border-gray-200 px-4 py-3 space-y-2">
+      <div className="sticky bottom-nav-safe bg-white border-t border-gray-200 px-4 py-3 space-y-2">
         {saveError && <p className="text-xs text-red-600 text-center">{saveError}</p>}
         {saveSuccess && <p className="text-xs text-farm-green text-center font-medium">Saved to {isAllMode ? "all restaurants" : "1 restaurant"}</p>}
         <div className="flex gap-2">

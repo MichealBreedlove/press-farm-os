@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { SendDigestButton } from "./SendDigestButton";
+import { RefreshButton } from "./RefreshButton";
 import {
   ClipboardList,
   CalendarDays,
@@ -117,18 +118,24 @@ export default async function AdminDashboardPage() {
 
       <div className="px-4 py-5 space-y-6">
         {/* Live stats */}
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-sm text-gray-500 uppercase tracking-wider">
+            {monthName} Overview
+          </h2>
+          <RefreshButton />
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/admin/deliveries" className="card-interactive p-4">
+          <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4">
             <p className="text-xs text-gray-400">{monthName} Revenue</p>
             <p className="text-2xl font-bold text-farm-green mt-1">{formatCurrency(monthRevenue)}</p>
             <p className="text-[10px] text-gray-400 mt-1">{(monthDeliveries ?? []).length} deliveries</p>
           </Link>
-          <Link href="/admin/expenses" className="card-interactive p-4">
+          <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4">
             <p className="text-xs text-gray-400">{monthName} Expenses</p>
             <p className="text-2xl font-bold text-red-500 mt-1">{formatCurrency(monthExpenseTotal)}</p>
             <p className="text-[10px] text-gray-400 mt-1">{(monthExpenses ?? []).length} entries</p>
           </Link>
-          <Link href="/admin/orders" className="card-interactive p-4">
+          <Link href="/admin/orders?status=submitted" className="card-interactive p-4">
             <p className="text-xs text-gray-400">Pending Orders</p>
             <p className="text-2xl font-bold text-blue-600 mt-1">{pendingOrders ?? 0}</p>
             <p className="text-[10px] text-gray-400 mt-1">awaiting fulfillment</p>

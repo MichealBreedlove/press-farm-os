@@ -27,7 +27,12 @@ function monthLabel(d: string) {
   });
 }
 
-export default async function AdminDeliveriesPage() {
+export default async function AdminDeliveriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month: filterMonth } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -44,14 +49,25 @@ export default async function AdminDeliveriesPage() {
     .limit(6);
 
   // All logged deliveries, most recent first
-  const { data: deliveries } = await (admin as any)
+  // If a month filter is provided, only return that month
+  let deliveriesQuery = (admin as any)
     .from("deliveries")
     .select(`
       id, delivery_date, status, total_value,
       restaurants ( name )
     `)
-    .order("delivery_date", { ascending: false })
-    .limit(60);
+    .order("delivery_date", { ascending: false });
+
+  if (filterMonth && /^\d{4}-\d{2}$/.test(filterMonth)) {
+    const [y, m] = filterMonth.split("-").map(Number);
+    const start = `${filterMonth}-01`;
+    const end = `${filterMonth}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+    deliveriesQuery = deliveriesQuery.gte("delivery_date", start).lte("delivery_date", end);
+  } else {
+    deliveriesQuery = deliveriesQuery.limit(60);
+  }
+
+  const { data: deliveries } = await deliveriesQuery;
 
   // Current month totals
   const currentMonth = today.slice(0, 7);
@@ -92,6 +108,16 @@ export default async function AdminDeliveriesPage() {
       </header>
 
       <div className="px-4 py-4 space-y-4">
+        {filterMonth && (
+          <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
+            <p className="text-sm text-blue-700">
+              Filtered to <span className="font-semibold">{monthLabel(filterMonth + "-01")}</span>
+            </p>
+            <Link href="/admin/deliveries" className="text-xs text-blue-600 hover:text-blue-800 font-medium min-h-[36px] px-2 py-1.5">
+              Clear filter
+            </Link>
+          </div>
+        )}
         {/* Current month summary card */}
         <div className="bg-farm-green text-white rounded-2xl p-5">
           <p className="text-sm text-farm-green-light">{monthLabel(today)} Total</p>

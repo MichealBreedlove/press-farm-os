@@ -457,7 +457,7 @@ export default function AvailabilityEditorClient({
       </div>
 
       {/* Footer actions — fixed above bottom nav */}
-      <div className="fixed bottom-16 inset-x-0 px-4 py-3 bg-white shadow-nav z-40 space-y-2">
+      <div className="fixed bottom-nav-safe inset-x-0 px-4 py-3 bg-white shadow-nav z-40 space-y-2">
         <div className="flex gap-2">
           <button
             onClick={handlePublish}
