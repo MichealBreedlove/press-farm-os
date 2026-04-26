@@ -83,17 +83,17 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 160px;
+    padding-right: 92px;
   }
-  /* "PRESS FARM" text in header */
+  /* "PRESS FARM" text in header — mobile-first, scales up on desktop */
   .page-header::before {
     content: "PRESS FARM";
     position: absolute;
-    right: 56px;
+    right: 40px;
     top: 50%;
     transform: translateY(-50%);
     font-family: 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif;
-    font-size: 24px;
+    font-size: 13px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.6);
@@ -106,14 +106,28 @@
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 33px;
-    height: 33px;
+    width: 22px;
+    height: 22px;
     background-image: url("/icon-192.png");
     background-size: contain;
     background-repeat: no-repeat;
     border-radius: 50%;
     border: 1px solid black;
     opacity: 0.9;
+  }
+  /* Larger size on tablet+ */
+  @media (min-width: 640px) {
+    .page-header {
+      padding-right: 130px;
+    }
+    .page-header::before {
+      right: 50px;
+      font-size: 18px;
+    }
+    .page-header::after {
+      width: 28px;
+      height: 28px;
+    }
   }
   .page-header .text-gray-500,
   .page-header .text-gray-400,
