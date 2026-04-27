@@ -7,7 +7,7 @@ import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
 import Link from "next/link";
 
 interface AdminOrdersPageProps {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; status?: string }>;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -25,9 +25,23 @@ const STATUS_COLORS: Record<string, string> = {
  * Per-restaurant order cards. Date switcher. Close/open ordering toggle.
  */
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
-  const { date: dateParam } = await searchParams;
+  const { date: dateParam, status: statusFilter } = await searchParams;
   const supabase = await createClient();
   const today = new Date().toISOString().split("T")[0];
+
+  // If filtering by status (e.g., from dashboard "Pending Orders" card),
+  // jump to the date of the first matching order
+  let effectiveDateParam = dateParam;
+  if (!effectiveDateParam && statusFilter) {
+    const { data: firstMatch } = await (supabase as any)
+      .from("orders")
+      .select("delivery_date")
+      .eq("status", statusFilter)
+      .order("delivery_date", { ascending: false })
+      .limit(1)
+      .single();
+    if (firstMatch?.delivery_date) effectiveDateParam = firstMatch.delivery_date;
+  }
 
   // Fetch all delivery dates sorted ascending
   const { data: allDates } = await (supabase as any)
@@ -37,10 +51,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   const dates: { id: string; date: string; ordering_open: boolean }[] = allDates ?? [];
 
-  // Determine active date: param > next upcoming > most recent
+  // Determine active date: param > status-derived > next upcoming > most recent
   let activeDate: string;
-  if (dateParam && dates.find((d) => d.date === dateParam)) {
-    activeDate = dateParam;
+  if (effectiveDateParam && dates.find((d) => d.date === effectiveDateParam)) {
+    activeDate = effectiveDateParam;
   } else {
     const upcoming = dates.find((d) => d.date >= today);
     activeDate = upcoming?.date ?? dates[dates.length - 1]?.date ?? today;
