@@ -150,7 +150,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
 
   return (
     <main>
-      <header className="page-header print:hidden">
+      <header className="page-header no-wordmark print:hidden">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
@@ -159,7 +159,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
           >
             ←
           </Link>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="page-title">Harvest List</h1>
             <p className="text-sm text-white/60">{formatDeliveryDate(activeDate)} · {totalItems} items</p>
           </div>

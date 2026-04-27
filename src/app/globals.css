@@ -129,6 +129,14 @@
       height: 32px;
     }
   }
+  /* Modifier: hide wordmark+logo to free right-side space for buttons */
+  .page-header.no-wordmark {
+    padding-right: 1rem;
+  }
+  .page-header.no-wordmark::before,
+  .page-header.no-wordmark::after {
+    display: none;
+  }
   .page-header .text-gray-500,
   .page-header .text-gray-400,
   .page-header .text-farm-muted {
