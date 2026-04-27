@@ -6,37 +6,45 @@ import { List, CalendarDays } from "lucide-react";
 export function ViewToggle({
   listView,
   calendarView,
+  defaultView = "calendar",
 }: {
   listView: React.ReactNode;
   calendarView: React.ReactNode;
+  defaultView?: "list" | "calendar";
 }) {
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<"list" | "calendar">(defaultView);
 
   return (
     <div>
       {/* Toggle */}
-      <div className="flex gap-1 bg-white/20 rounded-lg p-0.5 mb-4">
+      <div className="flex bg-gray-100 rounded-xl p-1 mb-3">
         <button
-          onClick={() => setView("list")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all min-h-0 ${
-            view === "list" ? "bg-white text-farm-green shadow-sm" : "text-white/60 hover:text-white"
+          type="button"
+          onClick={() => setView("calendar")}
+          className={`flex-1 flex items-center justify-center gap-1.5 min-h-[40px] text-sm font-medium rounded-lg transition-colors ${
+            view === "calendar"
+              ? "bg-white text-farm-dark shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          <List className="w-3.5 h-3.5" />
-          List
+          <CalendarDays className="w-4 h-4" />
+          Calendar
         </button>
         <button
-          onClick={() => setView("calendar")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all min-h-0 ${
-            view === "calendar" ? "bg-white text-farm-green shadow-sm" : "text-white/60 hover:text-white"
+          type="button"
+          onClick={() => setView("list")}
+          className={`flex-1 flex items-center justify-center gap-1.5 min-h-[40px] text-sm font-medium rounded-lg transition-colors ${
+            view === "list"
+              ? "bg-white text-farm-dark shadow-sm"
+              : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          <CalendarDays className="w-3.5 h-3.5" />
-          Calendar
+          <List className="w-4 h-4" />
+          List
         </button>
       </div>
 
-      {view === "list" ? listView : calendarView}
+      <div>{view === "calendar" ? calendarView : listView}</div>
     </div>
   );
 }

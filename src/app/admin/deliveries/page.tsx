@@ -6,6 +6,7 @@ import FinalizeButton from "./FinalizeButton";
 import { CalendarView } from "./CalendarView";
 import { LogPastDelivery } from "./LogPastDelivery";
 import { GenerateDatesButton } from "./GenerateDatesButton";
+import { ViewToggle } from "./ViewToggle";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -137,8 +138,79 @@ export default async function AdminDeliveriesPage({
           </div>
         </div>
 
-        {/* Calendar view */}
-        <CalendarView deliveries={calendarDeliveries} deliveryDates={calendarDates} />
+        {/* Calendar / List toggle */}
+        <ViewToggle
+          calendarView={
+            <CalendarView deliveries={calendarDeliveries} deliveryDates={calendarDates} />
+          }
+          listView={
+            Object.keys(grouped).length > 0 ? (
+              <div className="space-y-4">
+                {Object.entries(grouped)
+                  .sort(([a], [b]) => b.localeCompare(a))
+                  .map(([month, entries]) => {
+                    const total = entries.reduce(
+                      (sum, d) => sum + (d.total_value ?? 0),
+                      0
+                    );
+                    return (
+                      <div key={month}>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-gray-700">
+                            {monthLabel(month + "-01")}
+                          </p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(total)}
+                          </p>
+                        </div>
+                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                          {entries.map((d: any, i: number) => (
+                            <Link
+                              key={d.id}
+                              href={`/admin/deliveries/${d.delivery_date}`}
+                              className={`flex items-center justify-between px-4 py-3 ${
+                                i < entries.length - 1 ? "border-b border-gray-50" : ""
+                              }`}
+                            >
+                              <div>
+                                <p className="text-sm text-gray-900">
+                                  {formatDate(d.delivery_date)}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {d.restaurants?.name}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {formatCurrency(d.total_value ?? 0)}
+                                  </p>
+                                  <p className={`text-xs ${
+                                    d.status === "finalized"
+                                      ? "text-gray-400"
+                                      : "text-farm-green"
+                                  }`}>
+                                    {d.status}
+                                  </p>
+                                </div>
+                                <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <p className="text-center text-gray-400 text-sm py-8">
+                No deliveries logged yet
+              </p>
+            )
+          }
+        />
 
         {/* Upcoming dates needing log entry */}
         {upcomingDates && upcomingDates.length > 0 && (
@@ -183,79 +255,6 @@ export default async function AdminDeliveriesPage({
         <GenerateDatesButton />
         <LogPastDelivery />
 
-        {/* Delivery history */}
-        {Object.keys(grouped).length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              History
-            </h2>
-            <div className="space-y-4">
-              {Object.entries(grouped)
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([month, entries]) => {
-                  const total = entries.reduce(
-                    (sum, d) => sum + (d.total_value ?? 0),
-                    0
-                  );
-                  return (
-                    <div key={month}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-gray-700">
-                          {monthLabel(month + "-01")}
-                        </p>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(total)}
-                        </p>
-                      </div>
-                      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                        {entries.map((d: any, i: number) => (
-                          <Link
-                            key={d.id}
-                            href={`/admin/deliveries/${d.delivery_date}`}
-                            className={`flex items-center justify-between px-4 py-3 ${
-                              i < entries.length - 1 ? "border-b border-gray-50" : ""
-                            }`}
-                          >
-                            <div>
-                              <p className="text-sm text-gray-900">
-                                {formatDate(d.delivery_date)}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {d.restaurants?.name}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {formatCurrency(d.total_value ?? 0)}
-                                </p>
-                                <p className={`text-xs ${
-                                  d.status === "finalized"
-                                    ? "text-gray-400"
-                                    : "text-farm-green"
-                                }`}>
-                                  {d.status}
-                                </p>
-                              </div>
-                              <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </section>
-        )}
-
-        {Object.keys(grouped).length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">
-            No deliveries logged yet
-          </p>
-        )}
       </div>
     </main>
   );

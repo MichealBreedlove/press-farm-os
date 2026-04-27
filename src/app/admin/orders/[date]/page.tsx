@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate, formatQty } from "@/lib/utils";
-import { UNIT_LABELS, ORDER_STATUS_LABELS, CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
+import { formatDeliveryDate } from "@/lib/utils";
+import { ORDER_STATUS_LABELS, CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
-import { ShortageEditor } from "./ShortageEditor";
+import { InlineShortageRow } from "./InlineShortageRow";
 import Link from "next/link";
 import type { ItemCategory } from "@/types";
 
@@ -134,11 +134,17 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                 </div>
               )}
 
-              {/* Items by category */}
-              <div className="divide-y divide-gray-50">
+              {/* Items by category — tap any row to mark/edit shortage */}
+              {(order.status !== "fulfilled" && order.status !== "cancelled") && (
+                <div className="px-4 py-1.5 bg-orange-50/40 border-b border-orange-100">
+                  <p className="text-[11px] text-orange-700">
+                    Tap any item to mark a shortage
+                  </p>
+                </div>
+              )}
+              <div>
                 {sortedCategories.map((category) => {
                   const catItems = byCategory[category];
-                  // Sort alphabetically within category
                   catItems.sort((a: any, b: any) =>
                     (a.availability_item?.item?.name ?? "").localeCompare(
                       b.availability_item?.item?.name ?? ""
@@ -154,68 +160,28 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                       </div>
                       {catItems.map((oi: any) => {
                         const item = oi.availability_item?.item;
-                        const isShorted = oi.is_shorted;
-
                         return (
-                          <div
+                          <InlineShortageRow
                             key={oi.id}
-                            className={`px-4 py-3 flex items-center gap-3 ${
-                              isShorted ? "bg-orange-50" : ""
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={`text-sm font-medium truncate ${
-                                  isShorted ? "text-orange-800" : "text-gray-900"
-                                }`}
-                              >
-                                {item?.name ?? "Unknown item"}
-                              </p>
-                              {isShorted && oi.shortage_reason && (
-                                <p className="text-xs text-orange-600 mt-0.5">{oi.shortage_reason}</p>
-                              )}
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <span className="text-xs text-gray-400 mr-1">
-                                {UNIT_LABELS[item?.unit_type as keyof typeof UNIT_LABELS] ?? item?.unit_type ?? ""}
-                              </span>
-                              {isShorted ? (
-                                <span className="text-sm text-orange-700 font-semibold">
-                                  {formatQty(oi.quantity_fulfilled ?? 0)}{" "}
-                                  <span className="line-through text-gray-400 font-normal">
-                                    {formatQty(oi.quantity_requested)}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-sm font-semibold text-gray-900">
-                                  {formatQty(oi.quantity_requested)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                            orderId={order.id}
+                            canEdit={order.status !== "fulfilled" && order.status !== "cancelled"}
+                            orderItem={{
+                              id: oi.id,
+                              itemName: item?.name ?? "Unknown item",
+                              category: item?.category ?? "other",
+                              unitType: item?.unit_type ?? "",
+                              quantityRequested: oi.quantity_requested,
+                              quantityFulfilled: oi.quantity_fulfilled,
+                              isShorted: oi.is_shorted,
+                              shortageReason: oi.shortage_reason,
+                            }}
+                          />
                         );
                       })}
                     </div>
                   );
                 })}
               </div>
-
-              {/* Shortage editor */}
-              {order.status !== "fulfilled" && order.status !== "cancelled" && (order.order_items?.length ?? 0) > 0 && (
-                <div className="px-4 py-3 border-t border-gray-100">
-                  <ShortageEditor
-                    orderId={order.id}
-                    orderItems={(order.order_items ?? []).map((oi: any) => ({
-                      id: oi.id,
-                      itemName: oi.availability_item?.item?.name ?? "Unknown item",
-                      unit: UNIT_LABELS[oi.availability_item?.item?.unit_type as keyof typeof UNIT_LABELS] ?? "",
-                      quantityRequested: oi.quantity_requested,
-                      quantityFulfilled: oi.quantity_fulfilled,
-                      isShorted: oi.is_shorted,
-                    }))}
-                  />
-                </div>
-              )}
 
               {/* Actions */}
               <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">

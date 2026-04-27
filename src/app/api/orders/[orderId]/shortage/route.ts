@@ -33,7 +33,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { items: { order_item_id: string; quantity_fulfilled: number; shortage_reason: string }[] };
+  let body: { items: { order_item_id: string; quantity_fulfilled: number; shortage_reason: string | null; clear?: boolean }[] };
   try {
     body = await request.json();
   } catch {
@@ -57,9 +57,9 @@ export async function PATCH(
 
   const adminClient = createAdminClient();
 
-  // Verify the order exists
+  // Verify the order exists, fetch order_items to compare quantities
   const { data: order, error: orderError } = await (adminClient.from("orders") as any)
-    .select("id")
+    .select("id, order_items(id, quantity_requested)")
     .eq("id", orderId)
     .single();
 
@@ -67,18 +67,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Update each order item with shortage info
+  const itemQtyMap = new Map<string, number>(
+    (order.order_items ?? []).map((oi: any) => [oi.id, oi.quantity_requested])
+  );
+
+  // Update each order item — auto-clear shortage if fulfilled >= requested or `clear` flag set
   const updates = await Promise.all(
-    items.map(({ order_item_id, quantity_fulfilled, shortage_reason }) =>
-      (adminClient.from("order_items") as any)
+    items.map(({ order_item_id, quantity_fulfilled, shortage_reason, clear }) => {
+      const requested = itemQtyMap.get(order_item_id) ?? Infinity;
+      const shouldClear = clear || quantity_fulfilled >= requested;
+      return (adminClient.from("order_items") as any)
         .update({
-          is_shorted: true,
-          quantity_fulfilled,
-          shortage_reason,
+          is_shorted: !shouldClear,
+          quantity_fulfilled: shouldClear ? requested : quantity_fulfilled,
+          shortage_reason: shouldClear ? null : shortage_reason,
         })
         .eq("id", order_item_id)
-        .eq("order_id", orderId)
-    )
+        .eq("order_id", orderId);
+    })
   );
 
   const firstError = updates.find((r) => r.error);
