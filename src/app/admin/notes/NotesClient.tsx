@@ -163,9 +163,21 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
 
       {/* Notes list */}
       {filtered.length === 0 ? (
-        <p className="text-center text-gray-400 text-sm py-8">
-          {notes.length === 0 ? "No notes yet — add your first observation." : "No notes match this filter."}
-        </p>
+        notes.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="mx-auto w-16 h-16 rounded-full bg-farm-green-light flex items-center justify-center mb-4">
+              <span className="text-2xl">📝</span>
+            </div>
+            <h3 className="text-base font-semibold text-farm-dark">Start your field journal</h3>
+            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+              Quick observations save hours later. &ldquo;Mustard frills bolting&rdquo; or &ldquo;Borage flowering early&rdquo; — anything worth remembering.
+            </p>
+          </div>
+        ) : (
+          <p className="text-center text-gray-400 text-sm py-8">
+            No notes match this filter.
+          </p>
+        )
       ) : (
         <div className="space-y-2">
           {filtered.map((note) => (

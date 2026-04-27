@@ -33,8 +33,25 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const [resetUserId, setResetUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [resetting, setResetting] = useState(false);
+  const [welcomingId, setWelcomingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  async function handleSendWelcome(user: UserRow) {
+    setWelcomingId(user.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/users/${user.id}/welcome`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to send");
+      setSuccess(`Welcome email sent to ${json.sent_to}`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setWelcomingId(null);
+    }
+  }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -217,6 +234,14 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                 </span>
                 {u.id !== currentUserId && (
                   <>
+                    <button
+                      onClick={() => handleSendWelcome(u)}
+                      disabled={welcomingId === u.id}
+                      className="min-h-[44px] px-3 flex items-center justify-center text-xs text-farm-green hover:bg-farm-green-light rounded-lg disabled:opacity-50 transition-colors"
+                      title="Send welcome email with magic-link login"
+                    >
+                      {welcomingId === u.id ? "Sending…" : "📧 Welcome"}
+                    </button>
                     <button
                       onClick={() => {
                         setResetUserId(resetUserId === u.id ? null : u.id);

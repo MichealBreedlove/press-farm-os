@@ -329,6 +329,34 @@ export default function ReportsDashboard({
         </svg>
       </Link>
 
+      {/* Item Performance CTA */}
+      <Link
+        href="/admin/reports/items"
+        className="card-interactive flex items-center justify-between px-4 py-4"
+      >
+        <div>
+          <p className="text-sm font-semibold text-farm-dark">Item Performance</p>
+          <p className="text-xs text-gray-400 mt-0.5">Top revenue · Reliable sellers · Dead stock</p>
+        </div>
+        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+
+      {/* Year over Year CTA */}
+      <Link
+        href="/admin/reports/yoy"
+        className="card-interactive flex items-center justify-between px-4 py-4"
+      >
+        <div>
+          <p className="text-sm font-semibold text-farm-dark">Year over Year</p>
+          <p className="text-xs text-gray-400 mt-0.5">Compare months/quarters across years</p>
+        </div>
+        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+
       {topItems.length === 0 && monthlyData.length === 0 && (
         <p className="text-center text-gray-400 text-sm py-8">
           No delivery data yet — log deliveries to see reports

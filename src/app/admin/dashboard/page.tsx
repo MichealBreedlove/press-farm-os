@@ -84,6 +84,8 @@ export default async function AdminDashboardPage() {
         { href: "/admin/labor", title: "Labor", description: "Track hours", icon: <Clock className="w-5 h-5" />, color: "bg-purple-500" },
         { href: "/admin/expenses", title: "Expenses", description: "Track costs", icon: <DollarSign className="w-5 h-5" />, color: "bg-red-500" },
         { href: "/admin/notes", title: "Notes", description: "Field observations", icon: <FileText className="w-5 h-5" />, color: "bg-cyan-500" },
+        { href: "/admin/packs", title: "Pack Manager", description: "Container inventory", icon: <PackageOpen className="w-5 h-5" />, color: "bg-orange-500" },
+        { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", icon: <BarChart3 className="w-5 h-5" />, color: "bg-blue-500" },
       ],
     },
     {

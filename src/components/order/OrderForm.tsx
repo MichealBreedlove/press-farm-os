@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH } from "@/lib/constants";
 import { CategorySection } from "./category-section";
+import { OnboardingTour } from "./OnboardingTour";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 
 interface OrderFormProps {
@@ -151,6 +152,7 @@ export function OrderForm({
 
   return (
     <div className="flex flex-col min-h-screen bg-farm-cream">
+      {!editingOrderId && <OnboardingTour />}
       {editingOrderId && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2">
           <span className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</span>
