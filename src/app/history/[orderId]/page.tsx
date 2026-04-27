@@ -92,7 +92,7 @@ export default async function OrderDetailPage({
 
   return (
     <main className="min-h-screen bg-farm-cream pb-20">
-      <header className="page-header flex items-center gap-3">
+      <header className="page-header no-wordmark flex items-center gap-3">
         <Link
           href="/history"
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2 text-2xl"

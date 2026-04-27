@@ -59,22 +59,41 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   }
 
   // Current week entries (Mon-Sun of the most recent week with data)
-  const totalHours = entries.reduce((s, e) => s + e.hours, 0);
-  const totalCost = entries.reduce((s, e) => s + e.hours * (e.hourly_rate ?? 0), 0);
-  const workers = Array.from(new Set(entries.map(e => e.worker_name)));
-
-  // Get this week's entries for the timesheet report
+  // Date boundaries
   const today = new Date();
   const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(today);
   monday.setDate(today.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
   const mondayStr = monday.toISOString().split("T")[0];
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   const sundayStr = sunday.toISOString().split("T")[0];
 
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
+  const yearStart = `${today.getFullYear()}-01-01`;
+  const yearEnd = `${today.getFullYear()}-12-31`;
+
   const thisWeekEntries = entries.filter(e => e.date >= mondayStr && e.date <= sundayStr);
+  const monthEntries = entries.filter(e => e.date >= monthStart && e.date <= monthEnd);
+  const yearEntries = entries.filter(e => e.date >= yearStart && e.date <= yearEnd);
+
+  function totalsFor(rows: LaborEntry[]) {
+    const hours = rows.reduce((s, e) => s + e.hours, 0);
+    const cost = rows.reduce((s, e) => s + e.hours * (e.hourly_rate ?? 0), 0);
+    return { hours, cost };
+  }
+  const week = totalsFor(thisWeekEntries);
+  const month = totalsFor(monthEntries);
+  const year = totalsFor(yearEntries);
+
+  const monthLabel = today.toLocaleDateString("en-US", { month: "short" });
+
+  function fmt(n: number) {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  }
 
   async function handleSendTimesheet() {
     setSending(true);
@@ -91,19 +110,22 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Summary — week / month / year */}
+      <div className="grid grid-cols-3 gap-2">
         <div className="card p-3 text-center">
-          <p className="text-2xl font-bold text-farm-dark">{entries.length}</p>
-          <p className="text-xs text-gray-400">Entries</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide">This Week</p>
+          <p className="text-xl font-bold text-farm-green mt-1">{week.hours.toFixed(1)}h</p>
+          {week.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(week.cost)}</p>}
         </div>
         <div className="card p-3 text-center">
-          <p className="text-2xl font-bold text-farm-green">{totalHours.toFixed(1)}</p>
-          <p className="text-xs text-gray-400">Total Hours</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide">{monthLabel}</p>
+          <p className="text-xl font-bold text-farm-dark mt-1">{month.hours.toFixed(1)}h</p>
+          {month.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(month.cost)}</p>}
         </div>
         <div className="card p-3 text-center">
-          <p className="text-2xl font-bold text-farm-dark">{workers.length}</p>
-          <p className="text-xs text-gray-400">Workers</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide">{today.getFullYear()}</p>
+          <p className="text-xl font-bold text-farm-dark mt-1">{year.hours.toFixed(1)}h</p>
+          {year.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(year.cost)}</p>}
         </div>
       </div>
 

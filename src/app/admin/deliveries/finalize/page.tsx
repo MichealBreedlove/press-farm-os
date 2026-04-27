@@ -65,7 +65,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
 
   return (
     <main className="pb-24">
-      <header className="page-header">
+      <header className="page-header no-wordmark">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/deliveries"

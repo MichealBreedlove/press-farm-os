@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
 import { OrderForm } from "@/components/order/OrderForm";
+import { fetchAvailabilityWithRollover } from "@/lib/availability";
 import type { AvailabilityItemWithItem } from "@/types";
 
 /**
@@ -120,24 +121,15 @@ export default async function OrderPage({
     );
   }
 
-  // Fetch availability items for this date + restaurant (exclude unavailable)
-  const availSelect = `
-    id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
-    available_sizes, available_colors, created_at, updated_at,
-    item:items(
-      id, farm_id, name, category, unit_type, default_price, chef_notes,
-      internal_notes, source, is_archived, sort_order, image_url,
-      season_status, season_note, size, color, created_at, updated_at
-    )
-  `;
+  // Fetch availability items for this date + restaurant (auto-rollover to prior date if empty)
 
-  const { data: rawItems } = await supabase
-    .from("availability_items")
-    .select(availSelect)
-    .eq("delivery_date", deliveryDate.date)
-    .eq("restaurant_id", restaurant.id)
-    .neq("status", "unavailable")
-    .order("item(sort_order)", { ascending: true }) as any;
+  // Persistent availability — fall back to most recent prior date if no rows for this date
+  const { data: rawItems } = await fetchAvailabilityWithRollover(supabase, {
+    deliveryDate: deliveryDate.date,
+    restaurantId: restaurant.id,
+    withItem: true,
+    hideUnavailable: true,
+  });
 
   // Also fetch Events availability (if chef's restaurant isn't Events)
   // So Press/Under-Study chefs can order Events items too
@@ -151,13 +143,12 @@ export default async function OrderPage({
       .single() as any;
 
     if (eventsRestaurant) {
-      const { data: rawEventsItems } = await supabase
-        .from("availability_items")
-        .select(availSelect)
-        .eq("delivery_date", deliveryDate.date)
-        .eq("restaurant_id", eventsRestaurant.id)
-        .neq("status", "unavailable")
-        .order("item(sort_order)", { ascending: true }) as any;
+      const { data: rawEventsItems } = await fetchAvailabilityWithRollover(supabase, {
+        deliveryDate: deliveryDate.date,
+        restaurantId: eventsRestaurant.id,
+        withItem: true,
+        hideUnavailable: true,
+      });
 
       // Only include Events items that aren't already in the restaurant's own list
       const ownItemIds = new Set((rawItems ?? []).map((ai: any) => ai.item_id));

@@ -145,7 +145,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
   return (
     <main className="pb-24 bg-farm-cream min-h-screen">
-      <header className="page-header">
+      <header className="page-header no-wordmark">
         <div className="flex items-center gap-2">
           <Link href="/admin/reports" className="text-white/70 hover:text-white">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

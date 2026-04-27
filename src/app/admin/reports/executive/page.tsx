@@ -294,7 +294,7 @@ export default async function AdminExecutiveReportsPage() {
 
   return (
     <main className="pb-24 bg-farm-cream min-h-screen print:min-h-0 print:pb-0">
-      <header className="page-header print-hide">
+      <header className="page-header no-wordmark print-hide">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <a href="/admin/reports" className="text-white/70 hover:text-white">

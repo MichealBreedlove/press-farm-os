@@ -77,10 +77,39 @@ export default async function AdminAvailabilityEditorPage({
     .from("availability_items")
     .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, created_at, updated_at")
     .eq("delivery_date", date);
-  const availability: AvailabilityItem[] = rawAvailability ?? [];
+  let availability: AvailabilityItem[] = rawAvailability ?? [];
+  let inheritedFromDate: string | null = null;
 
   if (availError) {
     console.error("Error fetching availability:", availError);
+  }
+
+  // Persistent availability: if this date has zero rows, pre-fill from the most
+  // recent prior date with availability (per restaurant). Admin still needs to
+  // hit Save to persist, but the form shows what they had last time.
+  if (availability.length === 0) {
+    // Find most recent prior date with availability data
+    const { data: priorDateRow } = await supabase
+      .from("availability_items")
+      .select("delivery_date")
+      .lt("delivery_date", date)
+      .order("delivery_date", { ascending: false })
+      .limit(1)
+      .single() as any;
+
+    if (priorDateRow?.delivery_date) {
+      inheritedFromDate = priorDateRow.delivery_date;
+      const { data: priorRows } = await supabase
+        .from("availability_items")
+        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, created_at, updated_at")
+        .eq("delivery_date", priorDateRow.delivery_date);
+
+      // Remap delivery_date so the editor shows them as belonging to this date
+      availability = (priorRows ?? []).map((r: any) => ({
+        ...r,
+        delivery_date: date,
+      }));
+    }
   }
 
   const pageTitle = formatPageTitle(date);
@@ -109,6 +138,16 @@ export default async function AdminAvailabilityEditorPage({
           </div>
         </div>
       </header>
+
+      {inheritedFromDate && (
+        <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 flex items-start gap-2">
+          <span className="text-blue-600">↻</span>
+          <div className="flex-1 text-xs text-blue-800">
+            <p className="font-semibold">Carried over from {new Date(inheritedFromDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}.</p>
+            <p>Tweak as needed and tap <strong>Save All Restaurants</strong> to publish this date.</p>
+          </div>
+        </div>
+      )}
 
       <AvailabilityEditor
         items={items}

@@ -56,7 +56,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
 
   return (
     <main className="pb-24">
-      <header className="page-header">
+      <header className="page-header no-wordmark">
         <h1 className="page-title">Expenses</h1>
 
         {/* Month navigation */}
