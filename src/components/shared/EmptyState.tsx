@@ -33,14 +33,12 @@ export function EmptyState({ icon, flower, title, description, actionLabel, acti
   return (
     <div className="text-center py-10 px-4">
       {flowerSrc ? (
-        <div className="mx-auto w-20 h-20 rounded-full bg-farm-cream border border-farm-dark/5 shadow-sm flex items-center justify-center mb-4 overflow-hidden">
-          <img
-            src={flowerSrc}
-            alt=""
-            aria-hidden="true"
-            className="w-full h-full object-contain p-1.5"
-          />
-        </div>
+        <img
+          src={flowerSrc}
+          alt=""
+          aria-hidden="true"
+          className="mx-auto h-24 w-auto mb-4"
+        />
       ) : (
         <div className="mx-auto w-16 h-16 rounded-full bg-farm-green-light flex items-center justify-center mb-4">
           {icon ?? <span className="text-2xl">🌿</span>}
