@@ -89,6 +89,9 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   const month = totalsFor(monthEntries);
   const year = totalsFor(yearEntries);
 
+  // Unique worker names across all entries (for the autocomplete datalist)
+  const workers = Array.from(new Set(entries.map(e => e.worker_name)));
+
   const monthLabel = today.toLocaleDateString("en-US", { month: "short" });
 
   function fmt(n: number) {
