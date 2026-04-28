@@ -274,7 +274,7 @@
   width: clamp(48px, 12vw, 96px);
   height: auto;
 }
-.pressfarm-logo--lg .pressfarm-logo__floral { width: clamp(96px, 22vw, 200px); }
+.pressfarm-logo--lg .pressfarm-logo__floral { width: clamp(120px, 18vw, 160px); }
 
 .pressfarm-logo__wordmark {
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
@@ -285,9 +285,9 @@
   font-size: clamp(0.875rem, 2.5vw, 1.5rem);
 }
 .pressfarm-logo--lg .pressfarm-logo__wordmark {
-  font-size: clamp(1.75rem, 6vw, 4rem);
-  letter-spacing: 0.45em;
-  padding-left: 0.45em;
+  font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+  letter-spacing: 0.35em;
+  padding-left: 0.35em;
 }
 
 .pressfarm-logo__tagline {
@@ -304,9 +304,9 @@
   gap: 0.75rem;
 }
 .pressfarm-logo--lg .pressfarm-logo__tagline {
-  font-size: clamp(0.75rem, 1.8vw, 1.05rem);
-  letter-spacing: 0.28em;
-  gap: 1.25rem;
+  font-size: clamp(0.7rem, 1.4vw, 0.875rem);
+  letter-spacing: 0.22em;
+  gap: 1rem;
 }
 .pressfarm-logo__tagline::before,
 .pressfarm-logo__tagline::after {
