@@ -34,106 +34,118 @@ export default function LoginPage() {
 
   if (sent) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
-        <div className="w-full max-w-md text-center space-y-6">
-          <PressFarmLogo size="lg" />
-          <div className="h-px bg-farm-dark/10 mx-auto max-w-xs" />
-          <p className="text-sm text-farm-muted leading-relaxed">
-            We sent a sign-in link to<br />
-            <strong className="text-farm-dark">{email}</strong>
-          </p>
-          <button
-            onClick={() => { setSent(false); setEmail(""); }}
-            className="text-xs tracking-[0.1em] uppercase text-farm-muted underline underline-offset-4 min-h-0"
-          >
-            Use a different email
-          </button>
+      <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <div className="login-card text-center px-8 py-12 sm:px-12 sm:py-14 space-y-8">
+            <PressFarmLogo size="lg" />
+
+            <div className="login-divider" />
+
+            <div className="space-y-3">
+              <p className="login-eyebrow text-farm-green">Check your inbox</p>
+              <p className="text-sm text-farm-muted leading-relaxed">
+                We sent a sign-in link to
+                <br />
+                <strong className="text-farm-dark">{email}</strong>
+              </p>
+            </div>
+
+            <button
+              onClick={() => { setSent(false); setEmail(""); }}
+              className="login-link"
+            >
+              Use a different email
+            </button>
+          </div>
+
+          <p className="login-footer">Yountville · California · Est. 2024</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6 py-10">
-      <div className="w-full max-w-md space-y-10">
+    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        <div className="login-card px-8 py-12 sm:px-12 sm:py-14 space-y-8">
 
-        {/* Logo lockup */}
-        <div className="text-center">
-          <PressFarmLogo size="lg" />
-        </div>
+          {/* Hero lockup */}
+          <div className="text-center">
+            <PressFarmLogo size="lg" />
+          </div>
 
-        {/* Card */}
-        <div className="card p-6 space-y-5">
+          {/* Refined divider with portal label */}
+          <div className="login-portal-rule">
+            <span>Kitchen Portal</span>
+          </div>
+
           {/* Mode toggle */}
-          <div className="flex rounded-xl bg-gray-50 border border-gray-100 p-1 gap-1">
+          <div className="login-tabs">
             {(["magic", "password"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(null); }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all min-h-0 ${
-                  mode === m
-                    ? "bg-white text-farm-dark shadow-sm border border-gray-100"
-                    : "text-farm-muted hover:text-farm-dark"
-                }`}
+                className={`login-tab ${mode === m ? "is-active" : ""}`}
               >
                 {m === "magic" ? "Magic Link" : "Password"}
               </button>
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-farm-dark mb-1.5">
-                Email
-              </label>
+              <label htmlFor="email" className="login-label">Email</label>
               <input
+                id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@pressfarm.app"
-                className="input-field"
+                placeholder="you@restaurant.com"
+                className="login-input"
+                autoComplete="email"
               />
             </div>
 
             {mode === "password" && (
               <div>
-                <label className="block text-sm font-medium text-farm-dark mb-1.5">
-                  Password
-                </label>
+                <label htmlFor="password" className="login-label">Password</label>
                 <input
+                  id="password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input-field"
+                  className="login-input"
+                  autoComplete="current-password"
                 />
               </div>
             )}
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3 border border-red-100">
+              <p className="text-sm text-red-700 bg-red-50/70 rounded-lg px-4 py-3 border border-red-100/80">
                 {error}
               </p>
             )}
 
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "…" : mode === "magic" ? "Send Magic Link" : "Sign In"}
+            <button type="submit" disabled={loading} className="login-cta">
+              {loading
+                ? "Sending…"
+                : mode === "magic" ? "Send Sign-In Link" : "Sign In"}
             </button>
           </form>
 
           {mode === "magic" && (
-            <p className="text-xs text-farm-muted text-center">
-              We&apos;ll send a sign-in link — no password needed
+            <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
+              No password — we&apos;ll email you a one-tap link
             </p>
           )}
         </div>
 
-        <p className="text-center text-[10px] tracking-[0.2em] uppercase text-farm-muted/50">
-          Yountville · California
-        </p>
+        <p className="login-footer">Yountville · California · Est. 2024</p>
       </div>
     </main>
   );

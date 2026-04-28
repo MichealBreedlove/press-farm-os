@@ -321,3 +321,172 @@
   background: rgba(181, 139, 72, 0.7);
 }
 
+
+/* ==========================================================
+   Login page — Michelin-level minimal sign-in screen
+   ========================================================== */
+.login-bg {
+  background-color: #faf7f0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,119,74,0.06), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(181,139,72,0.05), transparent 70%);
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(13, 42, 30, 0.06);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 30px 60px -30px rgba(13, 42, 30, 0.18),
+    0 4px 12px -4px rgba(13, 42, 30, 0.06);
+}
+
+.login-divider {
+  width: 32px;
+  height: 1px;
+  background: #B58B48;
+  margin: 0 auto;
+  opacity: 0.7;
+}
+
+.login-portal-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: rgba(13, 42, 30, 0.45);
+}
+.login-portal-rule::before,
+.login-portal-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(181, 139, 72, 0.35), transparent);
+}
+.login-portal-rule span {
+  font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(13, 42, 30, 0.55);
+}
+
+.login-eyebrow {
+  font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.login-tabs {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  background: rgba(13, 42, 30, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(13, 42, 30, 0.04);
+}
+.login-tab {
+  flex: 1;
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(13, 42, 30, 0.55);
+  background: transparent;
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+.login-tab:hover { color: #0D2A1E; }
+.login-tab.is-active {
+  background: #ffffff;
+  color: #0D2A1E;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 1px 3px rgba(13, 42, 30, 0.06),
+    0 1px 1px rgba(13, 42, 30, 0.04);
+}
+
+.login-label {
+  display: block;
+  font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(13, 42, 30, 0.55);
+  margin-bottom: 0.5rem;
+}
+
+.login-input {
+  display: block;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #faf7f0;
+  border: 1px solid rgba(13, 42, 30, 0.08);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #0D2A1E;
+  transition: all 180ms ease;
+}
+.login-input::placeholder { color: rgba(13, 42, 30, 0.3); }
+.login-input:hover { border-color: rgba(13, 42, 30, 0.16); }
+.login-input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #00774A;
+  box-shadow: 0 0 0 4px rgba(0, 119, 74, 0.08);
+}
+
+.login-cta {
+  width: 100%;
+  min-height: 50px;
+  padding: 0.85rem 1.5rem;
+  background: #0D2A1E;
+  color: #faf7f0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 12px;
+  border: 1px solid #0D2A1E;
+  box-shadow: 0 4px 12px -4px rgba(13, 42, 30, 0.3);
+  transition: all 200ms ease;
+}
+.login-cta:hover:not(:disabled) {
+  background: #00774A;
+  border-color: #00774A;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -6px rgba(0, 119, 74, 0.4);
+}
+.login-cta:active:not(:disabled) { transform: translateY(0); }
+.login-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.login-link {
+  display: inline-block;
+  font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(13, 42, 30, 0.6);
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-color: rgba(181, 139, 72, 0.5);
+  text-decoration-thickness: 1px;
+  min-height: 40px;
+  padding: 0.5rem;
+  transition: color 200ms ease;
+}
+.login-link:hover { color: #0D2A1E; text-decoration-color: #B58B48; }
+
+.login-footer {
+  margin-top: 2rem;
+  font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(13, 42, 30, 0.35);
+  text-align: center;
+}
