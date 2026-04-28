@@ -1,0 +1,59 @@
+/* Press Farm branding typography
+   Load your licensed Bank Gothic LT webfont at these paths.
+   Font files are not included in this export pack. */
+@font-face {
+  font-family: "Bank Gothic LT";
+  src: url("/assets/fonts/BankGothicLT.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bank Gothic LT";
+  src: url("/assets/fonts/BankGothicLT-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+.pressfarm-logo {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+}
+
+.pressfarm-logo__floral {
+  width: min(78vw, 520px);
+  height: auto;
+}
+
+.pressfarm-logo__wordmark {
+  font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.55em;
+  color: #0D2A1E;
+  line-height: 1;
+  margin: 0;
+}
+
+.pressfarm-logo__tagline {
+  font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  color: #0D2A1E;
+  font-size: 0.8rem;
+  line-height: 1;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pressfarm-logo__tagline::before,
+.pressfarm-logo__tagline::after {
+  content: "";
+  display: block;
+  width: 5.5rem;
+  height: 1px;
+  background: #B58B48;
+}

@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-
-const BANK_GOTHIC: React.CSSProperties = {
-  fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif",
-};
+import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -39,14 +35,9 @@ export default function LoginPage() {
   if (sent) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
-        <div className="w-full max-w-sm text-center space-y-5">
-          <div>
-            <Image src="/icon-192.png" alt="Press Farm" width={72} height={72} className="mx-auto mb-4" priority />
-            <h1 className="text-2xl font-normal tracking-[0.3em] uppercase text-farm-dark" style={BANK_GOTHIC}>
-              PRESS FARM
-            </h1>
-            <div className="mt-3 h-px bg-farm-dark/10" />
-          </div>
+        <div className="w-full max-w-md text-center space-y-6">
+          <PressFarmLogo size="lg" />
+          <div className="h-px bg-farm-dark/10 mx-auto max-w-xs" />
           <p className="text-sm text-farm-muted leading-relaxed">
             We sent a sign-in link to<br />
             <strong className="text-farm-dark">{email}</strong>
@@ -63,22 +54,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
-      <div className="w-full max-w-sm space-y-8">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6 py-10">
+      <div className="w-full max-w-md space-y-10">
 
-        {/* Logo + Wordmark */}
-        <div className="text-center space-y-3">
-          <Image src="/icon-192.png" alt="Press Farm" width={80} height={80} className="mx-auto mb-2 rounded-full border-2 border-black" priority />
-          <h1 className="text-3xl font-normal tracking-[0.35em] uppercase text-farm-dark" style={BANK_GOTHIC}>
-            PRESS FARM
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-farm-dark/12" />
-            <span className="text-[9px] tracking-[0.3em] uppercase text-farm-muted">
-              Kitchen Portal
-            </span>
-            <div className="h-px flex-1 bg-farm-dark/12" />
-          </div>
+        {/* Logo lockup */}
+        <div className="text-center">
+          <PressFarmLogo size="lg" />
         </div>
 
         {/* Card */}

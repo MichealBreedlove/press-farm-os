@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 260" width="1600" height="260">
+  <defs><style>
+    @font-face { font-family: 'Bank Gothic LT'; src: url('/assets/fonts/BankGothicLT.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Bank Gothic LT'; src: url('/assets/fonts/BankGothicLT-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+    .wordmark { font-family: 'Bank Gothic LT', 'Bank Gothic', 'Noto Sans Display', sans-serif; font-size: 118px; font-weight: 700; letter-spacing: 58px; fill: #F7F3E7; }
+    .tagline { font-family: 'Bank Gothic LT', 'Bank Gothic', 'Noto Sans Display', sans-serif; font-size: 42px; font-weight: 500; letter-spacing: 15px; fill: #F7F3E7; }
+    </style></defs>
+  
+  <text class="wordmark" x="800" y="115" text-anchor="middle">PRESS FARM</text>
+  <line x1="120" y1="190" x2="450" y2="190" stroke="#B58B48" stroke-width="3"/>
+  <text class="tagline" x="800" y="205" text-anchor="middle">CULTIVATED WITH CHEFS</text>
+  <line x1="1150" y1="190" x2="1480" y2="190" stroke="#B58B48" stroke-width="3"/>
+</svg>

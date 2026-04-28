@@ -46,9 +46,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
       <head>
+        {/* Bank Gothic LT — local @font-face is preferred (see globals.css).
+            CDN kept as fallback in case the licensed file isn't yet in /public/assets/fonts/ */}
         <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/bank-gothic" />
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
       </head>
       <body>
         {children}

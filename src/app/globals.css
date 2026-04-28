@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================
+   Bank Gothic LT — brand typography
+   Drop licensed woff2 files in /public/assets/fonts/
+   See public/assets/fonts/README.md
+   ========================================================== */
+@font-face {
+  font-family: "Bank Gothic LT";
+  src: url("/assets/fonts/BankGothicLT.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Bank Gothic LT";
+  src: url("/assets/fonts/BankGothicLT-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --farm-green: #00774A;
@@ -92,28 +112,27 @@
     right: 48px;
     top: 50%;
     transform: translateY(-50%);
-    font-family: 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif;
+    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", Arial, sans-serif;
     font-size: 17px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.6);
     white-space: nowrap;
   }
-  /* Olive branch icon in header */
+  /* Squash blossom icon in header */
   .page-header::after {
     content: "";
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    background-image: url("/icon-192.png");
+    width: 32px;
+    height: 32px;
+    background-image: url("/assets/logo/png/logo-floral-only-monochrome-light.png");
     background-size: contain;
     background-repeat: no-repeat;
-    border-radius: 50%;
-    border: 1px solid black;
-    opacity: 0.9;
+    background-position: center;
+    opacity: 0.95;
   }
   /* Larger size on tablet+ */
   @media (min-width: 640px) {
@@ -241,3 +260,70 @@
     bottom: calc(64px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* ==========================================================
+   Press Farm logo lockup classes
+   Used by <PressFarmLogo /> component.
+   ========================================================== */
+.pressfarm-logo {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
+  color: #0D2A1E;
+  text-align: center;
+}
+.pressfarm-logo--on-dark { color: #faf7f0; }
+
+.pressfarm-logo__floral {
+  width: clamp(48px, 12vw, 96px);
+  height: auto;
+}
+.pressfarm-logo--lg .pressfarm-logo__floral { width: clamp(96px, 22vw, 200px); }
+
+.pressfarm-logo__wordmark {
+  font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin: 0;
+  font-size: clamp(0.875rem, 2.5vw, 1.5rem);
+}
+.pressfarm-logo--lg .pressfarm-logo__wordmark {
+  font-size: clamp(1.75rem, 6vw, 4rem);
+  letter-spacing: 0.45em;
+  padding-left: 0.45em;
+}
+
+.pressfarm-logo__tagline {
+  font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  margin: 0;
+  opacity: 0.85;
+  font-size: clamp(0.625rem, 1.4vw, 0.875rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.pressfarm-logo--lg .pressfarm-logo__tagline {
+  font-size: clamp(0.75rem, 1.8vw, 1.05rem);
+  letter-spacing: 0.28em;
+  gap: 1.25rem;
+}
+.pressfarm-logo__tagline::before,
+.pressfarm-logo__tagline::after {
+  content: "";
+  display: block;
+  width: clamp(2rem, 6vw, 5.5rem);
+  height: 1px;
+  background: #B58B48;
+}
+.pressfarm-logo--on-dark .pressfarm-logo__tagline::before,
+.pressfarm-logo--on-dark .pressfarm-logo__tagline::after {
+  background: rgba(181, 139, 72, 0.7);
+}
+
