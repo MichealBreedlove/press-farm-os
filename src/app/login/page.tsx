@@ -74,11 +74,6 @@ export default function LoginPage() {
             <PressFarmLogo size="lg" />
           </div>
 
-          {/* Refined divider with portal label */}
-          <div className="login-portal-rule">
-            <span>Kitchen Portal</span>
-          </div>
-
           {/* Mode toggle */}
           <div className="login-tabs">
             {(["magic", "password"] as const).map((m) => (
