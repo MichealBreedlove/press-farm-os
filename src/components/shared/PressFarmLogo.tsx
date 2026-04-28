@@ -71,10 +71,12 @@ export function PressFarmLogo({
         className="pressfarm-logo__floral"
         priority={size === "lg"}
       />
-      <span className="pressfarm-logo__wordmark">PRESS FARM</span>
-      {!hideTagline && (
-        <span className="pressfarm-logo__tagline">CULTIVATED WITH CHEFS</span>
-      )}
+      <div className="pressfarm-logo__text">
+        <span className="pressfarm-logo__wordmark">PRESS FARM</span>
+        {!hideTagline && (
+          <span className="pressfarm-logo__tagline">CULTIVATED WITH CHEFS</span>
+        )}
+      </div>
     </div>
   );
 }
