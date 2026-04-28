@@ -1,14 +1,20 @@
-# Bank Gothic LT — Required Font Files
+# Bank Gothic LT — Font Files
 
-Drop your **licensed** Bank Gothic LT webfont files here:
+Currently installed:
+- `BankGothicLT.woff2` (19 KB) — Light weight, converted from BNKGOTHL.TTF
+- `BankGothicLT.ttf` (43 KB) — TrueType fallback
 
-- `BankGothicLT.woff2` — primary (700 weight)
-- `BankGothicLT-Medium.woff2` — medium (500 weight, used for tagline)
+Loaded by `src/app/globals.css` `@font-face` for all weights (100–900) since
+only one weight is provided. This prevents browsers from synthesizing fake
+bold variants which look poor on display fonts like Bank Gothic.
 
-The site references these paths in `src/app/globals.css` via `@font-face`.
-Until the files are added, the system falls back to a CDN-hosted Bank Gothic
-or to a system sans-serif.
+## To upgrade with additional weights
 
-**Do not commit the font files unless your license permits redistribution.**
+If you obtain a Bank Gothic LT Bold (700) or Medium (500) variant, drop them
+in here as `BankGothicLT-Bold.woff2` etc. and add separate `@font-face`
+declarations in globals.css with proper `font-weight` values.
 
-Once dropped here, the deploy will pick them up automatically.
+## License
+
+These font files are present because the user supplied a licensed copy.
+Verify your license terms before redistributing the project repo publicly.

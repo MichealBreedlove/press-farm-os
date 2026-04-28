@@ -4,20 +4,14 @@
 
 /* ==========================================================
    Bank Gothic LT — brand typography
-   Drop licensed woff2 files in /public/assets/fonts/
-   See public/assets/fonts/README.md
+   Single Light weight file used for all weights so browsers
+   don't synthesize fake bold (which looks awful on display fonts).
    ========================================================== */
 @font-face {
   font-family: "Bank Gothic LT";
-  src: url("/assets/fonts/BankGothicLT.woff2") format("woff2");
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Bank Gothic LT";
-  src: url("/assets/fonts/BankGothicLT-Medium.woff2") format("woff2");
-  font-weight: 500;
+  src: url("/assets/fonts/BankGothicLT.woff2") format("woff2"),
+       url("/assets/fonts/BankGothicLT.ttf") format("truetype");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
