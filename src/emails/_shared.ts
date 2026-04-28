@@ -45,7 +45,7 @@ export const styles = {
   },
   hero: {
     textAlign: "center" as const,
-    padding: "36px 24px 16px",
+    padding: "56px 24px 20px",
   },
   // Floral mark in header
   floral: {
