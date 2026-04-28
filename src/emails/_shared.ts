@@ -33,7 +33,7 @@ export const styles = {
   },
   container: {
     margin: "0 auto",
-    padding: "32px 16px",
+    padding: "48px 16px 32px",
     maxWidth: "560px",
   },
   card: {
@@ -45,7 +45,7 @@ export const styles = {
   },
   hero: {
     textAlign: "center" as const,
-    padding: "56px 24px 20px",
+    padding: "80px 24px 24px",
   },
   // Floral mark in header
   floral: {
