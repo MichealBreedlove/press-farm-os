@@ -236,9 +236,19 @@ export function ItemsClient({ items }: Props) {
       ))}
 
       {filtered.length === 0 && (
-        <p className="text-center text-sm text-gray-400 py-8">
-          {search ? "No items match your search." : "No items in catalog yet."}
-        </p>
+        search ? (
+          <p className="text-center text-sm text-gray-400 py-8">
+            No items match &ldquo;{search}&rdquo;.
+          </p>
+        ) : (
+          <div className="text-center py-10">
+            <img src="/assets/flowers/nasturtium.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
+            <h3 className="text-base font-semibold text-farm-dark">Your item catalog is empty</h3>
+            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+              Add the produce you grow so chefs can order it. Start with one or import in bulk via Settings.
+            </p>
+          </div>
+        )
       )}
     </div>
   );
