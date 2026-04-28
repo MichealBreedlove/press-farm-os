@@ -36,7 +36,7 @@ export default function LoginPage() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-farm-cream px-6">
         <div className="w-full max-w-md text-center space-y-6">
-          <PressFarmLogo size="lg" />
+          <PressFarmLogo size="md" />
           <div className="h-px bg-farm-dark/10 mx-auto max-w-xs" />
           <p className="text-sm text-farm-muted leading-relaxed">
             We sent a sign-in link to<br />
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
         {/* Logo lockup */}
         <div className="text-center">
-          <PressFarmLogo size="lg" />
+          <PressFarmLogo size="md" />
         </div>
 
         {/* Card */}
