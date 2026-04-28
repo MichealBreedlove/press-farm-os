@@ -290,7 +290,7 @@
 .pressfarm-logo--lg {
   gap: 1.1rem;
 }
-.pressfarm-logo--lg .pressfarm-logo__floral { width: clamp(120px, 20vw, 170px); }
+.pressfarm-logo--lg .pressfarm-logo__floral { width: clamp(180px, 30vw, 260px); }
 
 .pressfarm-logo__wordmark {
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
