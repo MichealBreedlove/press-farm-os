@@ -98,7 +98,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@restaurant.com"
+                placeholder="you@pressfarm.io"
                 className="login-input"
                 autoComplete="email"
               />

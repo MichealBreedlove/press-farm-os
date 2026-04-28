@@ -321,8 +321,11 @@
 
 .pressfarm-logo__wordmark {
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
-  font-weight: 700;
-  /* Brand spec: PRESS FARM at 0.08em letter-spacing */
+  /* We only have the Light weight of Bank Gothic LT installed. Setting weight 400
+     and disabling font-synthesis prevents the browser from faking a bold variant. */
+  font-weight: 400;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
   letter-spacing: 0.08em;
   line-height: 1;
   margin: 0;
@@ -341,6 +344,7 @@
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
   /* Brand spec: tagline weight 400, 0.12em letter-spacing, opacity 0.85 */
   font-weight: 400;
+  font-synthesis: none;
   letter-spacing: 0.12em;
   line-height: 1;
   margin: 0;
@@ -350,6 +354,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
+  /* Keep "CULTIVATED WITH CHEFS" on a single line — never wrap */
+  white-space: nowrap;
 }
 .pressfarm-logo--lg .pressfarm-logo__tagline {
   font-size: clamp(0.65rem, 1.3vw, 0.8rem);
