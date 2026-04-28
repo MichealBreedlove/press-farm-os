@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Baskervville } from "next/font/google";
+import { Roboto, Baskervville, Inter, Cormorant_Garamond, JetBrains_Mono } from "next/font/google";
 import { ServiceWorkerRegistrar } from "@/components/shared/ServiceWorkerRegistrar";
 import "./globals.css";
+import "./pressfarm-tokens.css";
 
+// Existing fonts (kept for backward compatibility)
 const roboto = Roboto({
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
@@ -15,6 +17,27 @@ const baskervville = Baskervville({
   weight: ["400"],
   style: ["normal", "italic"],
   variable: "--font-baskervville",
+  display: "swap",
+});
+
+// PressFarm OS design system fonts
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -44,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${roboto.variable} ${baskervville.variable}`}>
+    <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${inter.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Bank Gothic LT — local @font-face is preferred (see globals.css).
             CDN kept as fallback in case the licensed file isn't yet in /public/assets/fonts/ */}

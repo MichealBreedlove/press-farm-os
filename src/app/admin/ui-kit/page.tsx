@@ -4,17 +4,37 @@ import { createClient } from "@/lib/supabase/server";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
 const FLOWERS = [
-  { name: "Squash Blossom", file: "squash-blossom.png", role: "Signature crop", color: "Orange" },
-  { name: "Marigold", file: "marigold.png", role: "Harvest garnish", color: "Orange" },
-  { name: "Gem Marigold", file: "gem-marigold.png", role: "Chef garnish", color: "Yellow" },
-  { name: "Nasturtium", file: "nasturtium.png", role: "Edible flower", color: "Orange / Red" },
-  { name: "Bachelor Button", file: "bachelor-button.png", role: "Blue accent", color: "Blue" },
-  { name: "Pea Flower", file: "pea-flower.png", role: "Seasonal bloom", color: "White" },
-  { name: "Mustard Flower", file: "mustard-flower.png", role: "Brassica bloom", color: "Yellow" },
-  { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "White" },
-  { name: "Viola", file: "viola.png", role: "Plate flower", color: "Purple / Yellow" },
-  { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "Black / White" },
-  { name: "Hairy Vetch", file: "hairy-vetch.png", role: "Soil health", color: "Purple" },
+  { name: "Squash Blossom", file: "squash-blossom.png", role: "Signature crop", color: "Orange", chip: "pf-crop-squash" },
+  { name: "Marigold", file: "marigold.png", role: "Harvest garnish", color: "Orange", chip: "pf-crop-marigold" },
+  { name: "Gem Marigold", file: "gem-marigold.png", role: "Chef garnish", color: "Yellow", chip: "pf-crop-gem-marigold" },
+  { name: "Nasturtium", file: "nasturtium.png", role: "Edible flower", color: "Orange / Red", chip: "pf-crop-nasturtium" },
+  { name: "Bachelor Button", file: "bachelor-button.png", role: "Blue accent", color: "Blue", chip: "pf-crop-bachelor-button" },
+  { name: "Pea Flower", file: "pea-flower.png", role: "Seasonal bloom", color: "White", chip: "pf-crop-pea-flower" },
+  { name: "Mustard Flower", file: "mustard-flower.png", role: "Brassica bloom", color: "Yellow", chip: "pf-crop-mustard" },
+  { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "White", chip: "pf-crop-alyssum" },
+  { name: "Viola", file: "viola.png", role: "Plate flower", color: "Purple / Yellow", chip: "pf-crop-viola" },
+  { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "Black / White", chip: "pf-crop-fava" },
+  { name: "Hairy Vetch", file: "hairy-vetch.png", role: "Soil health", color: "Purple", chip: "pf-crop-hairy-vetch" },
+];
+
+const PF_PALETTE = [
+  { group: "Cream", swatches: [
+    { name: "cream-50", hex: "#fffdf8" }, { name: "cream-100", hex: "#fbf8f1" },
+    { name: "cream-200", hex: "#f7f1e7" }, { name: "cream-300", hex: "#efe6d6" },
+  ]},
+  { group: "Green", swatches: [
+    { name: "green-900", hex: "#0f1a14" }, { name: "green-700", hex: "#17351f" },
+    { name: "green-600", hex: "#234d2e" }, { name: "green-500", hex: "#365a3a" },
+    { name: "green-300", hex: "#7f9275" },
+  ]},
+  { group: "Gold", swatches: [
+    { name: "gold-700", hex: "#7a6a43" }, { name: "gold-500", hex: "#b99a46" },
+    { name: "gold-300", hex: "#d8c9a7" }, { name: "gold-200", hex: "#e2d7c4" },
+  ]},
+  { group: "Ink", swatches: [
+    { name: "ink-900", hex: "#111411" }, { name: "ink-700", hex: "#2b302a" },
+    { name: "ink-500", hex: "#5b6258" }, { name: "ink-300", hex: "#9ca195" },
+  ]},
 ];
 
 const ASSET_PATHS = [
@@ -245,6 +265,166 @@ export default async function UIKitPage() {
             <li><strong>Bottom:</strong> Bank Gothic LT typography, restrained spacing, refined hierarchy.</li>
             <li><strong>Whole:</strong> chef-facing identity that feels like a kitchen menu — minimal, intentional, premium.</li>
           </ul>
+        </section>
+
+        {/* ============================================================
+             PRESSFARM OS DESIGN TOKENS — pf-* namespace
+             ============================================================ */}
+        <hr className="pf-divider-gold" />
+
+        <section>
+          <p className="pf-eyebrow mb-2">Design Tokens</p>
+          <h2 className="pf-heading-1 mb-3">PressFarm OS · pf-* namespace</h2>
+          <p className="pf-body max-w-2xl">
+            Production-grade tokens for color, typography, spacing, radius, shadow, and motion.
+            Use via Tailwind utilities (<code className="font-pf-mono text-xs">bg-pf-green-700</code>),
+            CSS variables (<code className="font-pf-mono text-xs">var(--pf-color-gold-500)</code>),
+            or the named class shortcuts below.
+          </p>
+        </section>
+
+        {/* PF Palette */}
+        <section>
+          <p className="pf-eyebrow mb-4">Color System</p>
+          <div className="space-y-5">
+            {PF_PALETTE.map((group) => (
+              <div key={group.group}>
+                <p className="text-xs font-medium text-farm-muted mb-2">{group.group}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {group.swatches.map((s) => (
+                    <div key={s.name} className="rounded-xl overflow-hidden border border-farm-dark/5">
+                      <div style={{ backgroundColor: s.hex, height: "70px" }} />
+                      <div className="p-2 bg-white">
+                        <p className="text-xs font-mono text-farm-dark">{s.name}</p>
+                        <p className="text-[10px] font-mono text-farm-muted">{s.hex}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* PF Typography */}
+        <section>
+          <p className="pf-eyebrow mb-4">Typography Stack</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="pf-card p-6">
+              <p className="pf-eyebrow mb-3">Brand · Bank Gothic LT</p>
+              <p className="pf-brand-wordmark" style={{ fontSize: "1.75rem" }}>PRESS FARM</p>
+              <p className="pf-brand-tagline mt-2">CULTIVATED WITH CHEFS</p>
+              <p className="text-xs font-pf-mono text-farm-muted mt-3">.pf-brand-wordmark · .pf-brand-tagline</p>
+            </div>
+            <div className="pf-card p-6">
+              <p className="pf-eyebrow mb-3">Display · Cormorant Garamond</p>
+              <p className="pf-heading-1">Picked &amp; Packed</p>
+              <p className="pf-heading-2 mt-2">Yountville harvest</p>
+              <p className="text-xs font-pf-mono text-farm-muted mt-3">.pf-heading-1 · .pf-heading-2</p>
+            </div>
+            <div className="pf-card p-6">
+              <p className="pf-eyebrow mb-3">Body · Inter</p>
+              <p className="pf-body">Order produce direct from Press Farm — fresh-cut the morning of delivery.</p>
+              <p className="text-xs font-pf-mono text-farm-muted mt-3">.pf-body · font-pf-sans</p>
+            </div>
+            <div className="pf-card p-6">
+              <p className="pf-eyebrow mb-3">Mono · JetBrains Mono</p>
+              <p className="font-pf-mono text-sm text-farm-dark">/api/v1/items?category=flowers</p>
+              <p className="text-xs font-pf-mono text-farm-muted mt-3">font-pf-mono · code blocks, asset paths</p>
+            </div>
+          </div>
+        </section>
+
+        {/* PF Buttons */}
+        <section>
+          <p className="pf-eyebrow mb-4">Buttons · pf namespace</p>
+          <div className="pf-card p-6 flex flex-wrap items-center gap-3">
+            <button className="pf-button-primary">Primary action</button>
+            <button className="pf-button-secondary">Secondary</button>
+          </div>
+        </section>
+
+        {/* Status pills */}
+        <section>
+          <p className="pf-eyebrow mb-4">Status · pf namespace</p>
+          <div className="pf-card p-6 flex flex-wrap items-center gap-3">
+            <span className="pf-status-ready">Ready</span>
+            <span className="pf-status-review">Review</span>
+            <span className="pf-status-alert">Alert</span>
+          </div>
+        </section>
+
+        {/* CROP SIGNAL CHIPS */}
+        <section>
+          <p className="pf-eyebrow mb-4">Crop Signal Chips</p>
+          <div className="pf-card p-6 flex flex-wrap items-center gap-2">
+            {FLOWERS.map((f) => (
+              <span key={f.name} className={`pf-crop-chip ${f.chip}`}>
+                {f.name}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-farm-muted mt-2 font-pf-mono">
+            .pf-crop-chip + .pf-crop-* modifier · auto-adapting fill via color-mix()
+          </p>
+        </section>
+
+        {/* PF Cards */}
+        <section>
+          <p className="pf-eyebrow mb-4">Card Variants · pf namespace</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="pf-card p-6">
+              <p className="pf-eyebrow mb-2">Soft</p>
+              <h3 className="pf-heading-2">.pf-card</h3>
+              <p className="pf-body mt-2">Cream-100 fill, soft gold border, lifted shadow.</p>
+            </div>
+            <div className="pf-card-elevated p-6">
+              <p className="pf-eyebrow mb-2">Elevated</p>
+              <h3 className="pf-heading-2">.pf-card-elevated</h3>
+              <p className="pf-body mt-2">Cream-50 fill, stronger gold border, deeper shadow.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Tokens cheat sheet */}
+        <section>
+          <p className="pf-eyebrow mb-4">Token Reference</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="pf-card p-5">
+              <p className="text-xs text-farm-muted uppercase tracking-wider mb-2">Spacing</p>
+              <p className="font-pf-mono text-xs text-farm-dark leading-relaxed">
+                --pf-space-1 → 0.25rem<br />
+                --pf-space-4 → 1rem<br />
+                --pf-space-8 → 2rem<br />
+                --pf-space-16 → 4rem
+              </p>
+            </div>
+            <div className="pf-card p-5">
+              <p className="text-xs text-farm-muted uppercase tracking-wider mb-2">Radius</p>
+              <p className="font-pf-mono text-xs text-farm-dark leading-relaxed">
+                --pf-radius-sm → 0.5rem<br />
+                --pf-radius-md → 0.75rem<br />
+                --pf-radius-2xl → 1.5rem<br />
+                --pf-radius-full → 9999px
+              </p>
+            </div>
+            <div className="pf-card p-5">
+              <p className="text-xs text-farm-muted uppercase tracking-wider mb-2">Shadow</p>
+              <p className="font-pf-mono text-xs text-farm-dark leading-relaxed">
+                --pf-shadow-soft<br />
+                --pf-shadow-card<br />
+                --pf-shadow-lifted
+              </p>
+            </div>
+            <div className="pf-card p-5">
+              <p className="text-xs text-farm-muted uppercase tracking-wider mb-2">Motion</p>
+              <p className="font-pf-mono text-xs text-farm-dark leading-relaxed">
+                --pf-motion-fast → 140ms ease<br />
+                --pf-motion-base → 220ms ease<br />
+                --pf-motion-slow → 420ms ease
+              </p>
+            </div>
+          </div>
         </section>
 
       </div>

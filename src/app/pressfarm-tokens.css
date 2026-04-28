@@ -1,0 +1,332 @@
+/*
+  PressFarm OS Design System
+  Brand position: Michelin-level farm operations system, cultivated with chefs.
+  These tokens layer ON TOP of existing globals.css — both work simultaneously.
+
+  Use in components via:
+    - CSS:    var(--pf-color-green-700)
+    - Tailwind: bg-pf-green-700 (configured in tailwind.config.ts)
+    - Class shortcuts: .pf-card, .pf-button-primary, .pf-eyebrow, etc.
+*/
+
+:root {
+  /* ============================================================
+     COLOR TOKENS
+     ============================================================ */
+
+  /* Core surfaces */
+  --pf-color-cream-50: #fffdf8;
+  --pf-color-cream-100: #fbf8f1;
+  --pf-color-cream-200: #f7f1e7;
+  --pf-color-cream-300: #efe6d6;
+
+  /* Botanical greens */
+  --pf-color-green-900: #0f1a14;
+  --pf-color-green-800: #162016;
+  --pf-color-green-700: #17351f;
+  --pf-color-green-600: #234d2e;
+  --pf-color-green-500: #365a3a;
+  --pf-color-green-300: #7f9275;
+
+  /* Gold / brass accents */
+  --pf-color-gold-700: #7a6a43;
+  --pf-color-gold-600: #9b7c35;
+  --pf-color-gold-500: #b99a46;
+  --pf-color-gold-300: #d8c9a7;
+  --pf-color-gold-200: #e2d7c4;
+
+  /* Ink */
+  --pf-color-ink-900: #111411;
+  --pf-color-ink-700: #2b302a;
+  --pf-color-ink-500: #5b6258;
+  --pf-color-ink-300: #9ca195;
+
+  /* Crop signal colors — one per bundled flower */
+  --pf-crop-squash: #f4c75f;
+  --pf-crop-marigold: #d97706;
+  --pf-crop-gem-marigold: #9a3412;
+  --pf-crop-nasturtium: #ea580c;
+  --pf-crop-bachelor-button: #3b5bbb;
+  --pf-crop-pea-flower: #7c3aed;
+  --pf-crop-mustard: #dcae23;
+  --pf-crop-alyssum: #f4efe3;
+  --pf-crop-viola: #5b21b6;
+  --pf-crop-fava: #f7f4ea;
+  --pf-crop-hairy-vetch: #8b5cf6;
+
+  /* Semantic aliases */
+  --pf-bg-page: var(--pf-color-cream-200);
+  --pf-bg-card: var(--pf-color-cream-100);
+  --pf-bg-elevated: var(--pf-color-cream-50);
+  --pf-text-primary: var(--pf-color-green-900);
+  --pf-text-secondary: var(--pf-color-ink-500);
+  --pf-text-muted: var(--pf-color-gold-700);
+  --pf-border-soft: var(--pf-color-gold-200);
+  --pf-border-strong: var(--pf-color-gold-300);
+  --pf-action-primary: var(--pf-color-green-700);
+  --pf-action-primary-hover: var(--pf-color-green-600);
+  --pf-action-accent: var(--pf-color-gold-500);
+
+  /* ============================================================
+     TYPOGRAPHY TOKENS
+     ============================================================ */
+
+  --pf-font-brand: "Bank Gothic LT", "BankGothic Md BT", "Arial Narrow", sans-serif;
+  --pf-font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pf-font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --pf-font-mono: var(--font-jetbrains), "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  --pf-text-xs: 0.75rem;
+  --pf-text-sm: 0.875rem;
+  --pf-text-base: 1rem;
+  --pf-text-lg: 1.125rem;
+  --pf-text-xl: 1.25rem;
+  --pf-text-2xl: 1.5rem;
+  --pf-text-3xl: 1.875rem;
+  --pf-text-4xl: 2.25rem;
+
+  --pf-leading-tight: 1.1;
+  --pf-leading-normal: 1.5;
+  --pf-leading-relaxed: 1.7;
+
+  --pf-tracking-brand: 0.18em;
+  --pf-tracking-label: 0.24em;
+  --pf-tracking-tagline: 0.32em;
+
+  /* ============================================================
+     SPACING TOKENS
+     ============================================================ */
+
+  --pf-space-0: 0;
+  --pf-space-1: 0.25rem;
+  --pf-space-2: 0.5rem;
+  --pf-space-3: 0.75rem;
+  --pf-space-4: 1rem;
+  --pf-space-5: 1.25rem;
+  --pf-space-6: 1.5rem;
+  --pf-space-8: 2rem;
+  --pf-space-10: 2.5rem;
+  --pf-space-12: 3rem;
+  --pf-space-16: 4rem;
+  --pf-space-20: 5rem;
+  --pf-space-24: 6rem;
+
+  /* Layout containers */
+  --pf-container-sm: 640px;
+  --pf-container-md: 768px;
+  --pf-container-lg: 1024px;
+  --pf-container-xl: 1280px;
+  --pf-container-2xl: 1440px;
+
+  /* ============================================================
+     RADIUS + ELEVATION
+     ============================================================ */
+
+  --pf-radius-sm: 0.5rem;
+  --pf-radius-md: 0.75rem;
+  --pf-radius-lg: 1rem;
+  --pf-radius-xl: 1.25rem;
+  --pf-radius-2xl: 1.5rem;
+  --pf-radius-full: 9999px;
+
+  --pf-shadow-soft: 0 10px 30px rgba(15, 26, 20, 0.06);
+  --pf-shadow-card: 0 16px 40px rgba(15, 26, 20, 0.08);
+  --pf-shadow-lifted: 0 24px 70px rgba(15, 26, 20, 0.12);
+
+  /* ============================================================
+     MOTION
+     ============================================================ */
+
+  --pf-motion-fast: 140ms ease;
+  --pf-motion-base: 220ms ease;
+  --pf-motion-slow: 420ms ease;
+}
+
+/* ============================================================
+   BASE TYPOGRAPHY CLASSES
+   ============================================================ */
+
+.pf-brand-wordmark {
+  font-family: var(--pf-font-brand);
+  font-size: clamp(2rem, 6vw, 4.75rem);
+  letter-spacing: var(--pf-tracking-brand);
+  text-transform: uppercase;
+  line-height: var(--pf-leading-tight);
+  color: var(--pf-color-green-900);
+  margin: 0;
+}
+
+.pf-brand-tagline {
+  font-family: var(--pf-font-brand);
+  font-size: clamp(0.75rem, 1.4vw, 1rem);
+  letter-spacing: var(--pf-tracking-tagline);
+  text-transform: uppercase;
+  line-height: var(--pf-leading-normal);
+  color: var(--pf-color-green-700);
+  margin: 0;
+}
+
+.pf-eyebrow {
+  font-family: var(--pf-font-brand);
+  font-size: var(--pf-text-xs);
+  letter-spacing: var(--pf-tracking-label);
+  text-transform: uppercase;
+  color: var(--pf-text-muted);
+  margin: 0;
+}
+
+.pf-heading-1 {
+  font-family: var(--pf-font-serif);
+  font-size: var(--pf-text-4xl);
+  line-height: var(--pf-leading-tight);
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  margin: 0;
+}
+
+.pf-heading-2 {
+  font-family: var(--pf-font-serif);
+  font-size: var(--pf-text-2xl);
+  line-height: var(--pf-leading-tight);
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  margin: 0;
+}
+
+.pf-body {
+  font-family: var(--pf-font-sans);
+  font-size: var(--pf-text-base);
+  line-height: var(--pf-leading-normal);
+  color: var(--pf-text-secondary);
+}
+
+/* ============================================================
+   COMPONENT CLASSES
+   ============================================================ */
+
+.pf-card {
+  background: var(--pf-bg-card);
+  border: 1px solid var(--pf-border-soft);
+  border-radius: var(--pf-radius-2xl);
+  box-shadow: var(--pf-shadow-soft);
+}
+
+.pf-card-elevated {
+  background: var(--pf-bg-elevated);
+  border: 1px solid var(--pf-border-strong);
+  border-radius: var(--pf-radius-2xl);
+  box-shadow: var(--pf-shadow-card);
+}
+
+.pf-button-primary {
+  background: var(--pf-action-primary);
+  color: white;
+  border-radius: var(--pf-radius-2xl);
+  padding: var(--pf-space-3) var(--pf-space-5);
+  border: none;
+  cursor: pointer;
+  font-family: var(--pf-font-sans);
+  font-weight: 500;
+  transition: background var(--pf-motion-base), transform var(--pf-motion-fast);
+}
+.pf-button-primary:hover {
+  background: var(--pf-action-primary-hover);
+  transform: translateY(-1px);
+}
+
+.pf-button-secondary {
+  background: transparent;
+  color: var(--pf-color-green-700);
+  border: 1px solid var(--pf-action-accent);
+  border-radius: var(--pf-radius-2xl);
+  padding: var(--pf-space-3) var(--pf-space-5);
+  font-family: var(--pf-font-sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--pf-motion-base), border-color var(--pf-motion-base);
+}
+.pf-button-secondary:hover {
+  background: var(--pf-color-cream-100);
+  border-color: var(--pf-color-gold-600);
+}
+
+.pf-divider-gold {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pf-color-gold-500), transparent);
+  border: none;
+  margin: var(--pf-space-6) 0;
+}
+
+.pf-status-ready {
+  background: #eef7ed;
+  color: #1f5a2e;
+  border: 1px solid #c8dec6;
+  border-radius: var(--pf-radius-full);
+  padding: var(--pf-space-1) var(--pf-space-3);
+  font-size: var(--pf-text-xs);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pf-status-review {
+  background: #fff8e8;
+  color: #7a5a12;
+  border: 1px solid #e8d19a;
+  border-radius: var(--pf-radius-full);
+  padding: var(--pf-space-1) var(--pf-space-3);
+  font-size: var(--pf-text-xs);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pf-status-alert {
+  background: #fff1ed;
+  color: #9a3412;
+  border: 1px solid #f3c7b7;
+  border-radius: var(--pf-radius-full);
+  padding: var(--pf-space-1) var(--pf-space-3);
+  font-size: var(--pf-text-xs);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ============================================================
+   CROP SIGNAL CHIPS — colored chips per flower
+   ============================================================ */
+
+.pf-crop-squash { --pf-crop-color: var(--pf-crop-squash); }
+.pf-crop-marigold { --pf-crop-color: var(--pf-crop-marigold); }
+.pf-crop-gem-marigold { --pf-crop-color: var(--pf-crop-gem-marigold); }
+.pf-crop-nasturtium { --pf-crop-color: var(--pf-crop-nasturtium); }
+.pf-crop-bachelor-button { --pf-crop-color: var(--pf-crop-bachelor-button); }
+.pf-crop-pea-flower { --pf-crop-color: var(--pf-crop-pea-flower); }
+.pf-crop-mustard { --pf-crop-color: var(--pf-crop-mustard); }
+.pf-crop-alyssum { --pf-crop-color: var(--pf-crop-alyssum); }
+.pf-crop-viola { --pf-crop-color: var(--pf-crop-viola); }
+.pf-crop-fava { --pf-crop-color: var(--pf-crop-fava); }
+.pf-crop-hairy-vetch { --pf-crop-color: var(--pf-crop-hairy-vetch); }
+
+.pf-crop-chip {
+  border: 1px solid color-mix(in srgb, var(--pf-crop-color, #ccc) 45%, white);
+  background: color-mix(in srgb, var(--pf-crop-color, #eee) 14%, white);
+  color: var(--pf-color-green-900);
+  border-radius: var(--pf-radius-full);
+  padding: var(--pf-space-1) var(--pf-space-3);
+  font-family: var(--pf-font-sans);
+  font-size: var(--pf-text-xs);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-space-2);
+}
+.pf-crop-chip::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pf-crop-color, #999);
+}
