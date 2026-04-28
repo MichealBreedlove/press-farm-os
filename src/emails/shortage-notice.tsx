@@ -8,7 +8,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { styles, FLORAL_URL, colors } from "./_shared";
+import { styles, FLORAL_URL, WORDMARK_URL, colors } from "./_shared";
 
 interface ShortageItem {
   itemName: string;
@@ -43,7 +43,7 @@ export default function ShortageNotice({
           <div style={styles.card}>
             <Section style={styles.hero}>
               <Img src={FLORAL_URL} alt="Press Farm" width="56" height="56" style={{ ...styles.floral, width: "56px" }} />
-              <Text style={styles.brand}>PRESS FARM</Text>
+              <Img src={WORDMARK_URL} alt="PRESS FARM" width="240" height="auto" style={{ display: "block", margin: "16px auto 4px", maxWidth: "240px", height: "auto" }} />
               <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
             </Section>
 
@@ -101,3 +101,4 @@ export default function ShortageNotice({
     </Html>
   );
 }
+

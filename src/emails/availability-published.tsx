@@ -9,7 +9,7 @@ import {
   Text,
 } from "@react-email/components";
 import { APP_URL } from "@/lib/constants";
-import { styles, FLORAL_URL } from "./_shared";
+import { styles, FLORAL_URL, WORDMARK_URL } from "./_shared";
 
 interface AvailabilityPublishedProps {
   chefName: string;
@@ -38,7 +38,7 @@ export default function AvailabilityPublished({
             {/* Hero */}
             <Section style={styles.hero}>
               <Img src={FLORAL_URL} alt="Press Farm" width="72" height="72" style={styles.floral} />
-              <Text style={styles.brand}>PRESS FARM</Text>
+              <Img src={WORDMARK_URL} alt="PRESS FARM" width="240" height="auto" style={{ display: "block", margin: "16px auto 4px", maxWidth: "240px", height: "auto" }} />
               <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
             </Section>
 
@@ -84,3 +84,4 @@ export default function AvailabilityPublished({
     </Html>
   );
 }
+

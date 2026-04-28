@@ -259,3 +259,5 @@ export const styles = {
 };
 
 export const FLORAL_URL = `${APP_URL}/assets/logo/png/logo-floral-only-transparent.png`;
+/** Bank Gothic LT "PRESS FARM" wordmark rendered as PNG (email clients can't load custom fonts) */
+export const WORDMARK_URL = `${APP_URL}/assets/logo/logo-wordmark-bank-gothic-transparent.png`;
