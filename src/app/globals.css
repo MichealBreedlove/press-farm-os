@@ -175,6 +175,33 @@
     @apply font-display text-base text-farm-dark tracking-tight mb-3;
   }
 
+  /* Bank Gothic eyebrow used above section content. Pair with farm-green
+     or farm-muted colors. Example: <p className="section-eyebrow text-farm-green">Overview</p> */
+  .section-eyebrow {
+    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  /* Filled card variants for KPI/summary blocks */
+  .card-success {
+    @apply rounded-2xl text-white p-5;
+    background: linear-gradient(135deg, #00774A 0%, #0D5A38 100%);
+  }
+  .card-warning {
+    @apply rounded-2xl p-5;
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    color: #78350F;
+  }
+  .card-cream {
+    @apply rounded-2xl p-5;
+    background: #faf7f0;
+    border: 1px solid rgba(13, 42, 30, 0.06);
+  }
+
   /* --- Status badges --- */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;

@@ -1,22 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
 import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
+import { StatusPill } from "@/components/shared/StatusPill";
 import Link from "next/link";
+import type { OrderStatus } from "@/types";
 
 interface AdminOrdersPageProps {
   searchParams: Promise<{ date?: string; status?: string }>;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: "badge-gray",
-  submitted: "badge-blue",
-  in_progress: "badge-gold",
-  fulfilled: "badge-green",
-  cancelled: "badge-red",
-};
 
 /**
  * /admin/orders — Orders dashboard (server component)
@@ -143,13 +136,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                       : "Not submitted"}
                   </p>
                 </div>
-                <span
-                  className={`flex-shrink-0 ${
-                    STATUS_COLORS[order.status] ?? "badge-gray"
-                  }`}
-                >
-                  {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
-                </span>
+                <StatusPill status={order.status as OrderStatus} />
               </div>
 
               <div className="flex gap-4 mt-3 text-sm text-gray-500">

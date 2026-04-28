@@ -103,30 +103,28 @@ export default function OrderReviewPage() {
         </button>
         <div>
           <h1 className="page-title">{isEditing ? "Review Changes" : "Review Order"}</h1>
-          <p className="text-sm text-gray-500">{deliveryDateFormatted}</p>
+          <p className="text-sm text-white/60">{deliveryDateFormatted}</p>
         </div>
       </header>
 
-      <div className="px-4 py-4">
-        {/* Order items table */}
-        <div className="card overflow-hidden mb-4">
+      <div className="px-4 py-5 space-y-4">
+        {/* Order items */}
+        <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
-            <h2 className="text-sm font-semibold text-gray-700">
-              Items ({items.length})
-            </h2>
+            <p className="section-eyebrow text-farm-muted">Items · {items.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
             {items.map((item) => (
               <li key={item.availabilityItemId} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.itemName}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-medium text-farm-dark truncate">{item.itemName}</p>
+                    <p className="text-xs text-farm-muted mt-0.5">
                       {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-farm-dark">
                       &times; {item.quantity}
                     </p>
                   </div>
@@ -134,25 +132,23 @@ export default function OrderReviewPage() {
               </li>
             ))}
           </ul>
-
-          {/* Item count */}
-          <div className="px-4 py-3 border-t border-gray-100 flex justify-between items-center">
-            <span className="text-sm font-semibold text-gray-700">Total Items</span>
-            <span className="text-base font-bold text-gray-900">{items.length}</span>
+          <div className="px-4 py-3 border-t border-gray-100 flex justify-between items-center bg-farm-cream/40">
+            <span className="text-sm font-semibold text-farm-dark">Total Items</span>
+            <span className="text-base font-bold text-farm-dark">{items.length}</span>
           </div>
         </div>
 
         {/* Notes */}
         {freeformNotes && (
-          <div className="card px-4 py-4 mb-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-1">Notes for Micheal</h2>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{freeformNotes}</p>
+          <div className="card px-4 py-4">
+            <p className="section-eyebrow text-farm-muted mb-1.5">Notes for Micheal</p>
+            <p className="text-sm text-farm-dark whitespace-pre-wrap leading-relaxed">{freeformNotes}</p>
           </div>
         )}
 
         {/* Error message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
             <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
@@ -160,18 +156,18 @@ export default function OrderReviewPage() {
 
       {/* Sticky action buttons */}
       <div className="fixed bottom-nav-safe inset-x-0 bg-white shadow-nav px-4 py-3 z-40">
-        <div className="flex gap-3">
+        <div className="flex gap-3 max-w-2xl mx-auto">
           <button
             onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
             disabled={isSubmitting}
-            className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl min-h-[44px] disabled:opacity-40 transition-opacity"
+            className="btn-ghost flex-1 bg-gray-50 hover:bg-gray-100 text-sm py-3"
           >
             Back
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-[2] bg-farm-green text-white font-semibold py-3 rounded-xl min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            className="btn-primary flex-[2] text-sm py-3"
           >
             {isSubmitting ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update Order" : "Submit Order")}
           </button>

@@ -121,9 +121,7 @@ export default async function AdminDashboardPage() {
       <div className="px-4 py-5 space-y-6">
         {/* Live stats */}
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-sm text-gray-500 uppercase tracking-wider">
-            {monthName} Overview
-          </h2>
+          <p className="section-eyebrow text-farm-muted">{monthName} Overview</p>
           <RefreshButton />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -154,9 +152,7 @@ export default async function AdminDashboardPage() {
 
         {sections.map((section) => (
           <div key={section.title}>
-            <h2 className="font-display text-sm text-gray-500 uppercase tracking-wider mb-3">
-              {section.title}
-            </h2>
+            <p className="section-eyebrow text-farm-muted mb-3">{section.title}</p>
             <div className="grid grid-cols-2 gap-3">
               {section.cards.map((card) => (
                 <Link

@@ -120,20 +120,18 @@ export default async function AdminDeliveriesPage({
           </div>
         )}
         {/* Current month summary card */}
-        <div className="bg-farm-green text-white rounded-2xl p-5">
-          <p className="text-sm text-farm-green-light">{monthLabel(today)} Total</p>
-          <p className="text-3xl font-bold mt-1">{formatCurrency(monthTotal)}</p>
+        <div className="card-success">
+          <p className="section-eyebrow text-white/70">{monthLabel(today)} Total</p>
+          <p className="text-3xl font-bold mt-2">{formatCurrency(monthTotal)}</p>
           <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-farm-green-light">
+            <p className="text-sm text-white/80">
               {monthDeliveries.length} delivery{monthDeliveries.length !== 1 ? "s" : ""} logged
             </p>
             {monthDeliveries.length > 0 && !allFinalized && (
               <FinalizeButton month={currentMonth} />
             )}
             {allFinalized && (
-              <span className="badge-green">
-                Finalized
-              </span>
+              <span className="badge-green">Finalized</span>
             )}
           </div>
         </div>
@@ -215,9 +213,7 @@ export default async function AdminDeliveriesPage({
         {/* Upcoming dates needing log entry */}
         {upcomingDates && upcomingDates.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Log a Delivery
-            </h2>
+            <p className="section-eyebrow text-farm-muted mb-3">Log a Delivery</p>
             <div className="space-y-2">
               {(upcomingDates as any[]).map((d: any) => (
                 <Link

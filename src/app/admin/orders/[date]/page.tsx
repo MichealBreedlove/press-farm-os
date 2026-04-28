@@ -1,23 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
-import { ORDER_STATUS_LABELS, CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
+import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
+import { StatusPill } from "@/components/shared/StatusPill";
 import Link from "next/link";
-import type { ItemCategory } from "@/types";
+import type { ItemCategory, OrderStatus } from "@/types";
 
 interface AdminOrdersByDatePageProps {
   params: Promise<{ date: string }>;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: "badge-gray",
-  submitted: "badge-blue",
-  in_progress: "badge-gold",
-  fulfilled: "badge-green",
-  cancelled: "badge-red",
-};
 
 /**
  * /admin/orders/[date] — Full order detail for a specific delivery date (server component)
@@ -119,11 +112,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span
-                    className={STATUS_COLORS[order.status] ?? "badge-gray"}
-                  >
-                    {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
-                  </span>
+                  <StatusPill status={order.status as OrderStatus} />
                 </div>
               </div>
 

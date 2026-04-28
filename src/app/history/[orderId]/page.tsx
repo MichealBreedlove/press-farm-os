@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate, formatCurrency } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
+import { StatusPill } from "@/components/shared/StatusPill";
 import type { OrderStatus, UnitType } from "@/types";
 
 /**
@@ -132,9 +133,7 @@ export default async function OrderDetailPage({
         {/* Order items */}
         <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
-            <h2 className="text-sm font-semibold text-gray-700">
-              Items ({orderItems.length})
-            </h2>
+            <p className="section-eyebrow text-farm-muted">Items · {orderItems.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
             {orderItems.map((oi: any) => {
@@ -234,20 +233,3 @@ export default async function OrderDetailPage({
   );
 }
 
-function StatusPill({ status }: { status: OrderStatus }) {
-  const colors: Record<OrderStatus, string> = {
-    draft: "bg-gray-100 text-gray-500",
-    submitted: "bg-blue-50 text-blue-600",
-    in_progress: "bg-yellow-50 text-yellow-700",
-    fulfilled: "bg-green-50 text-green-700",
-    cancelled: "bg-red-50 text-red-600",
-  };
-
-  return (
-    <span
-      className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${colors[status] ?? "bg-gray-100 text-gray-500"}`}
-    >
-      {ORDER_STATUS_LABELS[status] ?? status}
-    </span>
-  );
-}
