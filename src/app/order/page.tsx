@@ -40,7 +40,7 @@ export default async function OrderPage({
       <main className="min-h-screen bg-farm-cream flex items-center justify-center px-4">
         <div className="text-center">
           <p className="text-gray-500 text-sm">
-            No restaurant found for your account. Please contact Micheal.
+            No restaurant found for your account. Please contact Press Farm.
           </p>
         </div>
       </main>
@@ -114,7 +114,7 @@ export default async function OrderPage({
           <p className="text-center text-gray-500 text-sm">
             No upcoming delivery dates open for ordering.
             <br />
-            Check back soon or contact Micheal.
+            Check back soon or contact Press Farm.
           </p>
         </div>
       </main>

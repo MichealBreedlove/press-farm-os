@@ -8,7 +8,7 @@ const STORAGE_KEY = "pressfarm_onboarding_seen";
 const STEPS = [
   {
     title: "Welcome to Press Farm 🌿",
-    body: "Order fresh produce direct from Micheal's farm. Here's how it works in 4 quick steps.",
+    body: "Order fresh produce direct from Press Farm. Here's how it works in 4 quick steps.",
   },
   {
     title: "1. Search or scroll",

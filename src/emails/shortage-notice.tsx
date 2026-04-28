@@ -2,14 +2,13 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Html,
+  Img,
   Preview,
   Section,
   Text,
-  Row,
-  Column,
 } from "@react-email/components";
+import { styles, FLORAL_URL, colors } from "./_shared";
 
 interface ShortageItem {
   itemName: string;
@@ -28,14 +27,6 @@ interface ShortageNoticeProps {
 
 /**
  * shortage-notice.tsx — Sent to chef when admin marks items as shorted.
- *
- * Subject: "Shortage Notice — [Date]"
- * From: orders@pressfarm.app
- * To: Chef
- *
- * Example from chef workflow doc:
- *   Fava Leaves | 3 SM | 1 SM | Low yield
- *   Nasturtium  | 20 EA | 12 EA | Pest damage
  */
 export default function ShortageNotice({
   chefName,
@@ -46,45 +37,65 @@ export default function ShortageNotice({
   return (
     <Html>
       <Head />
-      <Preview>Shortage Notice — {deliveryDate}</Preview>
-      <Body style={{ backgroundColor: "#faf7f0", fontFamily: "sans-serif" }}>
-        <Container style={{ maxWidth: "600px", margin: "0 auto", padding: "24px" }}>
-          <Heading style={{ color: "#b45309", fontSize: "20px", marginBottom: "8px" }}>
-            Shortage Notice
-          </Heading>
-          <Text style={{ color: "#666", marginBottom: "24px" }}>
-            Hi {chefName}, some items on your {restaurantName} order for{" "}
-            <strong>{deliveryDate}</strong> have been adjusted:
-          </Text>
+      <Preview>Shortage notice for {deliveryDate}</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <div style={styles.card}>
+            <Section style={styles.hero}>
+              <Img src={FLORAL_URL} alt="Press Farm" width="56" height="56" style={{ ...styles.floral, width: "56px" }} />
+              <Text style={styles.brand}>PRESS FARM</Text>
+              <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
+            </Section>
 
-          <Section style={{ backgroundColor: "#fff", borderRadius: "8px", padding: "16px" }}>
-            {/* Header row */}
-            <Row style={{ marginBottom: "8px", fontWeight: "bold", color: "#333", fontSize: "12px" }}>
-              <Column>Item</Column>
-              <Column style={{ textAlign: "center" }}>Requested</Column>
-              <Column style={{ textAlign: "center" }}>Fulfilled</Column>
-              <Column>Reason</Column>
-            </Row>
-            {shortages.map((s, i) => (
-              <Row key={i} style={{ marginBottom: "8px", color: "#333", fontSize: "14px" }}>
-                <Column>{s.itemName}</Column>
-                <Column style={{ textAlign: "center" }}>
-                  {s.requestedQty} {s.unit.toUpperCase()}
-                </Column>
-                <Column style={{ textAlign: "center", color: "#b45309" }}>
-                  {s.fulfilledQty} {s.unit.toUpperCase()}
-                </Column>
-                <Column style={{ color: "#666" }}>{s.reason}</Column>
-              </Row>
-            ))}
+            <hr style={styles.goldRule} />
+
+            <Section style={styles.body_section}>
+              <Text style={{ ...styles.eyebrow, color: "#B45309" }}>Heads Up</Text>
+              <Text style={styles.h1}>Shortage on {deliveryDate}</Text>
+
+              <Text style={styles.paragraph}>
+                Hello {chefName}, a few items on your <strong>{restaurantName}</strong> order
+                couldn&apos;t be fulfilled in full. Details below — all other items will arrive
+                as requested.
+              </Text>
+
+              <table cellPadding="0" cellSpacing="0" border={0} style={{ width: "100%", borderCollapse: "collapse" as const, margin: "20px 0" }}>
+                <tbody>
+                  {shortages.map((s, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: "14px 0", borderBottom: i < shortages.length - 1 ? `1px solid ${colors.borderSoft}` : "none" }}>
+                        <Text style={styles.itemName}>{s.itemName}</Text>
+                        <Text style={{ fontFamily: "inherit", fontSize: "12px", color: colors.textMuted, margin: "4px 0 0" }}>
+                          {s.reason}
+                        </Text>
+                      </td>
+                      <td style={{ padding: "14px 0", borderBottom: i < shortages.length - 1 ? `1px solid ${colors.borderSoft}` : "none", textAlign: "right" as const, whiteSpace: "nowrap" as const }}>
+                        <Text style={{ ...styles.itemQty, color: "#B45309" }}>
+                          {s.fulfilledQty}
+                        </Text>
+                        <Text style={{ fontFamily: "inherit", fontSize: "11px", color: colors.textLight, margin: "2px 0 0", textDecoration: "line-through" as const }}>
+                          {s.requestedQty} {s.unit.toUpperCase()}
+                        </Text>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <Text style={styles.paragraphMuted}>
+                We do our best to fulfill every order. When the field doesn&apos;t cooperate
+                — pests, weather, timing — we&apos;d rather give you accurate info than
+                substitute without asking. Reply to this email if you&apos;d like a
+                substitute or have questions.
+              </Text>
+            </Section>
+          </div>
+
+          <Section style={styles.footerSection}>
+            <Text style={styles.footerSignature}>
+              Press Farm · Yountville, California
+            </Text>
           </Section>
-
-          <Text style={{ color: "#666", marginTop: "16px" }}>
-            All other items fulfilled as requested.
-          </Text>
-          <Text style={{ color: "#999", fontSize: "12px", marginTop: "16px" }}>
-            — Press Farm OS
-          </Text>
         </Container>
       </Body>
     </Html>

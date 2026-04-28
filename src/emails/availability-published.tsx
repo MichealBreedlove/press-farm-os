@@ -1,9 +1,7 @@
 import {
   Body,
-  Button,
   Container,
   Head,
-  Heading,
   Html,
   Img,
   Preview,
@@ -11,6 +9,7 @@ import {
   Text,
 } from "@react-email/components";
 import { APP_URL } from "@/lib/constants";
+import { styles, FLORAL_URL } from "./_shared";
 
 interface AvailabilityPublishedProps {
   chefName: string;
@@ -20,11 +19,8 @@ interface AvailabilityPublishedProps {
 }
 
 /**
- * availability-published.tsx — Sent to all chefs for a restaurant
- * when admin publishes availability for a delivery date.
- *
- * Subject: "New Availability — [Date]"
- * From: availability@pressfarm.io
+ * availability-published.tsx — Sent to all chefs when admin publishes
+ * availability for a delivery date.
  */
 export default function AvailabilityPublished({
   chefName,
@@ -35,132 +31,56 @@ export default function AvailabilityPublished({
   return (
     <Html>
       <Head />
-      <Preview>New availability posted for {deliveryDate} — place your order</Preview>
-      <Body style={body}>
-        <Container style={container}>
-          <Section style={hero}>
-            <Img
-              src={`${APP_URL}/assets/logo/png/logo-floral-only-transparent.png`}
-              alt="Press Farm"
-              width="80"
-              height="80"
-              style={{ display: "block", margin: "0 auto" }}
-            />
-            <Heading style={brand}>PRESS FARM</Heading>
-            <Text style={tagline}>— CULTIVATED WITH CHEFS —</Text>
-          </Section>
-
-          <Section style={content}>
-            <Text style={eyebrow}>Fresh availability</Text>
-            <Heading style={h1}>{deliveryDate}</Heading>
-
-            <Text style={paragraph}>Hi {chefName},</Text>
-            <Text style={paragraph}>
-              We&apos;ve posted availability for <strong>{restaurantName}</strong> for delivery on{" "}
-              <strong>{deliveryDate}</strong>.
-            </Text>
-            <Text style={countLine}>
-              <strong>{itemCount}</strong> {itemCount === 1 ? "item" : "items"} ready to order
-            </Text>
-
-            <Section style={ctaWrap}>
-              <Button href={`${APP_URL}/order`} style={button}>
-                Place Your Order
-              </Button>
+      <Preview>New availability for {deliveryDate} — {itemCount} items</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <div style={styles.card}>
+            {/* Hero */}
+            <Section style={styles.hero}>
+              <Img src={FLORAL_URL} alt="Press Farm" width="72" height="72" style={styles.floral} />
+              <Text style={styles.brand}>PRESS FARM</Text>
+              <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
             </Section>
 
-            <Text style={footer}>
-              Order by the night before delivery.<br />
-              Questions? Reply to this email.
+            <hr style={styles.goldRule} />
+
+            <Section style={styles.body_section}>
+              <Text style={styles.eyebrow}>Fresh Availability</Text>
+              <Text style={styles.h1}>{deliveryDate}</Text>
+
+              <Text style={styles.paragraph}>Hello {chefName},</Text>
+              <Text style={styles.paragraph}>
+                We&apos;ve posted availability for <strong>{restaurantName}</strong> for delivery on <strong>{deliveryDate}</strong>.
+              </Text>
+
+              <div style={styles.highlightBox}>
+                <Text style={styles.highlightLabel}>Ready to order</Text>
+                <Text style={styles.highlightValue}>{itemCount} {itemCount === 1 ? "item" : "items"}</Text>
+              </div>
+
+              <Section style={styles.ctaWrap}>
+                <a href={`${APP_URL}/order`} style={styles.button}>
+                  Place Your Order
+                </a>
+              </Section>
+
+              <Text style={styles.paragraphMuted}>
+                Order by the night before delivery. We harvest the morning of, so the
+                fresher your order, the fresher your produce.
+              </Text>
+            </Section>
+          </div>
+
+          <Section style={styles.footerSection}>
+            <Text style={styles.footerLine}>
+              Questions or need something specific? Reply to this email.
+            </Text>
+            <Text style={styles.footerSignature}>
+              Press Farm · Yountville, California
             </Text>
           </Section>
-
-          <Text style={signoff}>Press Farm · Yountville, California</Text>
         </Container>
       </Body>
     </Html>
   );
 }
-
-const body = { backgroundColor: "#faf7f0", fontFamily: "system-ui, -apple-system, sans-serif", margin: 0, padding: 0 };
-const container = { maxWidth: "560px", margin: "0 auto", padding: "20px" };
-const hero = {
-  textAlign: "center" as const,
-  padding: "32px 24px 24px",
-  backgroundColor: "#ffffff",
-  borderRadius: "16px 16px 0 0",
-};
-const brand = {
-  fontFamily: "Bank Gothic LT, system-ui, sans-serif",
-  fontSize: "20px",
-  fontWeight: 700,
-  letterSpacing: "0.22em",
-  color: "#0D2A1E",
-  margin: "12px 0 4px",
-};
-const tagline = {
-  fontFamily: "Bank Gothic LT, system-ui, sans-serif",
-  fontSize: "10px",
-  letterSpacing: "0.28em",
-  color: "#B58B48",
-  margin: 0,
-};
-const content = {
-  backgroundColor: "#ffffff",
-  padding: "8px 32px 32px",
-  borderRadius: "0 0 16px 16px",
-};
-const eyebrow = {
-  fontFamily: "Bank Gothic LT, system-ui, sans-serif",
-  fontSize: "11px",
-  letterSpacing: "0.22em",
-  textTransform: "uppercase" as const,
-  color: "#00774A",
-  margin: "16px 0 8px",
-};
-const h1 = {
-  fontSize: "26px",
-  fontWeight: 600,
-  color: "#0D2A1E",
-  margin: "0 0 24px",
-  lineHeight: 1.2,
-};
-const paragraph = { fontSize: "14px", color: "#444", lineHeight: 1.6, margin: "0 0 12px" };
-const countLine = {
-  fontSize: "16px",
-  color: "#0D2A1E",
-  margin: "20px 0",
-  padding: "12px 16px",
-  backgroundColor: "#faf7f0",
-  borderRadius: "8px",
-  textAlign: "center" as const,
-};
-const ctaWrap = { textAlign: "center" as const, margin: "24px 0" };
-const button = {
-  backgroundColor: "#0D2A1E",
-  color: "#faf7f0",
-  padding: "14px 32px",
-  borderRadius: "12px",
-  textDecoration: "none",
-  fontSize: "14px",
-  fontWeight: 600,
-  letterSpacing: "0.08em",
-  display: "inline-block",
-};
-const footer = {
-  fontSize: "12px",
-  color: "#888",
-  marginTop: "24px",
-  paddingTop: "16px",
-  borderTop: "1px solid #f0ebe0",
-  lineHeight: 1.6,
-};
-const signoff = {
-  fontFamily: "Bank Gothic LT, system-ui, sans-serif",
-  fontSize: "10px",
-  letterSpacing: "0.28em",
-  textTransform: "uppercase" as const,
-  color: "#aaa",
-  textAlign: "center" as const,
-  marginTop: "16px",
-};

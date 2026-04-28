@@ -36,7 +36,7 @@ export default async function HistoryPage() {
         </header>
         <div className="flex items-center justify-center h-64 px-4">
           <p className="text-center text-gray-500 text-sm">
-            No restaurant found. Please contact Micheal.
+            No restaurant found. Please contact Press Farm.
           </p>
         </div>
       </main>

@@ -2,14 +2,14 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Html,
+  Img,
   Preview,
   Section,
   Text,
-  Row,
-  Column,
 } from "@react-email/components";
+import { APP_URL } from "@/lib/constants";
+import { styles, FLORAL_URL, colors } from "./_shared";
 
 interface FulfilledItem {
   itemName: string;
@@ -28,10 +28,6 @@ interface OrderFulfilledProps {
 
 /**
  * order-fulfilled.tsx — Sent to chef when admin marks order as fulfilled.
- *
- * Subject: "Order Fulfilled — [Date]"
- * From: orders@pressfarm.app
- * To: Chef
  */
 export default function OrderFulfilled({
   chefName,
@@ -39,43 +35,80 @@ export default function OrderFulfilled({
   deliveryDate,
   items,
 }: OrderFulfilledProps) {
+  const shortedCount = items.filter(i => i.isShorted).length;
+
   return (
     <Html>
       <Head />
-      <Preview>Order Fulfilled — {deliveryDate}</Preview>
-      <Body style={{ backgroundColor: "#faf7f0", fontFamily: "sans-serif" }}>
-        <Container style={{ maxWidth: "600px", margin: "0 auto", padding: "24px" }}>
-          <Heading style={{ color: "#2d6a4f", fontSize: "20px", marginBottom: "8px" }}>
-            Order Fulfilled ✓
-          </Heading>
-          <Text style={{ color: "#666", marginBottom: "24px" }}>
-            Hi {chefName}, your {restaurantName} order for{" "}
-            <strong>{deliveryDate}</strong> has been fulfilled.
-          </Text>
+      <Preview>Order ready for {deliveryDate}</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <div style={styles.card}>
+            <Section style={styles.hero}>
+              <Img src={FLORAL_URL} alt="Press Farm" width="56" height="56" style={{ ...styles.floral, width: "56px" }} />
+              <Text style={styles.brand}>PRESS FARM</Text>
+              <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
+            </Section>
 
-          <Section style={{ backgroundColor: "#fff", borderRadius: "8px", padding: "16px" }}>
-            <Row style={{ marginBottom: "8px", fontWeight: "bold", color: "#333", fontSize: "12px" }}>
-              <Column>Item</Column>
-              <Column style={{ textAlign: "right" }}>Delivered</Column>
-            </Row>
-            {items.map((item, i) => (
-              <Row key={i} style={{ marginBottom: "8px", color: item.isShorted ? "#b45309" : "#333" }}>
-                <Column>{item.itemName}</Column>
-                <Column style={{ textAlign: "right" }}>
-                  {item.fulfilledQty} {item.unit.toUpperCase()}
-                  {item.isShorted && (
-                    <span style={{ color: "#b45309", fontSize: "12px" }}>
-                      {" "}(of {item.requestedQty} req.)
-                    </span>
-                  )}
-                </Column>
-              </Row>
-            ))}
+            <hr style={styles.goldRule} />
+
+            <Section style={styles.body_section}>
+              <Text style={styles.eyebrow}>Order Ready</Text>
+              <Text style={styles.h1}>Picked & Packed</Text>
+
+              <Text style={styles.paragraph}>
+                Hello {chefName}, your <strong>{restaurantName}</strong> order for{" "}
+                <strong>{deliveryDate}</strong> is ready for delivery.
+              </Text>
+
+              {shortedCount > 0 && (
+                <div style={{ ...styles.highlightBox, backgroundColor: "#FEF3C7", borderColor: "#FDE68A" }}>
+                  <Text style={{ ...styles.paragraph, fontSize: "13px", color: "#78350F", margin: 0 }}>
+                    <strong>{shortedCount} item{shortedCount !== 1 ? "s" : ""} shorted</strong> — see the list below for details.
+                  </Text>
+                </div>
+              )}
+
+              <Text style={styles.eyebrow}>What you&apos;re getting</Text>
+
+              <table cellPadding="0" cellSpacing="0" border={0} style={{ width: "100%", borderCollapse: "collapse" as const }}>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: "10px 0", borderBottom: i < items.length - 1 ? `1px solid ${colors.borderSoft}` : "none" }}>
+                        <Text style={styles.itemName}>{item.itemName}</Text>
+                        {item.isShorted && (
+                          <Text style={{ fontFamily: "inherit", fontSize: "11px", color: "#B45309", margin: "2px 0 0" }}>
+                            Shorted from {item.requestedQty} requested
+                          </Text>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 0", borderBottom: i < items.length - 1 ? `1px solid ${colors.borderSoft}` : "none", textAlign: "right" as const }}>
+                        <Text style={{ ...styles.itemQty, color: item.isShorted ? "#B45309" : colors.greenDark }}>
+                          {item.fulfilledQty} <span style={{ color: colors.textMuted, fontWeight: 400, fontSize: "12px", textTransform: "uppercase" as const }}>{item.unit}</span>
+                        </Text>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <Section style={styles.ctaWrap}>
+                <a href={`${APP_URL}/history`} style={styles.button}>
+                  View Order
+                </a>
+              </Section>
+            </Section>
+          </div>
+
+          <Section style={styles.footerSection}>
+            <Text style={styles.footerLine}>
+              Questions about your delivery? Reply to this email.
+            </Text>
+            <Text style={styles.footerSignature}>
+              Press Farm · Yountville, California
+            </Text>
           </Section>
-
-          <Text style={{ color: "#999", fontSize: "12px", marginTop: "24px" }}>
-            — Press Farm OS
-          </Text>
         </Container>
       </Body>
     </Html>

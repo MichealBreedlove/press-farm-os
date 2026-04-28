@@ -111,8 +111,8 @@ export default function AboutPage() {
             If you&apos;re a chef interested in our produce, get in touch.
           </p>
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="mailto:micheal@pressfarm.io" className="login-cta inline-flex items-center" style={{ background: "#faf7f0", color: "#0D2A1E" }}>
-              Email Micheal
+            <a href="mailto:hello@pressfarm.io" className="login-cta inline-flex items-center" style={{ background: "#faf7f0", color: "#0D2A1E" }}>
+              Email Press Farm
             </a>
             <Link href="/login" className="login-link" style={{ color: "rgba(250,247,240,0.8)" }}>
               Chef sign in →

@@ -199,7 +199,7 @@ export default async function OrderDetailPage({
         {/* Freeform notes */}
         {order.freeform_notes && (
           <div className="card px-4 py-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-1">Notes for Micheal</h2>
+            <p className="section-eyebrow text-farm-muted mb-1.5">Notes for Press Farm</p>
             <p className="text-sm text-gray-600 whitespace-pre-wrap">{order.freeform_notes}</p>
           </div>
         )}

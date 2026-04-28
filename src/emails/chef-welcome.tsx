@@ -1,113 +1,107 @@
 import {
   Body,
-  Button,
   Container,
   Head,
-  Heading,
   Html,
+  Img,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 import { APP_URL } from "@/lib/constants";
+import { styles, FLORAL_URL } from "./_shared";
 
 interface ChefWelcomeProps {
   chefName: string;
   restaurantName: string;
+  /** Sign-in URL — defaults to /login (always fresh, never expires) */
   loginUrl?: string;
 }
 
 /**
- * chef-welcome.tsx — Sent to a chef when admin invites them or
- * triggers "Send Welcome" from user management.
+ * chef-welcome.tsx — Sent to a chef when admin invites them
+ * or triggers "Send Welcome" from user management.
  */
 export default function ChefWelcome({
   chefName,
   restaurantName,
   loginUrl,
 }: ChefWelcomeProps) {
+  // Default to /login (always fresh, never expires).
+  // Magic-link URLs from generateLink expire in 1 hour and are one-shot.
   const signInUrl = loginUrl ?? `${APP_URL}/login`;
 
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Press Farm — your kitchen, our farm</Preview>
-      <Body style={body}>
-        <Container style={container}>
-          <Section style={header}>
-            <Heading style={h1}>Welcome to Press Farm 🌿</Heading>
-          </Section>
-
-          <Section style={content}>
-            <Text style={greeting}>Hi {chefName},</Text>
-
-            <Text style={paragraph}>
-              You&apos;ve been added to the Press Farm ordering system for{" "}
-              <strong>{restaurantName}</strong>. From now on, you&apos;ll order produce
-              directly through our app — no more Excel sheets or back-and-forth texts.
-            </Text>
-
-            <Section style={cta}>
-              <Button style={button} href={signInUrl}>
-                Sign In
-              </Button>
+      <Preview>Welcome to Press Farm — order produce from the farm</Preview>
+      <Body style={styles.body}>
+        <Container style={styles.container}>
+          <div style={styles.card}>
+            {/* Hero */}
+            <Section style={styles.hero}>
+              <Img src={FLORAL_URL} alt="Press Farm" width="72" height="72" style={styles.floral} />
+              <Text style={styles.brand}>PRESS FARM</Text>
+              <Text style={styles.tagline}>— Cultivated with Chefs —</Text>
             </Section>
 
-            <Heading style={h2}>How it works</Heading>
+            <hr style={styles.goldRule} />
 
-            <Section style={steps}>
-              <Section style={step}>
-                <Text style={stepNum}>1</Text>
-                <div>
-                  <Text style={stepTitle}>Get availability emails</Text>
-                  <Text style={stepBody}>
-                    Each cycle, Micheal sends what&apos;s available. You&apos;ll get
-                    an email a day or two before delivery.
-                  </Text>
-                </div>
+            {/* Welcome message */}
+            <Section style={styles.body_section}>
+              <Text style={styles.eyebrow}>Welcome</Text>
+              <Text style={styles.h1}>Hello, {chefName}</Text>
+              <Text style={styles.paragraph}>
+                You&apos;ve been added to the Press Farm ordering system for{" "}
+                <strong>{restaurantName}</strong>. From now on, you&apos;ll order
+                produce directly through our app — no more spreadsheets or
+                back-and-forth.
+              </Text>
+
+              <Section style={styles.ctaWrap}>
+                <a href={signInUrl} style={styles.button}>
+                  Sign In
+                </a>
               </Section>
 
-              <Section style={step}>
-                <Text style={stepNum}>2</Text>
-                <div>
-                  <Text style={stepTitle}>Place your order</Text>
-                  <Text style={stepBody}>
-                    Tap the link, browse items, set quantities, add a note if needed.
-                    Submit by the night before delivery.
-                  </Text>
-                </div>
-              </Section>
+              {/* How it works */}
+              <Text style={styles.eyebrow}>How it works</Text>
 
-              <Section style={step}>
-                <Text style={stepNum}>3</Text>
-                <div>
-                  <Text style={stepTitle}>Get your delivery</Text>
-                  <Text style={stepBody}>
-                    Items arrive Thursday, Saturday, or Monday. If anything was short,
-                    you&apos;ll see it in your order history with the reason.
-                  </Text>
-                </div>
-              </Section>
+              <table cellPadding="0" cellSpacing="0" border={0} style={{ width: "100%", marginBottom: "24px" }}>
+                <tbody>
+                  <Step n="1" title="Get availability emails"
+                    body="Each cycle, Press Farm sends what's been picked. You'll get an email a day or two before delivery." />
+                  <Step n="2" title="Place your order"
+                    body="Tap the link, browse items, set quantities, add a note if you need something specific. Submit by the night before delivery." />
+                  <Step n="3" title="Receive your delivery"
+                    body="Items arrive Thursday, Saturday, or Monday. If anything was short, you'll see it in your order history with the reason." />
+                </tbody>
+              </table>
+
+              {/* Tips */}
+              <Text style={styles.eyebrow}>Quick tips</Text>
+              <Text style={styles.paragraphMuted}>
+                <strong style={{ color: "#1a1a1a" }}>Add to home screen.</strong>
+                {" "}On iPhone, tap the share button → &ldquo;Add to Home Screen&rdquo; for a one-tap app.
+              </Text>
+              <Text style={styles.paragraphMuted}>
+                <strong style={{ color: "#1a1a1a" }}>Watch for emails from <code>availability@pressfarm.io</code>.</strong>
+                {" "}They&apos;re your cue to order.
+              </Text>
+              <Text style={styles.paragraphMuted}>
+                <strong style={{ color: "#1a1a1a" }}>Use the notes field</strong>
+                {" "}when you need something specific — size preferences, prep style, anything.
+              </Text>
             </Section>
+          </div>
 
-            <Heading style={h2}>Quick tips</Heading>
-            <Text style={paragraph}>
-              📱 <strong>Add to home screen.</strong> On iPhone, tap the share button →
-              &ldquo;Add to Home Screen&rdquo; for a one-tap app.
+          {/* Footer */}
+          <Section style={styles.footerSection}>
+            <Text style={styles.footerLine}>
+              Questions? Just reply to this email.
             </Text>
-            <Text style={paragraph}>
-              🔔 <strong>Watch for emails from <code>availability@pressfarm.io</code>.</strong>
-              {" "}They&apos;re your cue to order.
-            </Text>
-            <Text style={paragraph}>
-              📝 <strong>Use the notes field</strong> when you need something specific —
-              size preferences, prep style, anything.
-            </Text>
-
-            <Text style={footer}>
-              Questions? Just reply to this email or text Micheal directly.
-              <br />
-              <em>— The Press Farm team</em>
+            <Text style={styles.footerSignature}>
+              Press Farm · Yountville, California
             </Text>
           </Section>
         </Container>
@@ -116,41 +110,18 @@ export default function ChefWelcome({
   );
 }
 
-const body = { backgroundColor: "#faf7f0", fontFamily: "system-ui, -apple-system, sans-serif" };
-const container = { margin: "0 auto", padding: "20px 0", maxWidth: "560px" };
-const header = { backgroundColor: "#00774A", padding: "32px 24px", borderRadius: "12px 12px 0 0" };
-const h1 = { color: "#ffffff", fontSize: "24px", fontWeight: 600, margin: 0 };
-const content = { backgroundColor: "#ffffff", padding: "24px", borderRadius: "0 0 12px 12px", border: "1px solid #f0ebe0" };
-const greeting = { fontSize: "16px", color: "#1a1a1a", marginTop: 0 };
-const paragraph = { fontSize: "14px", color: "#444", lineHeight: "1.6", margin: "12px 0" };
-const cta = { textAlign: "center" as const, margin: "24px 0" };
-const button = {
-  backgroundColor: "#00774A",
-  color: "#ffffff",
-  padding: "14px 32px",
-  borderRadius: "12px",
-  textDecoration: "none",
-  fontSize: "15px",
-  fontWeight: 600,
-  display: "inline-block",
-};
-const h2 = { fontSize: "16px", fontWeight: 600, color: "#1a1a1a", marginTop: "24px", marginBottom: "12px" };
-const steps = { margin: "12px 0" };
-const step = { display: "flex" as const, alignItems: "flex-start", gap: "12px", marginBottom: "16px" };
-const stepNum = {
-  display: "inline-block",
-  width: "28px",
-  height: "28px",
-  lineHeight: "28px",
-  borderRadius: "50%",
-  backgroundColor: "#00774A",
-  color: "#ffffff",
-  textAlign: "center" as const,
-  fontWeight: 600,
-  fontSize: "14px",
-  flexShrink: 0,
-  margin: 0,
-};
-const stepTitle = { fontSize: "14px", fontWeight: 600, color: "#1a1a1a", margin: 0 };
-const stepBody = { fontSize: "13px", color: "#666", lineHeight: "1.5", margin: "2px 0 0 0" };
-const footer = { fontSize: "13px", color: "#888", marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #f0ebe0" };
+function Step({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <tr>
+      <td style={{ width: "44px", verticalAlign: "top", paddingBottom: "20px" }}>
+        <div style={styles.stepNumWrap as any}>
+          <span style={styles.stepNumText as any}>{n}</span>
+        </div>
+      </td>
+      <td style={{ verticalAlign: "top", paddingBottom: "20px" }}>
+        <Text style={styles.stepTitle}>{title}</Text>
+        <Text style={styles.stepDesc}>{body}</Text>
+      </td>
+    </tr>
+  );
+}

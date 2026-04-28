@@ -47,8 +47,8 @@ export default function OrderConfirmedPage() {
         <h1 className="font-display text-2xl text-farm-dark mb-3">Thank you</h1>
         <p className="text-farm-muted text-sm leading-relaxed max-w-xs mx-auto">
           {deliveryDateFormatted
-            ? <>Your order for <strong className="text-farm-dark">{deliveryDateFormatted}</strong> has been sent to Micheal.</>
-            : "Your order has been sent to Micheal."}
+            ? <>Your order for <strong className="text-farm-dark">{deliveryDateFormatted}</strong> has been sent to Press Farm.</>
+            : "Your order has been sent to Press Farm."}
         </p>
         <p className="text-farm-muted/70 text-xs mt-3">
           A confirmation email is on its way.

@@ -220,7 +220,7 @@ export function OrderForm({
                 htmlFor="freeform-notes"
                 className="block text-sm font-semibold text-gray-900 mb-2"
               >
-                Notes for Micheal
+                Notes for Press Farm
               </label>
               <textarea
                 id="freeform-notes"
