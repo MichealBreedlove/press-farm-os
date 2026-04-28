@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { getItemImageUrl } from "@/lib/flower-images";
+import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
@@ -78,24 +78,28 @@ export function ItemRow({
     <div className={cn("py-3 border-b border-gray-100 last:border-0", isUnavailable && "opacity-50")}>
       {/* Main row: photo + name + badges + stepper (only for items WITHOUT sizes) */}
       <div className="flex items-center gap-3">
-        {/* Photo — admin-set image_url, falls back to bundled flower illustration */}
+        {/* Photo — admin-set photo, or floral wreath placeholder */}
         {(() => {
           const imgUrl = getItemImageUrl({ name: item.name, image_url: (item as any).image_url });
-          if (!imgUrl) return null;
-          const isFlower = imgUrl.startsWith("/assets/flowers/");
+          if (imgUrl) {
+            return (
+              <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                <img
+                  src={imgUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            );
+          }
           return (
-            <div className={cn(
-              "w-24 h-24 rounded-lg overflow-hidden flex-shrink-0",
-              isFlower ? "bg-farm-cream" : "bg-gray-100"
-            )}>
+            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
               <img
-                src={imgUrl}
-                alt={item.name}
-                className={cn(
-                  "w-full h-full",
-                  isFlower ? "object-contain p-1.5" : "object-cover"
-                )}
-                loading="lazy"
+                src={PLACEHOLDER_WREATH}
+                alt=""
+                aria-hidden="true"
+                className="w-14 h-14 object-contain opacity-25"
               />
             </div>
           );
