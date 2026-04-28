@@ -32,14 +32,11 @@ export function PressFarmLogo({
   ariaLabel = "Press Farm — Cultivated with Chefs",
   className = "",
 }: PressFarmLogoProps) {
-  // Icon-only render
+  // Icon-only render — uses the new master squash blossom illustration
   if (size === "icon") {
-    const src = onDark
-      ? "/assets/logo/png/logo-floral-only-monochrome-light.png"
-      : "/assets/logo/logo-icon-squash-blossom-transparent.png";
     return (
       <Image
-        src={src}
+        src="/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png"
         alt={ariaLabel}
         width={64}
         height={64}
@@ -52,9 +49,10 @@ export function PressFarmLogo({
   const sizeClass = size === "lg" ? "pressfarm-logo--lg" : "";
   const darkClass = onDark ? "pressfarm-logo--on-dark" : "";
 
-  const floralSrc = onDark
-    ? "/assets/logo/png/logo-floral-only-monochrome-light.png"
-    : "/assets/logo/png/logo-floral-only-transparent.png";
+  // For lg (hero), use the full master mandala image. For md, use the squash blossom icon.
+  const floralSrc = size === "lg"
+    ? "/assets/pressfarm/logo/png/pressfarm-mandala-only.png"
+    : "/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png";
 
   return (
     <div
@@ -66,8 +64,8 @@ export function PressFarmLogo({
         src={floralSrc}
         alt=""
         aria-hidden="true"
-        width={size === "lg" ? 200 : 96}
-        height={size === "lg" ? 200 : 96}
+        width={size === "lg" ? 280 : 96}
+        height={size === "lg" ? 280 : 96}
         className="pressfarm-logo__floral"
         priority={size === "lg"}
       />

@@ -113,20 +113,20 @@
     color: rgba(255,255,255,0.6);
     white-space: nowrap;
   }
-  /* Squash blossom icon in header */
+  /* Squash blossom icon in header — uses the new master illustration */
   .page-header::after {
     content: "";
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    background-image: url("/assets/logo/png/logo-floral-only-monochrome-light.png");
+    width: 36px;
+    height: 36px;
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.95;
+    opacity: 1;
   }
   /* Larger size on tablet+ */
   @media (min-width: 640px) {

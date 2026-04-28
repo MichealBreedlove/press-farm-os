@@ -41,18 +41,35 @@
   --pf-color-ink-500: #5b6258;
   --pf-color-ink-300: #9ca195;
 
-  /* Crop signal colors — one per bundled flower */
-  --pf-crop-squash: #f4c75f;
-  --pf-crop-marigold: #d97706;
+  /* ========== FINAL MASTER PALETTE (10 brand colors) ========== */
+  --pf-master-dark-green: #1E2B20;     /* Deepest forest — primary text on cream */
+  --pf-master-olive: #556B2F;          /* Stem / leaf / secondary */
+  --pf-master-sage: #7A8B52;            /* Accent green / borders */
+  --pf-master-mustard-yellow: #D4A017;  /* Warm yellow */
+  --pf-master-paper: #F7F5F0;           /* Master cream / page bg */
+  --pf-master-orange: #EB6C32;          /* Nasturtium / energetic accent */
+  --pf-master-yellow: #F4C430;          /* Marigold / harvest yellow */
+  --pf-master-bottle-green: #4B6B38;    /* Mid green / button hover */
+  --pf-master-violet: #5E2B7A;          /* Viola / signal purple */
+  --pf-master-blue: #2E5FA1;            /* Bachelor button / info */
+
+  /* Crop signal colors — mapped to master palette */
+  --pf-crop-squash: var(--pf-master-yellow);
+  --pf-crop-marigold: var(--pf-master-orange);
   --pf-crop-gem-marigold: #9a3412;
-  --pf-crop-nasturtium: #ea580c;
-  --pf-crop-bachelor-button: #3b5bbb;
-  --pf-crop-pea-flower: #7c3aed;
-  --pf-crop-mustard: #dcae23;
+  --pf-crop-nasturtium: var(--pf-master-orange);
+  --pf-crop-bachelor-button: var(--pf-master-blue);
+  --pf-crop-pea-flower: var(--pf-master-violet);
+  --pf-crop-pansy: var(--pf-master-violet);
+  --pf-crop-chive: var(--pf-master-violet);
+  --pf-crop-mustard: var(--pf-master-mustard-yellow);
   --pf-crop-alyssum: #f4efe3;
-  --pf-crop-viola: #5b21b6;
+  --pf-crop-viola: var(--pf-master-violet);
   --pf-crop-fava: #f7f4ea;
+  --pf-crop-fava-pod: var(--pf-master-bottle-green);
+  --pf-crop-fairy-vetch: var(--pf-master-violet);
   --pf-crop-hairy-vetch: #8b5cf6;
+  --pf-crop-leaf: var(--pf-master-olive);
 
   /* Semantic aliases */
   --pf-bg-page: var(--pf-color-cream-200);

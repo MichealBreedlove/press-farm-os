@@ -258,6 +258,11 @@ export const styles = {
   },
 };
 
-export const FLORAL_URL = `${APP_URL}/assets/logo/png/logo-floral-only-transparent.png`;
+/** New master squash blossom illustration */
+export const FLORAL_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png`;
+/** Full master mandala (use for hero email moments) */
+export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-mandala-only.png`;
+/** Stacked lockup with PRESS FARM + tagline rendered as image */
+export const STACKED_LOCKUP_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-stacked-lockup.png`;
 /** Bank Gothic LT "PRESS FARM" wordmark rendered as PNG (email clients can't load custom fonts) */
 export const WORDMARK_URL = `${APP_URL}/assets/logo/logo-wordmark-bank-gothic-transparent.png`;
