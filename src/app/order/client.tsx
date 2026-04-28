@@ -169,9 +169,9 @@ export default function OrderFormClient({
       <div className="px-4 py-3 space-y-6">
         {Object.entries(itemsByCategory).map(([cat, catItems]) => (
           <div key={cat}>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            <p className="section-eyebrow text-farm-muted mb-2 px-1">
               {CATEGORY_LABELS[cat as ItemCategory]}
-            </h2>
+            </p>
             <div className="space-y-2">
               {catItems.map((avail) => {
                 const item = avail.items;
@@ -246,9 +246,9 @@ export default function OrderFormClient({
 
         {/* Notes */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+          <p className="section-eyebrow text-farm-muted mb-2 px-1">
             Notes / Special Requests
-          </h2>
+          </p>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -277,3 +277,4 @@ export default function OrderFormClient({
     </div>
   );
 }
+

@@ -137,7 +137,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       {/* Invite button */}
       <button
         onClick={() => { setShowInvite((v) => !v); setError(null); }}
-        className="w-full min-h-[44px] bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+        className={showInvite ? "btn-ghost w-full text-sm" : "btn-primary w-full text-sm"}
       >
         {showInvite ? "Cancel" : "+ Invite Chef"}
       </button>
@@ -154,7 +154,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               value={form.full_name}
               onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
               placeholder="Chef's full name"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="input-field"
             />
           </div>
           <div>
@@ -165,7 +165,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="chef@restaurant.com"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="input-field"
             />
           </div>
           <div>
@@ -173,7 +173,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             <select
               value={form.restaurant_id}
               onChange={(e) => setForm((f) => ({ ...f, restaurant_id: e.target.value }))}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="input-field"
             >
               {restaurants.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
@@ -194,7 +194,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       {/* Admins */}
       {admins.length > 0 && (
         <div>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Admin</h2>
+          <p className="section-eyebrow text-farm-muted mb-2">Admin</p>
           {admins.map((u) => (
             <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -209,9 +209,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
       {/* Chefs */}
       <div>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        <p className="section-eyebrow text-farm-muted mb-2">
           Chefs ({chefs.length})
-        </h2>
+        </p>
         <div className="space-y-2">
           {chefs.map((u) => (
             <div
@@ -293,3 +293,4 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
     </div>
   );
 }
+

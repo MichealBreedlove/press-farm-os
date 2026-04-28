@@ -92,7 +92,7 @@ export default async function YoYReportPage() {
       <div className="px-4 py-5 space-y-6">
         {/* Year totals */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Annual Totals</h2>
+          <p className="section-eyebrow text-farm-muted mb-3">Annual Totals</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-4">
               <p className="text-xs text-gray-400">Revenue</p>
@@ -115,7 +115,7 @@ export default async function YoYReportPage() {
 
         {/* Monthly comparison */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Monthly Revenue</h2>
+          <p className="section-eyebrow text-farm-muted mb-3">Monthly Revenue</p>
           <div className="card overflow-hidden">
             <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-gray-50 text-[10px] font-semibold text-gray-500 uppercase">
               <div>Month</div>
@@ -143,7 +143,7 @@ export default async function YoYReportPage() {
 
         {/* Quarterly comparison */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Quarterly Revenue</h2>
+          <p className="section-eyebrow text-farm-muted mb-3">Quarterly Revenue</p>
           <div className="card overflow-hidden">
             <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-gray-50 text-[10px] font-semibold text-gray-500 uppercase">
               <div>Quarter</div>

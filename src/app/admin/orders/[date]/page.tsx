@@ -152,10 +152,10 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
                   return (
                     <div key={category}>
-                      <div className="px-4 py-2 bg-gray-50">
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      <div className="px-4 py-2 bg-farm-cream/60">
+                        <p className="section-eyebrow text-farm-muted">
                           {CATEGORY_LABELS[category as ItemCategory] ?? category}
-                        </h3>
+                        </p>
                       </div>
                       {catItems.map((oi: any) => {
                         const item = oi.availability_item?.item;

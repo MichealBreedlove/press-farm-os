@@ -112,7 +112,7 @@ export default async function DataCheckPage() {
       <div className="px-4 py-6 space-y-4">
         {/* Items by category */}
         <div className="card p-4">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Items by Category</h2>
+          <p className="section-eyebrow text-farm-muted mb-3">Items by Category</p>
           <div className="space-y-1">
             {Object.entries(categories ?? {}).sort(([, a]: any, [, b]: any) => b - a).map(([cat, count]: any) => (
               <div key={cat} className="flex justify-between text-sm">
@@ -126,7 +126,7 @@ export default async function DataCheckPage() {
         {/* All counts */}
         <div className="card overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Database Counts</h2>
+            <p className="section-eyebrow text-farm-muted">Database Counts</p>
           </div>
           {rows.map((row) => (
             <div key={row.label} className="px-4 py-2.5 flex items-center justify-between border-b border-gray-50 last:border-0">
@@ -148,3 +148,4 @@ export default async function DataCheckPage() {
     </main>
   );
 }
+

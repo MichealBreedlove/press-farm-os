@@ -141,9 +141,9 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         {/* Delivery list */}
         {rows.length > 0 ? (
           <div className="space-y-2">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <p className="section-eyebrow text-farm-muted">
               Deliveries ({rows.length})
-            </h2>
+            </p>
             {rows.map((d: any) => (
               <Link
                 key={d.id}
@@ -179,3 +179,4 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
     </main>
   );
 }
+

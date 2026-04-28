@@ -163,9 +163,9 @@ export default async function ItemPerformancePage({
 
         {/* Top Revenue */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <p className="section-eyebrow text-farm-muted mb-3">
             Top Revenue
-          </h2>
+          </p>
           <div className="card overflow-hidden">
             {topRevenue.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-6">No deliveries in this window</p>
@@ -195,9 +195,9 @@ export default async function ItemPerformancePage({
 
         {/* Most Frequent */}
         <section>
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <p className="section-eyebrow text-farm-muted mb-3">
             Most Frequent (Reliable Sellers)
-          </h2>
+          </p>
           <div className="card overflow-hidden">
             {mostFrequent.slice(0, 8).map((s, i) => (
               <Link
@@ -221,9 +221,9 @@ export default async function ItemPerformancePage({
         {/* Dead Stock */}
         {deadStock.length > 0 && (
           <section>
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <p className="section-eyebrow text-farm-muted mb-3">
               Dead Stock — In Catalog but No Deliveries
-            </h2>
+            </p>
             <div className="card p-4">
               <p className="text-xs text-gray-500 mb-2">
                 {deadStock.length} active items haven&apos;t shipped in {windowLabel.toLowerCase()}.
