@@ -7,6 +7,7 @@
  */
 
 const FLOWER_MAP: Record<string, string> = {
+  // Direct matches with bundled illustrations
   alyssum: "/assets/flowers/alyssum.png",
   "bachelor button": "/assets/flowers/bachelor-buttons.png",
   "bachelor buttons": "/assets/flowers/bachelor-buttons.png",
@@ -28,6 +29,16 @@ const FLOWER_MAP: Record<string, string> = {
   "squash blossom": "/assets/flowers/squash-blossom.png",
   viola: "/assets/flowers/violas.png",
   violas: "/assets/flowers/violas.png",
+
+  // Cross-mapped: items that visually resemble bundled illustrations
+  // (use sparingly so admins still upload real photos for accuracy)
+  allium: "/assets/flowers/bachelor-buttons.png", // both round purple-ish puffballs
+  chive: "/assets/flowers/bachelor-buttons.png",
+  "chive flower": "/assets/flowers/bachelor-buttons.png",
+  "chive blossom": "/assets/flowers/bachelor-buttons.png",
+  borage: "/assets/flowers/violas.png", // small star-shaped purple-blue florals
+  "calendula flower": "/assets/flowers/marigold.png", // calendula is in marigold family
+  calendula: "/assets/flowers/marigold.png",
 };
 
 /**

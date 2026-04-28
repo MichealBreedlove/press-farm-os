@@ -20,9 +20,10 @@ interface Item {
 
 interface Props {
   items: Item[];
+  addItemHref?: string;
 }
 
-export function ItemsClient({ items }: Props) {
+export function ItemsClient({ items, addItemHref }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -92,18 +93,27 @@ export function ItemsClient({ items }: Props) {
           placeholder="Search items…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green/30 focus:border-farm-green"
         />
         <button
           onClick={() => setShowArchived((v) => !v)}
-          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
             showArchived
               ? "bg-gray-900 text-white border-gray-900"
-              : "bg-white text-gray-500 border-gray-200"
+              : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
           }`}
         >
           Archived
         </button>
+        {addItemHref && (
+          <Link
+            href={addItemHref}
+            className="px-4 py-2.5 rounded-xl bg-farm-green text-white text-sm font-medium hover:bg-farm-green-dark transition-colors min-h-0 flex items-center gap-1 whitespace-nowrap"
+          >
+            <span className="text-base leading-none">+</span>
+            <span>Add</span>
+          </Link>
+        )}
       </div>
 
       {/* Count */}
@@ -152,8 +162,13 @@ export function ItemsClient({ items }: Props) {
                           );
                         }
                         return (
-                          <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <span className="text-gray-300 text-lg">🌿</span>
+                          <div className="w-20 h-20 rounded-lg bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
+                            <img
+                              src="/assets/logo/png/logo-floral-only-transparent.png"
+                              alt=""
+                              aria-hidden="true"
+                              className="w-12 h-12 object-contain opacity-25"
+                            />
                           </div>
                         );
                       })()}

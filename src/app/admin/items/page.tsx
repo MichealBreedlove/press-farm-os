@@ -29,13 +29,7 @@ export default async function AdminItemsPage() {
       </header>
 
       <div className="px-4 py-4">
-        <Link
-          href="/admin/items/new"
-          className="btn-primary w-full flex items-center justify-center gap-2 mb-4 text-sm font-semibold"
-        >
-          + Add Item
-        </Link>
-        <ItemsClient items={items} />
+        <ItemsClient items={items} addItemHref="/admin/items/new" />
       </div>
     </main>
   );
