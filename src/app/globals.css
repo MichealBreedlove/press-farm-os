@@ -508,3 +508,51 @@
   color: rgba(13, 42, 30, 0.35);
   text-align: center;
 }
+
+/* ==========================================================
+   Login page floral scatter — subtle, refined corner accents
+   ========================================================== */
+.login-bg {
+  position: relative;
+  overflow: hidden;
+}
+.login-bg::before,
+.login-bg::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.18;
+  z-index: 0;
+  filter: saturate(0.85);
+}
+/* Top-left floral cluster */
+.login-bg::before {
+  top: -40px;
+  left: -40px;
+  width: clamp(180px, 28vw, 320px);
+  height: clamp(180px, 28vw, 320px);
+  background-image: url("/assets/flowers/nasturtium.png");
+  transform: rotate(-12deg);
+}
+/* Bottom-right floral cluster */
+.login-bg::after {
+  bottom: -50px;
+  right: -50px;
+  width: clamp(200px, 30vw, 360px);
+  height: clamp(200px, 30vw, 360px);
+  background-image: url("/assets/flowers/squash-blossom.png");
+  transform: rotate(15deg);
+}
+/* Mobile: smaller and even more subtle */
+@media (max-width: 640px) {
+  .login-bg::before,
+  .login-bg::after {
+    opacity: 0.1;
+  }
+}
+.login-bg > * {
+  position: relative;
+  z-index: 1;
+}

@@ -70,9 +70,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       <div className="px-4 py-6 space-y-6">
         {orders.length === 0 && (
           <div className="text-center py-10">
-            <div className="mx-auto w-16 h-16 rounded-full bg-farm-green-light flex items-center justify-center mb-4">
-              <span className="text-2xl">📭</span>
-            </div>
+            <img src="/assets/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto w-24 h-24 object-contain mb-4 opacity-90" />
             <h3 className="text-base font-semibold text-farm-dark">No orders yet</h3>
             <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
               Chefs haven&apos;t placed orders for this date yet. They&apos;ll show up here once submitted.

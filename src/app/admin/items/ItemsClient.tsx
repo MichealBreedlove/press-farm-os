@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/constants";
+import { getItemImageUrl } from "@/lib/flower-images";
 import type { ItemCategory } from "@/types";
 
 interface Item {
@@ -133,17 +134,29 @@ export function ItemsClient({ items }: Props) {
               >
                 <div className="flex-1 px-3 py-3 min-h-[48px]">
                   <div className="flex items-center gap-3">
-                    {/* Photo thumbnail */}
+                    {/* Photo thumbnail — admin photo, then flower fallback, then placeholder */}
                     <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
-                      {item.image_url ? (
-                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
-                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
-                        </div>
-                      ) : (
-                        <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-300 text-lg">🌿</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const imgUrl = getItemImageUrl(item);
+                        const isFlower = imgUrl?.startsWith("/assets/flowers/");
+                        if (imgUrl) {
+                          return (
+                            <div className={`w-20 h-20 rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-gray-100"}`}>
+                              <img
+                                src={imgUrl}
+                                alt={item.name}
+                                className={`w-full h-full ${isFlower ? "object-contain p-1" : "object-cover"}`}
+                                loading="lazy"
+                              />
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <span className="text-gray-300 text-lg">🌿</span>
+                          </div>
+                        );
+                      })()}
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>

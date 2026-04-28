@@ -25,41 +25,42 @@ export default function OrderConfirmedPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-farm-cream flex flex-col items-center justify-center px-4">
+    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <div className="text-center max-w-sm">
-        {/* Success icon */}
-        <div className="w-16 h-16 bg-farm-green rounded-full flex items-center justify-center mx-auto mb-5 shadow-md animate-[scale-in_0.3s_ease-out]">
-          <svg
-            className="w-8 h-8 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+        {/* Hero floral mark — replaces generic checkmark with brand illustration */}
+        <div className="relative mx-auto mb-6 w-32 h-32 sm:w-40 sm:h-40 animate-[scale-in_0.4s_ease-out]">
+          <img
+            src="/assets/flowers/squash-blossom.png"
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-contain"
+          />
+          {/* Small green check badge in lower-right */}
+          <div className="absolute -bottom-1 -right-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-farm-green border-4 border-farm-cream shadow-md flex items-center justify-center">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
         </div>
 
-        <h1 className="font-display text-2xl text-farm-dark mb-2">Order Submitted</h1>
-        <p className="text-gray-500 text-sm leading-relaxed">
+        <p className="login-eyebrow text-farm-green mb-2">Order Submitted</p>
+        <h1 className="font-display text-2xl text-farm-dark mb-3">Thank you</h1>
+        <p className="text-farm-muted text-sm leading-relaxed max-w-xs mx-auto">
           {deliveryDateFormatted
-            ? `Your order for ${deliveryDateFormatted} has been sent to Micheal.`
+            ? <>Your order for <strong className="text-farm-dark">{deliveryDateFormatted}</strong> has been sent to Micheal.</>
             : "Your order has been sent to Micheal."}
         </p>
-        <p className="text-gray-400 text-xs mt-2">
-          You&apos;ll receive a confirmation email shortly.
+        <p className="text-farm-muted/70 text-xs mt-3">
+          A confirmation email is on its way.
         </p>
 
-        <div className="mt-8 flex flex-col gap-3">
-          <Link
-            href="/order"
-            className="block w-full bg-farm-green text-white font-semibold py-3 rounded-xl min-h-[44px] flex items-center justify-center"
-          >
-            Back to Order
+        <div className="mt-10 flex flex-col gap-3 max-w-xs mx-auto">
+          <Link href="/order" className="login-cta inline-flex items-center justify-center">
+            Place Another Order
           </Link>
           <Link
             href="/history"
-            className="block w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl min-h-[44px] flex items-center justify-center"
+            className="login-link"
           >
             View Order History
           </Link>

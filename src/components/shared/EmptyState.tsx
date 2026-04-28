@@ -1,8 +1,19 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 
+const FLOWER_OPTIONS = [
+  "/assets/flowers/nasturtium.png",
+  "/assets/flowers/squash-blossom.png",
+  "/assets/flowers/marigold.png",
+  "/assets/flowers/violas.png",
+  "/assets/flowers/pea-flower.png",
+  "/assets/flowers/bachelor-buttons.png",
+];
+
 interface EmptyStateProps {
   icon?: ReactNode;
+  /** Use a bundled flower illustration as the visual */
+  flower?: "nasturtium" | "squash-blossom" | "marigold" | "violas" | "pea-flower" | "bachelor-buttons" | "random";
   title: string;
   description?: string;
   actionLabel?: string;
@@ -10,15 +21,29 @@ interface EmptyStateProps {
 }
 
 /**
- * Friendly empty state with optional icon, description, and CTA.
- * Used across pages to replace plain "No items" text.
+ * Friendly empty state with floral illustration, description, and CTA.
  */
-export function EmptyState({ icon, title, description, actionLabel, actionHref }: EmptyStateProps) {
+export function EmptyState({ icon, flower, title, description, actionLabel, actionHref }: EmptyStateProps) {
+  const flowerSrc = flower === "random"
+    ? FLOWER_OPTIONS[Math.floor(Math.random() * FLOWER_OPTIONS.length)]
+    : flower
+    ? `/assets/flowers/${flower}.png`
+    : null;
+
   return (
     <div className="text-center py-10 px-4">
-      <div className="mx-auto w-16 h-16 rounded-full bg-farm-green-light flex items-center justify-center mb-4">
-        {icon ?? <span className="text-2xl">🌿</span>}
-      </div>
+      {flowerSrc ? (
+        <img
+          src={flowerSrc}
+          alt=""
+          aria-hidden="true"
+          className="mx-auto w-24 h-24 object-contain mb-4 opacity-90"
+        />
+      ) : (
+        <div className="mx-auto w-16 h-16 rounded-full bg-farm-green-light flex items-center justify-center mb-4">
+          {icon ?? <span className="text-2xl">🌿</span>}
+        </div>
+      )}
       <h3 className="text-base font-semibold text-farm-dark">{title}</h3>
       {description && (
         <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto leading-relaxed">{description}</p>
