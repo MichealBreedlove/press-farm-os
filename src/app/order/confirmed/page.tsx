@@ -28,16 +28,16 @@ export default function OrderConfirmedPage() {
     <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <div className="text-center max-w-sm">
         {/* Hero floral mark — replaces generic checkmark with brand illustration */}
-        <div className="relative mx-auto mb-6 w-32 h-32 sm:w-40 sm:h-40 animate-[scale-in_0.4s_ease-out]">
+        <div className="relative mx-auto mb-6 w-56 h-56 sm:w-72 sm:h-72 animate-[scale-in_0.4s_ease-out]">
           <img
             src="/assets/flowers/squash-blossom.png"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-contain"
           />
-          {/* Small green check badge in lower-right */}
-          <div className="absolute -bottom-1 -right-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-farm-green border-4 border-farm-cream shadow-md flex items-center justify-center">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          {/* Green check badge in lower-right */}
+          <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-farm-green border-4 border-farm-cream shadow-lg flex items-center justify-center">
+            <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
