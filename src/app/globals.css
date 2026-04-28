@@ -322,26 +322,29 @@
 .pressfarm-logo__wordmark {
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  /* Brand spec: PRESS FARM at 0.08em letter-spacing */
+  letter-spacing: 0.08em;
   line-height: 1;
   margin: 0;
   font-size: clamp(1rem, 3vw, 1.5rem);
   white-space: nowrap;
-  padding-left: 0.18em;
+  padding-left: 0.08em;
 }
 .pressfarm-logo--lg .pressfarm-logo__wordmark {
   font-size: clamp(1.5rem, 4.5vw, 2.25rem);
-  letter-spacing: 0.28em;
-  padding-left: 0.28em;
+  /* Brand spec: 0.08em base; lg uses slightly more for impact */
+  letter-spacing: 0.12em;
+  padding-left: 0.12em;
 }
 
 .pressfarm-logo__tagline {
   font-family: "Bank Gothic LT", "Bank Gothic", "Noto Sans Display", system-ui, sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.22em;
+  /* Brand spec: tagline weight 400, 0.12em letter-spacing, opacity 0.85 */
+  font-weight: 400;
+  letter-spacing: 0.12em;
   line-height: 1;
   margin: 0;
-  opacity: 0.75;
+  opacity: 0.85;
   font-size: clamp(0.6rem, 1.2vw, 0.75rem);
   display: flex;
   align-items: center;

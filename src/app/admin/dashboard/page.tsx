@@ -101,6 +101,7 @@ export default async function AdminDashboardPage() {
         { href: "/admin/settings/users", title: "Users", description: "Manage accounts", icon: <Users className="w-5 h-5" />, color: "bg-gray-500" },
         { href: "/admin/settings/import", title: "Import", description: "Excel data", icon: <Upload className="w-5 h-5" />, color: "bg-gray-500" },
         { href: "/admin/settings", title: "Settings", description: "App config", icon: <Settings className="w-5 h-5" />, color: "bg-gray-500" },
+        { href: "/admin/ui-kit", title: "UI Kit", description: "Brand reference", icon: <Leaf className="w-5 h-5" />, color: "bg-gray-500" },
       ],
     },
   ];
