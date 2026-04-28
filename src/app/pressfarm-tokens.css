@@ -68,8 +68,24 @@
   --pf-crop-fava: #f7f4ea;
   --pf-crop-fava-pod: var(--pf-master-bottle-green);
   --pf-crop-fairy-vetch: var(--pf-master-violet);
-  --pf-crop-hairy-vetch: #8b5cf6;
   --pf-crop-leaf: var(--pf-master-olive);
+  --pf-crop-chive-blossom: var(--pf-master-violet);
+
+  /* Extended chef-garden crops */
+  --pf-crop-borage: var(--pf-master-blue);
+  --pf-crop-calendula: var(--pf-master-orange);
+  --pf-crop-chamomile: #fdf6c4;
+  --pf-crop-lavender: var(--pf-master-violet);
+  --pf-crop-anise-hyssop: var(--pf-master-violet);
+  --pf-crop-chervil: #f4efe3;
+  --pf-crop-dill: var(--pf-master-yellow);
+  --pf-crop-fennel: var(--pf-master-yellow);
+  --pf-crop-garlic-chive: #f7f4ea;
+  --pf-crop-rosemary: #b8c5e0;
+  --pf-crop-thyme: #c08a9a;
+  --pf-crop-thai-basil: var(--pf-master-violet);
+  --pf-crop-nasturtium-leaf: var(--pf-master-olive);
+  --pf-crop-squash-bud: var(--pf-master-yellow);
 
   /* Semantic aliases */
   --pf-bg-page: var(--pf-color-cream-200);
@@ -320,11 +336,28 @@
 .pf-crop-nasturtium { --pf-crop-color: var(--pf-crop-nasturtium); }
 .pf-crop-bachelor-button { --pf-crop-color: var(--pf-crop-bachelor-button); }
 .pf-crop-pea-flower { --pf-crop-color: var(--pf-crop-pea-flower); }
+.pf-crop-pansy { --pf-crop-color: var(--pf-crop-pansy); }
 .pf-crop-mustard { --pf-crop-color: var(--pf-crop-mustard); }
 .pf-crop-alyssum { --pf-crop-color: var(--pf-crop-alyssum); }
 .pf-crop-viola { --pf-crop-color: var(--pf-crop-viola); }
 .pf-crop-fava { --pf-crop-color: var(--pf-crop-fava); }
-.pf-crop-hairy-vetch { --pf-crop-color: var(--pf-crop-hairy-vetch); }
+.pf-crop-fairy-vetch { --pf-crop-color: var(--pf-crop-fairy-vetch); }
+.pf-crop-leaf { --pf-crop-color: var(--pf-crop-leaf); }
+.pf-crop-chive-blossom { --pf-crop-color: var(--pf-crop-chive-blossom); }
+.pf-crop-borage { --pf-crop-color: var(--pf-crop-borage); }
+.pf-crop-calendula { --pf-crop-color: var(--pf-crop-calendula); }
+.pf-crop-chamomile { --pf-crop-color: var(--pf-crop-chamomile); }
+.pf-crop-lavender { --pf-crop-color: var(--pf-crop-lavender); }
+.pf-crop-anise-hyssop { --pf-crop-color: var(--pf-crop-anise-hyssop); }
+.pf-crop-chervil { --pf-crop-color: var(--pf-crop-chervil); }
+.pf-crop-dill { --pf-crop-color: var(--pf-crop-dill); }
+.pf-crop-fennel { --pf-crop-color: var(--pf-crop-fennel); }
+.pf-crop-garlic-chive { --pf-crop-color: var(--pf-crop-garlic-chive); }
+.pf-crop-rosemary { --pf-crop-color: var(--pf-crop-rosemary); }
+.pf-crop-thyme { --pf-crop-color: var(--pf-crop-thyme); }
+.pf-crop-thai-basil { --pf-crop-color: var(--pf-crop-thai-basil); }
+.pf-crop-nasturtium-leaf { --pf-crop-color: var(--pf-crop-nasturtium-leaf); }
+.pf-crop-squash-bud { --pf-crop-color: var(--pf-crop-squash-bud); }
 
 .pf-crop-chip {
   border: 1px solid color-mix(in srgb, var(--pf-crop-color, #ccc) 45%, white);

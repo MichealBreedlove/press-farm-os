@@ -3,19 +3,41 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
-const FLOWERS = [
-  { name: "Squash Blossom", file: "squash-blossom.png", role: "Signature crop", color: "Orange", chip: "pf-crop-squash" },
+const FLOWERS_BRAND = [
+  { name: "Squash Blossom", file: "squash-blossom.png", role: "Signature crop", color: "Yellow", chip: "pf-crop-squash" },
+  { name: "Nasturtium", file: "nasturtium.png", role: "Edible flower", color: "Orange / Red", chip: "pf-crop-nasturtium" },
   { name: "Marigold", file: "marigold.png", role: "Harvest garnish", color: "Orange", chip: "pf-crop-marigold" },
   { name: "Gem Marigold", file: "gem-marigold.png", role: "Chef garnish", color: "Yellow", chip: "pf-crop-gem-marigold" },
-  { name: "Nasturtium", file: "nasturtium.png", role: "Edible flower", color: "Orange / Red", chip: "pf-crop-nasturtium" },
   { name: "Bachelor Button", file: "bachelor-button.png", role: "Blue accent", color: "Blue", chip: "pf-crop-bachelor-button" },
-  { name: "Pea Flower", file: "pea-flower.png", role: "Seasonal bloom", color: "White", chip: "pf-crop-pea-flower" },
+  { name: "Pansy", file: "pansy.png", role: "Plate flower", color: "Purple / White", chip: "pf-crop-pansy" },
+  { name: "Pea Flower", file: "pea-flower.png", role: "Seasonal bloom", color: "Purple", chip: "pf-crop-pea-flower" },
+  { name: "Chive Blossom", file: "chive-blossom.png", role: "Allium globe", color: "Pink / Purple", chip: "pf-crop-chive-blossom" },
   { name: "Mustard Flower", file: "mustard-flower.png", role: "Brassica bloom", color: "Yellow", chip: "pf-crop-mustard" },
-  { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "White", chip: "pf-crop-alyssum" },
+  { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "White / Black", chip: "pf-crop-fava" },
+  { name: "Fairy Vetch", file: "fairy-vetch.png", role: "Soil health", color: "Cream / Violet", chip: "pf-crop-fairy-vetch" },
+  { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "Cream", chip: "pf-crop-alyssum" },
   { name: "Viola", file: "viola.png", role: "Plate flower", color: "Purple / Yellow", chip: "pf-crop-viola" },
-  { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "Black / White", chip: "pf-crop-fava" },
-  { name: "Hairy Vetch", file: "hairy-vetch.png", role: "Soil health", color: "Purple", chip: "pf-crop-hairy-vetch" },
+  { name: "Green Leaf", file: "green-leaf.png", role: "Foliage accent", color: "Green", chip: "pf-crop-leaf" },
 ];
+
+const FLOWERS_EXTENDED = [
+  { name: "Borage", file: "borage.png", role: "Cucumber garnish", color: "Cornflower Blue", chip: "pf-crop-borage" },
+  { name: "Calendula", file: "calendula.png", role: "Tasting menu petals", color: "Orange", chip: "pf-crop-calendula" },
+  { name: "Chamomile", file: "chamomile.png", role: "Tea + garnish", color: "White / Yellow", chip: "pf-crop-chamomile" },
+  { name: "Lavender", file: "lavender.png", role: "Aromatic spike", color: "Violet", chip: "pf-crop-lavender" },
+  { name: "Anise Hyssop", file: "anise-hyssop.png", role: "Mint-family spike", color: "Violet", chip: "pf-crop-anise-hyssop" },
+  { name: "Chervil", file: "chervil.png", role: "Fine herb umbel", color: "Cream", chip: "pf-crop-chervil" },
+  { name: "Dill", file: "dill.png", role: "Pickling umbel", color: "Yellow", chip: "pf-crop-dill" },
+  { name: "Fennel", file: "fennel.png", role: "Anise umbel", color: "Yellow", chip: "pf-crop-fennel" },
+  { name: "Garlic Chive", file: "garlic-chive.png", role: "Allium star cluster", color: "White", chip: "pf-crop-garlic-chive" },
+  { name: "Rosemary", file: "rosemary.png", role: "Woody herb sprig", color: "Pale Blue", chip: "pf-crop-rosemary" },
+  { name: "Thyme", file: "thyme.png", role: "Tight herb cluster", color: "Pink / Purple", chip: "pf-crop-thyme" },
+  { name: "Thai Basil", file: "thai-basil.png", role: "Aromatic stalk", color: "Violet", chip: "pf-crop-thai-basil" },
+  { name: "Nasturtium Leaf", file: "nasturtium-leaf.png", role: "Peltate foliage", color: "Green", chip: "pf-crop-nasturtium-leaf" },
+  { name: "Squash Bud", file: "squash-bud.png", role: "Closed blossom", color: "Yellow", chip: "pf-crop-squash-bud" },
+];
+
+const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED];
 
 const PF_PALETTE = [
   { group: "Cream", swatches: [
@@ -45,7 +67,7 @@ const ASSET_PATHS = [
   { label: "Light monochrome (for dark UI)", path: "/assets/pressfarm/logo/pressfarm-light.svg" },
   { label: "Favicon (ICO + PNG variants)", path: "/assets/pressfarm/favicon/" },
   { label: "Bank Gothic LT font", path: "/assets/fonts/BankGothicLT.woff2" },
-  { label: "Flower illustrations (11)", path: "/assets/pressfarm/flowers/" },
+  { label: "Flower illustrations (28)", path: "/assets/pressfarm/flowers/" },
 ];
 
 export default async function UIKitPage() {
@@ -122,14 +144,36 @@ export default async function UIKitPage() {
           </div>
         </section>
 
-        {/* FLOWER SYSTEM */}
+        {/* FLOWER SYSTEM — BRAND SHEET */}
         <section>
           <div className="flex items-baseline justify-between mb-4">
-            <p className="section-eyebrow text-farm-muted">Flower System</p>
-            <p className="text-xs text-farm-muted">11 botanical illustrations</p>
+            <p className="section-eyebrow text-farm-muted">Flower System · Brand Sheet</p>
+            <p className="text-xs text-farm-muted">14 canonical botanicals</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {FLOWERS.map((f) => (
+            {FLOWERS_BRAND.map((f) => (
+              <div key={f.file} className="card overflow-hidden text-center">
+                <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
+                  <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
+                </div>
+                <div className="p-4">
+                  <p className="font-display text-base text-farm-dark m-0">{f.name}</p>
+                  <p className="text-[11px] text-farm-muted mt-1">{f.role}</p>
+                  <p className="text-[10px] text-farm-muted/70 tracking-wide uppercase mt-1">{f.color}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FLOWER SYSTEM — EXTENDED CHEF GARDEN */}
+        <section>
+          <div className="flex items-baseline justify-between mb-4">
+            <p className="section-eyebrow text-farm-muted">Flower System · Extended Chef Garden</p>
+            <p className="text-xs text-farm-muted">14 herbs & seasonals</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {FLOWERS_EXTENDED.map((f) => (
               <div key={f.file} className="card overflow-hidden text-center">
                 <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
                   <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />

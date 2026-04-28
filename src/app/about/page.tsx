@@ -2,17 +2,22 @@ import Link from "next/link";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
 const FLOWERS = [
-  { src: "/assets/flowers/nasturtium.png", name: "Nasturtium" },
-  { src: "/assets/flowers/squash-blossom.png", name: "Squash Blossom" },
-  { src: "/assets/flowers/marigold.png", name: "Marigold" },
-  { src: "/assets/flowers/gem-marigold.png", name: "Gem Marigold" },
-  { src: "/assets/flowers/violas.png", name: "Violas" },
-  { src: "/assets/flowers/pea-flower.png", name: "Pea Flower" },
-  { src: "/assets/flowers/fava-flowers.png", name: "Fava Flowers" },
-  { src: "/assets/flowers/mustard-flowers.png", name: "Mustard Flowers" },
-  { src: "/assets/flowers/bachelor-buttons.png", name: "Bachelor Buttons" },
-  { src: "/assets/flowers/alyssum.png", name: "Alyssum" },
-  { src: "/assets/flowers/hairy-vetch.png", name: "Hairy Vetch" },
+  { src: "/assets/pressfarm/flowers/nasturtium.png", name: "Nasturtium" },
+  { src: "/assets/pressfarm/flowers/squash-blossom.png", name: "Squash Blossom" },
+  { src: "/assets/pressfarm/flowers/marigold.png", name: "Marigold" },
+  { src: "/assets/pressfarm/flowers/gem-marigold.png", name: "Gem Marigold" },
+  { src: "/assets/pressfarm/flowers/viola.png", name: "Viola" },
+  { src: "/assets/pressfarm/flowers/pansy.png", name: "Pansy" },
+  { src: "/assets/pressfarm/flowers/pea-flower.png", name: "Pea Flower" },
+  { src: "/assets/pressfarm/flowers/chive-blossom.png", name: "Chive Blossom" },
+  { src: "/assets/pressfarm/flowers/fava-flower.png", name: "Fava Flower" },
+  { src: "/assets/pressfarm/flowers/mustard-flower.png", name: "Mustard Flower" },
+  { src: "/assets/pressfarm/flowers/bachelor-button.png", name: "Bachelor Button" },
+  { src: "/assets/pressfarm/flowers/alyssum.png", name: "Alyssum" },
+  { src: "/assets/pressfarm/flowers/fairy-vetch.png", name: "Fairy Vetch" },
+  { src: "/assets/pressfarm/flowers/borage.png", name: "Borage" },
+  { src: "/assets/pressfarm/flowers/calendula.png", name: "Calendula" },
+  { src: "/assets/pressfarm/flowers/chamomile.png", name: "Chamomile" },
 ];
 
 /**
