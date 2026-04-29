@@ -186,18 +186,35 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Unit Type */}
+      {/* Unit (multi-select — pick one or more containers this item ships in) */}
       <div>
         <label className="form-label">Unit *</label>
-        <select
-          value={form.unit_type}
-          onChange={(e) => set("unit_type", e.target.value)}
-          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
-        >
-          {UNIT_TYPES.map((u) => (
-            <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-1.5">
+          {UNIT_TYPES.map((u) => {
+            const units = form.unit_type ? form.unit_type.split(",").map((v) => v.trim()).filter(Boolean) : [];
+            const selected = units.includes(u.value);
+            return (
+              <button
+                key={u.value}
+                type="button"
+                onClick={() => {
+                  const next = selected ? units.filter((v) => v !== u.value) : [...units, u.value];
+                  // Always keep at least one unit (the field is required)
+                  set("unit_type", next.length > 0 ? next.join(",") : u.value);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
+                  selected ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted hover:bg-gray-200"
+                }`}
+                title={u.description}
+              >
+                {u.description}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-farm-muted/70 mt-2">
+          Pick every container this item is offered in. Chefs will see a separate quantity for each.
+        </p>
       </div>
 
       {/* Sizes (multi-select + custom) */}

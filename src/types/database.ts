@@ -489,6 +489,7 @@ export type UnitType =
   | "ea"
   | "sm"
   | "lg"
+  | "gb"
   | "lbs"
   | "bu"
   | "qt"

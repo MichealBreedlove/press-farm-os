@@ -63,8 +63,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     updates.category = body.category;
   }
   if (body.unit_type !== undefined) {
-    if (!VALID_UNITS.includes(body.unit_type as any)) return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
-    updates.unit_type = body.unit_type;
+    // Accept comma-separated list of one or more valid units (e.g. "sm,lg")
+    const parts = String(body.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
+    if (parts.length === 0 || parts.some((u: string) => !VALID_UNITS.includes(u as any))) {
+      return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
+    }
+    updates.unit_type = parts.join(",");
   }
   if (body.default_price !== undefined) updates.default_price = body.default_price === null ? null : Number(body.default_price);
   if (body.chef_notes !== undefined) updates.chef_notes = body.chef_notes || null;

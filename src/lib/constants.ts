@@ -55,9 +55,6 @@ export const SEASON_STATUSES: { value: string; label: string; color: string }[] 
 // ============================================
 
 export const ITEM_SIZES = [
-  // To-Go containers — most common chef-facing packaging sizes
-  { value: "small-to-go", label: "Small To Go" },
-  { value: "large-to-go", label: "Large To Go" },
   // Generic descriptors
   { value: "tiny", label: "Tiny" },
   { value: "small", label: "Small" },
@@ -89,12 +86,13 @@ export const UNIT_TYPES: { value: UnitType; label: string; description: string }
   { value: "ea", label: "EA", description: "Each" },
   { value: "sm", label: "SM", description: "Small To Go" },
   { value: "lg", label: "LG", description: "Large To Go" },
-  { value: "lbs", label: "LBS", description: "Pounds" },
+  { value: "gb", label: "GB", description: "Green Bin" },
   { value: "bu", label: "BU", description: "Bunch" },
   { value: "qt", label: "QT", description: "Quart" },
+  { value: "pt", label: "PT", description: "Pint" },
+  { value: "lbs", label: "LBS", description: "Pounds" },
   { value: "bx", label: "BX", description: "Box" },
   { value: "cs", label: "CS", description: "Case" },
-  { value: "pt", label: "PT", description: "Pint" },
   { value: "kit", label: "Kit", description: "Pre-assembled kit" },
 ];
 
@@ -102,6 +100,7 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   ea: "EA",
   sm: "SM",
   lg: "LG",
+  gb: "GB",
   lbs: "LBS",
   bu: "BU",
   qt: "QT",

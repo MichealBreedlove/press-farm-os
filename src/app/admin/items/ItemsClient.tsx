@@ -174,7 +174,12 @@ export function ItemsClient({ items, addItemHref }: Props) {
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
                       <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
                       <p className="text-xs text-farm-muted mt-0.5">
-                        {item.unit_type.toUpperCase()}
+                        {item.unit_type
+                          .split(",")
+                          .map((u) => u.trim())
+                          .filter(Boolean)
+                          .map((u) => u.toUpperCase())
+                          .join(" · ")}
                         {item.default_price != null && ` · $${item.default_price.toFixed(2)}`}
                         {item.is_archived && " · Archived"}
                       </p>

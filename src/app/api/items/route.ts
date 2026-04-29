@@ -71,7 +71,11 @@ export async function POST(request: Request) {
 
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
   if (!VALID_CATEGORIES.includes(category as any)) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-  if (!VALID_UNITS.includes(unit_type as any)) return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
+  // unit_type may be a comma-separated list of one or more valid units (e.g. "sm,lg")
+  const unitParts = (unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
+  if (unitParts.length === 0 || unitParts.some((u: string) => !VALID_UNITS.includes(u as any))) {
+    return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
+  }
 
   const admin = createAdminClient();
   const { data: farm } = await (admin as any).from("farms").select("id").single();
