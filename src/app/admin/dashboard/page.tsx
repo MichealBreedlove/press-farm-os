@@ -156,14 +156,8 @@ export default async function AdminDashboardPage() {
               {subtitleParts.join(" · ")}
             </p>
           </div>
-          <div className="flex-shrink-0 flex flex-col items-end gap-2">
+          <div className="flex-shrink-0">
             <WeatherWidget />
-            <img
-              src="/assets/pressfarm/flowers/squash-blossom.png"
-              alt=""
-              aria-hidden="true"
-              className="w-16 sm:w-20 h-auto opacity-80"
-            />
           </div>
         </div>
         {/* Gold dot rule */}
