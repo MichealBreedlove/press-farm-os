@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { EmailSettingsClient } from "./EmailSettingsClient";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 export default async function EmailSettingsPage() {
   const supabase = await createClient();
@@ -28,6 +29,13 @@ export default async function EmailSettingsPage() {
           <h1 className="page-title">Email Settings</h1>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Email Settings"
+        subtitle="From-addresses, sender names, templates"
+        flower="allium"
+        backHref="/admin/settings"
+      />
       <div className="px-4 py-6">
         <EmailSettingsClient settings={settingsMap} farmId={farmId} />
       </div>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "@/components/shared/PrintButton";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -124,6 +125,13 @@ export default async function ItemPerformancePage({
           <div className="ml-auto"><PrintButton /></div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="By the Numbers"
+        title="Item Performance"
+        subtitle="Top revenue + quantity items + dead stock"
+        flower="gem-marigold"
+        backHref="/admin/reports"
+      />
 
       <div className="px-4 py-5 space-y-6">
         {/* Window selector */}

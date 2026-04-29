@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 type ImportTarget = "key-tab" | "delivery-history";
 
@@ -85,6 +86,13 @@ export default function AdminImportPage() {
         <h1 className="page-title">Data Import</h1>
         <p className="text-sm text-farm-muted">One-time migration from Excel</p>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Excel Import"
+        subtitle="Bring in legacy spreadsheet data"
+        flower="chamomile"
+        backHref="/admin/settings"
+      />
 
       <div className="px-4 py-6 space-y-5">
         {/* Source file info */}

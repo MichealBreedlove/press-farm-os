@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { SuggestionBoxClient } from "./SuggestionBoxClient";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 export default async function SuggestionsPage() {
   const supabase = await createClient();
@@ -30,6 +31,13 @@ export default async function SuggestionsPage() {
           <h1 className="page-title">Suggestion Box</h1>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Suggestion Box"
+        subtitle="Ideas + feedback from chefs and staff"
+        flower="bachelor-button"
+        backHref="/admin/settings"
+      />
       <div className="px-4 py-6">
         <SuggestionBoxClient suggestions={suggestions ?? []} farmId={farmId} />
       </div>

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PrintButton } from "@/components/shared/PrintButton";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 interface Props {
   searchParams: Promise<{ year?: string; quarter?: string }>;
@@ -179,6 +180,13 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
           </Link>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="By the Numbers"
+        title="Income Statement"
+        subtitle="Quarterly P&L · margins · benchmarks"
+        flower="calendula"
+        backHref="/admin/reports"
+      />
 
       {!hasData ? (
         <div className="px-4 py-12 text-center text-sm text-farm-muted">

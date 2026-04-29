@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { UsersClient } from "./UsersClient";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -49,6 +50,13 @@ export default async function AdminUsersPage() {
           <h1 className="page-title">Users</h1>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Users"
+        subtitle="Manage chef + admin accounts"
+        flower="pansy"
+        backHref="/admin/settings"
+      />
 
       <div className="px-4 py-6">
         <UsersClient

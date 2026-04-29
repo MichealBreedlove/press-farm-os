@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "./SignOutButton";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 interface NavCard {
   href: string;
@@ -27,6 +28,13 @@ export default async function AdminSettingsPage() {
       <header className="page-header">
         <h1 className="page-title">Settings</h1>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Settings"
+        subtitle="App config, users, integrations"
+        flower="fennel"
+        backHref="/admin/dashboard"
+      />
 
       <div className="px-4 py-6 space-y-3">
         {NAV_CARDS.map((card) => (

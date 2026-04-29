@@ -5,6 +5,7 @@ import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 import Link from "next/link";
 import type { ItemCategory, OrderStatus } from "@/types";
 
@@ -51,16 +52,18 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           >
             ←
           </Link>
-          <div>
-            <h1 className="page-title">
-              Orders — {formatDeliveryDate(date)}
-            </h1>
-            <p className="text-sm text-farm-muted">{orders.length} restaurant{orders.length !== 1 ? "s" : ""}</p>
-          </div>
+          <h1 className="page-title">Orders</h1>
         </div>
       </header>
+      <EditorialHero
+        eyebrow={formatDeliveryDate(date)}
+        title="Order Detail"
+        subtitle={`${orders.length} restaurant${orders.length !== 1 ? "s" : ""} ordering for this date`}
+        flower="squash-blossom"
+        backHref="/admin/orders"
+      />
 
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6">
         {orders.length === 0 && (
           <div className="text-center py-10">
             <img src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />

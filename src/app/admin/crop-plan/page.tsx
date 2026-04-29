@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { CropPlanTimeline } from "./CropPlanTimeline";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 export default async function CropPlanPage() {
   const supabase = await createClient();
@@ -42,6 +43,13 @@ export default async function CropPlanPage() {
           </div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Farm Management"
+        title="Crop Plan"
+        subtitle="Seasonal calendar — what to plant when"
+        flower="squash-bud"
+        backHref="/admin/dashboard"
+      />
       <CropPlanTimeline
         plantings={plantings ?? []}
         items={items ?? []}

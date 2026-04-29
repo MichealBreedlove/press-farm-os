@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ExpensesClient } from "./ExpensesClient";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -83,6 +84,13 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
           </Link>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Farm Management"
+        title="Expenses"
+        subtitle="Track operating costs · group by category"
+        flower="chive-blossom"
+        backHref="/admin/dashboard"
+      />
 
       <div className="px-4 py-6">
         <ExpensesClient

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -139,6 +140,13 @@ export default async function ForecastPage({
           </div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="Farm Management"
+        title="Harvest Forecast"
+        subtitle="Predict next cycle from history"
+        flower="bachelor-button"
+        backHref="/admin/dashboard"
+      />
 
       <div className="px-4 py-5 space-y-4">
         <div className="card p-4 bg-farm-cream/60/40 border-farm-green/15">

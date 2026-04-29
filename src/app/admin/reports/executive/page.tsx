@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/shared/PrintButton";
 import ExecutiveDashboard from "./ExecutiveDashboard";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 const FARMER_PAY_PER_QUARTER = 12000;
 const FARM_ACRES = 0.5;
@@ -317,6 +318,13 @@ export default async function AdminExecutiveReportsPage() {
           <PrintButton />
         </div>
       </header>
+      <EditorialHero
+        eyebrow="By the Numbers"
+        title="Executive Summary"
+        subtitle="Print-ready full overview · for stakeholders"
+        flower="squash-blossom"
+        backHref="/admin/reports"
+      />
 
       <ExecutiveDashboard data={execData} />
     </main>

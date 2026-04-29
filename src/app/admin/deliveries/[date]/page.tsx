@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import DeliveryLogForm from "./DeliveryLogForm";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 export default async function AdminDeliveryLogPage({
   params,
@@ -76,6 +77,12 @@ export default async function AdminDeliveryLogPage({
     }).filter((oi: any) => oi.item_id),
   }));
 
+  const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   return (
     <main className="pb-24">
       <header className="page-header">
@@ -88,16 +95,18 @@ export default async function AdminDeliveryLogPage({
           <div>
             <h1 className="page-title">Log Delivery</h1>
             <p className="text-xs text-white/60">
-              {new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
+              {dateLabel}
             </p>
           </div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow={dateLabel}
+        title="Log Delivery"
+        subtitle="Record actual quantities + bonus items per restaurant"
+        flower="marigold"
+        backHref="/admin/deliveries"
+      />
 
       <DeliveryLogForm
         date={date}

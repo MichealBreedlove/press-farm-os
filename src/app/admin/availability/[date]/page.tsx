@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
@@ -138,6 +139,13 @@ export default async function AdminAvailabilityEditorPage({
           </div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow={pageTitle}
+        title="Set Availability"
+        subtitle={`Ordering ${deliveryDate.ordering_open ? "is open" : "is closed"} · tap items to mark available, limited, or unavailable`}
+        flower="calendula"
+        backHref="/admin/availability"
+      />
 
       {inheritedFromDate && (
         <div className="bg-farm-cream/60 border-b border-farm-green/15 px-4 py-2.5 flex items-start gap-2">

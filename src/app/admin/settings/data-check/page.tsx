@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -108,6 +109,13 @@ export default async function DataCheckPage() {
         </div>
         <p className="text-sm text-white/60">Verify imports are complete</p>
       </header>
+      <EditorialHero
+        eyebrow="Configuration"
+        title="Data Check"
+        subtitle="Integrity checks across the database"
+        flower="alyssum"
+        backHref="/admin/settings"
+      />
 
       <div className="px-4 py-6 space-y-4">
         {/* Items by category */}

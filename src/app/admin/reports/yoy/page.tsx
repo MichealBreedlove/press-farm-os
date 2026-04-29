@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "@/components/shared/PrintButton";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -90,6 +91,13 @@ export default async function YoYReportPage() {
           <div className="ml-auto"><PrintButton /></div>
         </div>
       </header>
+      <EditorialHero
+        eyebrow="By the Numbers"
+        title="Year over Year"
+        subtitle="Revenue + expense change by month and quarter"
+        flower="green-leaf"
+        backHref="/admin/reports"
+      />
 
       <div className="px-4 py-5 space-y-6">
         {/* Year totals */}
