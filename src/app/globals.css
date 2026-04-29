@@ -97,32 +97,50 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 235px;
+    padding-right: 215px;
   }
-  /* Horizontal logo — squash blossom + gold rule + PRESS FARM + tagline.
-     Sized so the text is readable; overflows the header height slightly
-     for a "stamp" feel. */
+  /* "PRESS FARM" wordmark — REAL Bank Gothic LT Bold rendered as CSS text */
+  .page-header::before {
+    content: "PRESS FARM";
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", Arial, sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #ffffff;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  /* Squash blossom icon — anchors the right edge */
   .page-header::after {
     content: "";
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 220px;
-    height: 74px;
-    background-image: url("/assets/pressfarm/logo/png/pressfarm-horizontal-logo.png");
+    width: 64px;
+    height: 64px;
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png");
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: center right;
+    background-position: center;
     opacity: 1;
   }
   @media (min-width: 640px) {
     .page-header {
-      padding-right: 280px;
+      padding-right: 250px;
+    }
+    .page-header::before {
+      right: 96px;
+      font-size: 26px;
     }
     .page-header::after {
-      width: 264px;
-      height: 88px;
+      width: 76px;
+      height: 76px;
     }
   }
   /* Modifier: hide wordmark+logo to free right-side space for buttons */

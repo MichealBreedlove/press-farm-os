@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { PrintButton } from "@/components/shared/PrintButton";
 
 interface Props {
   searchParams: Promise<{ year?: string; quarter?: string }>;
@@ -152,7 +153,8 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="page-title">Income Statement</h1>
+          <h1 className="page-title flex-1">Income Statement</h1>
+          <PrintButton />
         </div>
 
         <div className="flex items-center justify-between mt-2">

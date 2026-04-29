@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
+import { PrintButton } from "@/components/shared/PrintButton";
 
 const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
@@ -141,7 +142,10 @@ export default async function AdminReportsPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <h1 className="page-title">Reports</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Reports</h1>
+          <PrintButton />
+        </div>
       </header>
 
       {/* Executive Summary CTA */}

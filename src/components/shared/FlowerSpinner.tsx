@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 
+// Only stem-less flowers — they read cleaner when rotating since
+// there's no off-axis weight from a stem flopping around.
 const SPINNER_FLOWERS = [
-  "alyssum", "anise-hyssop", "bachelor-button", "borage", "calendula",
-  "chamomile", "chervil", "chive-blossom", "dill", "fairy-vetch",
-  "fava-flower", "fennel", "garlic-chive", "gem-marigold",
-  "lavender", "marigold", "mustard-flower", "nasturtium",
-  "pansy", "pea-flower", "rosemary", "squash-blossom",
-  "thai-basil", "thyme", "viola",
+  "borage-2",
+  "chamomile-2",
+  "chive-blossom-2",
+  "chive-blossom-3",
+  "gem-marigold-2",
+  "marigold-2",
+  "nasturtium-2",
+  "pansy-2",
+  "buttercup",
+  "california-poppy",
+  "allium",
 ];
 
 interface FlowerSpinnerProps {

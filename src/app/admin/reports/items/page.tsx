@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PrintButton } from "@/components/shared/PrintButton";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -116,10 +117,11 @@ export default async function ItemPerformancePage({
       <header className="page-header">
         <div className="flex items-center gap-3">
           <Link href="/admin/reports" className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-white/70 hover:text-white">←</Link>
-          <div>
+          <div className="flex-1">
             <h1 className="page-title">Item Performance</h1>
             <p className="text-xs text-white/60">{windowLabel}</p>
           </div>
+          <div className="ml-auto"><PrintButton /></div>
         </div>
       </header>
 
