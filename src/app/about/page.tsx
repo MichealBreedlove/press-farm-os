@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
+import { RestaurantCard } from "@/components/shared/RestaurantCard";
 
 const FEATURED_FLOWERS = [
   { src: "/assets/pressfarm/flowers/squash-blossom.png", name: "Squash Blossom", latin: "Cucurbita pepo", note: "Signature crop" },
@@ -309,39 +310,7 @@ export default function AboutPage() {
 
           <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
             {RESTAURANTS.map((r) => (
-              <div
-                key={r.name}
-                className="bg-white rounded-2xl border border-pf-master-gold/15 p-8 text-center"
-              >
-                <p
-                  className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-4"
-                  style={eyebrowFont}
-                >
-                  Restaurant
-                </p>
-                {/* Logo space — falls back to wordmark if image not present */}
-                <div className="h-20 sm:h-24 flex items-center justify-center mb-4">
-                  <img
-                    src={r.logo}
-                    alt={`${r.name} logo`}
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      // Fall back to a styled wordmark if the logo file isn't there yet
-                      const target = e.currentTarget;
-                      target.style.display = "none";
-                      const next = target.nextElementSibling as HTMLElement | null;
-                      if (next) next.style.display = "block";
-                    }}
-                  />
-                  <h3 className="font-display text-3xl text-farm-dark hidden">{r.name}</h3>
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <div className="w-4 h-px bg-pf-master-gold/40" />
-                  <div className="w-1 h-1 rounded-full bg-pf-master-gold" />
-                  <div className="w-4 h-px bg-pf-master-gold/40" />
-                </div>
-                <p className="text-xs text-farm-muted mt-3">{r.note}</p>
-              </div>
+              <RestaurantCard key={r.name} {...r} />
             ))}
           </div>
         </div>
