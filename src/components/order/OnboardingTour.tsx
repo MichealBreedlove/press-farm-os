@@ -71,14 +71,14 @@ export function OnboardingTour() {
           <h2 className="font-display text-lg font-semibold text-farm-dark">{current.title}</h2>
           <button
             onClick={close}
-            className="text-gray-400 hover:text-gray-600 min-h-[36px] min-w-[36px] flex items-center justify-center -mr-2 -mt-2"
+            className="text-farm-muted hover:text-farm-muted/90 min-h-[36px] min-w-[36px] flex items-center justify-center -mr-2 -mt-2"
             aria-label="Skip tour"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 leading-relaxed">{current.body}</p>
+        <p className="text-sm text-farm-muted/90 leading-relaxed">{current.body}</p>
 
         {/* Progress dots */}
         <div className="flex items-center justify-center gap-1.5 mt-5">
@@ -113,7 +113,7 @@ export function OnboardingTour() {
         {!isLast && (
           <button
             onClick={close}
-            className="block w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-3 min-h-[32px]"
+            className="block w-full text-center text-xs text-farm-muted hover:text-farm-muted/90 mt-3 min-h-[32px]"
           >
             Skip tour
           </button>

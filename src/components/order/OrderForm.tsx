@@ -159,9 +159,9 @@ export function OrderForm({
         </div>
       )}
       {/* Sticky search bar */}
-      <div className="sticky top-0 z-30 bg-farm-cream/95 backdrop-blur-sm border-b border-gray-100 px-4 py-3">
+      <div className="sticky top-0 z-30 bg-farm-cream/95 backdrop-blur-sm border-b border-farm-dark/5 px-4 py-3">
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -169,13 +169,13 @@ export function OrderForm({
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-farm-dark/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-farm-muted hover:text-farm-muted/90"
               aria-label="Clear search"
             >
               ✕
@@ -191,7 +191,7 @@ export function OrderForm({
 
       <div className="flex-1 px-4 py-4 pb-32">
         {visibleItems.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-sm">
+          <div className="text-center py-12 text-farm-muted text-sm">
             {search ? `No items match "${search}"` : "No items available for this delivery."}
           </div>
         ) : (
@@ -218,7 +218,7 @@ export function OrderForm({
             <div className="card px-4 py-4 mt-2">
               <label
                 htmlFor="freeform-notes"
-                className="block text-sm font-semibold text-gray-900 mb-2"
+                className="block text-sm font-semibold text-farm-dark mb-2"
               >
                 Notes for Press Farm
               </label>
@@ -229,9 +229,9 @@ export function OrderForm({
                 maxLength={MAX_NOTES_LENGTH}
                 rows={3}
                 placeholder="Any special requests or substitutions..."
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+                className="w-full text-sm border border-farm-dark/10 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
+              <p className="text-xs text-farm-muted mt-1 text-right">
                 {freeformNotes.length}/{MAX_NOTES_LENGTH}
               </p>
             </div>

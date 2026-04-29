@@ -34,7 +34,7 @@ export function DeleteOrderButton({ orderId, restaurantName }: { orderId: string
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-xs font-medium text-gray-500 rounded-lg px-3 py-1.5 min-h-0 hover:text-gray-700"
+          className="text-xs font-medium text-farm-muted rounded-lg px-3 py-1.5 min-h-0 hover:text-farm-dark/80"
         >
           Cancel
         </button>

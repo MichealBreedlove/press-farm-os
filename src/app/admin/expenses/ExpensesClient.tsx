@@ -125,8 +125,8 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
         <div className="grid grid-cols-2 gap-3">
           {categoriesWithData.map((cat) => (
             <div key={cat} className="card p-3">
-              <p className="text-xs text-gray-500">{cat}</p>
-              <p className="text-base font-semibold text-gray-900 mt-0.5">
+              <p className="text-xs text-farm-muted">{cat}</p>
+              <p className="text-base font-semibold text-farm-dark mt-0.5">
                 ${totalByCategory[cat].toFixed(2)}
               </p>
             </div>
@@ -135,7 +135,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
       )}
 
       {/* Total */}
-      <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 flex justify-between items-center">
+      <div className="bg-pf-master-orange/8 border border-pf-master-orange/20 rounded-xl p-4 flex justify-between items-center">
         <span className="text-sm font-medium text-orange-800">Total Expenses</span>
         <span className="text-lg font-bold text-orange-900">${grandTotal.toFixed(2)}</span>
       </div>
@@ -157,20 +157,20 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
             <h3 className="font-display text-sm text-farm-dark">
               {editingId ? "Edit Expense" : "New Expense"}
             </h3>
-            <button type="button" onClick={resetForm} className="text-gray-400 min-h-0 min-w-0 p-1">
+            <button type="button" onClick={resetForm} className="text-farm-muted min-h-0 min-w-0 p-1">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+              <label className="form-label">Date</label>
               <input type="date" required value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className="input-field" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Amount ($)</label>
+              <label className="form-label">Amount ($)</label>
               <input type="number" required min="0.01" step="0.01" value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                 placeholder="0.00" className="input-field" />
@@ -178,7 +178,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Categories</label>
+            <label className="form-label">Categories</label>
             <div className="flex flex-wrap gap-1.5">
               {EXPENSE_CATEGORIES.map((cat) => {
                 const selected = form.categories.includes(cat);
@@ -190,7 +190,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
                     className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
                       selected
                         ? "bg-farm-green text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        : "bg-farm-cream/60 text-farm-muted hover:bg-gray-200"
                     }`}
                   >
                     {cat}
@@ -201,7 +201,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+            <label className="form-label">Vendor</label>
             <input type="text" value={form.vendor}
               onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
               placeholder="e.g. Amazon, Home Depot"
@@ -213,7 +213,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+            <label className="form-label">Description</label>
             <input type="text" value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="What was purchased..."
@@ -231,7 +231,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
       {/* Expense list */}
       <div className="space-y-2">
         {expenses.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">No expenses logged for this month.</p>
+          <p className="text-center text-sm text-farm-muted py-8">No expenses logged for this month.</p>
         )}
         {expenses.map((exp) => (
           <div key={exp.id} className="card px-4 py-3">
@@ -241,27 +241,27 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
                   {exp.category.split(", ").map((cat) => (
                     <span key={cat} className="badge-gray">{cat}</span>
                   ))}
-                  {exp.vendor && <span className="text-xs text-blue-600 font-medium">{exp.vendor}</span>}
-                  <span className="text-xs text-gray-400">
+                  {exp.vendor && <span className="text-xs text-farm-green font-medium">{exp.vendor}</span>}
+                  <span className="text-xs text-farm-muted">
                     {new Date(exp.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
                 </div>
                 {exp.description && (
-                  <p className="text-sm text-gray-700 mt-1 truncate">{exp.description}</p>
+                  <p className="text-sm text-farm-dark/80 mt-1 truncate">{exp.description}</p>
                 )}
-                <p className="text-base font-semibold text-gray-900 mt-1">${exp.amount.toFixed(2)}</p>
+                <p className="text-base font-semibold text-farm-dark mt-1">${exp.amount.toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => startEdit(exp)}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-farm-green transition-colors"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-farm-muted/60 hover:text-farm-green transition-colors"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleDelete(exp.id)}
                   disabled={deleting === exp.id}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-300 hover:text-red-500 transition-colors"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-farm-muted/60 hover:text-red-500 transition-colors"
                 >
                   {deleting === exp.id ? <span className="text-xs">...</span> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>

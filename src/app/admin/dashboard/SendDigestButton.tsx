@@ -38,7 +38,7 @@ export function SendDigestButton() {
         <p className="text-sm font-semibold text-farm-dark">
           {loading ? "Sending..." : result ?? "Send Weekly Digest"}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">Email summary of last 7 days</p>
+        <p className="text-xs text-farm-muted mt-0.5">Email summary of last 7 days</p>
       </div>
     </button>
   );

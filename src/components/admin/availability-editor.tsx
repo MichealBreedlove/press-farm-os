@@ -55,7 +55,7 @@ export function AvailabilityEditor({
 
   return (
     <div className="p-4">
-      <p className="text-center text-gray-400 text-sm">
+      <p className="text-center text-farm-muted text-sm">
         AvailabilityEditor — TODO: implement in Phase 1
       </p>
     </div>

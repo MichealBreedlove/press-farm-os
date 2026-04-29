@@ -141,17 +141,17 @@ export default async function ForecastPage({
       </header>
 
       <div className="px-4 py-5 space-y-4">
-        <div className="card p-4 bg-blue-50/40 border-blue-100">
+        <div className="card p-4 bg-farm-cream/60/40 border-farm-green/15">
           <p className="text-sm text-blue-900">
             📊 Based on the average of recent <strong>{DAY_NAMES[targetDay]}</strong> deliveries (past 8 weeks).
           </p>
-          <p className="text-xs text-blue-700 mt-1.5">
+          <p className="text-xs text-farm-green mt-1.5">
             Use this as a guide for what to harvest. Actual orders may vary.
           </p>
         </div>
 
         {forecasts.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">
+          <p className="text-center text-farm-muted text-sm py-8">
             Not enough delivery history yet. Forecast needs at least 2 deliveries per item on this day-of-week.
           </p>
         ) : (
@@ -165,8 +165,8 @@ export default async function ForecastPage({
                   <div key={f.itemName} className="px-4 py-3 border-b border-gray-50 last:border-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{f.itemName}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
+                        <p className="text-sm font-medium text-farm-dark truncate">{f.itemName}</p>
+                        <p className="text-[11px] text-farm-muted mt-0.5">
                           {f.recentDeliveries.length} past {DAY_NAMES[targetDay]}{f.recentDeliveries.length === 1 ? "" : "s"}: {" "}
                           {f.recentDeliveries.map((e) => e.qty).join(" · ")}
                         </p>
@@ -174,9 +174,9 @@ export default async function ForecastPage({
                       <div className="text-right flex-shrink-0">
                         <div className="flex items-baseline gap-1">
                           <span className="text-lg font-bold text-farm-green">~{f.avgQty < 1 ? f.avgQty.toFixed(1) : Math.round(f.avgQty)}</span>
-                          <span className="text-xs text-gray-400">{f.unit}</span>
+                          <span className="text-xs text-farm-muted">{f.unit}</span>
                           {f.trend === "up" && <span className="text-xs text-farm-green ml-1">↗</span>}
-                          {f.trend === "down" && <span className="text-xs text-orange-500 ml-1">↘</span>}
+                          {f.trend === "down" && <span className="text-xs text-pf-master-orange ml-1">↘</span>}
                         </div>
                       </div>
                     </div>

@@ -34,7 +34,7 @@ export function DeliveryLogForm({
 
   return (
     <div className="p-4">
-      <p className="text-center text-gray-400 text-sm">
+      <p className="text-center text-farm-muted text-sm">
         DeliveryLogForm — TODO: implement in Phase 1
       </p>
     </div>

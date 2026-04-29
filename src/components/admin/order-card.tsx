@@ -31,12 +31,12 @@ export function OrderCard({ order }: OrderCardProps) {
   return (
     <Link
       href={`/admin/orders/${order.delivery_date}`}
-      className="block bg-white rounded-xl border border-gray-100 p-4 hover:border-gray-200 transition-colors"
+      className="block bg-white rounded-xl border border-farm-dark/5 p-4 hover:border-farm-dark/10 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-gray-900">{order.restaurant.name}</h3>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h3 className="font-semibold text-farm-dark">{order.restaurant.name}</h3>
+          <p className="text-sm text-farm-muted mt-0.5">
             {order.chef.full_name ?? "Chef"} ·{" "}
             {order.submitted_at
               ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
@@ -56,13 +56,13 @@ export function OrderCard({ order }: OrderCardProps) {
         </span>
       </div>
 
-      <div className="flex gap-4 mt-3 text-sm text-gray-500">
+      <div className="flex gap-4 mt-3 text-sm text-farm-muted">
         <span>{itemCount} items</span>
         {shortedCount > 0 && (
           <span className="text-orange-600">{shortedCount} shorted</span>
         )}
         {order.freeform_notes && (
-          <span className="text-blue-600">Has notes</span>
+          <span className="text-farm-green">Has notes</span>
         )}
       </div>
     </Link>

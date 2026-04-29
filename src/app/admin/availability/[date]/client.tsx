@@ -304,7 +304,7 @@ export default function AvailabilityEditorClient({
     <div>
       {/* Restaurant tabs */}
       {restaurants.length > 1 && (
-        <div className="flex bg-white border-b border-gray-100 px-4 gap-4">
+        <div className="flex bg-white border-b border-farm-dark/5 px-4 gap-4">
           {restaurants.map((r) => (
             <button
               key={r.id}
@@ -312,7 +312,7 @@ export default function AvailabilityEditorClient({
               className={`py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeRestaurantId === r.id
                   ? "border-farm-green text-farm-green"
-                  : "border-transparent text-gray-400"
+                  : "border-transparent text-farm-muted"
               }`}
             >
               {r.name}
@@ -322,13 +322,13 @@ export default function AvailabilityEditorClient({
       )}
 
       {/* Category filter pills */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-gray-100 scrollbar-none">
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b border-farm-dark/5 scrollbar-none">
         <button
           onClick={() => setActiveCategory("all")}
           className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
             activeCategory === "all"
               ? "bg-farm-green text-white border-farm-green"
-              : "bg-white text-gray-500 border-gray-200"
+              : "bg-white text-farm-muted border-farm-dark/10"
           }`}
         >
           All
@@ -340,7 +340,7 @@ export default function AvailabilityEditorClient({
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               activeCategory === cat
                 ? "bg-farm-green text-white border-farm-green"
-                : "bg-white text-gray-500 border-gray-200"
+                : "bg-white text-farm-muted border-farm-dark/10"
             }`}
           >
             {CATEGORY_LABELS[cat]}
@@ -352,7 +352,7 @@ export default function AvailabilityEditorClient({
       <div className="px-4 py-3 space-y-6">
         {Object.entries(itemsByCategory).map(([cat, catItems]) => (
           <div key={cat}>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            <h2 className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-2 px-1">
               {CATEGORY_LABELS[cat as ItemCategory]}
             </h2>
             <div className="space-y-1.5">
@@ -366,10 +366,10 @@ export default function AvailabilityEditorClient({
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className={`font-medium text-sm leading-tight ${status === "unavailable" ? "text-gray-400" : "text-gray-900"}`}>
+                        <p className={`font-medium text-sm leading-tight ${status === "unavailable" ? "text-farm-muted" : "text-farm-dark"}`}>
                           {item.name}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5 uppercase">{item.unit_type}</p>
+                        <p className="text-xs text-farm-muted mt-0.5 uppercase">{item.unit_type}</p>
                         {item.size && (() => {
                           const allSizes = item.size!.split(", ").filter(Boolean);
                           const entry = avail[item.id];
@@ -378,14 +378,14 @@ export default function AvailabilityEditorClient({
                             : new Set(entry.available_sizes.split(",").filter(Boolean));
                           return (
                             <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <span className="text-[9px] text-gray-400 mr-0.5">Sizes:</span>
+                              <span className="text-[9px] text-farm-muted mr-0.5">Sizes:</span>
                               {allSizes.map((s) => (
                                 <button key={s} type="button"
                                   onClick={() => toggleSizeColor(item.id, "available_sizes", s, allSizes)}
                                   className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
                                     selectedSizes.has(s)
                                       ? "bg-farm-green text-white"
-                                      : "bg-gray-100 text-gray-400 line-through"
+                                      : "bg-farm-cream/60 text-farm-muted line-through"
                                   }`}
                                 >{s}</button>
                               ))}
@@ -400,14 +400,14 @@ export default function AvailabilityEditorClient({
                             : new Set(entry.available_colors.split(",").filter(Boolean));
                           return (
                             <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <span className="text-[9px] text-gray-400 mr-0.5">Colors:</span>
+                              <span className="text-[9px] text-farm-muted mr-0.5">Colors:</span>
                               {allColors.map((c) => (
                                 <button key={c} type="button"
                                   onClick={() => toggleSizeColor(item.id, "available_colors", c, allColors)}
                                   className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
                                     selectedColors.has(c)
                                       ? "bg-purple-600 text-white"
-                                      : "bg-gray-100 text-gray-400 line-through"
+                                      : "bg-farm-cream/60 text-farm-muted line-through"
                                   }`}
                                 >{c}</button>
                               ))}
@@ -450,7 +450,7 @@ export default function AvailabilityEditorClient({
         ))}
 
         {!items.length && (
-          <p className="text-center text-gray-400 text-sm py-8">
+          <p className="text-center text-farm-muted text-sm py-8">
             No items in catalog yet.
           </p>
         )}
@@ -482,7 +482,7 @@ export default function AvailabilityEditorClient({
           <button
             onClick={handleDuplicateLast}
             disabled={saving}
-            className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
+            className="flex-1 bg-white border border-farm-dark/10 text-farm-muted/90 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
           >
             Duplicate Last
           </button>
@@ -490,14 +490,14 @@ export default function AvailabilityEditorClient({
             <button
               onClick={handleCopyToRestaurant}
               disabled={saving}
-              className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
+              className="flex-1 bg-white border border-farm-dark/10 text-farm-muted/90 text-xs font-medium py-2.5 rounded-xl disabled:opacity-50"
             >
               Copy to Other
             </button>
           )}
           <button
             onClick={handleToggleOrdering}
-            className="flex-1 border border-gray-200 bg-white text-xs font-medium py-2.5 rounded-xl text-gray-600"
+            className="flex-1 border border-farm-dark/10 bg-white text-xs font-medium py-2.5 rounded-xl text-farm-muted/90"
           >
             {orderingOpen ? "Close Ordering" : "Open Ordering"}
           </button>

@@ -115,7 +115,7 @@ export function ShortageEditor({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-700 font-medium min-h-[44px] px-3"
+        className="flex items-center gap-1.5 text-sm text-orange-600 hover:text-pf-master-orange font-medium min-h-[44px] px-3"
       >
         <AlertTriangle className="w-4 h-4" />
         Mark Shortages
@@ -130,7 +130,7 @@ export function ShortageEditor({
   }).length;
 
   return (
-    <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 space-y-3">
+    <div className="border border-orange-200 bg-pf-master-orange/8 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-1.5">
           <AlertTriangle className="w-4 h-4" />
@@ -158,8 +158,8 @@ export function ShortageEditor({
             <div key={oi.id} className={`bg-white rounded-lg px-3 py-2.5 ${isShort ? "ring-1 ring-orange-300" : ""}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{oi.itemName}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium text-farm-dark truncate">{oi.itemName}</p>
+                  <p className="text-xs text-farm-muted mt-0.5">
                     Requested: <span className="font-semibold">{oi.quantityRequested}</span> {oi.unit}
                   </p>
                 </div>
@@ -168,7 +168,7 @@ export function ShortageEditor({
                     type="button"
                     onClick={() => adjustBy(oi.id, -1)}
                     disabled={fulfilled <= 0}
-                    className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-medium disabled:opacity-30"
+                    className="w-10 h-10 rounded-full bg-orange-100 text-pf-master-orange flex items-center justify-center text-lg font-medium disabled:opacity-30"
                     aria-label={`Decrease ${oi.itemName}`}
                   >&minus;</button>
                   <input
@@ -178,13 +178,13 @@ export function ShortageEditor({
                     step="0.5"
                     value={adj.fulfilled}
                     onChange={(e) => updateItem(oi.id, "fulfilled", e.target.value)}
-                    className="w-14 h-10 text-center text-sm font-semibold border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="w-14 h-10 text-center text-sm font-semibold border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-400"
                   />
                   <button
                     type="button"
                     onClick={() => adjustBy(oi.id, 1)}
                     disabled={fulfilled >= oi.quantityRequested}
-                    className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-lg font-medium disabled:opacity-30"
+                    className="w-10 h-10 rounded-full bg-orange-100 text-pf-master-orange flex items-center justify-center text-lg font-medium disabled:opacity-30"
                     aria-label={`Increase ${oi.itemName}`}
                   >+</button>
                   <button
@@ -205,7 +205,7 @@ export function ShortageEditor({
                         className={`text-[10px] px-2 py-1 rounded-full transition-colors ${
                           adj.reason === r
                             ? "bg-orange-600 text-white"
-                            : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                            : "bg-orange-100 text-pf-master-orange hover:bg-orange-200"
                         }`}
                       >{r}</button>
                     ))}
@@ -215,7 +215,7 @@ export function ShortageEditor({
                     value={adj.reason}
                     onChange={(e) => updateItem(oi.id, "reason", e.target.value)}
                     placeholder="Or type a custom reason..."
-                    className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    className="w-full px-2 py-1.5 border border-farm-dark/10 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-orange-400"
                   />
                 </div>
               )}

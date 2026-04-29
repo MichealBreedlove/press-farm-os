@@ -97,7 +97,7 @@ export default async function DataCheckPage() {
     { label: "Notes", value: noteCount ?? 0 },
   ];
 
-  const statusColor = { ok: "text-farm-green", warn: "text-orange-500", missing: "text-red-500" };
+  const statusColor = { ok: "text-farm-green", warn: "text-pf-master-orange", missing: "text-red-500" };
 
   return (
     <main className="pb-24">
@@ -116,7 +116,7 @@ export default async function DataCheckPage() {
           <div className="space-y-1">
             {Object.entries(categories ?? {}).sort(([, a]: any, [, b]: any) => b - a).map(([cat, count]: any) => (
               <div key={cat} className="flex justify-between text-sm">
-                <span className="text-gray-600">{cat}</span>
+                <span className="text-farm-muted/90">{cat}</span>
                 <span className="font-medium text-farm-dark">{count}</span>
               </div>
             ))}
@@ -125,15 +125,15 @@ export default async function DataCheckPage() {
 
         {/* All counts */}
         <div className="card overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-            <p className="section-eyebrow text-farm-muted">Database Counts</p>
+          <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/5">
+            <p className="section-eyebrow with-flower text-farm-muted">Database Counts</p>
           </div>
           {rows.map((row) => (
             <div key={row.label} className="px-4 py-2.5 flex items-center justify-between border-b border-gray-50 last:border-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">{row.label}</span>
+                <span className="text-sm text-farm-muted/90">{row.label}</span>
                 {row.target && (
-                  <span className="text-[10px] text-gray-400">target: {row.target}</span>
+                  <span className="text-[10px] text-farm-muted">target: {row.target}</span>
                 )}
               </div>
               <span className={`text-sm font-semibold ${row.status ? statusColor[row.status] : "text-farm-dark"}`}>

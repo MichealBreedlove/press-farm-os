@@ -117,7 +117,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
 
   return (
     <div
-      className={`border-b border-gray-50 last:border-0 ${isShorted ? "bg-orange-50" : ""}`}
+      className={`border-b border-gray-50 last:border-0 ${isShorted ? "bg-pf-master-orange/8" : ""}`}
     >
       {/* Main row — tap anywhere to toggle if editable */}
       <button
@@ -125,13 +125,13 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
         onClick={() => canEdit && setExpanded((v) => !v)}
         disabled={!canEdit}
         className={`w-full px-4 py-3 flex items-center gap-3 text-left ${
-          canEdit ? "hover:bg-gray-50" : ""
+          canEdit ? "hover:bg-farm-cream/40" : ""
         } transition-colors disabled:cursor-default`}
       >
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-medium truncate ${
-              isShorted ? "text-orange-800" : "text-gray-900"
+              isShorted ? "text-orange-800" : "text-farm-dark"
             }`}
           >
             {orderItem.itemName}
@@ -141,18 +141,18 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <span className="text-xs text-gray-400 mr-1">
+          <span className="text-xs text-farm-muted mr-1">
             {UNIT_LABELS[orderItem.unitType as keyof typeof UNIT_LABELS] ?? orderItem.unitType}
           </span>
           {isShorted ? (
-            <span className="text-sm text-orange-700 font-semibold">
+            <span className="text-sm text-pf-master-orange font-semibold">
               {formatQty(orderItem.quantityFulfilled ?? 0)}{" "}
-              <span className="line-through text-gray-400 font-normal">
+              <span className="line-through text-farm-muted font-normal">
                 {formatQty(orderItem.quantityRequested)}
               </span>
             </span>
           ) : (
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-sm font-semibold text-farm-dark">
               {formatQty(orderItem.quantityRequested)}
             </span>
           )}
@@ -160,7 +160,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
         {canEdit && (
           <AlertTriangle
             className={`w-4 h-4 flex-shrink-0 ${
-              isShorted ? "text-orange-500" : "text-gray-300"
+              isShorted ? "text-pf-master-orange" : "text-farm-muted/60"
             }`}
           />
         )}
@@ -168,9 +168,9 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
 
       {/* Inline editor */}
       {expanded && canEdit && (
-        <div className="px-4 pb-3 pt-1 bg-orange-50/40 space-y-2 border-t border-orange-100">
+        <div className="px-4 pb-3 pt-1 bg-pf-master-orange/8/40 space-y-2 border-t border-pf-master-orange/20">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 flex-shrink-0">
+            <span className="text-xs text-farm-muted flex-shrink-0">
               Picked:
             </span>
             <input
@@ -182,10 +182,10 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
               onChange={(e) => setFulfilledQty(e.target.value)}
               className="w-20 h-9 px-2 border border-orange-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-400 bg-white"
             />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-farm-muted">
               of {formatQty(orderItem.quantityRequested)}
             </span>
-            <span className="text-xs text-gray-400 ml-auto">
+            <span className="text-xs text-farm-muted ml-auto">
               {orderItem.quantityRequested - parseFloat(fulfilledQty || "0") > 0 &&
                 `${formatQty(orderItem.quantityRequested - parseFloat(fulfilledQty || "0"))} short`}
             </span>
@@ -201,7 +201,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
                 className={`text-xs min-h-[32px] px-3 py-1.5 rounded-full transition-colors ${
                   reason === r
                     ? "bg-orange-500 text-white"
-                    : "bg-white border border-orange-200 text-orange-700 hover:bg-orange-100"
+                    : "bg-white border border-orange-200 text-pf-master-orange hover:bg-orange-100"
                 }`}
               >
                 {r}
@@ -236,7 +236,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
                 type="button"
                 onClick={clearShortage}
                 disabled={saving}
-                className="min-h-[44px] px-3 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg disabled:opacity-50"
+                className="min-h-[44px] px-3 bg-white border border-farm-dark/10 text-farm-muted/90 text-sm font-medium rounded-lg disabled:opacity-50"
               >
                 Clear
               </button>
@@ -245,7 +245,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
               type="button"
               onClick={() => setExpanded(false)}
               disabled={saving}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-50"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-farm-muted hover:text-farm-muted/90 disabled:opacity-50"
               aria-label="Cancel"
             >
               <X className="w-4 h-4" />

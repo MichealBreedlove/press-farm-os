@@ -58,18 +58,18 @@ export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
   return (
     <div className="card overflow-hidden">
       {/* Month nav */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <button onClick={prev} className="p-2 text-gray-400 hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-farm-dark/5">
+        <button onClick={prev} className="p-2 text-farm-muted hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h3 className="font-display text-sm text-farm-dark">{monthLabel}</h3>
-        <button onClick={next} className="p-2 text-gray-400 hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
+        <button onClick={next} className="p-2 text-farm-muted hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-gray-400 uppercase tracking-wider py-2 border-b border-gray-50">
+      <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-farm-muted uppercase tracking-wider py-2 border-b border-gray-50">
         {DAYS.map((d) => <div key={d}>{d}</div>)}
       </div>
 
@@ -93,7 +93,7 @@ export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-xs ${isToday ? "font-bold text-farm-green" : "text-gray-500"}`}>
+                <span className={`text-xs ${isToday ? "font-bold text-farm-green" : "text-farm-muted"}`}>
                   {day}
                 </span>
                 {isDeliveryDate && !hasDelivery && (
@@ -115,7 +115,7 @@ export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
                   href={`/admin/deliveries/${dateStr}`}
                   className="block mt-0.5 min-h-0 min-w-0"
                 >
-                  <div className="bg-gray-100 text-gray-400 rounded px-1 py-0.5 text-[9px] truncate text-center">
+                  <div className="bg-farm-cream/60 text-farm-muted rounded px-1 py-0.5 text-[9px] truncate text-center">
                     Log
                   </div>
                 </Link>

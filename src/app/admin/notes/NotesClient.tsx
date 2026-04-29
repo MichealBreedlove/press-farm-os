@@ -82,7 +82,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
         <button
           onClick={() => setFilter("all")}
           className={`text-xs px-3 py-1.5 rounded-full font-medium min-h-0 min-w-0 whitespace-nowrap transition-colors ${
-            filter === "all" ? "bg-farm-green text-white" : "bg-gray-100 text-gray-500"
+            filter === "all" ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted"
           }`}
         >
           All ({notes.length})
@@ -94,7 +94,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
               key={cat.value}
               onClick={() => setFilter(cat.value)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium min-h-0 min-w-0 whitespace-nowrap transition-colors ${
-                filter === cat.value ? "bg-farm-green text-white" : "bg-gray-100 text-gray-500"
+                filter === cat.value ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted"
               }`}
             >
               {cat.label} ({count})
@@ -120,7 +120,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
           <h3 className="font-display text-sm text-farm-dark">New Note</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+              <label className="form-label">Date</label>
               <input
                 type="date"
                 value={date}
@@ -129,7 +129,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
+              <label className="form-label">Type</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -142,7 +142,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Note</label>
+            <label className="form-label">Note</label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -167,12 +167,12 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
           <div className="text-center py-10">
             <img src="/assets/pressfarm/flowers/viola.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
             <h3 className="text-base font-semibold text-farm-dark">Start your field journal</h3>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
               Quick observations save hours later. &ldquo;Mustard frills bolting&rdquo; or &ldquo;Borage flowering early&rdquo; — anything worth remembering.
             </p>
           </div>
         ) : (
-          <p className="text-center text-gray-400 text-sm py-8">
+          <p className="text-center text-farm-muted text-sm py-8">
             No notes match this filter.
           </p>
         )
@@ -183,7 +183,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-farm-muted">
                       {new Date(note.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
                     <span className={categoryColors[note.category] ?? "badge-gray"}>
@@ -194,7 +194,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
                 </div>
                 <button
                   onClick={() => deleteNote(note.id)}
-                  className="text-gray-300 hover:text-red-500 transition-colors min-h-0 min-w-0 p-1"
+                  className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-0 min-w-0 p-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

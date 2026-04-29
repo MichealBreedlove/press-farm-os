@@ -22,8 +22,8 @@ export function ShortageForm({ orderItem, onSave, onCancel }: ShortageFormProps)
   void onCancel;
 
   return (
-    <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-      <p className="text-center text-gray-400 text-sm">
+    <div className="p-4 bg-pf-master-orange/8 rounded-xl border border-orange-200">
+      <p className="text-center text-farm-muted text-sm">
         ShortageForm — TODO: implement in Phase 1
       </p>
     </div>

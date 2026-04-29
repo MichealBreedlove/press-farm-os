@@ -95,16 +95,16 @@ export default function ReportsDashboard({
     <div className="px-4 py-4 space-y-6">
       {/* MTD summary cards */}
       <div>
-        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">
+        <p className="text-xs text-farm-muted uppercase tracking-wide font-semibold mb-3">
           {monthLabel(currentMonth)}
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div className="card p-4">
-            <p className="text-xs text-gray-400">Delivery Value</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{fmt(currentData.total_value)}</p>
+            <p className="text-xs text-farm-muted">Delivery Value</p>
+            <p className="text-xl font-bold text-farm-dark mt-1">{fmt(currentData.total_value)}</p>
           </div>
           <div className="card p-4">
-            <p className="text-xs text-gray-400">Expenses</p>
+            <p className="text-xs text-farm-muted">Expenses</p>
             <p className="text-xl font-bold text-red-600 mt-1">{fmt(currentData.total_expenses)}</p>
           </div>
           <div className="bg-farm-green text-white rounded-xl p-4">
@@ -112,20 +112,20 @@ export default function ReportsDashboard({
             <p className="text-xl font-bold mt-1">{fmt(currentData.net_value)}</p>
           </div>
           <div className="card p-4">
-            <p className="text-xs text-gray-400">YTD Value</p>
-            <p className="text-xl font-bold text-gray-900 mt-1">{fmt(ytdValue)}</p>
+            <p className="text-xs text-farm-muted">YTD Value</p>
+            <p className="text-xl font-bold text-farm-dark mt-1">{fmt(ytdValue)}</p>
           </div>
         </div>
 
         {/* By restaurant */}
         {Object.keys(currentData.by_restaurant).length > 0 && (
-          <div className="mt-3 bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-            <p className="text-xs text-gray-500 mb-2">By Restaurant</p>
+          <div className="mt-3 bg-white border border-farm-dark/5 rounded-xl p-4 shadow-sm">
+            <p className="text-xs text-farm-muted mb-2">By Restaurant</p>
             <div className="space-y-2">
               {Object.entries(currentData.by_restaurant).map(([name, value]) => (
                 <div key={name} className="flex items-center justify-between">
-                  <p className="text-sm text-gray-700">{name}</p>
-                  <p className="text-sm font-medium text-gray-900">{fmtFull(value)}</p>
+                  <p className="text-sm text-farm-dark/80">{name}</p>
+                  <p className="text-sm font-medium text-farm-dark">{fmtFull(value)}</p>
                 </div>
               ))}
             </div>
@@ -136,7 +136,7 @@ export default function ReportsDashboard({
       {/* Monthly value bar chart */}
       {monthlyData.length > 0 && (
         <div className="card p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Monthly Revenue (All Time)</p>
+          <p className="text-sm font-semibold text-farm-dark/80 mb-4">Monthly Revenue (All Time)</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -160,7 +160,7 @@ export default function ReportsDashboard({
       {/* YTD running total line chart */}
       {runningData.length > 0 && (
         <div className="card p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-4">Cumulative Value (All Time)</p>
+          <p className="text-sm font-semibold text-farm-dark/80 mb-4">Cumulative Value (All Time)</p>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={runningData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -181,20 +181,20 @@ export default function ReportsDashboard({
 
       {/* YTD summary */}
       <div className="card p-4">
-        <p className="text-sm font-semibold text-gray-700 mb-3">
+        <p className="text-sm font-semibold text-farm-dark/80 mb-3">
           Year-to-Date {new Date().getFullYear()}
         </p>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <p className="text-sm text-gray-500">Total Value</p>
-            <p className="text-sm font-semibold text-gray-900">{fmtFull(ytdValue)}</p>
+            <p className="text-sm text-farm-muted">Total Value</p>
+            <p className="text-sm font-semibold text-farm-dark">{fmtFull(ytdValue)}</p>
           </div>
           <div className="flex justify-between">
-            <p className="text-sm text-gray-500">Total Expenses</p>
+            <p className="text-sm text-farm-muted">Total Expenses</p>
             <p className="text-sm font-semibold text-red-600">{fmtFull(ytdExpenses)}</p>
           </div>
-          <div className="flex justify-between border-t border-gray-100 pt-2 mt-2">
-            <p className="text-sm font-medium text-gray-700">Net Value</p>
+          <div className="flex justify-between border-t border-farm-dark/5 pt-2 mt-2">
+            <p className="text-sm font-medium text-farm-dark/80">Net Value</p>
             <p className="text-sm font-bold text-farm-green">{fmtFull(ytdValue - ytdExpenses)}</p>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function ReportsDashboard({
       {/* Expense breakdown */}
       {Object.keys(expenseBreakdown).length > 0 && (
         <div className="card p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-3">
+          <p className="text-sm font-semibold text-farm-dark/80 mb-3">
             Expenses — {monthLabel(currentMonth)}
           </p>
           <div className="space-y-2">
@@ -211,8 +211,8 @@ export default function ReportsDashboard({
               .sort(([, a], [, b]) => b - a)
               .map(([cat, amount]) => (
                 <div key={cat} className="flex justify-between">
-                  <p className="text-sm text-gray-500">{cat}</p>
-                  <p className="text-sm text-gray-900">{fmtFull(amount)}</p>
+                  <p className="text-sm text-farm-muted">{cat}</p>
+                  <p className="text-sm text-farm-dark">{fmtFull(amount)}</p>
                 </div>
               ))}
           </div>
@@ -223,21 +223,21 @@ export default function ReportsDashboard({
       {topItems.length > 0 && (
         <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
-            <p className="text-sm font-semibold text-gray-700">Top Items by Value (12mo)</p>
+            <p className="text-sm font-semibold text-farm-dark/80">Top Items by Value (12mo)</p>
           </div>
           {topItems.map((item, i) => (
             <div
               key={item.item_id}
               className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0"
             >
-              <p className="text-sm text-gray-400 w-6 shrink-0">{i + 1}</p>
+              <p className="text-sm text-farm-muted w-6 shrink-0">{i + 1}</p>
               <div className="flex-1">
-                <p className="text-sm text-gray-900">{item.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-sm text-farm-dark">{item.name}</p>
+                <p className="text-xs text-farm-muted mt-0.5">
                   {item.total_qty.toFixed(1)} {item.unit}
                 </p>
               </div>
-              <p className="text-sm font-semibold text-gray-900">{fmtFull(item.total_value)}</p>
+              <p className="text-sm font-semibold text-farm-dark">{fmtFull(item.total_value)}</p>
             </div>
           ))}
         </div>
@@ -246,11 +246,11 @@ export default function ReportsDashboard({
       {/* Year-over-Year */}
       {annualData.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-farm-dark/5">
             <p className="text-sm font-semibold text-farm-dark">Year-over-Year</p>
           </div>
-          <div className="divide-y divide-gray-50">
-            <div className="px-4 py-2 grid grid-cols-4 gap-1 text-xs font-medium text-gray-400">
+          <div className="divide-y divide-farm-dark/5">
+            <div className="px-4 py-2 grid grid-cols-4 gap-1 text-xs font-medium text-farm-muted">
               <span>Year</span>
               <span className="text-right">Revenue</span>
               <span className="text-right">Expenses</span>
@@ -271,22 +271,22 @@ export default function ReportsDashboard({
       {/* Revenue Forecast */}
       {forecast.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-farm-dark/5">
             <h3 className="font-display text-sm text-farm-dark">Revenue Forecast</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Based on 3-month trailing average</p>
+            <p className="text-xs text-farm-muted mt-0.5">Based on 3-month trailing average</p>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-farm-dark/5">
             {forecast.map((f) => {
               const net = f.revenue - f.expenses;
               return (
                 <div key={f.month} className="px-4 py-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-farm-dark">{f.label}</p>
-                    <p className="text-xs text-gray-400">Projected</p>
+                    <p className="text-xs text-farm-muted">Projected</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-farm-green">{fmt(f.revenue)}</p>
-                    <p className="text-xs text-gray-400">Net: {fmt(net)}</p>
+                    <p className="text-xs text-farm-muted">Net: {fmt(net)}</p>
                   </div>
                 </div>
               );
@@ -308,9 +308,9 @@ export default function ReportsDashboard({
       >
         <div>
           <p className="text-sm font-semibold text-farm-dark">Executive Summary</p>
-          <p className="text-xs text-gray-400 mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
+          <p className="text-xs text-farm-muted mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
         </div>
-        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -322,9 +322,9 @@ export default function ReportsDashboard({
       >
         <div>
           <p className="text-sm font-semibold text-farm-dark">Income Statement</p>
-          <p className="text-xs text-gray-400 mt-0.5">P&amp;L · Farmer pay · Margin benchmarks</p>
+          <p className="text-xs text-farm-muted mt-0.5">P&amp;L · Farmer pay · Margin benchmarks</p>
         </div>
-        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -336,9 +336,9 @@ export default function ReportsDashboard({
       >
         <div>
           <p className="text-sm font-semibold text-farm-dark">Item Performance</p>
-          <p className="text-xs text-gray-400 mt-0.5">Top revenue · Reliable sellers · Dead stock</p>
+          <p className="text-xs text-farm-muted mt-0.5">Top revenue · Reliable sellers · Dead stock</p>
         </div>
-        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
@@ -350,15 +350,15 @@ export default function ReportsDashboard({
       >
         <div>
           <p className="text-sm font-semibold text-farm-dark">Year over Year</p>
-          <p className="text-xs text-gray-400 mt-0.5">Compare months/quarters across years</p>
+          <p className="text-xs text-farm-muted mt-0.5">Compare months/quarters across years</p>
         </div>
-        <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
 
       {topItems.length === 0 && monthlyData.length === 0 && (
-        <p className="text-center text-gray-400 text-sm py-8">
+        <p className="text-center text-farm-muted text-sm py-8">
           No delivery data yet — log deliveries to see reports
         </p>
       )}

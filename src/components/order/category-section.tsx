@@ -41,13 +41,13 @@ export function CategorySection({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-100 text-left transition-colors",
+          "w-full flex items-center justify-between px-4 py-3 bg-white border border-farm-dark/5 text-left transition-colors",
           isOpen ? "rounded-t-xl border-b-0" : "rounded-xl"
         )}
         style={{ minHeight: "44px" }}
       >
         <div className="flex items-center gap-2">
-          <span className="font-display text-sm text-gray-900 tracking-tight">
+          <span className="font-display text-sm text-farm-dark tracking-tight">
             {CATEGORY_LABELS[category]}
           </span>
           {orderedCount > 0 && (
@@ -56,13 +56,13 @@ export function CategorySection({
             </span>
           )}
         </div>
-        <span className="text-gray-400 text-sm" aria-hidden>
+        <span className="text-farm-muted text-sm" aria-hidden>
           {isOpen ? "▲" : "▼"}
         </span>
       </button>
 
       {isOpen && (
-        <div className="bg-white rounded-b-xl border border-t-0 border-gray-100 px-4">
+        <div className="bg-white rounded-b-xl border border-t-0 border-farm-dark/5 px-4">
           {items.map((item) => (
             <ItemRow
               key={item.id}

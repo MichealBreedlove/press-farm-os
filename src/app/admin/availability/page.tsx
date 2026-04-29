@@ -69,7 +69,7 @@ export default async function AdminAvailabilityPage() {
     <main>
       <header className="page-header">
         <h1 className="page-title">Availability</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-farm-muted mt-0.5">
           Tap a date to set item availability
         </p>
       </header>
@@ -77,8 +77,8 @@ export default async function AdminAvailabilityPage() {
       <div className="px-4 py-4 space-y-3">
         {dates.length === 0 && (
           <div className="py-12 text-center">
-            <p className="text-gray-400 text-sm">No upcoming delivery dates found.</p>
-            <p className="text-gray-400 text-xs mt-1">Add delivery dates below to get started.</p>
+            <p className="text-farm-muted text-sm">No upcoming delivery dates found.</p>
+            <p className="text-farm-muted text-xs mt-1">Add delivery dates below to get started.</p>
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default async function AdminAvailabilityPage() {
                   <p className="font-semibold text-farm-dark text-base">
                     {formatDeliveryDate(dd.date)}
                   </p>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-farm-muted mt-0.5">
                     {availableCount > 0
                       ? `${availableCount} items available`
                       : "No availability set"}
@@ -108,7 +108,7 @@ export default async function AdminAvailabilityPage() {
                     {dd.ordering_open ? "Open" : "Closed"}
                   </span>
                   <svg
-                    className="w-4 h-4 text-gray-400"
+                    className="w-4 h-4 text-farm-muted"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

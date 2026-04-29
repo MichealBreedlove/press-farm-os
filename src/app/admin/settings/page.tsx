@@ -37,9 +37,9 @@ export default async function AdminSettingsPage() {
           >
             <div>
               <p className="text-sm font-semibold text-farm-dark">{card.title}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{card.description}</p>
+              <p className="text-xs text-farm-muted mt-0.5">{card.description}</p>
             </div>
-            <svg className="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>

@@ -28,7 +28,7 @@ export default function AdminError({
           </div>
         </div>
         <h2 className="text-lg font-semibold text-farm-dark">Something went wrong</h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-farm-muted">
           {error.message || "An unexpected error occurred. Please try again."}
         </p>
         <button

@@ -51,7 +51,7 @@ export function EmptyState({ icon, flower, title, description, actionLabel, acti
       )}
       <h3 className="text-base font-semibold text-farm-dark">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto leading-relaxed">{description}</p>
+        <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto leading-relaxed">{description}</p>
       )}
       {actionLabel && actionHref && (
         <Link

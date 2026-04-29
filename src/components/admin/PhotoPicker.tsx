@@ -62,13 +62,13 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
 
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-500 mb-1">Photo</label>
+      <label className="form-label">Photo</label>
 
       {/* Current photo or placeholder */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-48 h-48 rounded-xl border-2 border-dashed border-gray-200 hover:border-farm-green flex items-center justify-center overflow-hidden transition-colors bg-gray-50 min-h-0 min-w-0 relative group"
+        className="w-48 h-48 rounded-xl border-2 border-dashed border-farm-dark/10 hover:border-farm-green flex items-center justify-center overflow-hidden transition-colors bg-farm-cream/40 min-h-0 min-w-0 relative group"
       >
         {value ? (
           <>
@@ -79,8 +79,8 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
           </>
         ) : (
           <div className="text-center">
-            <Camera className="w-6 h-6 text-gray-300 mx-auto" />
-            <span className="text-[10px] text-gray-400 mt-1 block">Choose</span>
+            <Camera className="w-6 h-6 text-farm-muted/60 mx-auto" />
+            <span className="text-[10px] text-farm-muted mt-1 block">Choose</span>
           </div>
         )}
       </button>
@@ -100,12 +100,12 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col">
             {/* Header */}
-            <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-farm-dark/5">
               <h3 className="font-display text-sm text-farm-dark">Choose Photo</h3>
               <button
                 type="button"
                 onClick={() => { setOpen(false); setSearch(""); }}
-                className="p-2 text-gray-400 hover:text-gray-600 min-h-0 min-w-0"
+                className="p-2 text-farm-muted hover:text-farm-muted/90 min-h-0 min-w-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -114,21 +114,21 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
             {/* Search + Upload */}
             <div className="px-4 py-2 space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted" />
                 <input
                   type="text"
                   placeholder="Search photos..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   autoFocus
-                  className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+                  className="w-full pl-9 pr-3 py-2.5 border border-farm-dark/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-farm-green hover:text-farm-green transition-colors min-h-0"
+                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-farm-dark/10 rounded-xl text-sm text-farm-muted hover:border-farm-green hover:text-farm-green transition-colors min-h-0"
               >
                 <Upload className="w-4 h-4" />
                 {uploading ? "Uploading..." : "Upload New Photo"}
@@ -139,9 +139,9 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
             {/* Photo grid */}
             <div className="flex-1 overflow-y-auto px-4 pb-4">
               {loading ? (
-                <p className="text-center text-gray-400 text-sm py-8">Loading photos...</p>
+                <p className="text-center text-farm-muted text-sm py-8">Loading photos...</p>
               ) : filtered.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-8">No photos found</p>
+                <p className="text-center text-farm-muted text-sm py-8">No photos found</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {filtered.map((photo) => {
@@ -158,7 +158,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
                         className={`aspect-square rounded-lg overflow-hidden border-2 transition-all min-h-0 min-w-0 ${
                           isSelected
                             ? "border-farm-green ring-2 ring-farm-green/30"
-                            : "border-transparent hover:border-gray-300"
+                            : "border-transparent hover:border-farm-dark/15"
                         }`}
                         title={label}
                       >
@@ -176,7 +176,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
             </div>
 
             {/* Count */}
-            <div className="px-4 py-2 border-t border-gray-100 text-xs text-gray-400 text-center">
+            <div className="px-4 py-2 border-t border-farm-dark/5 text-xs text-farm-muted text-center">
               {filtered.length} photos {search && `matching "${search}"`}
             </div>
           </div>

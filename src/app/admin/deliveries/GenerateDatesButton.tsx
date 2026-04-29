@@ -47,7 +47,7 @@ export function GenerateDatesButton() {
             <p className="text-sm font-medium text-farm-dark">
               {loading ? "Generating..." : "Generate Upcoming Dates"}
             </p>
-            <p className="text-xs text-gray-400">Add next 6 delivery dates (Thu/Sat/Mon)</p>
+            <p className="text-xs text-farm-muted">Add next 6 delivery dates (Thu/Sat/Mon)</p>
           </div>
         </div>
       </button>

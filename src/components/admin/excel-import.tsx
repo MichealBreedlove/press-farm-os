@@ -28,7 +28,7 @@ export function ExcelImport({ type }: ExcelImportProps) {
 
   return (
     <div className="p-4">
-      <p className="text-center text-gray-400 text-sm">
+      <p className="text-center text-farm-muted text-sm">
         ExcelImport — TODO: implement with SheetJS in Phase 1
       </p>
     </div>

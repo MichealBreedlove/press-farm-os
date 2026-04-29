@@ -21,7 +21,7 @@ export function RefreshButton() {
     <button
       onClick={handleRefresh}
       disabled={isPending}
-      className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-farm-green min-h-[36px] px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+      className="flex items-center gap-1.5 text-xs text-farm-muted hover:text-farm-green min-h-[36px] px-3 py-1.5 rounded-lg hover:bg-farm-cream/60 transition-colors disabled:opacity-50"
       aria-label="Refresh stats"
     >
       <RefreshCw className={`w-3.5 h-3.5 ${isPending ? "animate-spin" : ""}`} />

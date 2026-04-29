@@ -22,7 +22,7 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
   return (
     <div className="flex items-center gap-1 flex-shrink-0">
       <button type="button" onClick={() => onChange(Math.max(0, value - 1))} disabled={disabled || value <= 0}
-        className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Decrease ${label}`}>&minus;</button>
       <input
         type="number"
@@ -34,12 +34,12 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
           onChange(Math.max(0, Math.min(v, maxQty)));
         }}
         disabled={disabled}
-        className="w-14 h-11 text-center text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
+        className="w-14 h-11 text-center text-sm font-semibold text-farm-dark border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
         placeholder="0"
         aria-label={`Quantity for ${label}`}
       />
       <button type="button" onClick={() => onChange(Math.min(maxQty, value + 1))} disabled={disabled || value >= maxQty}
-        className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
         aria-label={`Increase ${label}`}>+</button>
     </div>
   );
@@ -75,7 +75,7 @@ export function ItemRow({
   const showDetails = totalQty > 0 || itemNote.length > 0;
 
   return (
-    <div className={cn("py-3 border-b border-gray-100 last:border-0", isUnavailable && "opacity-50")}>
+    <div className={cn("py-3 border-b border-farm-dark/5 last:border-0", isUnavailable && "opacity-50")}>
       {/* Main row: photo + name + badges + stepper (only for items WITHOUT sizes) */}
       <div className="flex items-center gap-3">
         {/* Photo — admin-set photo, auto-matched brand flower, or wreath placeholder */}
@@ -86,7 +86,7 @@ export function ItemRow({
             return (
               <div className={cn(
                 "w-24 h-24 rounded-lg overflow-hidden flex-shrink-0",
-                isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-gray-100"
+                isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-farm-cream/60"
               )}>
                 <img
                   src={imgUrl}
@@ -112,9 +112,9 @@ export function ItemRow({
         {/* Item info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm text-gray-900">{item.name}</span>
-            <span className="text-xs text-gray-400 flex-shrink-0">{UNIT_LABELS[item.unit_type]} container</span>
-            {(availabilityItem as any)._isEventsItem && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">Events</span>}
+            <span className="font-medium text-sm text-farm-dark">{item.name}</span>
+            <span className="text-xs text-farm-muted flex-shrink-0">{UNIT_LABELS[item.unit_type]} container</span>
+            {(availabilityItem as any)._isEventsItem && <span className="text-[10px] bg-pf-master-gold/15 text-pf-master-gold px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">Events</span>}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
@@ -122,14 +122,14 @@ export function ItemRow({
               <span className="text-xs font-semibold text-farm-green flex-shrink-0">({totalQty} total)</span>
             )}
           </div>
-          {cycle_notes && <p className="text-xs text-gray-400 italic mt-0.5 truncate">{cycle_notes}</p>}
-          {!cycle_notes && item.chef_notes && <p className="text-xs text-gray-400 italic mt-0.5 truncate">{item.chef_notes}</p>}
-          {(item as any).season_note && <p className="text-xs text-orange-500 mt-0.5 truncate">{(item as any).season_note}</p>}
+          {cycle_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{cycle_notes}</p>}
+          {!cycle_notes && item.chef_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{item.chef_notes}</p>}
+          {(item as any).season_note && <p className="text-xs text-pf-master-orange mt-0.5 truncate">{(item as any).season_note}</p>}
 
           {/* Color selector — selectable when qty > 0, preview when 0 */}
           {colors.length > 0 && totalQty > 0 && (
             <div className="flex items-center gap-1 mt-1 flex-wrap">
-              <span className="text-[10px] text-gray-400 mr-0.5">Color:</span>
+              <span className="text-[10px] text-farm-muted mr-0.5">Color:</span>
               {colors.map((c: string) => (
                 <button key={c} type="button"
                   onClick={() => onColorChange(availabilityItem.id, selectedColor === c ? "" : c)}
@@ -143,7 +143,7 @@ export function ItemRow({
           {colors.length > 0 && totalQty === 0 && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {colors.map((c: string) => (
-                <span key={c} className="text-[10px] bg-purple-50/50 text-purple-400 px-1.5 py-0.5 rounded">{c}</span>
+                <span key={c} className="text-[10px] bg-pf-master-violet/5 text-pf-master-violet/70 px-1.5 py-0.5 rounded">{c}</span>
               ))}
             </div>
           )}
@@ -177,7 +177,7 @@ export function ItemRow({
       {hasSizes && !showSizes && (
         <div className="flex items-center gap-1 mt-1.5 ml-0 flex-wrap">
           {sizes.map((s: string) => (
-            <span key={s} className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-md">{s}</span>
+            <span key={s} className="text-[10px] bg-farm-cream/40 text-farm-muted px-2 py-1 rounded-md">{s}</span>
           ))}
         </div>
       )}
@@ -189,8 +189,8 @@ export function ItemRow({
             const key = `${availabilityItem.id}__${size}`;
             const sizeQty = quantities[key] ?? 0;
             return (
-              <div key={size} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-gray-600")}>{size}</span>
+              <div key={size} className="flex items-center justify-between bg-farm-cream/40 rounded-lg px-3 py-2">
+                <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
                 <QuantityStepper
                   value={sizeQty}
                   onChange={(v) => onQuantityChange(key, v)}
@@ -206,7 +206,7 @@ export function ItemRow({
             <button
               type="button"
               onClick={() => setSizesExpanded(false)}
-              className="text-xs text-gray-400 hover:text-gray-600 mt-1 min-h-0"
+              className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0"
             >
               Hide sizes
             </button>
@@ -223,7 +223,7 @@ export function ItemRow({
             onChange={(e) => onNoteChange(availabilityItem.id, e.target.value)}
             placeholder="Add a note..."
             maxLength={200}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder-gray-300"
+            className="w-full text-sm border border-farm-dark/10 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder-gray-300"
           />
         </div>
       )}

@@ -48,7 +48,7 @@ export function FlowerSpinner({ size = 64, label = "Loading…" }: FlowerSpinner
           className="w-full h-full object-contain"
         />
       </div>
-      {label && <p className="text-sm text-gray-400">{label}</p>}
+      {label && <p className="text-sm text-farm-muted">{label}</p>}
       <style>{`
         @keyframes pf-flower-spin {
           0%   { transform: rotate(0deg)   scale(1); }

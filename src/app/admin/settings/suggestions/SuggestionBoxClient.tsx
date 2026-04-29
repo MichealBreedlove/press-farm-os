@@ -64,7 +64,7 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
           </div>
           <div>
             <h2 className="font-display text-sm text-farm-dark">Suggestion Box</h2>
-            <p className="text-xs text-gray-400">Ideas, feedback, and improvement suggestions</p>
+            <p className="text-xs text-farm-muted">Ideas, feedback, and improvement suggestions</p>
           </div>
         </div>
       </div>
@@ -77,11 +77,11 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
         <div className="card p-4 space-y-3">
           <h3 className="font-display text-sm text-farm-dark">New Suggestion</h3>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Your Name (optional)</label>
+            <label className="form-label">Your Name (optional)</label>
             <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Anonymous" className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Suggestion</label>
+            <label className="form-label">Suggestion</label>
             <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="What would make Press Farm OS better?" rows={3} autoFocus className="input-field resize-none" />
           </div>
           <div className="flex gap-2">
@@ -95,7 +95,7 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
         <div className="text-center py-10">
           <img src="/assets/pressfarm/flowers/bachelor-button.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
           <h3 className="text-base font-semibold text-farm-dark">No suggestions yet</h3>
-          <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+          <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
             Drop ideas, feature requests, or bugs here. They persist and you can mark them done as they ship.
           </p>
         </div>
@@ -109,8 +109,8 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
                     <span className={STATUS_LABELS[s.status]?.cls ?? "badge-gray"}>
                       {STATUS_LABELS[s.status]?.label ?? s.status}
                     </span>
-                    <span className="text-xs text-gray-400">{s.author}</span>
-                    <span className="text-xs text-gray-300">
+                    <span className="text-xs text-farm-muted">{s.author}</span>
+                    <span className="text-xs text-farm-muted/60">
                       {new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
                   </div>
@@ -119,13 +119,13 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
                     {(["new", "reviewed", "implemented", "declined"] as const).map((st) => (
                       <button key={st} onClick={() => updateStatus(s.id, st)}
                         className={`text-[9px] px-2 py-0.5 rounded-full min-h-0 min-w-0 capitalize transition-colors ${
-                          s.status === st ? "bg-farm-green text-white" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                          s.status === st ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted hover:bg-gray-200"
                         }`}
                       >{st}</button>
                     ))}
                   </div>
                 </div>
-                <button onClick={() => deleteSuggestion(s.id)} className="text-gray-300 hover:text-red-500 min-h-0 min-w-0 p-2 transition-colors">
+                <button onClick={() => deleteSuggestion(s.id)} className="text-farm-muted/60 hover:text-red-500 min-h-0 min-w-0 p-2 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

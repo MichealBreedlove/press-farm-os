@@ -150,7 +150,7 @@ export default function OrderReviewPage() {
         {/* Notes */}
         {freeformNotes && (
           <div className="card px-4 py-4">
-            <p className="section-eyebrow text-farm-muted mb-1.5">Notes for Press Farm</p>
+            <p className="section-eyebrow with-flower text-farm-muted mb-1.5">Notes for Press Farm</p>
             <p className="text-sm text-farm-dark whitespace-pre-wrap leading-relaxed">{freeformNotes}</p>
           </div>
         )}

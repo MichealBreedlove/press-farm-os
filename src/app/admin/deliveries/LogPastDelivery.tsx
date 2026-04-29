@@ -18,7 +18,7 @@ export function LogPastDelivery() {
       {!showPicker ? (
         <button
           onClick={() => setShowPicker(true)}
-          className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-farm-green hover:text-farm-green transition-colors flex items-center justify-center gap-2 min-h-0"
+          className="w-full py-3 border-2 border-dashed border-farm-dark/10 rounded-xl text-sm text-farm-muted hover:border-farm-green hover:text-farm-green transition-colors flex items-center justify-center gap-2 min-h-0"
         >
           <CalendarPlus className="w-4 h-4" />
           Log Past Delivery

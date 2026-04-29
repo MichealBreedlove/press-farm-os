@@ -110,11 +110,11 @@ export default async function AdminDeliveriesPage({
 
       <div className="px-4 py-4 space-y-4">
         {filterMonth && (
-          <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 flex items-center justify-between">
-            <p className="text-sm text-blue-700">
+          <div className="bg-farm-cream/60 border border-farm-green/15 rounded-xl px-4 py-2.5 flex items-center justify-between">
+            <p className="text-sm text-farm-green">
               Filtered to <span className="font-semibold">{monthLabel(filterMonth + "-01")}</span>
             </p>
-            <Link href="/admin/deliveries" className="text-xs text-blue-600 hover:text-blue-800 font-medium min-h-[36px] px-2 py-1.5">
+            <Link href="/admin/deliveries" className="text-xs text-farm-green hover:text-farm-dark font-medium min-h-[36px] px-2 py-1.5">
               Clear filter
             </Link>
           </div>
@@ -154,14 +154,14 @@ export default async function AdminDeliveriesPage({
                     return (
                       <div key={month}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-medium text-gray-700">
+                          <p className="text-sm font-medium text-farm-dark/80">
                             {monthLabel(month + "-01")}
                           </p>
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-sm font-semibold text-farm-dark">
                             {formatCurrency(total)}
                           </p>
                         </div>
-                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                        <div className="bg-white border border-farm-dark/5 rounded-xl overflow-hidden shadow-sm">
                           {entries.map((d: any, i: number) => (
                             <Link
                               key={d.id}
@@ -171,27 +171,27 @@ export default async function AdminDeliveriesPage({
                               }`}
                             >
                               <div>
-                                <p className="text-sm text-gray-900">
+                                <p className="text-sm text-farm-dark">
                                   {formatDate(d.delivery_date)}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
+                                <p className="text-xs text-farm-muted mt-0.5">
                                   {d.restaurants?.name}
                                 </p>
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="text-right">
-                                  <p className="text-sm font-medium text-gray-900">
+                                  <p className="text-sm font-medium text-farm-dark">
                                     {formatCurrency(d.total_value ?? 0)}
                                   </p>
                                   <p className={`text-xs ${
                                     d.status === "finalized"
-                                      ? "text-gray-400"
+                                      ? "text-farm-muted"
                                       : "text-farm-green"
                                   }`}>
                                     {d.status}
                                   </p>
                                 </div>
-                                <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-4 h-4 text-farm-muted/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                               </div>
@@ -203,7 +203,7 @@ export default async function AdminDeliveriesPage({
                   })}
               </div>
             ) : (
-              <p className="text-center text-gray-400 text-sm py-8">
+              <p className="text-center text-farm-muted text-sm py-8">
                 No deliveries logged yet
               </p>
             )
@@ -213,7 +213,7 @@ export default async function AdminDeliveriesPage({
         {/* Upcoming dates needing log entry */}
         {upcomingDates && upcomingDates.length > 0 && (
           <section>
-            <p className="section-eyebrow text-farm-muted mb-3">Log a Delivery</p>
+            <p className="section-eyebrow with-flower text-farm-muted mb-3">Log a Delivery</p>
             <div className="space-y-2">
               {(upcomingDates as any[]).map((d: any) => (
                 <Link
@@ -222,7 +222,7 @@ export default async function AdminDeliveriesPage({
                   className="flex items-center justify-between card px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-farm-dark">
                       {formatDate(d.date)}
                     </p>
                     {loggedDates.has(d.date) && (
@@ -231,13 +231,13 @@ export default async function AdminDeliveriesPage({
                   </div>
                   <div className="flex items-center gap-2">
                     {loggedDates.has(d.date) ? (
-                      <span className="text-xs text-gray-400">Edit</span>
+                      <span className="text-xs text-farm-muted">Edit</span>
                     ) : (
                       <span className="badge-green">
                         + Log
                       </span>
                     )}
-                    <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-farm-muted/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>

@@ -10,11 +10,11 @@ function formatCurrency(n: number) {
 
 function pct(curr: number, prev: number): { text: string; color: string } {
   if (prev === 0) {
-    if (curr === 0) return { text: "—", color: "text-gray-400" };
+    if (curr === 0) return { text: "—", color: "text-farm-muted" };
     return { text: "new", color: "text-farm-green" };
   }
   const diff = ((curr - prev) / prev) * 100;
-  if (Math.abs(diff) < 0.5) return { text: "≈", color: "text-gray-400" };
+  if (Math.abs(diff) < 0.5) return { text: "≈", color: "text-farm-muted" };
   return {
     text: `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`,
     color: diff > 0 ? "text-farm-green" : "text-red-500",
@@ -97,18 +97,18 @@ export default async function YoYReportPage() {
           <p className="section-eyebrow with-flower text-farm-muted mb-3">Annual Totals</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Revenue</p>
+              <p className="text-xs text-farm-muted">Revenue</p>
               <p className="text-2xl font-bold text-farm-green mt-1">{formatCurrency(currRev)}</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-xs text-gray-400">vs {formatCurrency(prevRev)}</p>
+                <p className="text-xs text-farm-muted">vs {formatCurrency(prevRev)}</p>
                 <span className={`text-xs font-semibold ${revPct.color}`}>{revPct.text}</span>
               </div>
             </div>
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Expenses</p>
+              <p className="text-xs text-farm-muted">Expenses</p>
               <p className="text-2xl font-bold text-red-500 mt-1">{formatCurrency(currExp)}</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <p className="text-xs text-gray-400">vs {formatCurrency(prevExp)}</p>
+                <p className="text-xs text-farm-muted">vs {formatCurrency(prevExp)}</p>
                 <span className={`text-xs font-semibold ${expPct.color}`}>{expPct.text}</span>
               </div>
             </div>
@@ -117,9 +117,9 @@ export default async function YoYReportPage() {
 
         {/* Monthly comparison */}
         <section>
-          <p className="section-eyebrow text-farm-muted mb-3">Monthly Revenue</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">Monthly Revenue</p>
           <div className="card overflow-hidden">
-            <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-gray-50 text-[10px] font-semibold text-gray-500 uppercase">
+            <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-farm-cream/40 text-[10px] font-semibold text-farm-muted uppercase">
               <div>Month</div>
               <div className="text-right">{prevYear}</div>
               <div className="text-right">{currYear}</div>
@@ -133,8 +133,8 @@ export default async function YoYReportPage() {
               if (!hasData) return null;
               return (
                 <div key={i} className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0 items-center">
-                  <div className="text-sm font-medium text-gray-700">{label}</div>
-                  <div className="text-right text-sm text-gray-500">{prevVal > 0 ? formatCurrency(prevVal) : "—"}</div>
+                  <div className="text-sm font-medium text-farm-dark/80">{label}</div>
+                  <div className="text-right text-sm text-farm-muted">{prevVal > 0 ? formatCurrency(prevVal) : "—"}</div>
                   <div className="text-right text-sm font-semibold text-farm-dark">{currVal > 0 ? formatCurrency(currVal) : "—"}</div>
                   <div className={`text-right text-xs font-semibold ${delta.color}`}>{delta.text}</div>
                 </div>
@@ -145,9 +145,9 @@ export default async function YoYReportPage() {
 
         {/* Quarterly comparison */}
         <section>
-          <p className="section-eyebrow text-farm-muted mb-3">Quarterly Revenue</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">Quarterly Revenue</p>
           <div className="card overflow-hidden">
-            <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-gray-50 text-[10px] font-semibold text-gray-500 uppercase">
+            <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2 bg-farm-cream/40 text-[10px] font-semibold text-farm-muted uppercase">
               <div>Quarter</div>
               <div className="text-right">{prevYear}</div>
               <div className="text-right">{currYear}</div>
@@ -162,8 +162,8 @@ export default async function YoYReportPage() {
               if (!hasData) return null;
               return (
                 <div key={q} className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] gap-2 px-4 py-2.5 border-b border-gray-50 last:border-0 items-center">
-                  <div className="text-sm font-medium text-gray-700">Q{q + 1}</div>
-                  <div className="text-right text-sm text-gray-500">{prevVal > 0 ? formatCurrency(prevVal) : "—"}</div>
+                  <div className="text-sm font-medium text-farm-dark/80">Q{q + 1}</div>
+                  <div className="text-right text-sm text-farm-muted">{prevVal > 0 ? formatCurrency(prevVal) : "—"}</div>
                   <div className="text-right text-sm font-semibold text-farm-dark">{currVal > 0 ? formatCurrency(currVal) : "—"}</div>
                   <div className={`text-right text-xs font-semibold ${delta.color}`}>{delta.text}</div>
                 </div>
@@ -173,7 +173,7 @@ export default async function YoYReportPage() {
         </section>
 
         {years.length < 2 && (
-          <p className="text-center text-sm text-gray-400 py-4">
+          <p className="text-center text-sm text-farm-muted py-4">
             Need at least 2 years of data for full YoY comparison.
           </p>
         )}

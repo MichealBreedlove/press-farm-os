@@ -37,7 +37,7 @@ export function DeliveryDatePicker({
             "flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium border min-h-[44px]",
             selectedDate === d.date
               ? "bg-farm-green text-white border-farm-green"
-              : "bg-white text-gray-700 border-gray-200"
+              : "bg-white text-farm-dark/80 border-farm-dark/10"
           )}
         >
           {formatDateShort(d.date)}

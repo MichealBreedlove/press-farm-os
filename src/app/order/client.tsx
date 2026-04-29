@@ -246,7 +246,7 @@ export default function OrderFormClient({
 
         {/* Notes */}
         <div>
-          <p className="section-eyebrow text-farm-muted mb-2 px-1">
+          <p className="section-eyebrow with-flower text-farm-muted mb-2 px-1">
             Notes / Special Requests
           </p>
           <textarea

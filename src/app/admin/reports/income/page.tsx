@@ -181,7 +181,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
       </header>
 
       {!hasData ? (
-        <div className="px-4 py-12 text-center text-sm text-gray-400">
+        <div className="px-4 py-12 text-center text-sm text-farm-muted">
           No data for Q{quarter} {year}.
         </div>
       ) : (
@@ -189,15 +189,15 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
           {/* Full P&L Statement */}
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
+            <div className="px-4 py-3 border-b border-farm-dark/5">
               <p className="text-sm font-semibold text-farm-dark">Press Farm · Q{quarter} {year}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{FARM_ACRES} acre · Income Statement</p>
+              <p className="text-xs text-farm-muted mt-0.5">{FARM_ACRES} acre · Income Statement</p>
             </div>
 
-            <div className="divide-y divide-gray-50 text-sm">
+            <div className="divide-y divide-farm-dark/5 text-sm">
               {/* Revenue */}
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Revenues</p>
+                <p className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-2">Revenues</p>
                 <div className="flex justify-between">
                   <span className="text-farm-dark">Farm Production</span>
                   <span className="font-medium text-farm-dark">{fmt(revenue)}</span>
@@ -206,15 +206,15 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
               {/* COGS */}
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cost of Goods Sold</p>
+                <p className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-2">Cost of Goods Sold</p>
                 <div className="flex justify-between">
                   <span className="text-farm-dark">Farm Expenses</span>
                   <span className="text-red-600">{fmt(-cogs)}</span>
                 </div>
                 {Object.entries(byExpenseCategory).map(([cat, amt]) => (
                   <div key={cat} className="flex justify-between mt-1 pl-3">
-                    <span className="text-gray-400 text-xs">{cat}</span>
-                    <span className="text-gray-400 text-xs">{fmt(-amt)}</span>
+                    <span className="text-farm-muted text-xs">{cat}</span>
+                    <span className="text-farm-muted text-xs">{fmt(-amt)}</span>
                   </div>
                 ))}
               </div>
@@ -226,16 +226,16 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
                   <span className={grossProfit >= 0 ? "text-farm-green" : "text-red-600"}>{fmt(grossProfit)}</span>
                 </div>
                 <div className="flex justify-between mt-0.5">
-                  <span className="text-xs text-gray-400">Gross Margin</span>
+                  <span className="text-xs text-farm-muted">Gross Margin</span>
                   <span className={`text-xs font-medium ${marginColor(grossMargin, BENCHMARKS.grossMargin.min, BENCHMARKS.grossMargin.max)}`}>
-                    {pct(grossProfit, revenue)} <span className="text-gray-300">·</span> <span className="text-gray-400">target {BENCHMARKS.grossMargin.range}</span>
+                    {pct(grossProfit, revenue)} <span className="text-farm-muted/60">·</span> <span className="text-farm-muted">target {BENCHMARKS.grossMargin.range}</span>
                   </span>
                 </div>
               </div>
 
               {/* Operating Expenses */}
               <div className="px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Operating Expenses</p>
+                <p className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-2">Operating Expenses</p>
                 <div className="flex justify-between">
                   <span className="text-farm-dark">Farmer Pay</span>
                   <span className="text-red-600">{fmt(-operatingExpenses)}</span>
@@ -249,9 +249,9 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
                   <span className={operatingProfit >= 0 ? "text-farm-green" : "text-red-600"}>{fmt(operatingProfit)}</span>
                 </div>
                 <div className="flex justify-between mt-0.5">
-                  <span className="text-xs text-gray-400">Operating Margin</span>
+                  <span className="text-xs text-farm-muted">Operating Margin</span>
                   <span className={`text-xs font-medium ${marginColor(operatingMargin, BENCHMARKS.operatingMargin.min, BENCHMARKS.operatingMargin.max)}`}>
-                    {pct(operatingProfit, revenue)} <span className="text-gray-300">·</span> <span className="text-gray-400">target {BENCHMARKS.operatingMargin.range}</span>
+                    {pct(operatingProfit, revenue)} <span className="text-farm-muted/60">·</span> <span className="text-farm-muted">target {BENCHMARKS.operatingMargin.range}</span>
                   </span>
                 </div>
               </div>
@@ -263,9 +263,9 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
                   <span className={netIncome >= 0 ? "text-farm-gold" : "text-red-300"}>{fmt(netIncome)}</span>
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-xs text-gray-400">Net Margin</span>
+                  <span className="text-xs text-farm-muted">Net Margin</span>
                   <span className={`text-xs font-medium ${netIncome >= 0 ? "text-farm-gold" : "text-red-300"}`}>
-                    {pct(netIncome, revenue)} <span className="text-gray-600">·</span> <span className="text-gray-500">target {BENCHMARKS.netMargin.range}</span>
+                    {pct(netIncome, revenue)} <span className="text-farm-muted/90">·</span> <span className="text-farm-muted">target {BENCHMARKS.netMargin.range}</span>
                   </span>
                 </div>
               </div>
@@ -274,16 +274,16 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
           {/* Monthly Breakdown */}
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
+            <div className="px-4 py-3 border-b border-farm-dark/5">
               <p className="text-sm font-semibold text-farm-dark">Monthly Breakdown</p>
-              <div className="grid grid-cols-4 gap-1 mt-1 text-xs text-gray-400">
+              <div className="grid grid-cols-4 gap-1 mt-1 text-xs text-farm-muted">
                 <span></span>
                 <span className="text-right">Revenue</span>
                 <span className="text-right">Expenses</span>
                 <span className="text-right">Net</span>
               </div>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-farm-dark/5">
               {months.map((m) => {
                 const { revenue: r, expenses: e } = monthData[m];
                 const net = r - e;
@@ -293,13 +293,13 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
                     <span className="font-medium text-farm-dark">{MONTH_LABELS[mo]}</span>
                     <span className="text-right text-farm-green">{r > 0 ? `$${r.toFixed(0)}` : "—"}</span>
                     <span className="text-right text-red-500">{e > 0 ? `-$${e.toFixed(0)}` : "—"}</span>
-                    <span className={`text-right font-medium ${net > 0 ? "text-farm-dark" : net < 0 ? "text-red-600" : "text-gray-300"}`}>
+                    <span className={`text-right font-medium ${net > 0 ? "text-farm-dark" : net < 0 ? "text-red-600" : "text-farm-muted/60"}`}>
                       {r > 0 || e > 0 ? `$${net.toFixed(0)}` : "—"}
                     </span>
                   </div>
                 );
               })}
-              <div className="px-4 py-3 grid grid-cols-4 gap-1 text-sm font-semibold bg-gray-50">
+              <div className="px-4 py-3 grid grid-cols-4 gap-1 text-sm font-semibold bg-farm-cream/40">
                 <span className="text-farm-dark">Total</span>
                 <span className="text-right text-farm-green">${revenue.toFixed(0)}</span>
                 <span className="text-right text-red-500">-${cogs.toFixed(0)}</span>
@@ -311,10 +311,10 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
           {/* Revenue by Restaurant */}
           {Object.keys(byRestaurant).length > 0 && (
             <div className="card overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100">
+              <div className="px-4 py-3 border-b border-farm-dark/5">
                 <p className="text-sm font-semibold text-farm-dark">Revenue by Restaurant</p>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-farm-dark/5">
                 {Object.entries(byRestaurant)
                   .sort(([, a], [, b]) => b - a)
                   .map(([name, value]) => (
@@ -329,45 +329,45 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
           {/* Industry Benchmarks */}
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
+            <div className="px-4 py-3 border-b border-farm-dark/5">
               <p className="text-sm font-semibold text-farm-dark">vs. Industry Benchmarks</p>
-              <p className="text-xs text-gray-400 mt-0.5">National avg · Market farms</p>
+              <p className="text-xs text-farm-muted mt-0.5">National avg · Market farms</p>
             </div>
-            <div className="divide-y divide-gray-50 text-sm">
+            <div className="divide-y divide-farm-dark/5 text-sm">
               <div className="px-4 py-3 flex justify-between items-center">
-                <span className="text-gray-600">Gross Margin</span>
+                <span className="text-farm-muted/90">Gross Margin</span>
                 <div className="text-right">
                   <span className={`font-medium ${marginColor(grossMargin, BENCHMARKS.grossMargin.min, BENCHMARKS.grossMargin.max)}`}>
                     {pct(grossProfit, revenue)}
                   </span>
-                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.grossMargin.range}</span>
+                  <span className="text-farm-muted text-xs ml-2">target {BENCHMARKS.grossMargin.range}</span>
                 </div>
               </div>
               <div className="px-4 py-3 flex justify-between items-center">
-                <span className="text-gray-600">Operating Margin</span>
+                <span className="text-farm-muted/90">Operating Margin</span>
                 <div className="text-right">
                   <span className={`font-medium ${marginColor(operatingMargin, BENCHMARKS.operatingMargin.min, BENCHMARKS.operatingMargin.max)}`}>
                     {pct(operatingProfit, revenue)}
                   </span>
-                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.operatingMargin.range}</span>
+                  <span className="text-farm-muted text-xs ml-2">target {BENCHMARKS.operatingMargin.range}</span>
                 </div>
               </div>
               <div className="px-4 py-3 flex justify-between items-center">
-                <span className="text-gray-600">Net Margin</span>
+                <span className="text-farm-muted/90">Net Margin</span>
                 <div className="text-right">
                   <span className={`font-medium ${marginColor(netMargin, BENCHMARKS.netMargin.min, BENCHMARKS.netMargin.max)}`}>
                     {pct(netIncome, revenue)}
                   </span>
-                  <span className="text-gray-400 text-xs ml-2">target {BENCHMARKS.netMargin.range}</span>
+                  <span className="text-farm-muted text-xs ml-2">target {BENCHMARKS.netMargin.range}</span>
                 </div>
               </div>
               <div className="px-4 py-3 flex justify-between items-center">
-                <span className="text-gray-600">Production / Acre</span>
+                <span className="text-farm-muted/90">Production / Acre</span>
                 <div className="text-right">
                   <span className={`font-medium ${acreProduction >= BENCHMARKS.acreProduction.national ? "text-farm-green" : "text-amber-600"}`}>
                     {fmt(acreProduction)}
                   </span>
-                  <span className="text-gray-400 text-xs ml-2">target $100K</span>
+                  <span className="text-farm-muted text-xs ml-2">target $100K</span>
                 </div>
               </div>
             </div>

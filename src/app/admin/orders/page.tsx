@@ -104,7 +104,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3><RestaurantWordmark name={restaurant.name} size="md" /></h3>
-                    <p className="text-sm text-gray-400 mt-0.5">Awaiting order</p>
+                    <p className="text-sm text-farm-muted mt-0.5">Awaiting order</p>
                   </div>
                   <span className="badge-gray">
                     Not submitted
@@ -126,7 +126,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3><RestaurantWordmark name={restaurant.name} size="md" /></h3>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-farm-muted mt-0.5">
                     {order.chef?.full_name ?? "Chef"} ·{" "}
                     {order.submitted_at
                       ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
@@ -139,13 +139,13 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                 <StatusPill status={order.status as OrderStatus} />
               </div>
 
-              <div className="flex gap-4 mt-3 text-sm text-gray-500">
+              <div className="flex gap-4 mt-3 text-sm text-farm-muted">
                 <span>{itemCount} {itemCount === 1 ? "item" : "items"}</span>
                 {shortedCount > 0 && (
                   <span className="text-orange-600">{shortedCount} shorted</span>
                 )}
                 {order.freeform_notes && (
-                  <span className="text-blue-600">Has notes</span>
+                  <span className="text-farm-green">Has notes</span>
                 )}
               </div>
             </Link>
@@ -153,7 +153,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         })}
 
         {restaurants.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">No restaurants found.</p>
+          <p className="text-center text-farm-muted text-sm py-8">No restaurants found.</p>
         )}
 
         {/* Actions */}

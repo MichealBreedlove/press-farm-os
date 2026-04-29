@@ -86,12 +86,27 @@
            border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-200;
   }
 
-  /* --- Form inputs --- */
+  /* --- Form inputs — editorial farm aesthetic --- */
   .input-field {
-    @apply w-full px-4 py-3 border border-gray-200/80 rounded-xl text-sm
-           bg-gray-50/40 placeholder-gray-400
-           focus:outline-none focus:ring-2 focus:ring-farm-green/20 focus:border-farm-green focus:bg-white
+    @apply w-full px-4 py-3 rounded-xl text-sm
+           bg-farm-cream/40 placeholder:text-farm-muted/60
+           focus:outline-none focus:ring-2 focus:ring-farm-green/25 focus:bg-white
            transition-all duration-200;
+    border: 1px solid rgba(181, 139, 72, 0.18); /* gold-toned border */
+    color: #1a1a1a;
+  }
+  .input-field:focus {
+    border-color: rgba(0, 119, 74, 0.6); /* farm-green */
+  }
+
+  /* Form field label — Bank Gothic eyebrow style for editorial polish */
+  .form-label {
+    @apply block mb-1.5 text-farm-muted;
+    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", system-ui, sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
   }
 
   /* --- Page headers --- */

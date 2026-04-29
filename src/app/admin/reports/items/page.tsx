@@ -127,7 +127,7 @@ export default async function ItemPerformancePage({
 
       <div className="px-4 py-5 space-y-6">
         {/* Window selector */}
-        <div className="flex bg-gray-100 rounded-xl p-1">
+        <div className="flex bg-farm-cream/60 rounded-xl p-1">
           {[
             { key: "month", label: "30 Days" },
             { key: "quarter", label: "Quarter" },
@@ -139,7 +139,7 @@ export default async function ItemPerformancePage({
               className={`flex-1 text-center min-h-[40px] flex items-center justify-center text-sm font-medium rounded-lg transition-colors ${
                 (windowParam ?? "month") === opt.key
                   ? "bg-white text-farm-dark shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-farm-muted hover:text-farm-dark/80"
               }`}
             >
               {opt.label}
@@ -151,15 +151,15 @@ export default async function ItemPerformancePage({
         <div className="grid grid-cols-3 gap-2">
           <div className="card p-3 text-center">
             <p className="text-xl font-bold text-farm-green">{uniqueItems}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Active Items</p>
+            <p className="text-[10px] text-farm-muted mt-0.5">Active Items</p>
           </div>
           <div className="card p-3 text-center">
             <p className="text-xl font-bold text-farm-dark">{Math.round(totalQuantity)}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Total Units</p>
+            <p className="text-[10px] text-farm-muted mt-0.5">Total Units</p>
           </div>
           <div className="card p-3 text-center">
             <p className="text-xl font-bold text-farm-dark">{formatCurrency(totalRevenue)}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Revenue</p>
+            <p className="text-[10px] text-farm-muted mt-0.5">Revenue</p>
           </div>
         </div>
 
@@ -170,7 +170,7 @@ export default async function ItemPerformancePage({
           </p>
           <div className="card overflow-hidden">
             {topRevenue.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No deliveries in this window</p>
+              <p className="text-sm text-farm-muted text-center py-6">No deliveries in this window</p>
             ) : (
               topRevenue.map((s, i) => (
                 <Link
@@ -178,16 +178,16 @@ export default async function ItemPerformancePage({
                   href={`/admin/items/${s.itemId}`}
                   className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0"
                 >
-                  <span className="text-xs font-bold text-gray-400 w-5">{i + 1}</span>
+                  <span className="text-xs font-bold text-farm-muted w-5">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{s.itemName}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm font-medium text-farm-dark truncate">{s.itemName}</p>
+                    <p className="text-xs text-farm-muted">
                       {s.deliveryCount} {s.deliveryCount === 1 ? "delivery" : "deliveries"} · last {formatDate(s.lastDeliveryDate)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-farm-green">{formatCurrency(s.totalRevenue)}</p>
-                    <p className="text-[10px] text-gray-400">{Math.round(s.totalQuantity)} {s.unit}</p>
+                    <p className="text-[10px] text-farm-muted">{Math.round(s.totalQuantity)} {s.unit}</p>
                   </div>
                 </Link>
               ))
@@ -197,7 +197,7 @@ export default async function ItemPerformancePage({
 
         {/* Most Frequent */}
         <section>
-          <p className="section-eyebrow text-farm-muted mb-3">
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">
             Most Frequent (Reliable Sellers)
           </p>
           <div className="card overflow-hidden">
@@ -207,14 +207,14 @@ export default async function ItemPerformancePage({
                 href={`/admin/items/${s.itemId}`}
                 className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0"
               >
-                <span className="text-xs font-bold text-gray-400 w-5">{i + 1}</span>
+                <span className="text-xs font-bold text-farm-muted w-5">{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{s.itemName}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm font-medium text-farm-dark truncate">{s.itemName}</p>
+                  <p className="text-xs text-farm-muted">
                     avg {s.averagePerDelivery.toFixed(1)} {s.unit} per delivery
                   </p>
                 </div>
-                <span className="text-sm font-semibold text-blue-600">{s.deliveryCount}×</span>
+                <span className="text-sm font-semibold text-farm-green">{s.deliveryCount}×</span>
               </Link>
             ))}
           </div>
@@ -223,11 +223,11 @@ export default async function ItemPerformancePage({
         {/* Dead Stock */}
         {deadStock.length > 0 && (
           <section>
-            <p className="section-eyebrow text-farm-muted mb-3">
+            <p className="section-eyebrow with-flower text-farm-muted mb-3">
               Dead Stock — In Catalog but No Deliveries
             </p>
             <div className="card p-4">
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-farm-muted mb-2">
                 {deadStock.length} active items haven&apos;t shipped in {windowLabel.toLowerCase()}.
                 Consider archiving or re-promoting.
               </p>
@@ -236,13 +236,13 @@ export default async function ItemPerformancePage({
                   <Link
                     key={item.id}
                     href={`/admin/items/${item.id}`}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-md transition-colors min-h-0"
+                    className="text-xs bg-farm-cream/60 hover:bg-gray-200 text-farm-muted/90 px-2 py-1 rounded-md transition-colors min-h-0"
                   >
                     {item.name}
                   </Link>
                 ))}
                 {deadStock.length > 30 && (
-                  <span className="text-xs text-gray-400 px-2 py-1">
+                  <span className="text-xs text-farm-muted px-2 py-1">
                     + {deadStock.length - 30} more
                   </span>
                 )}

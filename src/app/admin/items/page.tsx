@@ -23,7 +23,7 @@ export default async function AdminItemsPage() {
     <main className="pb-24">
       <header className="page-header">
         <h1 className="page-title">Item Catalog</h1>
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-farm-muted mt-1">
           {items.filter((i: any) => !i.is_archived).length} active items
         </p>
       </header>

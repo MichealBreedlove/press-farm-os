@@ -140,45 +140,45 @@ export function ItemForm({ item }: Props) {
       {/* Type + Variety + Color */}
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Type *</label>
+          <label className="form-label">Type *</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
             placeholder="e.g. Turnip, Basil"
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Variety</label>
+          <label className="form-label">Variety</label>
           <input
             type="text"
             value={form.variety}
             onChange={(e) => set("variety", e.target.value)}
             placeholder="e.g. Hakurei"
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
+          <label className="form-label">Color</label>
           <input
             type="text"
             value={form.color}
             onChange={(e) => set("color", e.target.value)}
             placeholder="e.g. Purple, Red"
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
       </div>
 
       {/* Category */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Category *</label>
+        <label className="form-label">Category *</label>
         <select
           value={form.category}
           onChange={(e) => set("category", e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         >
           {ITEM_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
@@ -188,11 +188,11 @@ export function ItemForm({ item }: Props) {
 
       {/* Unit Type */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Unit *</label>
+        <label className="form-label">Unit *</label>
         <select
           value={form.unit_type}
           onChange={(e) => set("unit_type", e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         >
           {UNIT_TYPES.map((u) => (
             <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
@@ -202,7 +202,7 @@ export function ItemForm({ item }: Props) {
 
       {/* Sizes (multi-select + custom) */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1.5">Sizes</label>
+        <label className="form-label">Sizes</label>
         <div className="flex flex-wrap gap-1.5">
           {ITEM_SIZES.map((s) => {
             const sizes = form.size ? form.size.split(", ").filter(Boolean) : [];
@@ -216,7 +216,7 @@ export function ItemForm({ item }: Props) {
                   set("size", next.join(", "));
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium min-h-0 transition-colors ${
-                  selected ? "bg-farm-green text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  selected ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted hover:bg-gray-200"
                 }`}
               >
                 {s.label}
@@ -229,13 +229,13 @@ export function ItemForm({ item }: Props) {
           value={form.size}
           onChange={(e) => set("size", e.target.value)}
           placeholder="Or type custom sizes: e.g. Dime - Nickel, Quarter, Palm"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-farm-green text-gray-600"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-farm-green text-farm-muted/90"
         />
       </div>
 
       {/* Default Price */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Default Price ($)</label>
+        <label className="form-label">Default Price ($)</label>
         <input
           type="number"
           min="0"
@@ -243,43 +243,43 @@ export function ItemForm({ item }: Props) {
           value={form.default_price}
           onChange={(e) => set("default_price", e.target.value)}
           placeholder="0.00"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
       {/* Chef Notes */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Chef Notes</label>
+        <label className="form-label">Chef Notes</label>
         <input
           type="text"
           value={form.chef_notes}
           onChange={(e) => set("chef_notes", e.target.value)}
           placeholder="Visible to chefs when ordering"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
       {/* Internal Notes */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Internal Notes</label>
+        <label className="form-label">Internal Notes</label>
         <input
           type="text"
           value={form.internal_notes}
           onChange={(e) => set("internal_notes", e.target.value)}
           placeholder="Admin-only notes"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
       {/* Source */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Source</label>
+        <label className="form-label">Source</label>
         <input
           type="text"
           value={form.source}
           onChange={(e) => set("source", e.target.value)}
           placeholder="e.g. Baker Creek, Johnny's Seeds"
-          className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+          className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
       </div>
 
@@ -290,25 +290,25 @@ export function ItemForm({ item }: Props) {
       />
 
       {/* Growing Conditions */}
-      <div className="border-t border-gray-100 pt-4 mt-2">
+      <div className="border-t border-farm-dark/5 pt-4 mt-2">
         <h3 className="font-display text-sm text-farm-dark mb-3">Growing Conditions</h3>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Days to Maturity</label>
+            <label className="form-label">Days to Maturity</label>
             <input type="number" value={form.days_to_maturity} onChange={(e) => set("days_to_maturity", e.target.value)} placeholder="e.g. 60" className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Sow Depth</label>
+            <label className="form-label">Sow Depth</label>
             <input type="text" value={form.sow_depth} onChange={(e) => set("sow_depth", e.target.value)} placeholder="e.g. 1/4 in" className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Plant Spacing</label>
+            <label className="form-label">Plant Spacing</label>
             <input type="text" value={form.plant_spacing} onChange={(e) => set("plant_spacing", e.target.value)} placeholder="e.g. 8-12 in" className="input-field" />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3 mt-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Sun</label>
+            <label className="form-label">Sun</label>
             <select value={form.sun_requirement} onChange={(e) => set("sun_requirement", e.target.value)} className="input-field">
               <option value="">Not set</option>
               <option value="full_sun">Full Sun</option>
@@ -318,7 +318,7 @@ export function ItemForm({ item }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Sow Method</label>
+            <label className="form-label">Sow Method</label>
             <select value={form.sow_method} onChange={(e) => set("sow_method", e.target.value)} className="input-field">
               <option value="">Not set</option>
               <option value="direct_seed">Direct Seed</option>
@@ -327,12 +327,12 @@ export function ItemForm({ item }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Start Indoors</label>
+            <label className="form-label">Start Indoors</label>
             <input type="number" value={form.indoor_start_weeks} onChange={(e) => set("indoor_start_weeks", e.target.value)} placeholder="weeks" className="input-field" />
           </div>
         </div>
         <div className="mt-3">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Growing Notes</label>
+          <label className="form-label">Growing Notes</label>
           <textarea value={form.growing_notes} onChange={(e) => set("growing_notes", e.target.value)} rows={2} placeholder="Cultivation tips, harvest info..." className="input-field resize-none" />
         </div>
       </div>
@@ -340,11 +340,11 @@ export function ItemForm({ item }: Props) {
       {/* Season Status */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Season Status</label>
+          <label className="form-label">Season Status</label>
           <select
             value={form.season_status}
             onChange={(e) => set("season_status", e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           >
             {SEASON_STATUSES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -352,13 +352,13 @@ export function ItemForm({ item }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Season Note</label>
+          <label className="form-label">Season Note</label>
           <input
             type="text"
             value={form.season_note}
             onChange={(e) => set("season_note", e.target.value)}
             placeholder="e.g. 2 weeks left"
-            className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
       </div>
@@ -383,7 +383,7 @@ export function ItemForm({ item }: Props) {
           className={`w-full min-h-[48px] rounded-xl border text-sm font-medium disabled:opacity-50 transition-colors ${
             item!.is_archived
               ? "border-farm-green text-farm-green hover:bg-farm-green-light"
-              : "border-gray-200 text-gray-500 hover:bg-gray-50"
+              : "border-farm-dark/10 text-farm-muted hover:bg-farm-cream/40"
           }`}
         >
           {archiving ? "…" : item!.is_archived ? "Unarchive Item" : "Archive Item"}

@@ -116,19 +116,19 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
       {/* Summary — week / month / year */}
       <div className="grid grid-cols-3 gap-2">
         <div className="card p-3 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">This Week</p>
+          <p className="text-xs text-farm-muted uppercase tracking-wide">This Week</p>
           <p className="text-xl font-bold text-farm-green mt-1">{week.hours.toFixed(1)}h</p>
-          {week.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(week.cost)}</p>}
+          {week.cost > 0 && <p className="text-[10px] text-farm-muted mt-0.5">{fmt(week.cost)}</p>}
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">{monthLabel}</p>
+          <p className="text-xs text-farm-muted uppercase tracking-wide">{monthLabel}</p>
           <p className="text-xl font-bold text-farm-dark mt-1">{month.hours.toFixed(1)}h</p>
-          {month.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(month.cost)}</p>}
+          {month.cost > 0 && <p className="text-[10px] text-farm-muted mt-0.5">{fmt(month.cost)}</p>}
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-wide">{today.getFullYear()}</p>
+          <p className="text-xs text-farm-muted uppercase tracking-wide">{today.getFullYear()}</p>
           <p className="text-xl font-bold text-farm-dark mt-1">{year.hours.toFixed(1)}h</p>
-          {year.cost > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{fmt(year.cost)}</p>}
+          {year.cost > 0 && <p className="text-[10px] text-farm-muted mt-0.5">{fmt(year.cost)}</p>}
         </div>
       </div>
 
@@ -143,7 +143,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
             <p className="text-sm font-medium text-farm-dark">
               {sent ? "Timesheet Sent" : `Send Timesheet — Week of ${new Date(mondayStr + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}`}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-farm-muted mt-0.5">
               {thisWeekEntries.length} {thisWeekEntries.length === 1 ? "entry" : "entries"} · {thisWeekEntries.reduce((s, e) => s + e.hours, 0)}h total
             </p>
           </div>
@@ -172,7 +172,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
           <h3 className="font-display text-sm text-farm-dark">Log Hours</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Worker Name</label>
+              <label className="form-label">Worker Name</label>
               <input
                 type="text"
                 required
@@ -187,7 +187,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
               </datalist>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+              <label className="form-label">Date</label>
               <input
                 type="date"
                 required
@@ -199,7 +199,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Hours</label>
+              <label className="form-label">Hours</label>
               <input
                 type="number"
                 required
@@ -212,7 +212,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Rate ($/hr)</label>
+              <label className="form-label">Rate ($/hr)</label>
               <input
                 type="number"
                 step="0.01"
@@ -224,7 +224,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+            <label className="form-label">Notes</label>
             <input
               type="text"
               value={notes}
@@ -249,13 +249,13 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
         <div className="text-center py-10">
           <img src="/assets/pressfarm/flowers/marigold.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
           <h3 className="text-base font-semibold text-farm-dark">Track your hours</h3>
-          <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+          <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
             Log farm work to see weekly totals and pay reports. Tap &ldquo;Log Hours&rdquo; above to add your first entry.
           </p>
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-400 grid grid-cols-[1fr_60px_44px_44px]">
+          <div className="px-4 py-2 bg-farm-cream/40 text-xs font-semibold text-farm-muted grid grid-cols-[1fr_60px_44px_44px]">
             <span>Worker</span>
             <span>Date</span>
             <span className="text-right">Hours</span>
@@ -268,15 +268,15 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
             >
               <div>
                 <p className="text-sm font-medium text-farm-dark">{entry.worker_name}</p>
-                {entry.notes && <p className="text-xs text-gray-400 truncate">{entry.notes}</p>}
+                {entry.notes && <p className="text-xs text-farm-muted truncate">{entry.notes}</p>}
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-farm-muted">
                 {new Date(entry.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
               <span className="text-sm font-semibold text-farm-green text-right">{entry.hours}h</span>
               <button
                 onClick={() => handleDelete(entry.id)}
-                className="text-gray-300 hover:text-red-500 transition-colors min-h-0 min-w-0 flex items-center justify-center"
+                className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-0 min-w-0 flex items-center justify-center"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

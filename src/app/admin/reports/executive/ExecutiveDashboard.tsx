@@ -53,9 +53,9 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
             <h1 className="text-base font-bold tracking-wide" style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif" }}>
               PRESS FARM
             </h1>
-            <p className="text-[7px] text-gray-500 tracking-wider uppercase">Executive Summary</p>
+            <p className="text-[7px] text-farm-muted tracking-wider uppercase">Executive Summary</p>
           </div>
-          <p className="text-[7px] text-gray-400">
+          <p className="text-[7px] text-farm-muted">
             Generated {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           </p>
         </div>
@@ -114,12 +114,12 @@ function KpiCard({ label, value, sub, subColor, dark, green, isText }: {
   label: string; value: string; sub?: string; subColor?: string;
   dark?: boolean; green?: boolean; isText?: boolean;
 }) {
-  const bg = dark ? "bg-[#212326] text-white" : green ? "bg-farm-green text-white" : "bg-white border border-gray-100";
+  const bg = dark ? "bg-[#212326] text-white" : green ? "bg-farm-green text-white" : "bg-white border border-farm-dark/5";
   return (
     <div className={`rounded-lg px-3 py-2.5 ${bg} print:py-1.5 print:px-2`}>
-      <p className={`text-[9px] uppercase tracking-wider ${dark ? "text-gray-400" : green ? "text-green-200" : "text-gray-400"} print:text-[7px]`}>{label}</p>
-      <p className={`${isText ? "text-xs" : "text-lg"} font-bold leading-tight mt-0.5 ${dark ? "text-[#F0B530]" : green ? "text-white" : "text-gray-900"} print:text-sm`}>{value}</p>
-      {sub && <p className={`text-[9px] mt-0.5 ${subColor ?? (dark ? "text-gray-400" : "text-gray-400")} print:text-[7px]`}>{sub}</p>}
+      <p className={`text-[9px] uppercase tracking-wider ${dark ? "text-farm-muted" : green ? "text-green-200" : "text-farm-muted"} print:text-[7px]`}>{label}</p>
+      <p className={`${isText ? "text-xs" : "text-lg"} font-bold leading-tight mt-0.5 ${dark ? "text-[#F0B530]" : green ? "text-white" : "text-farm-dark"} print:text-sm`}>{value}</p>
+      {sub && <p className={`text-[9px] mt-0.5 ${subColor ?? (dark ? "text-farm-muted" : "text-farm-muted")} print:text-[7px]`}>{sub}</p>}
     </div>
   );
 }
@@ -140,13 +140,13 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
   ];
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
-      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-        <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Annual P&amp;L</span>
-        <span className="text-[9px] text-gray-400 print:text-[7px]">All figures USD</span>
+    <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
+      <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5 flex justify-between items-center">
+        <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Annual P&amp;L</span>
+        <span className="text-[9px] text-farm-muted print:text-[7px]">All figures USD</span>
       </div>
       {/* Header */}
-      <div className="grid px-3 py-1 bg-gray-50/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}>
         <span />
         {years.map((y) => (
           <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>
@@ -162,10 +162,10 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
             ${r.dark ? "bg-[#212326] text-white" : r.bold ? "bg-green-50/40" : ""}`}
           style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}
         >
-          <span className={`${r.dark ? "text-gray-300" : "text-gray-600"} ${r.bold ? "font-semibold" : ""}`}>{r.label}</span>
+          <span className={`${r.dark ? "text-farm-muted/60" : "text-farm-muted/90"} ${r.bold ? "font-semibold" : ""}`}>{r.label}</span>
           {years.map((y) => {
             const s = byYear[y];
-            if (!s) return <span key={y} className="text-right text-gray-300">—</span>;
+            if (!s) return <span key={y} className="text-right text-farm-muted/60">—</span>;
             const val = s[r.key] as number;
             if (r.isPct) {
               return <span key={y} className={`text-right font-medium ${r.dark ? "text-[#F0B530]" : mColor(val, r.key === "gross_margin" ? 0.5 : r.key === "operating_margin" ? 0.3 : 0.2)}`}>{fmtPct(val)}</span>;
@@ -174,7 +174,7 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
             return (
               <span key={y} className={`text-right font-medium ${
                 r.dark ? (val < 0 ? "text-red-400" : "text-[#F0B530]")
-                : isExp ? "text-red-600" : r.bold ? "text-green-700" : "text-gray-800"
+                : isExp ? "text-red-600" : r.bold ? "text-green-700" : "text-farm-dark"
               }`}>
                 {isExp ? fmt(-val) : fmt(val)}
               </span>
@@ -191,20 +191,20 @@ function CompactRestaurant({ years, allRestaurants, restByYear }: {
   years: string[]; allRestaurants: string[]; restByYear: Record<string, Record<string, number>>;
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
-      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-        <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Revenue by Restaurant</span>
+    <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
+      <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
+        <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Revenue by Restaurant</span>
       </div>
-      <div className="grid px-3 py-1 bg-gray-50/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "64px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "64px").join(" ")}` }}>
         <span />
         {years.map((y) => <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>{y}</span>)}
       </div>
       {allRestaurants.map((name) => (
         <div key={name} className="grid px-3 py-1 border-b border-gray-50 last:border-0" style={{ gridTemplateColumns: `1fr ${years.map(() => "64px").join(" ")}` }}>
-          <span className="text-gray-700 font-medium truncate">{name}</span>
+          <span className="text-farm-dark/80 font-medium truncate">{name}</span>
           {years.map((y) => {
             const v = restByYear[y]?.[name] ?? 0;
-            return <span key={y} className={`text-right font-medium ${v > 0 ? "text-green-700" : "text-gray-300"}`}>{v > 0 ? fmtK(v) : "—"}</span>;
+            return <span key={y} className={`text-right font-medium ${v > 0 ? "text-green-700" : "text-farm-muted/60"}`}>{v > 0 ? fmtK(v) : "—"}</span>;
           })}
         </div>
       ))}
@@ -222,22 +222,22 @@ function CompactBenchmarks({ years, byYear }: { years: string[]; byYear: Record<
   ];
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
-      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-        <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Benchmarks vs Industry</span>
+    <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
+      <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
+        <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Benchmarks vs Industry</span>
       </div>
-      <div className="grid px-3 py-1 bg-gray-50/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr 44px ${years.map(() => "52px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr 44px ${years.map(() => "52px").join(" ")}` }}>
         <span />
-        <span className="text-center text-gray-400">Tgt</span>
+        <span className="text-center text-farm-muted">Tgt</span>
         {years.map((y) => <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>{y}</span>)}
       </div>
       {brows.map((r) => (
         <div key={r.label} className="grid px-3 py-1 border-b border-gray-50 last:border-0" style={{ gridTemplateColumns: `1fr 44px ${years.map(() => "52px").join(" ")}` }}>
-          <span className="text-gray-600">{r.label}</span>
-          <span className="text-center text-gray-400">{r.target}</span>
+          <span className="text-farm-muted/90">{r.label}</span>
+          <span className="text-center text-farm-muted">{r.target}</span>
           {years.map((y) => {
             const s = byYear[y];
-            if (!s) return <span key={y} className="text-right text-gray-300">—</span>;
+            if (!s) return <span key={y} className="text-right text-farm-muted/60">—</span>;
             const val = r.get(s);
             const color = r.isPct ? mColor(val, r.min) : (val >= r.min ? "text-green-700" : "text-amber-600");
             return <span key={y} className={`text-right font-medium ${color}`}>{r.isPct ? fmtPct(val) : fmtK(val)}</span>;
@@ -253,11 +253,11 @@ function CompactTopItems({ items, title, sortKey }: {
   items: ExecutiveData["topItemsByRevenue"]; title: string; sortKey: "revenue" | "qty";
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
-      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-        <span className="font-semibold text-gray-700 text-xs print:text-[8px]">{title}</span>
+    <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
+      <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
+        <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">{title}</span>
       </div>
-      <div className="grid px-3 py-1 bg-gray-50/50 border-b border-gray-50 font-semibold text-gray-400" style={{ gridTemplateColumns: "16px 1fr 52px 40px" }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50 font-semibold text-farm-muted" style={{ gridTemplateColumns: "16px 1fr 52px 40px" }}>
         <span>#</span>
         <span>Item</span>
         <span className="text-right">Rev</span>
@@ -265,10 +265,10 @@ function CompactTopItems({ items, title, sortKey }: {
       </div>
       {items.map((item, i) => (
         <div key={item.item_id} className="grid px-3 py-0.5 border-b border-gray-50 last:border-0 items-center" style={{ gridTemplateColumns: "16px 1fr 52px 40px" }}>
-          <span className="text-gray-300">{i + 1}</span>
-          <span className="text-gray-800 truncate pr-1">{item.name}</span>
-          <span className={`text-right font-medium ${sortKey === "revenue" ? "text-green-700" : "text-gray-600"}`}>{fmtK(item.total_revenue)}</span>
-          <span className={`text-right font-medium ${sortKey === "qty" ? "text-green-700" : "text-gray-600"}`}>{item.total_qty.toFixed(0)}</span>
+          <span className="text-farm-muted/60">{i + 1}</span>
+          <span className="text-farm-dark truncate pr-1">{item.name}</span>
+          <span className={`text-right font-medium ${sortKey === "revenue" ? "text-green-700" : "text-farm-muted/90"}`}>{fmtK(item.total_revenue)}</span>
+          <span className={`text-right font-medium ${sortKey === "qty" ? "text-green-700" : "text-farm-muted/90"}`}>{item.total_qty.toFixed(0)}</span>
         </div>
       ))}
     </div>
@@ -279,15 +279,15 @@ function CompactTopItems({ items, title, sortKey }: {
 function CompactExpenses({ categories }: { categories: ExecutiveData["expenseCategories"] }) {
   const total = categories.reduce((s, e) => s + e.total, 0);
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
-      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex justify-between">
-        <span className="font-semibold text-gray-700 text-xs print:text-[8px]">Expenses</span>
+    <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
+      <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5 flex justify-between">
+        <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Expenses</span>
         <span className="font-semibold text-red-600 text-xs print:text-[8px]">{fmt(total)}</span>
       </div>
       {categories.map((e) => (
         <div key={e.category} className="grid px-3 py-0.5 border-b border-gray-50 last:border-0" style={{ gridTemplateColumns: "1fr 36px 60px" }}>
-          <span className="text-gray-700 truncate">{e.category}</span>
-          <span className="text-right text-gray-400">{e.pct.toFixed(0)}%</span>
+          <span className="text-farm-dark/80 truncate">{e.category}</span>
+          <span className="text-right text-farm-muted">{e.pct.toFixed(0)}%</span>
           <span className="text-right font-medium text-red-600">{fmtK(e.total)}</span>
         </div>
       ))}

@@ -117,7 +117,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
     <div className="space-y-4">
       {/* Reorder alerts */}
       {lowStock.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <div className="bg-pf-master-orange/8 border border-orange-200 rounded-xl p-4">
           <p className="text-sm font-semibold text-orange-800 mb-1">
             ⚠ {lowStock.length} container{lowStock.length !== 1 ? "s" : ""} below reorder threshold
           </p>
@@ -125,7 +125,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
             {lowStock.map((p) => (
               <span
                 key={p.id}
-                className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium"
+                className="text-xs bg-orange-100 text-pf-master-orange px-2 py-1 rounded-full font-medium"
               >
                 {p.display_name}: {p.on_hand} left
               </span>
@@ -145,10 +145,10 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
         </button>
       ) : (
         <form onSubmit={handleAdd} className="card p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900">New Container Type</h3>
+          <h3 className="text-sm font-semibold text-farm-dark">New Container Type</h3>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Code (e.g. lg)</label>
+              <label className="block text-xs text-farm-muted mb-1">Code (e.g. lg)</label>
               <input
                 required value={newPack.container_type}
                 onChange={(e) => setNewPack({ ...newPack, container_type: e.target.value })}
@@ -156,7 +156,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Display name</label>
+              <label className="block text-xs text-farm-muted mb-1">Display name</label>
               <input
                 required value={newPack.display_name}
                 onChange={(e) => setNewPack({ ...newPack, display_name: e.target.value })}
@@ -166,21 +166,21 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">On hand</label>
+              <label className="block text-xs text-farm-muted mb-1">On hand</label>
               <input type="number" min="0" value={newPack.on_hand}
                 onChange={(e) => setNewPack({ ...newPack, on_hand: e.target.value })}
                 className="input-field"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Reorder at</label>
+              <label className="block text-xs text-farm-muted mb-1">Reorder at</label>
               <input type="number" min="0" value={newPack.reorder_threshold}
                 onChange={(e) => setNewPack({ ...newPack, reorder_threshold: e.target.value })}
                 className="input-field"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">$ each</label>
+              <label className="block text-xs text-farm-muted mb-1">$ each</label>
               <input type="number" step="0.01" value={newPack.unit_cost}
                 onChange={(e) => setNewPack({ ...newPack, unit_cost: e.target.value })}
                 className="input-field"
@@ -202,13 +202,13 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
           return (
             <div
               key={pack.id}
-              className={`card p-4 ${isLow ? "border-orange-300 bg-orange-50/40" : ""}`}
+              className={`card p-4 ${isLow ? "border-orange-300 bg-pf-master-orange/8/40" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900">{pack.display_name}</p>
-                    <span className="text-[10px] text-gray-400 font-mono">{pack.container_type}</span>
+                    <p className="text-sm font-semibold text-farm-dark">{pack.display_name}</p>
+                    <span className="text-[10px] text-farm-muted font-mono">{pack.container_type}</span>
                   </div>
                   {isLow && (
                     <p className="text-xs text-orange-600 font-medium mt-0.5">Low stock — reorder soon</p>
@@ -216,7 +216,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
                 </div>
                 <button
                   onClick={() => deletePack(pack.id)}
-                  className="text-gray-300 hover:text-red-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  className="text-farm-muted/60 hover:text-red-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -227,7 +227,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
                 <button
                   onClick={() => adjustQty(pack, -1)}
                   disabled={saving === pack.id || pack.on_hand <= 0}
-                  className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center disabled:opacity-30"
+                  className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center disabled:opacity-30"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -236,29 +236,29 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
                   min="0"
                   value={pack.on_hand}
                   onChange={(e) => setQty(pack, e.target.value)}
-                  className="w-20 h-11 text-center text-lg font-bold text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green"
+                  className="w-20 h-11 text-center text-lg font-bold text-farm-dark border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green"
                 />
                 <button
                   onClick={() => adjustQty(pack, 1)}
                   disabled={saving === pack.id}
-                  className="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center disabled:opacity-30"
+                  className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center disabled:opacity-30"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
-                <span className="text-sm text-gray-400 ml-1">on hand</span>
+                <span className="text-sm text-farm-muted ml-1">on hand</span>
               </div>
 
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs text-gray-500">Reorder at:</span>
+                <span className="text-xs text-farm-muted">Reorder at:</span>
                 <input
                   type="number"
                   min="0"
                   value={pack.reorder_threshold}
                   onChange={(e) => setThreshold(pack, e.target.value)}
-                  className="w-16 h-8 text-center text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
+                  className="w-16 h-8 text-center text-sm border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
                 />
                 {pack.unit_cost != null && (
-                  <span className="text-xs text-gray-400 ml-auto">
+                  <span className="text-xs text-farm-muted ml-auto">
                     ${pack.unit_cost.toFixed(2)} each
                   </span>
                 )}
@@ -267,7 +267,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
           );
         })}
         {packs.length === 0 && (
-          <p className="text-center text-sm text-gray-400 py-8">
+          <p className="text-center text-sm text-farm-muted py-8">
             No containers tracked yet. Add one above.
           </p>
         )}

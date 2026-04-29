@@ -55,7 +55,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
             <h1 className="page-title">
               Orders — {formatDeliveryDate(date)}
             </h1>
-            <p className="text-sm text-gray-500">{orders.length} restaurant{orders.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-farm-muted">{orders.length} restaurant{orders.length !== 1 ? "s" : ""}</p>
           </div>
         </div>
       </header>
@@ -65,7 +65,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           <div className="text-center py-10">
             <img src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
             <h3 className="text-base font-semibold text-farm-dark">No orders yet</h3>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
               Chefs haven&apos;t placed orders for this date yet. They&apos;ll show up here once submitted.
             </p>
             <Link
@@ -95,12 +95,12 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           return (
             <section key={order.id} className="card overflow-hidden">
               {/* Restaurant header */}
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+              <div className="px-4 py-3 border-b border-farm-dark/5 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-semibold text-farm-dark">
                     {order.restaurant?.name ?? "Restaurant"}
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-farm-muted mt-0.5">
                     {order.chef?.full_name ?? "Chef"} ·{" "}
                     {order.submitted_at
                       ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
@@ -118,16 +118,16 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
               {/* Chef notes */}
               {order.freeform_notes && (
-                <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-                  <p className="text-xs font-medium text-blue-700 mb-0.5">Chef Notes</p>
-                  <p className="text-sm text-blue-800">{order.freeform_notes}</p>
+                <div className="px-4 py-2 bg-farm-cream/60 border-b border-farm-green/15">
+                  <p className="text-xs font-medium text-farm-green mb-0.5">Chef Notes</p>
+                  <p className="text-sm text-farm-dark">{order.freeform_notes}</p>
                 </div>
               )}
 
               {/* Shortage summary */}
               {shortedItems.length > 0 && (
-                <div className="px-4 py-2 bg-orange-50 border-b border-orange-100">
-                  <p className="text-xs font-medium text-orange-700">
+                <div className="px-4 py-2 bg-pf-master-orange/8 border-b border-pf-master-orange/20">
+                  <p className="text-xs font-medium text-pf-master-orange">
                     {shortedItems.length} item{shortedItems.length !== 1 ? "s" : ""} shorted
                   </p>
                 </div>
@@ -135,8 +135,8 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
               {/* Items by category — tap any row to mark/edit shortage */}
               {(order.status !== "fulfilled" && order.status !== "cancelled") && (
-                <div className="px-4 py-1.5 bg-orange-50/40 border-b border-orange-100">
-                  <p className="text-[11px] text-orange-700">
+                <div className="px-4 py-1.5 bg-pf-master-orange/8/40 border-b border-pf-master-orange/20">
+                  <p className="text-[11px] text-pf-master-orange">
                     Tap any item to mark a shortage
                   </p>
                 </div>
@@ -183,7 +183,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
               </div>
 
               {/* Actions */}
-              <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+              <div className="px-4 py-3 border-t border-farm-dark/5 flex items-center justify-between">
                 {order.status !== "fulfilled" && order.status !== "cancelled" ? (
                   <FulfillButton orderId={order.id} currentStatus={order.status} />
                 ) : (

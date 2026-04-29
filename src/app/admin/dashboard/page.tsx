@@ -153,27 +153,27 @@ export default async function AdminDashboardPage() {
               <>
                 <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
                   <img src={`/assets/pressfarm/flowers/${revFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-gray-400 relative">{monthName} Revenue</p>
+                  <p className="text-xs text-farm-muted relative">{monthName} Revenue</p>
                   <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
-                  <p className="text-[10px] text-gray-400 mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
+                  <p className="text-[10px] text-farm-muted mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
                 </Link>
                 <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
                   <img src={`/assets/pressfarm/flowers/${expFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-gray-400 relative">{monthName} Expenses</p>
+                  <p className="text-xs text-farm-muted relative">{monthName} Expenses</p>
                   <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
-                  <p className="text-[10px] text-gray-400 mt-1 relative">{(monthExpenses ?? []).length} entries</p>
+                  <p className="text-[10px] text-farm-muted mt-1 relative">{(monthExpenses ?? []).length} entries</p>
                 </Link>
                 <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
                   <img src={`/assets/pressfarm/flowers/${pendFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-gray-400 relative">Pending Orders</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-1 relative">{pendingOrders ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 mt-1 relative">awaiting fulfillment</p>
+                  <p className="text-xs text-farm-muted relative">Pending Orders</p>
+                  <p className="text-2xl font-bold text-farm-green mt-1 relative">{pendingOrders ?? 0}</p>
+                  <p className="text-[10px] text-farm-muted mt-1 relative">awaiting fulfillment</p>
                 </Link>
                 <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
                   <img src={`/assets/pressfarm/flowers/${labFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-gray-400 relative">Labor (7 days)</p>
+                  <p className="text-xs text-farm-muted relative">Labor (7 days)</p>
                   <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
-                  <p className="text-[10px] text-gray-400 mt-1 relative">this week</p>
+                  <p className="text-[10px] text-farm-muted mt-1 relative">this week</p>
                 </Link>
               </>
             );
@@ -185,7 +185,7 @@ export default async function AdminDashboardPage() {
 
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="section-eyebrow text-farm-muted mb-3">{section.title}</p>
+            <p className="section-eyebrow with-flower text-farm-muted mb-3">{section.title}</p>
             <div className="grid grid-cols-2 gap-3">
               {section.cards.map((card) => (
                 <Link
@@ -198,7 +198,7 @@ export default async function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-farm-dark">{card.title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{card.description}</p>
+                    <p className="text-xs text-farm-muted mt-0.5">{card.description}</p>
                   </div>
                 </Link>
               ))}

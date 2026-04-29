@@ -140,9 +140,9 @@ export default async function AdminAvailabilityEditorPage({
       </header>
 
       {inheritedFromDate && (
-        <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 flex items-start gap-2">
-          <span className="text-blue-600">↻</span>
-          <div className="flex-1 text-xs text-blue-800">
+        <div className="bg-farm-cream/60 border-b border-farm-green/15 px-4 py-2.5 flex items-start gap-2">
+          <span className="text-farm-green">↻</span>
+          <div className="flex-1 text-xs text-farm-dark">
             <p className="font-semibold">Carried over from {new Date(inheritedFromDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}.</p>
             <p>Tweak as needed and tap <strong>Save All Restaurants</strong> to publish this date.</p>
           </div>

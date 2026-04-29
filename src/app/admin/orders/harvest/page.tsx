@@ -170,14 +170,14 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
       {/* Print-only header */}
       <div className="hidden print:block px-4 py-4">
         <h1 className="text-xl font-bold">HARVEST LIST — {formatDeliveryDate(activeDate)}</h1>
-        <p className="text-sm text-gray-600">{totalItems} items</p>
+        <p className="text-sm text-farm-muted/90">{totalItems} items</p>
       </div>
 
       {/* Container summary */}
       {containerList.length > 0 && (
         <div className="px-4 pt-4 print:pt-2">
           <div className="card p-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted mb-3">
               Containers Needed
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -197,7 +197,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
 
       <div className="px-4 py-4 space-y-6 print:py-2 print:space-y-4">
         {totalItems === 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">
+          <p className="text-center text-farm-muted text-sm py-8">
             No orders have been submitted for {formatDeliveryDate(activeDate)}.
           </p>
         )}
@@ -206,12 +206,12 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
           const rows = byCategory[category];
           return (
             <div key={category}>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200 pb-1 mb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted border-b border-farm-dark/10 pb-1 mb-2">
                 {CATEGORY_LABELS[category as ItemCategory] ?? category}
               </h2>
 
               {/* Column headers */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 text-xs text-gray-400 font-medium mb-1 px-1">
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 text-xs text-farm-muted font-medium mb-1 px-1">
                 <span>Item</span>
                 <span className="w-10 sm:w-14 text-right">P</span>
                 <span className="w-10 sm:w-14 text-right">U</span>
@@ -222,16 +222,16 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
                 {rows.map((row) => (
                   <div
                     key={row.itemId}
-                    className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-gray-50 print:odd:bg-gray-100"
+                    className="grid grid-cols-[1fr_auto_auto_auto] gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
                   >
-                    <span className="text-sm text-gray-900 truncate">{row.name}</span>
-                    <span className="text-sm text-gray-600 w-10 sm:w-14 text-right tabular-nums">
+                    <span className="text-sm text-farm-dark truncate">{row.name}</span>
+                    <span className="text-sm text-farm-muted/90 w-10 sm:w-14 text-right tabular-nums">
                       {row.pressQty != null ? formatQty(row.pressQty) : "—"}
                     </span>
-                    <span className="text-sm text-gray-600 w-10 sm:w-14 text-right tabular-nums">
+                    <span className="text-sm text-farm-muted/90 w-10 sm:w-14 text-right tabular-nums">
                       {row.understudyQty != null ? formatQty(row.understudyQty) : "—"}
                     </span>
-                    <span className="text-sm font-bold text-gray-900 w-10 sm:w-14 text-right tabular-nums">
+                    <span className="text-sm font-bold text-farm-dark w-10 sm:w-14 text-right tabular-nums">
                       {formatQty(row.total)}
                     </span>
                   </div>

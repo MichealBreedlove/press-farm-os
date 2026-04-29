@@ -145,9 +145,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       {/* Invite form */}
       {showInvite && (
         <form onSubmit={handleInvite} className="card p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900">Invite Chef</h3>
+          <h3 className="text-sm font-semibold text-farm-dark">Invite Chef</h3>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Full Name</label>
+            <label className="block text-xs text-farm-muted mb-1">Full Name</label>
             <input
               type="text"
               required
@@ -158,7 +158,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Email</label>
+            <label className="block text-xs text-farm-muted mb-1">Email</label>
             <input
               type="email"
               required
@@ -169,7 +169,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Restaurant</label>
+            <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
             <select
               value={form.restaurant_id}
               onChange={(e) => setForm((f) => ({ ...f, restaurant_id: e.target.value }))}
@@ -198,8 +198,8 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
           {admins.map((u) => (
             <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{u.full_name ?? "Admin"}</p>
-                <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "Admin"}</p>
+                <p className="text-xs text-farm-muted truncate">{u.email}</p>
               </div>
               <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full flex-shrink-0">Admin</span>
             </div>
@@ -209,7 +209,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
       {/* Chefs */}
       <div>
-        <p className="section-eyebrow text-farm-muted mb-2">
+        <p className="section-eyebrow with-flower text-farm-muted mb-2">
           Chefs ({chefs.length})
         </p>
         <div className="space-y-2">
@@ -217,15 +217,15 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             <div
               key={u.id}
               className={`bg-white rounded-xl border p-4 transition-opacity ${
-                u.is_active ? "border-gray-100" : "border-gray-100 opacity-50"
+                u.is_active ? "border-farm-dark/5" : "border-farm-dark/5 opacity-50"
               }`}
             >
               <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{u.full_name ?? "(No name)"}</p>
-                <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
+                <p className="text-xs text-farm-muted truncate">{u.email}</p>
                 {u.restaurants.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-0.5">{u.restaurants.join(", ")}</p>
+                  <p className="text-xs text-farm-muted mt-0.5">{u.restaurants.join(", ")}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -248,14 +248,14 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                         setNewPassword("");
                         setError(null);
                       }}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-gray-700"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-farm-muted hover:text-farm-dark/80"
                     >
                       {resetUserId === u.id ? "Cancel" : "Reset Pw"}
                     </button>
                     <button
                       onClick={() => handleToggle(u)}
                       disabled={toggling === u.id || isPending}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-gray-700 disabled:opacity-50"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-farm-muted hover:text-farm-dark/80 disabled:opacity-50"
                     >
                       {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
                     </button>
@@ -264,13 +264,13 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               </div>
               </div>
               {resetUserId === u.id && (
-                <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                <div className="mt-3 pt-3 border-t border-farm-dark/5 flex gap-2">
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="New password (min 8 chars)"
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="flex-1 border border-farm-dark/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                   <button
                     onClick={() => handleResetPassword(u.id)}
@@ -284,7 +284,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             </div>
           ))}
           {chefs.length === 0 && (
-            <p className="text-center text-sm text-gray-400 py-6">No chefs yet. Invite one above.</p>
+            <p className="text-center text-sm text-farm-muted py-6">No chefs yet. Invite one above.</p>
           )}
         </div>
       </div>

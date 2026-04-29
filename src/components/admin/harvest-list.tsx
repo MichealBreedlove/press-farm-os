@@ -32,7 +32,7 @@ export function HarvestList({ date, items }: HarvestListProps) {
       <h2 className="font-bold text-base mb-4">HARVEST LIST — {date}</h2>
       {Object.entries(grouped).map(([category, categoryItems]) => (
         <div key={category} className="mb-6">
-          <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-2 border-b border-gray-200 pb-1">
+          <h3 className="font-bold uppercase text-xs tracking-wider text-farm-muted mb-2 border-b border-farm-dark/10 pb-1">
             {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] ?? category}
           </h3>
           <div className="space-y-1">
@@ -42,7 +42,7 @@ export function HarvestList({ date, items }: HarvestListProps) {
                 className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center py-1"
               >
                 <span className="truncate">{hi.item.name}</span>
-                <span className="text-gray-400 w-8 text-right">{UNIT_LABELS[hi.unit]}</span>
+                <span className="text-farm-muted w-8 text-right">{UNIT_LABELS[hi.unit]}</span>
                 <span className="text-right w-16">{hi.press_qty != null ? formatQty(hi.press_qty) : "—"}</span>
                 <span className="text-right w-16">{hi.understudy_qty != null ? formatQty(hi.understudy_qty) : "—"}</span>
                 <span className="font-bold text-right w-16">{formatQty(hi.total_qty)}</span>

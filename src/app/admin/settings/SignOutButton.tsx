@@ -17,7 +17,7 @@ export function SignOutButton() {
     >
       <div>
         <p className="text-sm font-semibold text-red-600">Sign Out</p>
-        <p className="text-xs text-gray-400 mt-0.5">Sign out of Press Farm OS</p>
+        <p className="text-xs text-farm-muted mt-0.5">Sign out of Press Farm OS</p>
       </div>
       <LogOut className="w-5 h-5 text-red-400 flex-shrink-0" />
     </button>

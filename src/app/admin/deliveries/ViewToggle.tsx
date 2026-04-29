@@ -17,14 +17,14 @@ export function ViewToggle({
   return (
     <div>
       {/* Toggle */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-3">
+      <div className="flex bg-farm-cream/60 rounded-xl p-1 mb-3">
         <button
           type="button"
           onClick={() => setView("calendar")}
           className={`flex-1 flex items-center justify-center gap-1.5 min-h-[40px] text-sm font-medium rounded-lg transition-colors ${
             view === "calendar"
               ? "bg-white text-farm-dark shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              : "text-farm-muted hover:text-farm-dark/80"
           }`}
         >
           <CalendarDays className="w-4 h-4" />
@@ -36,7 +36,7 @@ export function ViewToggle({
           className={`flex-1 flex items-center justify-center gap-1.5 min-h-[40px] text-sm font-medium rounded-lg transition-colors ${
             view === "list"
               ? "bg-white text-farm-dark shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              : "text-farm-muted hover:text-farm-dark/80"
           }`}
         >
           <List className="w-4 h-4" />

@@ -240,7 +240,7 @@ export default function DeliveryLogForm({
     <div className="px-4 py-4 space-y-4">
       {/* Restaurant tabs */}
       {restaurants.length > 1 && (
-        <div className="flex rounded-lg bg-gray-100 p-1">
+        <div className="flex rounded-lg bg-farm-cream/60 p-1">
           {restaurants.map((r) => (
             <button
               key={r.id}
@@ -248,8 +248,8 @@ export default function DeliveryLogForm({
               onClick={() => setRestaurantId(r.id)}
               className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
                 restaurantId === r.id
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500"
+                  ? "bg-white text-farm-dark shadow-sm"
+                  : "text-farm-muted"
               }`}
             >
               {r.name}
@@ -267,8 +267,8 @@ export default function DeliveryLogForm({
 
       {/* Pre-populated notice */}
       {!existing && orders.some((o) => o.restaurant_id === restaurantId) && lines.length > 0 && (
-        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-          <p className="text-xs text-blue-600">
+        <div className="bg-farm-cream/60 border border-farm-green/15 rounded-xl px-4 py-3">
+          <p className="text-xs text-farm-green">
             Pre-populated from order — adjust quantities and prices as needed
           </p>
         </div>
@@ -277,10 +277,10 @@ export default function DeliveryLogForm({
       {/* Line items grouped by category */}
       {CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => (
         <div key={cat}>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <p className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-2">
             {CATEGORY_LABELS[cat]}
           </p>
-          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-farm-dark/5 rounded-xl overflow-hidden shadow-sm">
             {grouped[cat].map((line) => {
               const idx = lines.indexOf(line);
               const lt = lineTotal(line.quantity, line.unit_price);
@@ -292,7 +292,7 @@ export default function DeliveryLogForm({
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 pr-2">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900">{line.name}</p>
+                        <p className="text-sm font-medium text-farm-dark">{line.name}</p>
                         {line.is_bonus && <span className="badge-gold">Bonus</span>}
                       </div>
                       {!isFinalized && (
@@ -303,7 +303,7 @@ export default function DeliveryLogForm({
                             className={`text-[10px] px-2 py-0.5 rounded-full min-h-0 min-w-0 transition-colors ${
                               line.is_bonus
                                 ? "bg-amber-100 text-amber-700"
-                                : "bg-gray-100 text-gray-400 hover:bg-amber-50 hover:text-amber-600"
+                                : "bg-farm-cream/60 text-farm-muted hover:bg-amber-50 hover:text-amber-600"
                             }`}
                           >
                             {line.is_bonus ? "Bonus item" : "Mark as bonus"}
@@ -314,7 +314,7 @@ export default function DeliveryLogForm({
                               value={line.bonus_note}
                               onChange={(e) => updateLine(idx, "bonus_note" as any, e.target.value)}
                               placeholder="e.g. Sample, Family meal..."
-                              className="text-xs border border-gray-200 rounded px-2 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-farm-green"
+                              className="text-xs border border-farm-dark/10 rounded px-2 py-0.5 flex-1 focus:outline-none focus:ring-1 focus:ring-farm-green"
                             />
                           )}
                         </div>
@@ -324,7 +324,7 @@ export default function DeliveryLogForm({
                       <button
                         type="button"
                         onClick={() => removeLine(idx)}
-                        className="text-gray-300 hover:text-red-400 p-1 -mr-1"
+                        className="text-farm-muted/60 hover:text-red-400 p-1 -mr-1"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -334,7 +334,7 @@ export default function DeliveryLogForm({
                   </div>
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <label className="text-xs text-gray-400">Qty</label>
+                      <label className="text-xs text-farm-muted">Qty</label>
                       <input
                         type="number"
                         min="0"
@@ -342,21 +342,21 @@ export default function DeliveryLogForm({
                         value={line.quantity}
                         onChange={(e) => updateLine(idx, "quantity", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted"
                       />
                     </div>
                     <div className="w-16">
-                      <label className="text-xs text-gray-400">Unit</label>
+                      <label className="text-xs text-farm-muted">Unit</label>
                       <input
                         type="text"
                         value={line.unit}
                         onChange={(e) => updateLine(idx, "unit", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400 uppercase"
+                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted uppercase"
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs text-gray-400">Price/unit</label>
+                      <label className="text-xs text-farm-muted">Price/unit</label>
                       <input
                         type="number"
                         min="0"
@@ -364,11 +364,11 @@ export default function DeliveryLogForm({
                         value={line.unit_price}
                         onChange={(e) => updateLine(idx, "unit_price", e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-gray-50 disabled:text-gray-400"
+                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted"
                       />
                     </div>
                     <div className="text-right pt-4">
-                      <p className="text-sm font-medium text-gray-700">
+                      <p className="text-sm font-medium text-farm-dark/80">
                         {formatCurrency(lt)}
                       </p>
                     </div>
@@ -384,7 +384,7 @@ export default function DeliveryLogForm({
         <div className="text-center py-10">
           <img src="/assets/pressfarm/flowers/squash-blossom.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
           <h3 className="text-base font-semibold text-farm-dark">No deliveries logged for this restaurant</h3>
-          <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+          <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
             Add items below as you pack and deliver. Each line tracks quantity, unit price, and bonus items.
           </p>
         </div>
@@ -395,7 +395,7 @@ export default function DeliveryLogForm({
         <button
           type="button"
           onClick={() => setShowItemPicker(true)}
-          className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-farm-green hover:text-farm-green transition-colors"
+          className="w-full py-3 border-2 border-dashed border-farm-dark/10 rounded-xl text-sm text-farm-muted hover:border-farm-green hover:text-farm-green transition-colors"
         >
           + Add Item
         </button>
@@ -406,11 +406,11 @@ export default function DeliveryLogForm({
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className="bg-white rounded-t-2xl w-full max-h-[80vh] flex flex-col">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Add Item</h3>
+              <h3 className="font-semibold text-farm-dark">Add Item</h3>
               <button
                 type="button"
                 onClick={() => { setShowItemPicker(false); setSearchTerm(""); }}
-                className="text-gray-400 p-1"
+                className="text-farm-muted p-1"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -424,19 +424,19 @@ export default function DeliveryLogForm({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 autoFocus
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+                className="w-full px-3 py-2 border border-farm-dark/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
               />
             </div>
             <div className="overflow-y-auto flex-1 px-4 pb-4">
               {filteredItems.length === 0 ? (
-                <p className="text-center text-gray-400 text-sm py-4">No items found</p>
+                <p className="text-center text-farm-muted text-sm py-4">No items found</p>
               ) : (
                 CATEGORY_ORDER.map((cat) => {
                   const catItems = filteredItems.filter((i) => i.category === cat);
                   if (!catItems.length) return null;
                   return (
                     <div key={cat} className="mb-3">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                      <p className="text-xs font-semibold text-farm-muted uppercase tracking-wide mb-1">
                         {CATEGORY_LABELS[cat]}
                       </p>
                       {catItems.map((item) => (
@@ -444,10 +444,10 @@ export default function DeliveryLogForm({
                           key={item.id}
                           type="button"
                           onClick={() => addItem(item)}
-                          className="w-full flex items-center justify-between py-2.5 px-1 border-b border-gray-50 text-left hover:bg-gray-50 rounded"
+                          className="w-full flex items-center justify-between py-2.5 px-1 border-b border-gray-50 text-left hover:bg-farm-cream/40 rounded"
                         >
-                          <span className="text-sm text-gray-900">{item.name}</span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-sm text-farm-dark">{item.name}</span>
+                          <span className="text-xs text-farm-muted">
                             {formatCurrency(item.default_price ?? 0)} / {item.unit_type}
                           </span>
                         </button>
@@ -464,7 +464,7 @@ export default function DeliveryLogForm({
       {/* Notes */}
       {!isFinalized && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-farm-dark/80 mb-1">
             Notes (optional)
           </label>
           <textarea
@@ -472,7 +472,7 @@ export default function DeliveryLogForm({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="Any delivery notes..."
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green resize-none"
+            className="w-full px-3 py-2 border border-farm-dark/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green resize-none"
           />
         </div>
       )}
@@ -489,12 +489,12 @@ export default function DeliveryLogForm({
 
       {/* Total + Save */}
       {!isFinalized && (
-        <div className="fixed bottom-nav-safe left-0 right-0 px-4 py-3 bg-white border-t border-gray-100"
+        <div className="fixed bottom-nav-safe left-0 right-0 px-4 py-3 bg-white border-t border-farm-dark/5"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500">Delivery Total</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(total)}</p>
+              <p className="text-xs text-farm-muted">Delivery Total</p>
+              <p className="text-xl font-bold text-farm-dark">{formatCurrency(total)}</p>
             </div>
             <button
               type="button"
@@ -509,9 +509,9 @@ export default function DeliveryLogForm({
       )}
 
       {isFinalized && (
-        <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-gray-500">Total</p>
-          <p className="text-lg font-bold text-gray-900">
+        <div className="bg-farm-cream/40 border border-farm-dark/5 rounded-xl px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-farm-muted">Total</p>
+          <p className="text-lg font-bold text-farm-dark">
             {formatCurrency(existing?.total_value ?? total)}
           </p>
         </div>

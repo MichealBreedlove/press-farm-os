@@ -93,14 +93,14 @@ export function ItemsClient({ items, addItemHref }: Props) {
           placeholder="Search items…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green/30 focus:border-farm-green"
+          className="flex-1 border border-farm-dark/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green/30 focus:border-farm-green"
         />
         <button
           onClick={() => setShowArchived((v) => !v)}
           className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
             showArchived
               ? "bg-gray-900 text-white border-gray-900"
-              : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
           }`}
         >
           Archived
@@ -117,7 +117,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
       </div>
 
       {/* Count */}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-farm-muted">
         {filtered.length} {filtered.length === 1 ? "item" : "items"}
       </p>
 
@@ -137,7 +137,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
               <div
                 key={item.id}
                 className={`bg-white rounded-xl border flex items-center gap-3 pr-2 transition-colors ${
-                  item.is_archived ? "border-gray-100 opacity-50" : "border-gray-100"
+                  item.is_archived ? "border-farm-dark/5 opacity-50" : "border-farm-dark/5"
                 }`}
               >
                 <div className="flex-1 px-3 py-3 min-h-[48px]">
@@ -149,7 +149,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
                         const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
                         if (imgUrl) {
                           return (
-                            <div className={`w-20 h-20 rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-gray-100"}`}>
+                            <div className={`w-20 h-20 rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-farm-cream/60"}`}>
                               <img
                                 src={imgUrl}
                                 alt={item.name}
@@ -172,15 +172,15 @@ export function ItemsClient({ items, addItemHref }: Props) {
                       })()}
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                      <p className="text-xs text-farm-muted mt-0.5">
                         {item.unit_type.toUpperCase()}
                         {item.default_price != null && ` · $${item.default_price.toFixed(2)}`}
                         {item.is_archived && " · Archived"}
                       </p>
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
-                      <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </Link>
@@ -206,7 +206,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
                       </button>
                       <button
                         onClick={() => setEditingNote(null)}
-                        className="text-xs text-gray-400 min-h-0 min-w-0 px-1"
+                        className="text-xs text-farm-muted min-h-0 min-w-0 px-1"
                       >
                         ✕
                       </button>
@@ -217,9 +217,9 @@ export function ItemsClient({ items, addItemHref }: Props) {
                       className="mt-1 text-xs min-h-0 min-w-0 text-left w-full truncate transition-colors"
                     >
                       {item.chef_notes ? (
-                        <span className="text-blue-600 italic">{item.chef_notes}</span>
+                        <span className="text-farm-green italic">{item.chef_notes}</span>
                       ) : (
-                        <span className="text-gray-300 hover:text-gray-500">+ Add chef note</span>
+                        <span className="text-farm-muted/60 hover:text-farm-muted">+ Add chef note</span>
                       )}
                     </button>
                   )}
@@ -227,7 +227,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
                 <button
                   onClick={() => toggleArchive(item)}
                   disabled={archiving === item.id}
-                  className="min-w-[40px] min-h-[40px] flex items-center justify-center text-gray-300 hover:text-gray-600 disabled:opacity-50 transition-colors"
+                  className="min-w-[40px] min-h-[40px] flex items-center justify-center text-farm-muted/60 hover:text-farm-muted/90 disabled:opacity-50 transition-colors"
                   title={item.is_archived ? "Unarchive" : "Archive"}
                 >
                   {archiving === item.id ? (
@@ -250,14 +250,14 @@ export function ItemsClient({ items, addItemHref }: Props) {
 
       {filtered.length === 0 && (
         search ? (
-          <p className="text-center text-sm text-gray-400 py-8">
+          <p className="text-center text-sm text-farm-muted py-8">
             No items match &ldquo;{search}&rdquo;.
           </p>
         ) : (
           <div className="text-center py-10">
             <img src="/assets/pressfarm/flowers/nasturtium.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
             <h3 className="text-base font-semibold text-farm-dark">Your item catalog is empty</h3>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
               Add the produce you grow so chefs can order it. Start with one or import in bulk via Settings.
             </p>
           </div>

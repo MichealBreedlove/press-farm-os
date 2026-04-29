@@ -30,9 +30,9 @@ export function AddDatesButton() {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-dashed border-gray-300 px-4 py-5">
-      <h2 className="text-sm font-semibold text-gray-700 mb-1">Add Delivery Dates</h2>
-      <p className="text-xs text-gray-500 mb-3">
+    <div className="bg-white rounded-xl border border-dashed border-farm-dark/15 px-4 py-5">
+      <h2 className="text-sm font-semibold text-farm-dark/80 mb-1">Add Delivery Dates</h2>
+      <p className="text-xs text-farm-muted mb-3">
         Adds the next 4 dates following the Thu / Sat / Mon schedule.
       </p>
       {result && (

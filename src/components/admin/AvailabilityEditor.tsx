@@ -97,14 +97,14 @@ function StatusToggle({ value, onChange }: { value: AvailabilityStatus; onChange
   const options: { value: AvailabilityStatus; label: string; activeClass: string }[] = [
     { value: "available", label: "✓", activeClass: "bg-farm-green text-white" },
     { value: "limited", label: "⚠", activeClass: "bg-yellow-500 text-white" },
-    { value: "unavailable", label: "✗", activeClass: "bg-gray-300 text-gray-600" },
+    { value: "unavailable", label: "✗", activeClass: "bg-gray-300 text-farm-muted/90" },
   ];
   return (
-    <div className="inline-flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
+    <div className="inline-flex rounded-lg overflow-hidden border border-farm-dark/10 shrink-0">
       {options.map((opt) => (
         <button key={opt.value} type="button" onClick={() => onChange(opt.value)}
           className={`min-w-[36px] min-h-[36px] px-2 text-sm font-bold transition-colors ${
-            value === opt.value ? opt.activeClass : "bg-white text-gray-400 hover:bg-gray-50"
+            value === opt.value ? opt.activeClass : "bg-white text-farm-muted hover:bg-farm-cream/40"
           }`}
           aria-label={opt.value}
         >{opt.label}</button>
@@ -122,7 +122,7 @@ const STATUS_LABELS: Record<AvailabilityStatus, string> = {
 const STATUS_PILL: Record<AvailabilityStatus, string> = {
   available: "bg-green-100 text-green-700",
   limited: "bg-yellow-100 text-yellow-700",
-  unavailable: "bg-gray-100 text-gray-500",
+  unavailable: "bg-farm-cream/60 text-farm-muted",
 };
 
 // ============================================
@@ -343,11 +343,11 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   return (
     <div>
       {/* Mode selector */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-white border-b border-farm-dark/10 sticky top-0 z-10">
         <div className="flex">
           <button type="button" onClick={() => setEditMode("all")}
             className={`flex-1 py-3 px-2 text-sm font-semibold border-b-2 transition-colors ${
-              isAllMode ? "border-farm-green text-farm-green" : "border-transparent text-gray-500"
+              isAllMode ? "border-farm-green text-farm-green" : "border-transparent text-farm-muted"
             }`}
           >
             All Restaurants
@@ -355,7 +355,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
           {restaurants.map(r => (
             <button key={r.id} type="button" onClick={() => setEditMode(r.id)}
               className={`flex-1 py-3 px-2 text-sm font-semibold border-b-2 transition-colors ${
-                editMode === r.id ? "border-farm-green text-farm-green" : "border-transparent text-gray-500"
+                editMode === r.id ? "border-farm-green text-farm-green" : "border-transparent text-farm-muted"
               }`}
             >
               {r.name}
@@ -366,9 +366,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
       {/* Bulk actions */}
       {/* Search */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className="bg-white border-b border-farm-dark/10 px-4 py-3">
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
@@ -376,29 +376,29 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-farm-dark/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
           />
           {search && (
             <button type="button" onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-farm-muted hover:text-farm-muted/90"
               aria-label="Clear search"
             >✕</button>
           )}
         </div>
         {isSearching && (
-          <p className="text-xs text-gray-500 mt-1.5 px-1">
+          <p className="text-xs text-farm-muted mt-1.5 px-1">
             {filteredItems.length} match{filteredItems.length !== 1 ? "es" : ""}
           </p>
         )}
       </div>
 
       {/* Bulk actions */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex gap-2">
+      <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/10 flex gap-2">
         <button type="button" onClick={() => markAllBase("available")}
           className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold"
         >Mark All Available</button>
         <button type="button" onClick={() => markAllBase("unavailable")}
-          className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-700 text-xs font-semibold"
+          className="flex-1 py-2 rounded-lg bg-gray-200 text-farm-dark/80 text-xs font-semibold"
         >Mark All Unavailable</button>
       </div>
 
@@ -410,12 +410,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
           return (
             <div key={category}>
-              <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+              <div className="px-4 py-2 bg-farm-cream/60 border-b border-farm-dark/10">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-farm-muted">
                   {CATEGORY_LABELS[category]}
                 </h3>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-farm-dark/5">
                 {catItems.map(item => {
                   const state = isAllMode
                     ? (baseStates[item.id] ?? DEFAULT_STATE)
@@ -435,8 +435,8 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                     <div key={item.id} className="px-4 py-3 bg-white">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                          <p className="text-xs text-gray-400">{UNIT_LABELS[item.unit_type]}</p>
+                          <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                          <p className="text-xs text-farm-muted">{UNIT_LABELS[item.unit_type]}</p>
 
                           {/* Sizes */}
                           {(item as any).size && (() => {
@@ -444,10 +444,10 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                             const sel = state.available_sizes === null ? new Set(allSizes) : new Set(state.available_sizes?.split(",").filter(Boolean) ?? []);
                             return (
                               <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                <span className="text-[9px] text-gray-400">Sizes:</span>
+                                <span className="text-[9px] text-farm-muted">Sizes:</span>
                                 {allSizes.map(s => (
                                   <button key={s} type="button" onClick={() => toggleFn(item.id, "available_sizes", s, allSizes)}
-                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(s) ? "bg-farm-green text-white" : "bg-gray-100 text-gray-400 line-through"}`}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(s) ? "bg-farm-green text-white" : "bg-farm-cream/60 text-farm-muted line-through"}`}
                                   >{s}</button>
                                 ))}
                               </div>
@@ -460,10 +460,10 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                             const sel = state.available_colors === null ? new Set(allColors) : new Set(state.available_colors?.split(",").filter(Boolean) ?? []);
                             return (
                               <div className="flex items-center gap-1 mt-1 flex-wrap">
-                                <span className="text-[9px] text-gray-400">Colors:</span>
+                                <span className="text-[9px] text-farm-muted">Colors:</span>
                                 {allColors.map(c => (
                                   <button key={c} type="button" onClick={() => toggleFn(item.id, "available_colors", c, allColors)}
-                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(c) ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400 line-through"}`}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(c) ? "bg-purple-600 text-white" : "bg-farm-cream/60 text-farm-muted line-through"}`}
                                   >{c}</button>
                                 ))}
                               </div>
@@ -508,7 +508,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                           )}
                           <input type="text" placeholder="Notes (optional)" value={state.cycle_notes}
                             onChange={e => updateFn(item.id, { cycle_notes: e.target.value })}
-                            className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green bg-gray-50 placeholder:text-gray-400"
+                            className="flex-1 px-2 py-1.5 text-sm border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-farm-green bg-farm-cream/40 placeholder:text-farm-muted"
                           />
                         </div>
                       )}
@@ -522,12 +522,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
       </div>
 
       {/* Sticky bottom */}
-      <div className="sticky bottom-nav-safe bg-white border-t border-gray-200 px-4 py-3 space-y-2">
+      <div className="sticky bottom-nav-safe bg-white border-t border-farm-dark/10 px-4 py-3 space-y-2">
         {saveError && <p className="text-xs text-red-600 text-center">{saveError}</p>}
         {saveSuccess && <p className="text-xs text-farm-green text-center font-medium">Saved to {isAllMode ? "all restaurants" : "1 restaurant"}</p>}
         <div className="flex gap-2">
           <button type="button" onClick={handleDuplicate} disabled={isDuplicating}
-            className="flex-1 py-3 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 bg-white disabled:opacity-50"
+            className="flex-1 py-3 rounded-xl border border-farm-dark/15 text-sm font-semibold text-farm-dark/80 bg-white disabled:opacity-50"
           >{isDuplicating ? "Duplicating…" : "Duplicate Last"}</button>
           <button type="button" onClick={handleSave} disabled={isSaving}
             className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50"
@@ -554,7 +554,7 @@ function OverrideAdder({
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)}
-        className="text-[10px] text-gray-400 hover:text-farm-green mt-1 min-h-0 min-w-0"
+        className="text-[10px] text-farm-muted hover:text-farm-green mt-1 min-h-0 min-w-0"
       >+ exception</button>
     );
   }
@@ -562,8 +562,8 @@ function OverrideAdder({
   return (
     <div className="flex items-center gap-1 mt-1.5 flex-wrap">
       {restaurants.map(r => (
-        <div key={r.id} className="inline-flex items-center gap-0.5 bg-gray-50 rounded-full px-1 py-0.5">
-          <span className="text-[9px] text-gray-500 px-1">{shortName(r.name)}:</span>
+        <div key={r.id} className="inline-flex items-center gap-0.5 bg-farm-cream/40 rounded-full px-1 py-0.5">
+          <span className="text-[9px] text-farm-muted px-1">{shortName(r.name)}:</span>
           {(["available", "limited", "unavailable"] as AvailabilityStatus[]).map(s => (
             <button key={s} type="button"
               onClick={() => { onAdd(r.id, s); setOpen(false); }}
@@ -572,7 +572,7 @@ function OverrideAdder({
           ))}
         </div>
       ))}
-      <button type="button" onClick={() => setOpen(false)} className="text-[9px] text-gray-400 min-h-0 min-w-0">cancel</button>
+      <button type="button" onClick={() => setOpen(false)} className="text-[9px] text-farm-muted min-h-0 min-w-0">cancel</button>
     </div>
   );
 }

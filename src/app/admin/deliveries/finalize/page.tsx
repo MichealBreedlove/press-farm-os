@@ -69,7 +69,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/deliveries"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-gray-500"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-farm-muted"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -82,17 +82,17 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         <div className="flex items-center justify-between mt-2">
           <Link
             href={`/admin/deliveries/finalize?month=${prevMonth}`}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-500 hover:text-gray-900"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-farm-muted hover:text-farm-dark"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <span className="text-sm font-medium text-gray-900">{monthLabel}</span>
+          <span className="text-sm font-medium text-farm-dark">{monthLabel}</span>
           <Link
             href={isCurrentMonth ? "#" : `/admin/deliveries/finalize?month=${nextMonth}`}
             className={`min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors ${
-              isCurrentMonth ? "text-gray-200" : "text-gray-500 hover:text-gray-900"
+              isCurrentMonth ? "text-gray-200" : "text-farm-muted hover:text-farm-dark"
             }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,14 +124,14 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         {rows.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-3">
-              <p className="text-xs text-gray-500">Logged</p>
+              <p className="text-xs text-farm-muted">Logged</p>
               <p className="text-lg font-bold text-farm-dark">{logged.length}</p>
               <p className="text-xs text-farm-green mt-0.5">{formatCurrency(loggedTotal)}</p>
             </div>
             <div className="card p-3">
-              <p className="text-xs text-gray-500">Finalized</p>
-              <p className="text-lg font-bold text-gray-900">{finalized.length}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-farm-muted">Finalized</p>
+              <p className="text-lg font-bold text-farm-dark">{finalized.length}</p>
+              <p className="text-xs text-farm-muted mt-0.5">
                 {formatCurrency(finalized.reduce((s: number, d: any) => s + (d.total_value ?? 0), 0))}
               </p>
             </div>
@@ -152,14 +152,14 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{formatDate(d.delivery_date)}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{d.restaurants?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-sm font-medium text-farm-dark">{formatDate(d.delivery_date)}</p>
+                    <p className="text-xs text-farm-muted mt-0.5">{d.restaurants?.name}</p>
+                    <p className="text-xs text-farm-muted mt-0.5">
                       {(d.delivery_items ?? []).length} items
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-farm-dark">
                       {formatCurrency(d.total_value ?? 0)}
                     </p>
                     <span className={d.status === "finalized" ? "badge-gray" : "badge-green"}>
@@ -171,7 +171,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
             ))}
           </div>
         ) : (
-          <p className="text-center text-sm text-gray-400 py-8">
+          <p className="text-center text-sm text-farm-muted py-8">
             No deliveries logged for {monthLabel}.
           </p>
         )}

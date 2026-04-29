@@ -33,7 +33,7 @@ export function ChefNav() {
               href={href}
               className={cn(
                 "relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium min-h-[44px] transition-colors",
-                isActive ? "text-farm-green" : "text-gray-400"
+                isActive ? "text-farm-green" : "text-farm-muted"
               )}
             >
               <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} />
@@ -45,7 +45,7 @@ export function ChefNav() {
 
         <button
           onClick={handleSignOut}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-gray-400 hover:text-red-500 transition-colors min-h-[44px]"
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-farm-muted hover:text-red-500 transition-colors min-h-[44px]"
         >
           <LogOut className="w-5 h-5" strokeWidth={1.5} />
           <span>Sign Out</span>

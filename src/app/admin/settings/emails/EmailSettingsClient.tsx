@@ -69,7 +69,7 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           </div>
           <div>
             <h2 className="font-display text-sm text-farm-dark">Email Addresses</h2>
-            <p className="text-xs text-gray-400">Configure where different types of emails are sent</p>
+            <p className="text-xs text-farm-muted">Configure where different types of emails are sent</p>
           </div>
         </div>
 
@@ -77,7 +77,7 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           {EMAIL_FIELDS.map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium text-farm-dark mb-0.5">{field.label}</label>
-              <p className="text-xs text-gray-400 mb-1.5">{field.description}</p>
+              <p className="text-xs text-farm-muted mb-1.5">{field.description}</p>
               <input
                 type="email"
                 value={form[field.key]}
