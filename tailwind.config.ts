@@ -83,6 +83,7 @@ const config: Config = {
             "squash-bud": "#f4c75f",
             buttercup: "#f4d03f",
             "california-poppy": "#ea580c",
+            allium: "#5e2b7a",
           },
         },
       },

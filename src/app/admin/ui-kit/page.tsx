@@ -37,6 +37,7 @@ const FLOWERS_EXTENDED = [
   { name: "Squash Bud", file: "squash-bud.png", role: "Closed blossom", color: "Yellow", chip: "pf-crop-squash-bud" },
   { name: "Buttercup", file: "buttercup.png", role: "Wild meadow accent", color: "Yellow", chip: "pf-crop-buttercup" },
   { name: "California Poppy", file: "california-poppy.png", role: "State wildflower", color: "Orange", chip: "pf-crop-california-poppy" },
+  { name: "Allium", file: "allium.png", role: "Ornamental globe", color: "Deep Violet", chip: "pf-crop-allium" },
 ];
 
 const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED];
@@ -63,13 +64,16 @@ const PF_PALETTE = [
 
 const ASSET_PATHS = [
   { label: "Primary logo (mandala + wordmark)", path: "/assets/pressfarm/logo/pressfarm-primary.svg" },
+  { label: "Mandala only (color)", path: "/assets/pressfarm/logo/png/pressfarm-mandala-only.png" },
+  { label: "Mandala monochrome — black", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" },
+  { label: "Mandala monochrome — gold", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" },
   { label: "Seal logo (cream background)", path: "/assets/pressfarm/logo/pressfarm-seal.png" },
   { label: "Icon only (squash blossom)", path: "/assets/pressfarm/logo/pressfarm-icon.png" },
   { label: "Dark monochrome", path: "/assets/pressfarm/logo/pressfarm-dark.svg" },
   { label: "Light monochrome (for dark UI)", path: "/assets/pressfarm/logo/pressfarm-light.svg" },
   { label: "Favicon (ICO + PNG variants)", path: "/assets/pressfarm/favicon/" },
   { label: "Bank Gothic LT font", path: "/assets/fonts/BankGothicLT.woff2" },
-  { label: "Flower illustrations (30)", path: "/assets/pressfarm/flowers/" },
+  { label: "Flower illustrations (31 species + 8 alternates)", path: "/assets/pressfarm/flowers/" },
 ];
 
 export default async function UIKitPage() {
@@ -95,6 +99,34 @@ export default async function UIKitPage() {
         <section className="text-center py-10 bg-farm-cream rounded-2xl border border-farm-dark/5">
           <PressFarmLogo size="lg" />
           <p className="text-xs text-farm-muted mt-6">Master lockup · 260px max · Bank Gothic LT</p>
+        </section>
+
+        {/* MANDALA VARIANTS */}
+        <section>
+          <p className="section-eyebrow text-farm-muted mb-4">Mandala Variants</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="card text-center p-6">
+              <div className="bg-farm-cream rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png" alt="Color mandala" className="max-h-40 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Color</p>
+              <p className="text-xs text-farm-muted mt-1">Primary brand · website hero · login</p>
+            </div>
+            <div className="card text-center p-6">
+              <div className="bg-farm-cream rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" alt="Monochrome black mandala" className="max-h-40 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Mono · Black</p>
+              <p className="text-xs text-farm-muted mt-1">B&amp;W print · invoices · stamps</p>
+            </div>
+            <div className="card text-center p-6">
+              <div className="bg-farm-dark rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" alt="Monochrome gold mandala" className="max-h-40 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Mono · Gold</p>
+              <p className="text-xs text-farm-muted mt-1">Premium · letterhead · dark surfaces</p>
+            </div>
+          </div>
         </section>
 
         {/* TYPOGRAPHY */}
@@ -172,7 +204,7 @@ export default async function UIKitPage() {
         <section>
           <div className="flex items-baseline justify-between mb-4">
             <p className="section-eyebrow text-farm-muted">Flower System · Extended Chef Garden</p>
-            <p className="text-xs text-farm-muted">16 herbs & seasonals</p>
+            <p className="text-xs text-farm-muted">17 herbs & seasonals</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FLOWERS_EXTENDED.map((f) => (

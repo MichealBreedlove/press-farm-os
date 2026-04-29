@@ -86,6 +86,9 @@ const FLOWER_NAME_MAP: Record<string, string> = {
   "californiapoppy": "california-poppy",
   "poppy": "california-poppy",
   "eschscholzia": "california-poppy",
+  "allium": "allium",
+  "ornamentalallium": "allium",
+  "globeallium": "allium",
 };
 
 /**

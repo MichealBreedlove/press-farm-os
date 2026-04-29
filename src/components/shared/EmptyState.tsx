@@ -5,12 +5,12 @@ const FLOWERS_BASE = "/assets/pressfarm/flowers";
 
 /** Full set of 28 flower illustrations available for empty states. */
 const ALL_FLOWERS = [
-  "alyssum", "anise-hyssop", "bachelor-button", "borage", "buttercup",
-  "calendula", "california-poppy", "chamomile", "chervil", "chive-blossom",
-  "dill", "fairy-vetch", "fava-flower", "fennel", "garlic-chive",
-  "gem-marigold", "green-leaf", "lavender", "marigold", "mustard-flower",
-  "nasturtium", "nasturtium-leaf", "pansy", "pea-flower", "rosemary",
-  "squash-blossom", "squash-bud", "thai-basil", "thyme", "viola",
+  "allium", "alyssum", "anise-hyssop", "bachelor-button", "borage",
+  "buttercup", "calendula", "california-poppy", "chamomile", "chervil",
+  "chive-blossom", "dill", "fairy-vetch", "fava-flower", "fennel",
+  "garlic-chive", "gem-marigold", "green-leaf", "lavender", "marigold",
+  "mustard-flower", "nasturtium", "nasturtium-leaf", "pansy", "pea-flower",
+  "rosemary", "squash-blossom", "squash-bud", "thai-basil", "thyme", "viola",
 ] as const;
 
 export type FlowerName = typeof ALL_FLOWERS[number] | "random";
