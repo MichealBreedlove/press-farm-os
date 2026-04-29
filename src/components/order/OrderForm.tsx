@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH } from "@/lib/constants";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
+import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 
 interface OrderFormProps {
@@ -102,15 +103,18 @@ export function OrderForm({
     // Use allAvailable so search doesn't hide ordered items
     for (const ai of allAvailable) {
       const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
-      const colors = itemColors[ai.id] ?? [];
-      const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
-      const note = [colorNote, itemNotes[ai.id] ?? ""].filter(Boolean).join(" | ");
+      // For items WITHOUT sizes the color key is just the avail-item id.
+      // For items WITH sizes, each size has its OWN color set keyed by `id__size`.
+      const itemNote = itemNotes[ai.id] ?? "";
 
       if (sizes.length > 0) {
         // Create one order item per size that has quantity > 0
         for (const size of sizes) {
           const qty = quantities[`${ai.id}__${size}`] ?? 0;
           if (qty > 0) {
+            const sizeColors = itemColors[`${ai.id}__${size}`] ?? [];
+            const sizeColorNote = sizeColors.length > 0 ? `Color: ${sizeColors.join(", ")}` : "";
+            const note = [sizeColorNote, itemNote].filter(Boolean).join(" | ");
             orderedItems.push({
               availabilityItemId: ai.id,
               itemName: `${ai.item.name} (${size})`,
@@ -122,9 +126,12 @@ export function OrderForm({
           }
         }
       } else {
-        // No sizes — single quantity
+        // No sizes — single quantity. Colors keyed by avail-item id directly.
         const qty = quantities[ai.id] ?? 0;
         if (qty > 0) {
+          const colors = itemColors[ai.id] ?? [];
+          const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
+          const note = [colorNote, itemNote].filter(Boolean).join(" | ");
           orderedItems.push({
             availabilityItemId: ai.id,
             itemName: ai.item.name,
@@ -210,7 +217,7 @@ export function OrderForm({
                   itemColors={itemColors}
                   onQuantityChange={handleQuantityChange}
                   onNoteChange={handleNoteChange}
-                  onColorChange={(id, colors) => setItemColors((prev) => ({ ...prev, [id]: colors }))}
+                  onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
                 />
               );
             })}
@@ -236,6 +243,9 @@ export function OrderForm({
                 {freeformNotes.length}/{MAX_NOTES_LENGTH}
               </p>
             </div>
+
+            {/* Chef-facing suggestion box — crop requests + feature ideas */}
+            <ChefSuggestionBox />
           </>
         )}
       </div>

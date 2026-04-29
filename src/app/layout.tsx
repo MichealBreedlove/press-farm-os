@@ -45,13 +45,56 @@ const jetbrainsMono = JetBrains_Mono({
 
 
 export const metadata: Metadata = {
-  title: "Press Farm",
-  description: "Farm-to-kitchen ordering and availability management for Press Farm",
+  metadataBase: new URL("https://pressfarm.io"),
+  title: {
+    default: "Press Farm",
+    template: "%s · Press Farm",
+  },
+  description:
+    "Press Farm — half an acre in Yountville, California, growing edible flowers, micro-greens, and seasonal produce for Napa Valley chefs. Cultivated with chefs.",
+  applicationName: "Press Farm",
+  authors: [{ name: "Press Farm" }],
+  keywords: [
+    "Press Farm",
+    "edible flowers",
+    "Yountville",
+    "Napa Valley",
+    "specialty farm",
+    "chef-direct produce",
+    "micro-greens",
+  ],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Press Farm",
+  },
+  openGraph: {
+    title: "Press Farm — Cultivated with Chefs",
+    description:
+      "Half an acre in Yountville, California, growing edible flowers and seasonal produce in close partnership with Napa Valley kitchens.",
+    url: "https://pressfarm.io",
+    siteName: "Press Farm",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/assets/pressfarm/logo/png/pressfarm-mandala-only.png",
+        width: 3000,
+        height: 3000,
+        alt: "Press Farm — botanical mandala",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Press Farm — Cultivated with Chefs",
+    description:
+      "Edible flowers + seasonal produce, cultivated with Napa Valley chefs. Yountville, California.",
+    images: ["/assets/pressfarm/logo/png/pressfarm-mandala-only.png"],
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 

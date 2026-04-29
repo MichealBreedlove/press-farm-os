@@ -43,10 +43,10 @@ export default function OrderConfirmedPage() {
       `}</style>
 
       <div className="text-center max-w-sm relative z-10">
-        {/* Hero floral mark — replaces generic checkmark with brand illustration */}
-        <div className="relative mx-auto mb-6 w-56 h-56 sm:w-72 sm:h-72 animate-[scale-in_0.4s_ease-out]">
+        {/* Hero floral mark — Press Farm mandala as the brand celebration */}
+        <div className="relative mx-auto mb-6 w-64 h-64 sm:w-80 sm:h-80 animate-[scale-in_0.4s_ease-out]">
           <img
-            src="/assets/pressfarm/flowers/squash-blossom.png"
+            src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-contain"

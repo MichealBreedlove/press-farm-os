@@ -10,10 +10,11 @@ interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
   quantities: Record<string, number>; // keyed by availId or availId__size
   itemNote: string;
-  selectedColors: string[];
+  /** Multi-select colors keyed by availId (no-sizes) or availId__size (per-size). */
+  itemColors: Record<string, string[]>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
-  onColorChange: (id: string, colors: string[]) => void;
+  onColorChange: (key: string, colors: string[]) => void;
 }
 
 function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
@@ -45,11 +46,52 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
   );
 }
 
+/** Inline multi-select color picker. Used for whole-item colors (no sizes)
+ *  and per-size colors (with sizes). */
+function ColorPicker({
+  colors,
+  selected,
+  onToggle,
+  label = "Colors",
+}: {
+  colors: string[];
+  selected: string[];
+  onToggle: (next: string[]) => void;
+  label?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      <span className="text-[10px] text-farm-muted mr-0.5">
+        {label}{selected.length > 0 ? ` (${selected.length})` : ""}:
+      </span>
+      {colors.map((c: string) => {
+        const isSelected = selected.includes(c);
+        return (
+          <button key={c} type="button"
+            onClick={() => {
+              const next = isSelected
+                ? selected.filter((x) => x !== c)
+                : [...selected, c];
+              onToggle(next);
+            }}
+            aria-pressed={isSelected}
+            className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
+              isSelected
+                ? "bg-purple-600 text-white"
+                : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+            }`}
+          >{c}</button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ItemRow({
   availabilityItem,
   quantities,
   itemNote,
-  selectedColors,
+  itemColors,
   onQuantityChange,
   onNoteChange,
   onColorChange,
@@ -126,31 +168,15 @@ export function ItemRow({
           {!cycle_notes && item.chef_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{item.chef_notes}</p>}
           {(item as any).season_note && <p className="text-xs text-pf-master-orange mt-0.5 truncate">{(item as any).season_note}</p>}
 
-          {/* Color selector — multi-select. Tap each color to toggle inclusion. */}
-          {colors.length > 0 && totalQty > 0 && (
-            <div className="flex items-center gap-1 mt-1 flex-wrap">
-              <span className="text-[10px] text-farm-muted mr-0.5">
-                Colors{selectedColors.length > 0 ? ` (${selectedColors.length})` : ""}:
-              </span>
-              {colors.map((c: string) => {
-                const isSelected = selectedColors.includes(c);
-                return (
-                  <button key={c} type="button"
-                    onClick={() => {
-                      const next = isSelected
-                        ? selectedColors.filter((x) => x !== c)
-                        : [...selectedColors, c];
-                      onColorChange(availabilityItem.id, next);
-                    }}
-                    aria-pressed={isSelected}
-                    className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
-                      isSelected
-                        ? "bg-purple-600 text-white"
-                        : "bg-purple-50 text-purple-600 hover:bg-purple-100"
-                    }`}
-                  >{c}</button>
-                );
-              })}
+          {/* Whole-item color picker — only when item has NO sizes.
+              For items WITH sizes, the color picker lives under each size row. */}
+          {colors.length > 0 && !hasSizes && totalQty > 0 && (
+            <div className="mt-1">
+              <ColorPicker
+                colors={colors}
+                selected={itemColors[availabilityItem.id] ?? []}
+                onToggle={(next) => onColorChange(availabilityItem.id, next)}
+              />
             </div>
           )}
           {colors.length > 0 && totalQty === 0 && (
@@ -195,22 +221,33 @@ export function ItemRow({
         </div>
       )}
 
-      {/* Per-size quantity steppers — when expanded or items ordered */}
+      {/* Per-size quantity steppers + per-size color pickers */}
       {hasSizes && showSizes && (
         <div className="mt-2 ml-0 space-y-1.5">
           {sizes.map((size: string) => {
             const key = `${availabilityItem.id}__${size}`;
             const sizeQty = quantities[key] ?? 0;
+            const sizeColors = itemColors[key] ?? [];
             return (
-              <div key={size} className="flex items-center justify-between bg-farm-cream/40 rounded-lg px-3 py-2">
-                <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
-                <QuantityStepper
-                  value={sizeQty}
-                  onChange={(v) => onQuantityChange(key, v)}
-                  disabled={isUnavailable}
-                  maxQty={maxQty}
-                  label={`${item.name} ${size}`}
-                />
+              <div key={size} className="bg-farm-cream/40 rounded-lg px-3 py-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
+                  <QuantityStepper
+                    value={sizeQty}
+                    onChange={(v) => onQuantityChange(key, v)}
+                    disabled={isUnavailable}
+                    maxQty={maxQty}
+                    label={`${item.name} ${size}`}
+                  />
+                </div>
+                {/* Per-size color picker — visible when this size has qty > 0 */}
+                {colors.length > 0 && sizeQty > 0 && (
+                  <ColorPicker
+                    colors={colors}
+                    selected={sizeColors}
+                    onToggle={(next) => onColorChange(key, next)}
+                  />
+                )}
               </div>
             );
           })}

@@ -1,7 +1,7 @@
 {
   "name": "Press Farm",
   "short_name": "Press Farm",
-  "description": "Farm-to-kitchen ordering and availability management for Press Farm",
+  "description": "Press Farm — edible flowers and seasonal produce, cultivated with Napa Valley chefs. Yountville, California.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#faf7f0",
@@ -21,6 +21,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["food", "productivity"],
+  "categories": ["food", "productivity", "lifestyle"],
   "lang": "en-US"
 }
