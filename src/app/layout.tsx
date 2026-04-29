@@ -44,13 +44,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 
 export const metadata: Metadata = {
-  title: "Press Farm OS",
+  title: "Press Farm",
   description: "Farm-to-kitchen ordering and availability management for Press Farm",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Press Farm OS",
+    title: "Press Farm",
   },
 };
 
