@@ -97,32 +97,30 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 165px;
+    padding-right: 110px;
   }
-  /* Horizontal logo — squash blossom + gold rule + PRESS FARM + tagline.
-     Wide composition that fits the header bar height naturally. */
+  /* Light circular seal — gold ring + arched PRESS FARM + yellow squash blossom + tagline */
   .page-header::after {
     content: "";
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 150px;
-    height: 50px;
-    background-image: url("/assets/pressfarm/logo/png/pressfarm-horizontal-logo.png");
+    width: 96px;
+    height: 96px;
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-circular-seal-light.png");
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: center right;
+    background-position: center;
     opacity: 1;
   }
-  /* Larger size on tablet+ */
   @media (min-width: 640px) {
     .page-header {
-      padding-right: 200px;
+      padding-right: 130px;
     }
     .page-header::after {
-      width: 184px;
-      height: 60px;
+      width: 116px;
+      height: 116px;
     }
   }
   /* Modifier: hide wordmark+logo to free right-side space for buttons */
