@@ -14,7 +14,7 @@ export default async function AdminItemsPage() {
 
   const { data: itemsRaw } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, is_archived, chef_notes, image_url")
+    .select("id, name, category, unit_type, default_price, unit_prices, is_archived, chef_notes, image_url")
     .order("category")
     .order("name");
 
