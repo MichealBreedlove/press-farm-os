@@ -97,49 +97,33 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 150px;
+    padding-right: 110px;
   }
-  /* "PRESS FARM" wordmark — readable text on the right */
-  .page-header::before {
-    content: "PRESS FARM";
-    position: absolute;
-    right: 70px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", Arial, sans-serif;
-    font-size: 18px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.9);
-    white-space: nowrap;
-  }
-  /* Yellow squash blossom — the brand's signature crop, high-contrast on green */
+  /* Light circular seal — gold ring + arched PRESS FARM + yellow squash blossom + tagline.
+     Sized large so the arched text remains readable. Overflows the page-header
+     bar slightly above and below for a "stamp" effect. */
   .page-header::after {
     content: "";
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 56px;
-    height: 56px;
-    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png");
+    width: 96px;
+    height: 96px;
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-circular-seal-light.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
     opacity: 1;
   }
-  /* Larger sizes on tablet+ */
+  /* Larger size on tablet+ */
   @media (min-width: 640px) {
     .page-header {
-      padding-right: 180px;
-    }
-    .page-header::before {
-      right: 84px;
-      font-size: 22px;
+      padding-right: 130px;
     }
     .page-header::after {
-      width: 68px;
-      height: 68px;
+      width: 116px;
+      height: 116px;
     }
   }
   /* Modifier: hide wordmark+logo to free right-side space for buttons */
