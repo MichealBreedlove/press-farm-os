@@ -108,6 +108,62 @@ export default async function UIKitPage() {
           <p className="text-xs text-farm-muted mt-6">Master lockup · 260px max · Bank Gothic LT</p>
         </section>
 
+        {/* LOGO LOCKUPS */}
+        <section>
+          <p className="section-eyebrow text-farm-muted mb-4">Logo Lockups</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-6 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-circular-seal-light.png" alt="Light circular seal" className="max-h-36 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Circular Seal · Light</p>
+              <p className="text-[11px] text-farm-muted mt-1">Page-header · letterhead · premium docs</p>
+            </div>
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-6 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-circular-seal-dark.png" alt="Dark circular seal" className="max-h-36 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Circular Seal · Dark</p>
+              <p className="text-[11px] text-farm-muted mt-1">Stamps · invoices · monochrome contexts</p>
+            </div>
+            <div className="card text-center p-5">
+              <div className="bg-farm-dark rounded-xl py-6 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-app-icon.png" alt="App icon" className="max-h-36 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">App Icon</p>
+              <p className="text-[11px] text-farm-muted mt-1">iOS home screen · PWA install</p>
+            </div>
+            <div className="card text-center p-5 sm:col-span-2">
+              <div className="bg-farm-cream rounded-xl py-6 px-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-horizontal-logo.png" alt="Horizontal logo" className="max-h-32 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Horizontal Logo</p>
+              <p className="text-[11px] text-farm-muted mt-1">Email signatures · header banners · business cards</p>
+            </div>
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-6 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-stacked-logo.png" alt="Stacked logo" className="max-h-36 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Stacked Logo</p>
+              <p className="text-[11px] text-farm-muted mt-1">Square layouts · social profile pics</p>
+            </div>
+            <div className="card text-center p-5 sm:col-span-2">
+              <div className="bg-farm-cream rounded-xl py-6 px-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-wordmark-only.png" alt="Wordmark only" className="max-h-28 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Wordmark Only</p>
+              <p className="text-[11px] text-farm-muted mt-1">Watermarks · invoice footers · text-only contexts</p>
+            </div>
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-6 flex items-center justify-center" style={{ minHeight: "180px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png" alt="Squash blossom icon" className="max-h-32 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Squash Blossom Icon</p>
+              <p className="text-[11px] text-farm-muted mt-1">Signature crop · cropped head, no stem</p>
+            </div>
+          </div>
+        </section>
+
         {/* MANDALA VARIANTS */}
         <section>
           <p className="section-eyebrow text-farm-muted mb-4">Mandala Variants</p>
