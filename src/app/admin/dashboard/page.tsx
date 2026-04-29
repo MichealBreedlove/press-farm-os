@@ -4,27 +4,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { SendDigestButton } from "./SendDigestButton";
 import { RefreshButton } from "./RefreshButton";
-import {
-  ClipboardList,
-  CalendarDays,
-  PackageOpen,
-  BarChart3,
-  Leaf,
-  Clock,
-  DollarSign,
-  FileText,
-  Users,
-  Upload,
-  Settings,
-  Sprout,
-} from "lucide-react";
 
 interface DashCard {
   href: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
-  color: string;
+  flower: string; // brand flower illustration filename (without .png)
 }
 
 function formatCurrency(n: number) {
@@ -88,123 +73,210 @@ export default async function AdminDashboardPage() {
   const monthExpenseTotal = (monthExpenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);
   const weekLaborHours = (weekLabor ?? []).reduce((s: number, l: any) => s + (l.hours ?? 0), 0);
 
-  const sections: { title: string; cards: DashCard[] }[] = [
+  // Each function gets a brand flower instead of a colored icon tile.
+  // Mapping is loose-symbolic: signature crops for hero functions, supporting
+  // botanicals for utility functions.
+  const sections: { title: string; eyebrow: string; cards: DashCard[] }[] = [
     {
       title: "Daily Operations",
+      eyebrow: "The day's work",
       cards: [
-        { href: "/admin/orders", title: "Orders", description: `${pendingOrders ?? 0} pending`, icon: <ClipboardList className="w-5 h-5" />, color: "bg-blue-500" },
-        { href: "/admin/availability", title: "Availability", description: "Set what's available", icon: <CalendarDays className="w-5 h-5" />, color: "bg-farm-green" },
-        { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", icon: <PackageOpen className="w-5 h-5" />, color: "bg-amber-500" },
+        { href: "/admin/orders", title: "Orders", description: `${pendingOrders ?? 0} pending`, flower: "squash-blossom" },
+        { href: "/admin/availability", title: "Availability", description: "What's ready to harvest", flower: "calendula" },
+        { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", flower: "marigold" },
       ],
     },
     {
       title: "Farm Management",
+      eyebrow: "Behind the harvest",
       cards: [
-        { href: "/admin/items", title: "Items", description: "Catalog & photos", icon: <Leaf className="w-5 h-5" />, color: "bg-green-600" },
-        { href: "/admin/crop-plan", title: "Crop Plan", description: "Seasonal schedule", icon: <Sprout className="w-5 h-5" />, color: "bg-lime-600" },
-        { href: "/admin/labor", title: "Labor", description: "Track hours", icon: <Clock className="w-5 h-5" />, color: "bg-purple-500" },
-        { href: "/admin/expenses", title: "Expenses", description: "Track costs", icon: <DollarSign className="w-5 h-5" />, color: "bg-red-500" },
-        { href: "/admin/notes", title: "Notes", description: "Field observations", icon: <FileText className="w-5 h-5" />, color: "bg-cyan-500" },
-        { href: "/admin/packs", title: "Pack Manager", description: "Container inventory", icon: <PackageOpen className="w-5 h-5" />, color: "bg-orange-500" },
-        { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", icon: <BarChart3 className="w-5 h-5" />, color: "bg-blue-500" },
+        { href: "/admin/items", title: "Items", description: "Catalog & photos", flower: "nasturtium" },
+        { href: "/admin/crop-plan", title: "Crop Plan", description: "Seasonal schedule", flower: "squash-bud" },
+        { href: "/admin/labor", title: "Labor", description: "Track hours", flower: "lavender" },
+        { href: "/admin/expenses", title: "Expenses", description: "Track costs", flower: "chive-blossom" },
+        { href: "/admin/notes", title: "Notes", description: "Field observations", flower: "viola" },
+        { href: "/admin/packs", title: "Pack Manager", description: "Container inventory", flower: "fairy-vetch" },
+        { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", flower: "bachelor-button" },
       ],
     },
     {
       title: "Reports & Analytics",
+      eyebrow: "By the numbers",
       cards: [
-        { href: "/admin/reports", title: "Reports", description: "Revenue & P&L", icon: <BarChart3 className="w-5 h-5" />, color: "bg-farm-green" },
-        { href: "/admin/reports/executive", title: "Executive", description: "Print summary", icon: <BarChart3 className="w-5 h-5" />, color: "bg-gray-800" },
+        { href: "/admin/reports", title: "Reports", description: "Revenue & P&L", flower: "green-leaf" },
+        { href: "/admin/reports/executive", title: "Executive", description: "Print summary", flower: "gem-marigold" },
       ],
     },
     {
       title: "Settings",
+      eyebrow: "Configuration",
       cards: [
-        { href: "/admin/settings/users", title: "Users", description: "Manage accounts", icon: <Users className="w-5 h-5" />, color: "bg-gray-500" },
-        { href: "/admin/settings/import", title: "Import", description: "Excel data", icon: <Upload className="w-5 h-5" />, color: "bg-gray-500" },
-        { href: "/admin/settings", title: "Settings", description: "App config", icon: <Settings className="w-5 h-5" />, color: "bg-gray-500" },
-        { href: "/admin/ui-kit", title: "UI Kit", description: "Brand reference", icon: <Leaf className="w-5 h-5" />, color: "bg-gray-500" },
+        { href: "/admin/settings/users", title: "Users", description: "Manage accounts", flower: "pansy" },
+        { href: "/admin/settings/import", title: "Import", description: "Excel data", flower: "chamomile" },
+        { href: "/admin/settings", title: "Settings", description: "App config", flower: "fennel" },
+        { href: "/admin/ui-kit", title: "UI Kit", description: "Brand reference", flower: "allium" },
       ],
     },
   ];
 
   const monthName = new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
+  const todayDate = new Date();
+  const dayOfWeek = todayDate.toLocaleDateString("en-US", { weekday: "long" });
+  const monthDay = todayDate.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+  // Editorial subtitle that summarizes the day at a glance
+  const subtitleParts: string[] = [];
+  if (nextDeliveryLabel) subtitleParts.push(`Next delivery ${nextDeliveryLabel}`);
+  if ((pendingOrders ?? 0) > 0) {
+    subtitleParts.push(`${pendingOrders} order${pendingOrders === 1 ? "" : "s"} awaiting fulfillment`);
+  }
+  if (subtitleParts.length === 0) subtitleParts.push("All caught up");
 
   return (
     <main className="pb-24">
       <header className="page-header">
         <h1 className="page-title">Dashboard</h1>
-        {nextDeliveryLabel && (
-          <p className="text-sm text-green-200 mt-0.5">
-            Next delivery: <span className="font-medium text-white">{nextDeliveryLabel}</span>
-          </p>
-        )}
       </header>
 
-      <div className="px-4 py-5 space-y-6">
-        {/* Live stats */}
-        <div className="flex items-center justify-between">
-          <p className="section-eyebrow with-flower text-farm-muted">{monthName} Overview</p>
-          <RefreshButton />
+      {/* HERO — magazine-cover moment */}
+      <section className="px-5 pt-8 pb-6 bg-farm-cream/60 border-b border-pf-master-gold/20">
+        <div className="flex items-start gap-4 max-w-3xl mx-auto">
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[11px] tracking-[0.22em] uppercase text-pf-master-gold font-medium mb-2"
+              style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
+            >
+              {dayOfWeek} · {monthDay}
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl text-farm-dark leading-tight">
+              Today at the Farm
+            </h2>
+            <p className="text-sm text-farm-muted mt-3 leading-relaxed max-w-md">
+              {subtitleParts.join(" · ")}
+            </p>
+          </div>
+          <img
+            src="/assets/pressfarm/flowers/squash-blossom.png"
+            alt=""
+            aria-hidden="true"
+            className="w-24 sm:w-32 h-auto opacity-90 -mt-2 flex-shrink-0"
+          />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {(() => {
-            const [revFlower, expFlower, pendFlower, labFlower] = pickKpiFlowers();
-            return (
-              <>
-                <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-                  <img src={`/assets/pressfarm/flowers/${revFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-farm-muted relative">{monthName} Revenue</p>
-                  <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
-                  <p className="text-[10px] text-farm-muted mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
-                </Link>
-                <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-                  <img src={`/assets/pressfarm/flowers/${expFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-farm-muted relative">{monthName} Expenses</p>
-                  <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
-                  <p className="text-[10px] text-farm-muted mt-1 relative">{(monthExpenses ?? []).length} entries</p>
-                </Link>
-                <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
-                  <img src={`/assets/pressfarm/flowers/${pendFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-farm-muted relative">Pending Orders</p>
-                  <p className="text-2xl font-bold text-farm-green mt-1 relative">{pendingOrders ?? 0}</p>
-                  <p className="text-[10px] text-farm-muted mt-1 relative">awaiting fulfillment</p>
-                </Link>
-                <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
-                  <img src={`/assets/pressfarm/flowers/${labFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-                  <p className="text-xs text-farm-muted relative">Labor (7 days)</p>
-                  <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
-                  <p className="text-[10px] text-farm-muted mt-1 relative">this week</p>
-                </Link>
-              </>
-            );
-          })()}
+        {/* Gold dot rule */}
+        <div className="max-w-3xl mx-auto mt-6 flex items-center gap-2">
+          <div className="flex-1 h-px bg-pf-master-gold/30" />
+          <div className="w-1.5 h-1.5 rounded-full bg-pf-master-gold" />
+          <div className="flex-1 h-px bg-pf-master-gold/30" />
         </div>
+      </section>
+
+      <div className="px-4 py-6 space-y-8 max-w-3xl mx-auto">
+
+        {/* AT A GLANCE — KPI tiles */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="section-eyebrow with-flower text-farm-muted">{monthName} at a glance</p>
+            <RefreshButton />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {(() => {
+              const [revFlower, expFlower, pendFlower, labFlower] = pickKpiFlowers();
+              return (
+                <>
+                  <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+                    <img src={`/assets/pressfarm/flowers/${revFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                    <p className="text-xs text-farm-muted relative">{monthName} Revenue</p>
+                    <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
+                    <p className="text-[10px] text-farm-muted mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
+                  </Link>
+                  <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+                    <img src={`/assets/pressfarm/flowers/${expFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                    <p className="text-xs text-farm-muted relative">{monthName} Expenses</p>
+                    <p className="text-2xl font-bold text-pf-master-orange mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
+                    <p className="text-[10px] text-farm-muted mt-1 relative">{(monthExpenses ?? []).length} entries</p>
+                  </Link>
+                  <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
+                    <img src={`/assets/pressfarm/flowers/${pendFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                    <p className="text-xs text-farm-muted relative">Pending Orders</p>
+                    <p className="text-2xl font-bold text-farm-green mt-1 relative">{pendingOrders ?? 0}</p>
+                    <p className="text-[10px] text-farm-muted mt-1 relative">awaiting fulfillment</p>
+                  </Link>
+                  <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
+                    <img src={`/assets/pressfarm/flowers/${labFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                    <p className="text-xs text-farm-muted relative">Labor (7 days)</p>
+                    <p className="text-2xl font-bold text-pf-master-violet mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
+                    <p className="text-[10px] text-farm-muted mt-1 relative">this week</p>
+                  </Link>
+                </>
+              );
+            })()}
+          </div>
+        </section>
 
         {/* Quick actions */}
         <SendDigestButton />
 
-        {sections.map((section) => (
-          <div key={section.title}>
-            <p className="section-eyebrow with-flower text-farm-muted mb-3">{section.title}</p>
+        {/* NAV CARDS — with flower illustrations instead of colored icon tiles */}
+        {sections.map((section, idx) => (
+          <section key={section.title}>
+            <div className="mb-4">
+              <p
+                className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1"
+                style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
+              >
+                {section.eyebrow}
+              </p>
+              <h3 className="font-display text-xl text-farm-dark leading-tight">
+                {section.title}
+              </h3>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {section.cards.map((card) => (
                 <Link
                   key={card.href}
                   href={card.href}
-                  className="card-interactive p-4 flex flex-col gap-3"
+                  className="card-interactive p-4 flex items-center gap-3 relative overflow-hidden"
                 >
-                  <div className={`w-9 h-9 rounded-lg ${card.color} text-white flex items-center justify-center`}>
-                    {card.icon}
+                  <div className="w-14 h-14 rounded-xl bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center flex-shrink-0">
+                    <img
+                      src={`/assets/pressfarm/flowers/${card.flower}.png`}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-11 h-11 object-contain"
+                    />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-farm-dark">{card.title}</p>
-                    <p className="text-xs text-farm-muted mt-0.5">{card.description}</p>
+                    <p className="text-[11px] text-farm-muted mt-0.5 leading-tight">{card.description}</p>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
+            {/* Section divider — gold dot rule between sections (not after last) */}
+            {idx < sections.length - 1 && (
+              <div className="mt-8 flex items-center gap-2 max-w-md mx-auto opacity-60">
+                <div className="flex-1 h-px bg-pf-master-gold/25" />
+                <div className="w-1 h-1 rounded-full bg-pf-master-gold" />
+                <div className="flex-1 h-px bg-pf-master-gold/25" />
+              </div>
+            )}
+          </section>
         ))}
+
+        {/* Footer signature */}
+        <footer className="pt-8 text-center">
+          <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
+            <div className="flex-1 h-px bg-pf-master-gold/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-pf-master-gold" />
+            <div className="flex-1 h-px bg-pf-master-gold/30" />
+          </div>
+          <p
+            className="text-[10px] tracking-[0.28em] uppercase text-farm-muted/70 mt-3"
+            style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
+          >
+            Press Farm · Yountville · Est. 2024
+          </p>
+        </footer>
       </div>
     </main>
   );
