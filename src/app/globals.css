@@ -113,7 +113,7 @@
     color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
   }
-  /* White squash blossom — the brand's signature crop, extracted from the seal */
+  /* Yellow squash blossom — the brand's signature crop, high-contrast on green */
   .page-header::after {
     content: "";
     position: absolute;
@@ -122,7 +122,7 @@
     transform: translateY(-50%);
     width: 56px;
     height: 56px;
-    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom-white.png");
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
