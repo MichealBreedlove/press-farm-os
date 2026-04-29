@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { SendDigestButton } from "./SendDigestButton";
 import { RefreshButton } from "./RefreshButton";
+import { WeatherWidget } from "@/components/shared/WeatherWidget";
 
 interface DashCard {
   href: string;
@@ -138,7 +139,7 @@ export default async function AdminDashboardPage() {
         <h1 className="page-title">Dashboard</h1>
       </header>
 
-      {/* HERO — magazine-cover moment */}
+      {/* HERO — magazine-cover moment with weather */}
       <section className="px-5 pt-8 pb-6 bg-farm-cream/60 border-b border-pf-master-gold/20">
         <div className="flex items-start gap-4 max-w-3xl mx-auto">
           <div className="flex-1 min-w-0">
@@ -155,12 +156,15 @@ export default async function AdminDashboardPage() {
               {subtitleParts.join(" · ")}
             </p>
           </div>
-          <img
-            src="/assets/pressfarm/flowers/squash-blossom.png"
-            alt=""
-            aria-hidden="true"
-            className="w-24 sm:w-32 h-auto opacity-90 -mt-2 flex-shrink-0"
-          />
+          <div className="flex-shrink-0 flex flex-col items-end gap-2">
+            <WeatherWidget />
+            <img
+              src="/assets/pressfarm/flowers/squash-blossom.png"
+              alt=""
+              aria-hidden="true"
+              className="w-16 sm:w-20 h-auto opacity-80"
+            />
+          </div>
         </div>
         {/* Gold dot rule */}
         <div className="max-w-3xl mx-auto mt-6 flex items-center gap-2">

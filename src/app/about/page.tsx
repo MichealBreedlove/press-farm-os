@@ -9,15 +9,11 @@ const FEATURED_FLOWERS = [
 ];
 
 const SUPPORTING_FLOWERS = [
-  { src: "/assets/pressfarm/flowers/viola.png", name: "Viola" },
   { src: "/assets/pressfarm/flowers/pansy.png", name: "Pansy" },
   { src: "/assets/pressfarm/flowers/marigold.png", name: "Marigold" },
   { src: "/assets/pressfarm/flowers/gem-marigold.png", name: "Gem Marigold" },
-  { src: "/assets/pressfarm/flowers/bachelor-button.png", name: "Bachelor Button" },
   { src: "/assets/pressfarm/flowers/chive-blossom.png", name: "Chive Blossom" },
-  { src: "/assets/pressfarm/flowers/pea-flower.png", name: "Pea Flower" },
   { src: "/assets/pressfarm/flowers/fava-flower.png", name: "Fava Flower" },
-  { src: "/assets/pressfarm/flowers/mustard-flower.png", name: "Mustard Flower" },
   { src: "/assets/pressfarm/flowers/alyssum.png", name: "Alyssum" },
   { src: "/assets/pressfarm/flowers/fairy-vetch.png", name: "Fairy Vetch" },
   { src: "/assets/pressfarm/flowers/chamomile.png", name: "Chamomile" },
@@ -27,10 +23,19 @@ const SUPPORTING_FLOWERS = [
   { src: "/assets/pressfarm/flowers/california-poppy.png", name: "California Poppy" },
 ];
 
+// Logos for partner restaurants — when a logo file is added under
+// /public/assets/restaurants/, the card auto-renders it instead of the wordmark.
 const RESTAURANTS = [
-  { name: "Press", note: "Yountville · seasonal tasting" },
-  { name: "Under-Study", note: "Yountville · chef's bar" },
-  { name: "Events", note: "Tasting series · private dinners" },
+  {
+    name: "Press",
+    note: "Yountville",
+    logo: "/assets/restaurants/press.png",
+  },
+  {
+    name: "Under-Study",
+    note: "Yountville",
+    logo: "/assets/restaurants/under-study.png",
+  },
 ];
 
 /** Gold dot rule — small horizontal divider with a gold dot in the middle. */
@@ -302,20 +307,35 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
             {RESTAURANTS.map((r) => (
               <div
                 key={r.name}
-                className="bg-white rounded-2xl border border-pf-master-gold/15 p-7 text-center"
+                className="bg-white rounded-2xl border border-pf-master-gold/15 p-8 text-center"
               >
                 <p
-                  className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-3"
+                  className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-4"
                   style={eyebrowFont}
                 >
                   Restaurant
                 </p>
-                <h3 className="font-display text-2xl text-farm-dark">{r.name}</h3>
-                <div className="mt-3 flex items-center justify-center gap-1.5">
+                {/* Logo space — falls back to wordmark if image not present */}
+                <div className="h-20 sm:h-24 flex items-center justify-center mb-4">
+                  <img
+                    src={r.logo}
+                    alt={`${r.name} logo`}
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      // Fall back to a styled wordmark if the logo file isn't there yet
+                      const target = e.currentTarget;
+                      target.style.display = "none";
+                      const next = target.nextElementSibling as HTMLElement | null;
+                      if (next) next.style.display = "block";
+                    }}
+                  />
+                  <h3 className="font-display text-3xl text-farm-dark hidden">{r.name}</h3>
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
                   <div className="w-4 h-px bg-pf-master-gold/40" />
                   <div className="w-1 h-1 rounded-full bg-pf-master-gold" />
                   <div className="w-4 h-px bg-pf-master-gold/40" />
