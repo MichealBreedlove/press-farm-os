@@ -346,7 +346,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto pt-4 text-left sm:text-center">
             <div>
               <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1" style={eyebrowFont}>Email</p>
-              <a href="mailto:hello@pressfarm.io" className="text-sm text-farm-cream hover:underline">hello@pressfarm.io</a>
+              <a href="mailto:PressFarm@PressNapaValley.com" className="text-sm text-farm-cream hover:underline">PressFarm@PressNapaValley.com</a>
             </div>
             <div>
               <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1" style={eyebrowFont}>Find Us</p>
@@ -360,7 +360,7 @@ export default function AboutPage() {
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="mailto:hello@pressfarm.io"
+              href="mailto:PressFarm@PressNapaValley.com"
               className="login-cta inline-flex items-center"
               style={{ background: "#faf7f0", color: "#0D2A1E" }}
             >
