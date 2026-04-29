@@ -56,12 +56,20 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
     >
       {corners.map((corner, i) => {
         const flower = picks[i] ?? picks[0];
-        // Anchor each flower so it bleeds slightly off the viewport edge
+        // Mirror right-side corners horizontally and bottom corners vertically
+        // so each flower's stem points OFF the viewport corner and the bloom
+        // faces INWARD toward the page content.
+        const isRight = corner.pos.includes("right");
+        const isBottom = corner.pos.includes("bottom");
+        const scaleX = isRight ? -1 : 1;
+        const scaleY = isBottom ? -1 : 1;
+        const transform = `scale(${scaleX}, ${scaleY}) rotate(${corner.rot}deg)`;
+
         const offsetMap: Record<string, React.CSSProperties> = {
-          "top-0 left-0":     { top: -40, left: -40, transform: `rotate(${corner.rot}deg)` },
-          "top-0 right-0":    { top: -50, right: -50, transform: `rotate(${corner.rot}deg)` },
-          "bottom-0 left-0":  { bottom: -50, left: -40, transform: `rotate(${corner.rot}deg)` },
-          "bottom-0 right-0": { bottom: -60, right: -60, transform: `rotate(${corner.rot}deg)` },
+          "top-0 left-0":     { top: -40, left: -40 },
+          "top-0 right-0":    { top: -50, right: -50 },
+          "bottom-0 left-0":  { bottom: -50, left: -40 },
+          "bottom-0 right-0": { bottom: -60, right: -60 },
         };
         return (
           <img
@@ -74,6 +82,7 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
               width: corner.size,
               height: "auto",
               opacity,
+              transform,
             }}
           />
         );
