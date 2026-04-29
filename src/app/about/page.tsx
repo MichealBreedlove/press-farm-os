@@ -24,18 +24,19 @@ const SUPPORTING_FLOWERS = [
   { src: "/assets/pressfarm/flowers/california-poppy.png", name: "California Poppy" },
 ];
 
-// Logos for partner restaurants — when a logo file is added under
-// /public/assets/restaurants/, the card auto-renders it instead of the wordmark.
+// Partner restaurants — kitchens we feed.
 const RESTAURANTS = [
   {
     name: "Press",
-    note: "Yountville",
+    note: "St. Helena · Napa Valley fine dining",
     logo: "/assets/restaurants/press.png",
+    website: "https://pressnapavalley.com",
   },
   {
     name: "Under-Study",
-    note: "Yountville",
+    note: "St. Helena · Café · bakery · patisserie",
     logo: "/assets/restaurants/under-study.png",
+    website: "https://under-study.com",
   },
 ];
 
