@@ -48,7 +48,7 @@ export function OrderForm({
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [itemColors, setItemColors] = useState<Record<string, string>>({});
+  const [itemColors, setItemColors] = useState<Record<string, string[]>>({});
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
 
@@ -102,7 +102,8 @@ export function OrderForm({
     // Use allAvailable so search doesn't hide ordered items
     for (const ai of allAvailable) {
       const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
-      const colorNote = itemColors[ai.id] ? `Color: ${itemColors[ai.id]}` : "";
+      const colors = itemColors[ai.id] ?? [];
+      const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
       const note = [colorNote, itemNotes[ai.id] ?? ""].filter(Boolean).join(" | ");
 
       if (sizes.length > 0) {
@@ -209,7 +210,7 @@ export function OrderForm({
                   itemColors={itemColors}
                   onQuantityChange={handleQuantityChange}
                   onNoteChange={handleNoteChange}
-                  onColorChange={(id, color) => setItemColors((prev) => ({ ...prev, [id]: color }))}
+                  onColorChange={(id, colors) => setItemColors((prev) => ({ ...prev, [id]: colors }))}
                 />
               );
             })}

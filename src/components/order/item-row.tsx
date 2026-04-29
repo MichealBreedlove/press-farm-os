@@ -10,10 +10,10 @@ interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
   quantities: Record<string, number>; // keyed by availId or availId__size
   itemNote: string;
-  selectedColor: string;
+  selectedColors: string[];
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
-  onColorChange: (id: string, color: string) => void;
+  onColorChange: (id: string, colors: string[]) => void;
 }
 
 function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
@@ -49,7 +49,7 @@ export function ItemRow({
   availabilityItem,
   quantities,
   itemNote,
-  selectedColor,
+  selectedColors,
   onQuantityChange,
   onNoteChange,
   onColorChange,
@@ -126,18 +126,31 @@ export function ItemRow({
           {!cycle_notes && item.chef_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{item.chef_notes}</p>}
           {(item as any).season_note && <p className="text-xs text-pf-master-orange mt-0.5 truncate">{(item as any).season_note}</p>}
 
-          {/* Color selector — selectable when qty > 0, preview when 0 */}
+          {/* Color selector — multi-select. Tap each color to toggle inclusion. */}
           {colors.length > 0 && totalQty > 0 && (
             <div className="flex items-center gap-1 mt-1 flex-wrap">
-              <span className="text-[10px] text-farm-muted mr-0.5">Color:</span>
-              {colors.map((c: string) => (
-                <button key={c} type="button"
-                  onClick={() => onColorChange(availabilityItem.id, selectedColor === c ? "" : c)}
-                  className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
-                    selectedColor === c ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"
-                  }`}
-                >{c}</button>
-              ))}
+              <span className="text-[10px] text-farm-muted mr-0.5">
+                Colors{selectedColors.length > 0 ? ` (${selectedColors.length})` : ""}:
+              </span>
+              {colors.map((c: string) => {
+                const isSelected = selectedColors.includes(c);
+                return (
+                  <button key={c} type="button"
+                    onClick={() => {
+                      const next = isSelected
+                        ? selectedColors.filter((x) => x !== c)
+                        : [...selectedColors, c];
+                      onColorChange(availabilityItem.id, next);
+                    }}
+                    aria-pressed={isSelected}
+                    className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
+                      isSelected
+                        ? "bg-purple-600 text-white"
+                        : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                    }`}
+                  >{c}</button>
+                );
+              })}
             </div>
           )}
           {colors.length > 0 && totalQty === 0 && (

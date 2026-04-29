@@ -11,10 +11,10 @@ interface CategorySectionProps {
   items: AvailabilityItemWithItem[];
   quantities: Record<string, number>;
   itemNotes: Record<string, string>;
-  itemColors: Record<string, string>;
+  itemColors: Record<string, string[]>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
-  onColorChange: (id: string, color: string) => void;
+  onColorChange: (id: string, colors: string[]) => void;
 }
 
 export function CategorySection({
@@ -69,7 +69,7 @@ export function CategorySection({
               availabilityItem={item}
               quantities={quantities}
               itemNote={itemNotes[item.id] ?? ""}
-              selectedColor={itemColors[item.id] ?? ""}
+              selectedColors={itemColors[item.id] ?? []}
               onQuantityChange={onQuantityChange}
               onNoteChange={onNoteChange}
               onColorChange={onColorChange}
