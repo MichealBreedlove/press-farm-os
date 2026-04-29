@@ -40,7 +40,18 @@ const FLOWERS_EXTENDED = [
   { name: "Allium", file: "allium.png", role: "Ornamental globe", color: "Deep Violet", chip: "pf-crop-allium" },
 ];
 
-const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED];
+const FLOWERS_ALTS = [
+  { name: "Borage (alt)", file: "borage-2.png", role: "Tighter head crop", color: "Blue", chip: "pf-crop-borage" },
+  { name: "Chamomile (alt)", file: "chamomile-2.png", role: "Head only, no stem", color: "White / Yellow", chip: "pf-crop-chamomile" },
+  { name: "Chive Blossom (alt 2)", file: "chive-blossom-2.png", role: "Magenta variant", color: "Magenta", chip: "pf-crop-chive-blossom" },
+  { name: "Chive Blossom (alt 3)", file: "chive-blossom-3.png", role: "Light lavender variant", color: "Lavender", chip: "pf-crop-chive-blossom" },
+  { name: "Gem Marigold (alt)", file: "gem-marigold-2.png", role: "Head only", color: "Yellow", chip: "pf-crop-gem-marigold" },
+  { name: "Marigold (alt)", file: "marigold-2.png", role: "Head only, no stem", color: "Orange", chip: "pf-crop-marigold" },
+  { name: "Nasturtium (alt)", file: "nasturtium-2.png", role: "Head only", color: "Orange", chip: "pf-crop-nasturtium" },
+  { name: "Pansy (alt)", file: "pansy-2.png", role: "Head only, no stem", color: "Purple", chip: "pf-crop-pansy" },
+];
+
+const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED, ...FLOWERS_ALTS];
 
 const PF_PALETTE = [
   { group: "Cream", swatches: [
@@ -278,6 +289,28 @@ export default async function UIKitPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FLOWERS_EXTENDED.map((f) => (
+              <div key={f.file} className="card overflow-hidden text-center">
+                <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
+                  <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
+                </div>
+                <div className="p-4">
+                  <p className="font-display text-base text-farm-dark m-0">{f.name}</p>
+                  <p className="text-[11px] text-farm-muted mt-1">{f.role}</p>
+                  <p className="text-[10px] text-farm-muted/70 tracking-wide uppercase mt-1">{f.color}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FLOWER SYSTEM — ALTERNATE VIEWS */}
+        <section>
+          <div className="flex items-baseline justify-between mb-4">
+            <p className="section-eyebrow text-farm-muted">Flower System · Alternates</p>
+            <p className="text-xs text-farm-muted">8 alternate head-only views</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {FLOWERS_ALTS.map((f) => (
               <div key={f.file} className="card overflow-hidden text-center">
                 <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
                   <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
