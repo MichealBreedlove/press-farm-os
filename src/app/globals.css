@@ -97,32 +97,18 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 180px;
+    padding-right: 88px;
   }
-  /* "PRESS FARM" text in header — mobile-first, scales up on desktop */
-  .page-header::before {
-    content: "PRESS FARM";
-    position: absolute;
-    right: 80px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: "Bank Gothic LT", "BankGothic Lt BT", "Bank Gothic", Arial, sans-serif;
-    font-size: 17px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
-    white-space: nowrap;
-  }
-  /* Marigold flower mark in header — large brand bookend on the right */
+  /* Circular dark seal in header — full brand mark with wordmark + tagline + squash blossom */
   .page-header::after {
     content: "";
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 64px;
-    height: 64px;
-    background-image: url("/assets/pressfarm/flowers/marigold-2.png");
+    width: 68px;
+    height: 68px;
+    background-image: url("/assets/pressfarm/logo/png/pressfarm-circular-seal-dark.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -131,15 +117,11 @@
   /* Larger size on tablet+ */
   @media (min-width: 640px) {
     .page-header {
-      padding-right: 210px;
-    }
-    .page-header::before {
-      right: 96px;
-      font-size: 20px;
+      padding-right: 100px;
     }
     .page-header::after {
-      width: 76px;
-      height: 76px;
+      width: 82px;
+      height: 82px;
     }
   }
   /* Modifier: hide wordmark+logo to free right-side space for buttons */
