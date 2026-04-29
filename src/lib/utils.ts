@@ -118,3 +118,25 @@ export function formatPercentChange(change: number): string {
   const sign = change >= 0 ? "+" : "";
   return `${sign}${change.toFixed(1)}%`;
 }
+
+/** Parse a comma-separated unit_type field into individual unit codes. */
+export function parseUnits(unitType: string | null | undefined): string[] {
+  return String(unitType ?? "")
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Resolve the price an item charges for a particular unit.
+ * Lookup order: items.unit_prices[unit] → items.default_price → null.
+ */
+export function priceForUnit(
+  item: { default_price?: number | null; unit_prices?: Record<string, number> | null },
+  unit: string | null | undefined,
+): number | null {
+  const u = (unit ?? "").trim();
+  const map = item.unit_prices ?? null;
+  if (u && map && typeof map[u] === "number") return map[u];
+  return item.default_price ?? null;
+}

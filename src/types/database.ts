@@ -116,6 +116,7 @@ export interface Database {
           category: ItemCategory;
           unit_type: UnitType;
           default_price: number | null;
+          unit_prices: Record<string, number> | null;
           chef_notes: string | null;
           internal_notes: string | null;
           source: string | null;
@@ -131,6 +132,7 @@ export interface Database {
           category: ItemCategory;
           unit_type: UnitType;
           default_price?: number | null;
+          unit_prices?: Record<string, number> | null;
           chef_notes?: string | null;
           internal_notes?: string | null;
           source?: string | null;
@@ -145,6 +147,7 @@ export interface Database {
           category?: ItemCategory;
           unit_type?: UnitType;
           default_price?: number | null;
+          unit_prices?: Record<string, number> | null;
           chef_notes?: string | null;
           internal_notes?: string | null;
           source?: string | null;

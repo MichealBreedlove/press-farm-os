@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
+import { priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
@@ -145,12 +146,16 @@ export function OrderForm({
         // Persist the specific unit chosen (or fall back to whatever's on the item)
         const unitForOrder = unit ?? (String(ai.item.unit_type).split(",")[0]?.trim() || ai.item.unit_type);
 
+        // Resolve per-unit price → fallback to default_price.
+        // Frozen at submit time so future price changes don't rewrite history.
+        const unitPrice = priceForUnit(ai.item, unitForOrder);
+
         orderedItems.push({
           availabilityItemId: ai.id,
           itemName,
           unitType: unitForOrder,
           quantity: qty,
-          unitPrice: ai.item.default_price ?? null,
+          unitPrice,
           itemNote: note,
         });
       }

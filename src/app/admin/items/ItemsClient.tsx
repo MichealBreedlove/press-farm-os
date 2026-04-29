@@ -13,6 +13,7 @@ interface Item {
   category: ItemCategory;
   unit_type: string;
   default_price: number | null;
+  unit_prices?: Record<string, number> | null;
   is_archived: boolean;
   chef_notes: string | null;
   image_url: string | null;
@@ -174,13 +175,24 @@ export function ItemsClient({ items, addItemHref }: Props) {
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
                       <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
                       <p className="text-xs text-farm-muted mt-0.5">
-                        {item.unit_type
-                          .split(",")
-                          .map((u) => u.trim())
-                          .filter(Boolean)
-                          .map((u) => u.toUpperCase())
-                          .join(" · ")}
-                        {item.default_price != null && ` · $${item.default_price.toFixed(2)}`}
+                        {(() => {
+                          const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
+                          const map = item.unit_prices ?? {};
+                          // If any per-unit price exists, render "SM $15 · LG $30"
+                          const hasPerUnit = units.some((u) => typeof map[u] === "number");
+                          if (hasPerUnit) {
+                            const parts = units.map((u) => {
+                              const p = typeof map[u] === "number" ? map[u] : item.default_price;
+                              return p != null ? `${u.toUpperCase()} $${p.toFixed(2)}` : u.toUpperCase();
+                            });
+                            return parts.join(" · ");
+                          }
+                          // Fallback: just unit codes + default_price (legacy)
+                          const unitsStr = units.map((u) => u.toUpperCase()).join(" · ");
+                          return item.default_price != null
+                            ? `${unitsStr} · $${item.default_price.toFixed(2)}`
+                            : unitsStr;
+                        })()}
                         {item.is_archived && " · Archived"}
                       </p>
                     </Link>

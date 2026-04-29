@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   let query = (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, sort_order")
     .order("category")
     .order("name");
 
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     category: string;
     unit_type: string;
     default_price?: number;
+    unit_prices?: Record<string, number>;
     chef_notes?: string;
     internal_notes?: string;
     source?: string;
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { name, category, unit_type, default_price, chef_notes, internal_notes, source } = body;
+  const { name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source } = body;
 
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
   if (!VALID_CATEGORIES.includes(category as any)) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
@@ -75,6 +76,15 @@ export async function POST(request: Request) {
   const unitParts = (unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
   if (unitParts.length === 0 || unitParts.some((u: string) => !VALID_UNITS.includes(u as any))) {
     return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
+  }
+
+  // Sanitize unit_prices: only keep numeric entries for currently-selected units
+  const cleanedUnitPrices: Record<string, number> = {};
+  if (unit_prices && typeof unit_prices === "object") {
+    for (const u of unitParts) {
+      const v = (unit_prices as any)[u];
+      if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanedUnitPrices[u] = v;
+    }
   }
 
   const admin = createAdminClient();
@@ -87,13 +97,14 @@ export async function POST(request: Request) {
       farm_id: farm.id,
       name: name.trim(),
       category,
-      unit_type,
+      unit_type: unitParts.join(","),
       default_price: default_price ?? null,
+      unit_prices: cleanedUnitPrices,
       chef_notes: chef_notes?.trim() ?? null,
       internal_notes: internal_notes?.trim() ?? null,
       source: source?.trim() ?? null,
     })
-    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

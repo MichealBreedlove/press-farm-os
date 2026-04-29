@@ -28,6 +28,7 @@ interface Item {
   size?: string | null;
   variety?: string | null;
   color?: string | null;
+  unit_prices?: Record<string, number> | null;
 }
 
 interface Props {
@@ -61,6 +62,20 @@ export function ItemForm({ item }: Props) {
     color: item?.color ?? "",
   });
 
+  // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
+  const [unitPrices, setUnitPrices] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    const src = item?.unit_prices ?? {};
+    for (const [k, v] of Object.entries(src)) {
+      if (v != null) out[k] = String(v);
+    }
+    return out;
+  });
+
+  function setUnitPrice(unit: string, value: string) {
+    setUnitPrices((prev) => ({ ...prev, [unit]: value }));
+  }
+
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,11 +89,23 @@ export function ItemForm({ item }: Props) {
     setSaving(true);
     setError(null);
     try {
+      // Pack unit_prices into a numeric map, only for currently-selected units with a price
+      const selectedUnits = form.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
+      const unitPricesPayload: Record<string, number> = {};
+      for (const u of selectedUnits) {
+        const raw = unitPrices[u];
+        if (raw && raw.trim() !== "") {
+          const n = parseFloat(raw);
+          if (!Number.isNaN(n)) unitPricesPayload[u] = n;
+        }
+      }
+
       const body = {
         name: form.name,
         category: form.category,
         unit_type: form.unit_type,
         default_price: form.default_price ? parseFloat(form.default_price) : null,
+        unit_prices: unitPricesPayload,
         chef_notes: form.chef_notes || null,
         internal_notes: form.internal_notes || null,
         source: form.source || null,
@@ -186,9 +213,10 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Unit (multi-select — pick one or more containers this item ships in) */}
+      {/* Unit (multi-select with per-unit pricing).
+          Each selected container chip reveals its own price input. */}
       <div>
-        <label className="form-label">Unit *</label>
+        <label className="form-label">Containers &amp; Pricing *</label>
         <div className="flex flex-wrap gap-1.5">
           {UNIT_TYPES.map((u) => {
             const units = form.unit_type ? form.unit_type.split(",").map((v) => v.trim()).filter(Boolean) : [];
@@ -213,8 +241,47 @@ export function ItemForm({ item }: Props) {
           })}
         </div>
         <p className="text-[11px] text-farm-muted/70 mt-2">
-          Pick every container this item is offered in. Chefs will see a separate quantity for each.
+          Tap every container this item ships in. Chefs will see a separate quantity per container.
         </p>
+
+        {/* Per-unit price inputs — one row per currently selected container */}
+        {(() => {
+          const selected = form.unit_type
+            ? form.unit_type.split(",").map((v) => v.trim()).filter(Boolean)
+            : [];
+          if (selected.length === 0) return null;
+          return (
+            <div className="mt-3 space-y-2 bg-farm-cream/40 rounded-xl p-3 border border-farm-dark/5">
+              <p className="text-[11px] text-farm-muted uppercase tracking-wider">Price per container</p>
+              {selected.map((value) => {
+                const meta = UNIT_TYPES.find((u) => u.value === value);
+                const label = meta?.description ?? value.toUpperCase();
+                return (
+                  <div key={value} className="flex items-center gap-3">
+                    <span className="flex-1 text-sm text-farm-dark">{label}</span>
+                    <div className="relative w-32">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-farm-muted">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={unitPrices[value] ?? ""}
+                        onChange={(e) => setUnitPrice(value, e.target.value)}
+                        placeholder="0.00"
+                        className="w-full border border-farm-dark/10 rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green text-right"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-[10px] text-farm-muted/70 leading-relaxed pt-1">
+                Leave blank to fall back to the Default Price below. Order line totals freeze the
+                price at the moment the chef submits, so changes here only affect future orders.
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Sizes (multi-select + custom) */}
@@ -250,18 +317,22 @@ export function ItemForm({ item }: Props) {
         />
       </div>
 
-      {/* Default Price */}
+      {/* Default / fallback price — used for any container without an explicit per-unit price */}
       <div>
-        <label className="form-label">Default Price ($)</label>
+        <label className="form-label">Default Price ($) — fallback</label>
         <input
           type="number"
           min="0"
           step="0.01"
+          inputMode="decimal"
           value={form.default_price}
           onChange={(e) => set("default_price", e.target.value)}
           placeholder="0.00"
           className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
+        <p className="text-[11px] text-farm-muted/70 mt-1.5">
+          Used only when a container above has no price set.
+        </p>
       </div>
 
       {/* Chef Notes */}
