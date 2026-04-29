@@ -65,6 +65,7 @@ const PF_PALETTE = [
 const ASSET_PATHS = [
   { label: "Primary logo (mandala + wordmark)", path: "/assets/pressfarm/logo/pressfarm-primary.svg" },
   { label: "Mandala only (color)", path: "/assets/pressfarm/logo/png/pressfarm-mandala-only.png" },
+  { label: "Mandala monochrome — deep green", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-deep-green.png" },
   { label: "Mandala monochrome — black", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" },
   { label: "Mandala monochrome — gold", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" },
   { label: "Seal logo (cream background)", path: "/assets/pressfarm/logo/pressfarm-seal.png" },
@@ -104,27 +105,34 @@ export default async function UIKitPage() {
         {/* MANDALA VARIANTS */}
         <section>
           <p className="section-eyebrow text-farm-muted mb-4">Mandala Variants</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="card text-center p-6">
-              <div className="bg-farm-cream rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
-                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png" alt="Color mandala" className="max-h-40 w-auto" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-3 flex items-center justify-center" style={{ minHeight: "150px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png" alt="Color mandala" className="max-h-32 w-auto" />
               </div>
               <p className="font-display text-base text-farm-dark mt-3 m-0">Color</p>
-              <p className="text-xs text-farm-muted mt-1">Primary brand · website hero · login</p>
+              <p className="text-[11px] text-farm-muted mt-1">Primary · web hero</p>
             </div>
-            <div className="card text-center p-6">
-              <div className="bg-farm-cream rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
-                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" alt="Monochrome black mandala" className="max-h-40 w-auto" />
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-3 flex items-center justify-center" style={{ minHeight: "150px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-deep-green.png" alt="Monochrome green mandala" className="max-h-32 w-auto" />
+              </div>
+              <p className="font-display text-base text-farm-dark mt-3 m-0">Mono · Green</p>
+              <p className="text-[11px] text-farm-muted mt-1">Brand-coherent · single-color print</p>
+            </div>
+            <div className="card text-center p-5">
+              <div className="bg-farm-cream rounded-xl py-3 flex items-center justify-center" style={{ minHeight: "150px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" alt="Monochrome black mandala" className="max-h-32 w-auto" />
               </div>
               <p className="font-display text-base text-farm-dark mt-3 m-0">Mono · Black</p>
-              <p className="text-xs text-farm-muted mt-1">B&amp;W print · invoices · stamps</p>
+              <p className="text-[11px] text-farm-muted mt-1">B&amp;W print · stamps</p>
             </div>
-            <div className="card text-center p-6">
-              <div className="bg-farm-dark rounded-xl py-4 flex items-center justify-center" style={{ minHeight: "180px" }}>
-                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" alt="Monochrome gold mandala" className="max-h-40 w-auto" />
+            <div className="card text-center p-5">
+              <div className="bg-farm-dark rounded-xl py-3 flex items-center justify-center" style={{ minHeight: "150px" }}>
+                <img src="/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" alt="Monochrome gold mandala" className="max-h-32 w-auto" />
               </div>
               <p className="font-display text-base text-farm-dark mt-3 m-0">Mono · Gold</p>
-              <p className="text-xs text-farm-muted mt-1">Premium · letterhead · dark surfaces</p>
+              <p className="text-[11px] text-farm-muted mt-1">Premium · dark surfaces</p>
             </div>
           </div>
         </section>
