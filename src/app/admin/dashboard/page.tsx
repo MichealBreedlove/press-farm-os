@@ -31,6 +31,27 @@ function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
+// Force the page to re-render on every request so the random KPI flowers
+// (and live stats) refresh each time, instead of being cached.
+export const dynamic = "force-dynamic";
+
+// Curated pool of compact, watermark-friendly flowers for the 4 KPI tiles.
+// Each refresh picks 4 distinct ones at random.
+const KPI_FLOWER_POOL = [
+  "calendula", "marigold", "marigold-2", "gem-marigold", "gem-marigold-2",
+  "borage", "borage-2", "bachelor-button",
+  "pansy", "pansy-2", "viola", "chive-blossom", "chive-blossom-2",
+  "chive-blossom-3", "allium",
+  "chamomile", "chamomile-2", "alyssum",
+  "buttercup", "california-poppy",
+  "squash-blossom", "squash-bud", "nasturtium-2",
+];
+
+function pickKpiFlowers(): [string, string, string, string] {
+  const shuffled = [...KPI_FLOWER_POOL].sort(() => Math.random() - 0.5);
+  return [shuffled[0], shuffled[1], shuffled[2], shuffled[3]];
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -126,30 +147,37 @@ export default async function AdminDashboardPage() {
           <RefreshButton />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/calendula.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-            <p className="text-xs text-gray-400 relative">{monthName} Revenue</p>
-            <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
-            <p className="text-[10px] text-gray-400 mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
-          </Link>
-          <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/chive-blossom.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-            <p className="text-xs text-gray-400 relative">{monthName} Expenses</p>
-            <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
-            <p className="text-[10px] text-gray-400 mt-1 relative">{(monthExpenses ?? []).length} entries</p>
-          </Link>
-          <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/borage.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-            <p className="text-xs text-gray-400 relative">Pending Orders</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1 relative">{pendingOrders ?? 0}</p>
-            <p className="text-[10px] text-gray-400 mt-1 relative">awaiting fulfillment</p>
-          </Link>
-          <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/viola.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
-            <p className="text-xs text-gray-400 relative">Labor (7 days)</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
-            <p className="text-[10px] text-gray-400 mt-1 relative">this week</p>
-          </Link>
+          {(() => {
+            const [revFlower, expFlower, pendFlower, labFlower] = pickKpiFlowers();
+            return (
+              <>
+                <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+                  <img src={`/assets/pressfarm/flowers/${revFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                  <p className="text-xs text-gray-400 relative">{monthName} Revenue</p>
+                  <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
+                </Link>
+                <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+                  <img src={`/assets/pressfarm/flowers/${expFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                  <p className="text-xs text-gray-400 relative">{monthName} Expenses</p>
+                  <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 relative">{(monthExpenses ?? []).length} entries</p>
+                </Link>
+                <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
+                  <img src={`/assets/pressfarm/flowers/${pendFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                  <p className="text-xs text-gray-400 relative">Pending Orders</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1 relative">{pendingOrders ?? 0}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 relative">awaiting fulfillment</p>
+                </Link>
+                <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
+                  <img src={`/assets/pressfarm/flowers/${labFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
+                  <p className="text-xs text-gray-400 relative">Labor (7 days)</p>
+                  <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
+                  <p className="text-[10px] text-gray-400 mt-1 relative">this week</p>
+                </Link>
+              </>
+            );
+          })()}
         </div>
 
         {/* Quick actions */}
