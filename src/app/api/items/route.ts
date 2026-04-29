@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   let query = (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, sort_order")
+    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order")
     .order("category")
     .order("name");
 
@@ -99,12 +99,11 @@ export async function POST(request: Request) {
       category,
       unit_type: unitParts.join(","),
       default_price: default_price ?? null,
-      unit_prices: cleanedUnitPrices,
       chef_notes: chef_notes?.trim() ?? null,
       internal_notes: internal_notes?.trim() ?? null,
       source: source?.trim() ?? null,
     })
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
+    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -11,9 +11,9 @@
 
 const AVAIL_SELECT = `
   id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
-  available_sizes, available_colors, available_units, created_at, updated_at,
+  available_sizes, available_colors, created_at, updated_at,
   item:items(
-    id, farm_id, name, category, unit_type, default_price, unit_prices, chef_notes,
+    id, farm_id, name, category, unit_type, default_price, chef_notes,
     internal_notes, source, is_archived, sort_order, image_url,
     season_status, season_note, size, color, created_at, updated_at
   )
@@ -21,7 +21,7 @@ const AVAIL_SELECT = `
 
 const AVAIL_SELECT_BARE = `
   id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
-  available_sizes, available_colors, available_units, created_at, updated_at
+  available_sizes, available_colors, created_at, updated_at
 `;
 
 interface AvailabilityFetchOptions {

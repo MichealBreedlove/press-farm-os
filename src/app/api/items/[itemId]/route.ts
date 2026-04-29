@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Params }) {
 
   const { data: item, error } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, sort_order")
+    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order")
     .eq("id", itemId)
     .single();
 
@@ -71,18 +71,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     updates.unit_type = parts.join(",");
   }
   if (body.default_price !== undefined) updates.default_price = body.default_price === null ? null : Number(body.default_price);
-  if (body.unit_prices !== undefined) {
-    const cleaned: Record<string, number> = {};
-    if (body.unit_prices && typeof body.unit_prices === "object") {
-      // Only keep numeric, non-negative entries; ignore any unit codes not in VALID_UNITS
-      for (const [k, v] of Object.entries(body.unit_prices as Record<string, unknown>)) {
-        if (!VALID_UNITS.includes(k as any)) continue;
-        const n = typeof v === "number" ? v : parseFloat(String(v));
-        if (Number.isFinite(n) && n >= 0) cleaned[k] = n;
-      }
-    }
-    updates.unit_prices = cleaned;
-  }
+  // unit_prices: ignore for now — re-enable after migration 022 runs in Supabase.
+  // (Until then, writing unit_prices would fail with "column does not exist".)
   if (body.chef_notes !== undefined) updates.chef_notes = body.chef_notes || null;
   if (body.internal_notes !== undefined) updates.internal_notes = body.internal_notes || null;
   if (body.source !== undefined) updates.source = body.source || null;
@@ -110,7 +100,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     .from("items")
     .update(updates)
     .eq("id", itemId)
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
+    .select("id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
