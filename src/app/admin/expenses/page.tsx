@@ -93,6 +93,18 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
       />
 
       <div className="px-4 py-6">
+        <div className="flex justify-end mb-3">
+          <Link
+            href="/admin/expenses/data"
+            className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+            title="Bulk import / export"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Import / Export
+          </Link>
+        </div>
         <ExpensesClient
           month={currentMonth}
           expenses={expenses}

@@ -2,6 +2,8 @@
 
 import { useState, useRef, useCallback } from "react";
 
+type Tab = "export" | "import";
+
 interface PreviewResult {
   deliveries?: number;
   lines?: number;
@@ -22,6 +24,10 @@ interface Props {
 }
 
 export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
+  const [tab, setTab] = useState<Tab>("export");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
@@ -103,6 +109,102 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
           <p className="text-xs text-farm-muted mt-0.5">across all deliveries</p>
         </div>
       </div>
+
+      {/* Tab strip */}
+      <div className="bg-white rounded-2xl border border-farm-dark/5 p-1 shadow-sm flex gap-1">
+        <button
+          type="button"
+          onClick={() => setTab("export")}
+          className={`flex-1 min-h-[44px] rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            tab === "export" ? "bg-farm-green text-white shadow-sm" : "text-farm-muted hover:bg-farm-cream/40"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("import")}
+          className={`flex-1 min-h-[44px] rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+            tab === "import" ? "bg-farm-green text-white shadow-sm" : "text-farm-muted hover:bg-farm-cream/40"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v9a3 3 0 01-3 3H7a3 3 0 01-3-3V8m12 4l-4-4m0 0l-4 4m4-4v12" />
+          </svg>
+          Import
+        </button>
+      </div>
+
+      {/* EXPORT TAB */}
+      {tab === "export" && (
+        <div className="bg-white rounded-2xl border border-farm-dark/5 overflow-hidden shadow-sm">
+          <div className="px-5 pt-5 pb-3 bg-gradient-to-br from-farm-green/8 to-farm-cream/40 border-b border-farm-dark/5">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green/80 font-semibold">CSV Snapshot</p>
+            <p className="font-display text-xl text-farm-dark mt-1">Download delivery history</p>
+            <p className="text-sm text-farm-muted mt-1.5 leading-relaxed">
+              One row per fulfilled line item, joined with delivery date + restaurant + item name.
+            </p>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] tracking-[0.18em] uppercase text-farm-muted font-semibold mb-1.5 block">From</label>
+                <input
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="w-full border border-farm-dark/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] tracking-[0.18em] uppercase text-farm-muted font-semibold mb-1.5 block">To</label>
+                <input
+                  type="date"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  className="w-full border border-farm-dark/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+                />
+              </div>
+            </div>
+            {(from || to) && (
+              <button type="button" onClick={() => { setFrom(""); setTo(""); }} className="text-xs text-farm-muted hover:text-farm-green">
+                Clear date range
+              </button>
+            )}
+
+            <div className="rounded-xl border border-farm-dark/5 overflow-hidden">
+              <div className="bg-farm-cream/40 px-3 py-2 border-b border-farm-dark/5">
+                <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted font-semibold">Columns</p>
+              </div>
+              <div className="px-3 py-2.5 flex flex-wrap gap-1">
+                {["Date", "Restaurant", "Item", "Quantity", "Unit", "Unit Price", "Line Total", "Status", "Notes"].map((col) => (
+                  <span key={col} className="text-[10px] bg-farm-cream/60 text-farm-dark/80 px-2 py-0.5 rounded">{col}</span>
+                ))}
+              </div>
+            </div>
+
+            <a
+              href={`/api/deliveries/export${(from || to) ? `?${new URLSearchParams({ ...(from && { from }), ...(to && { to }) }).toString()}` : ""}`}
+              className="w-full min-h-[52px] bg-farm-green text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-farm-dark transition-colors shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download {from || to ? "filtered" : "all"} delivery lines
+            </a>
+
+            <p className="text-[11px] text-farm-muted text-center">
+              File: <code className="font-pf-mono bg-farm-cream/60 px-1.5 py-0.5 rounded">press-farm-deliveries-{new Date().toISOString().slice(0, 10)}.csv</code>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT TAB */}
+      {tab === "import" && (<>
 
       {/* Helper banner */}
       <div className="bg-gradient-to-br from-blue-50 to-farm-cream/30 border border-blue-100 rounded-2xl p-4">
@@ -271,6 +373,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
           </button>
         </div>
       )}
+      </>)}
     </div>
   );
 }

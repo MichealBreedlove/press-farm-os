@@ -259,15 +259,15 @@ export default async function AdminDeliveriesPage({
         <GenerateDatesButton />
         <LogPastDelivery />
 
-        {/* Bulk import from legacy Excel tracker */}
+        {/* Combined Import / Export — bulk delivery history I/O */}
         <Link
           href="/admin/deliveries/data"
           className="block w-full min-h-[48px] mt-2 rounded-xl border border-farm-dark/10 text-sm font-medium text-farm-dark/85 bg-white hover:border-farm-green hover:text-farm-green transition-colors flex items-center justify-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v9a3 3 0 01-3 3H7a3 3 0 01-3-3V8m12 4l-4-4m0 0l-4 4m4-4v12" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          Bulk Import History
+          Import / Export
         </Link>
 
       </div>
