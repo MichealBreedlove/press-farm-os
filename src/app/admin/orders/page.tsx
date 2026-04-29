@@ -4,6 +4,7 @@ import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
 import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 
@@ -79,6 +80,14 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   const restaurants: { id: string; name: string }[] = restaurantsRaw ?? [];
 
+  // Count submitted vs fulfilled orders for the current date
+  const submittedCount = orders.filter((o) => o.status === "submitted").length;
+  const fulfilledCount = orders.filter((o) => o.status === "fulfilled").length;
+  const orderSummary =
+    orders.length === 0
+      ? "No orders yet for this date"
+      : `${submittedCount} pending · ${fulfilledCount} fulfilled · ${orders.length} total`;
+
   return (
     <main>
       <header className="page-header sticky top-0 z-30">
@@ -90,8 +99,15 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           formattedDate={formatDeliveryDate(activeDate)}
         />
       </header>
+      <EditorialHero
+        eyebrow="Daily Operations"
+        title="Orders"
+        subtitle={orderSummary}
+        flower="squash-blossom"
+        backHref="/admin/dashboard"
+      />
 
-      <div className="px-4 py-6 space-y-4">
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-4">
         {restaurants.map((restaurant) => {
           const order = orders.find((o) => o.restaurant?.id === restaurant.id);
 

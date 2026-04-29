@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 import { PrintButton } from "@/components/shared/PrintButton";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
@@ -142,11 +143,16 @@ export default async function AdminReportsPage() {
   return (
     <main className="pb-24">
       <header className="page-header">
-        <div className="flex items-center justify-between">
-          <h1 className="page-title">Reports</h1>
-          <PrintButton />
-        </div>
+        <h1 className="page-title">Reports</h1>
       </header>
+      <EditorialHero
+        eyebrow="Reports & Analytics"
+        title="By the Numbers"
+        subtitle="Revenue, expenses, year-over-year growth, and benchmarks"
+        flower="green-leaf"
+        backHref="/admin/dashboard"
+        accessory={<PrintButton />}
+      />
 
       {/* Executive Summary CTA */}
       <div className="px-4 pt-4">

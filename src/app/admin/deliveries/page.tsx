@@ -7,6 +7,7 @@ import { CalendarView } from "./CalendarView";
 import { LogPastDelivery } from "./LogPastDelivery";
 import { GenerateDatesButton } from "./GenerateDatesButton";
 import { ViewToggle } from "./ViewToggle";
+import { EditorialHero } from "@/components/shared/EditorialHero";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -107,8 +108,15 @@ export default async function AdminDeliveriesPage({
       <header className="page-header">
         <h1 className="page-title">Deliveries</h1>
       </header>
+      <EditorialHero
+        eyebrow="Daily Operations"
+        title="Deliveries"
+        subtitle={`${monthLabel(today)} · ${formatCurrency(monthTotal)} across ${monthDeliveries.length} ${monthDeliveries.length === 1 ? "delivery" : "deliveries"}`}
+        flower="marigold"
+        backHref="/admin/dashboard"
+      />
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-4 max-w-3xl mx-auto space-y-4">
         {filterMonth && (
           <div className="bg-farm-cream/60 border border-farm-green/15 rounded-xl px-4 py-2.5 flex items-center justify-between">
             <p className="text-sm text-farm-green">
