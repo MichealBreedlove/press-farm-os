@@ -30,7 +30,7 @@ export default function OrderConfirmedPage() {
         {/* Hero floral mark — replaces generic checkmark with brand illustration */}
         <div className="relative mx-auto mb-6 w-56 h-56 sm:w-72 sm:h-72 animate-[scale-in_0.4s_ease-out]">
           <img
-            src="/assets/flowers/squash-blossom.png"
+            src="/assets/pressfarm/flowers/squash-blossom.png"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-contain"

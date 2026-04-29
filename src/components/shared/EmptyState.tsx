@@ -1,19 +1,24 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 
-const FLOWER_OPTIONS = [
-  "/assets/flowers/nasturtium.png",
-  "/assets/flowers/squash-blossom.png",
-  "/assets/flowers/marigold.png",
-  "/assets/flowers/violas.png",
-  "/assets/flowers/pea-flower.png",
-  "/assets/flowers/bachelor-buttons.png",
-];
+const FLOWERS_BASE = "/assets/pressfarm/flowers";
+
+/** Full set of 28 flower illustrations available for empty states. */
+const ALL_FLOWERS = [
+  "alyssum", "anise-hyssop", "bachelor-button", "borage", "calendula",
+  "chamomile", "chervil", "chive-blossom", "dill", "fairy-vetch",
+  "fava-flower", "fennel", "garlic-chive", "gem-marigold", "green-leaf",
+  "lavender", "marigold", "mustard-flower", "nasturtium", "nasturtium-leaf",
+  "pansy", "pea-flower", "rosemary", "squash-blossom", "squash-bud",
+  "thai-basil", "thyme", "viola",
+] as const;
+
+export type FlowerName = typeof ALL_FLOWERS[number] | "random";
 
 interface EmptyStateProps {
   icon?: ReactNode;
   /** Use a bundled flower illustration as the visual */
-  flower?: "nasturtium" | "squash-blossom" | "marigold" | "violas" | "pea-flower" | "bachelor-buttons" | "random";
+  flower?: FlowerName;
   title: string;
   description?: string;
   actionLabel?: string;
@@ -25,9 +30,9 @@ interface EmptyStateProps {
  */
 export function EmptyState({ icon, flower, title, description, actionLabel, actionHref }: EmptyStateProps) {
   const flowerSrc = flower === "random"
-    ? FLOWER_OPTIONS[Math.floor(Math.random() * FLOWER_OPTIONS.length)]
+    ? `${FLOWERS_BASE}/${ALL_FLOWERS[Math.floor(Math.random() * ALL_FLOWERS.length)]}.png`
     : flower
-    ? `/assets/flowers/${flower}.png`
+    ? `${FLOWERS_BASE}/${flower}.png`
     : null;
 
   return (

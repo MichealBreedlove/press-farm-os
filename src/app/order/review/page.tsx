@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { UNIT_LABELS } from "@/lib/constants";
+import { flowerImageForName } from "@/lib/flower-images";
 import type { OrderFormData } from "@/components/order/OrderForm";
 import type { UnitType } from "@/types";
 
@@ -114,23 +115,31 @@ export default function OrderReviewPage() {
             <p className="section-eyebrow text-farm-muted">Items · {items.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
-            {items.map((item) => (
-              <li key={item.availabilityItemId} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-farm-dark truncate">{item.itemName}</p>
-                    <p className="text-xs text-farm-muted mt-0.5">
-                      {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
-                    </p>
+            {items.map((item) => {
+              const flowerSrc = flowerImageForName(item.itemName);
+              return (
+                <li key={item.availabilityItemId} className="px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    {flowerSrc && (
+                      <div className="w-12 h-12 rounded-lg bg-farm-cream border border-farm-dark/5 flex items-center justify-center flex-shrink-0">
+                        <img src={flowerSrc} alt="" aria-hidden="true" className="w-9 h-9 object-contain" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-farm-dark truncate">{item.itemName}</p>
+                      <p className="text-xs text-farm-muted mt-0.5">
+                        {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-semibold text-farm-dark">
+                        &times; {item.quantity}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-farm-dark">
-                      &times; {item.quantity}
-                    </p>
-                  </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
           <div className="px-4 py-3 border-t border-gray-100 flex justify-between items-center bg-farm-cream/40">
             <span className="text-sm font-semibold text-farm-dark">Total Items</span>

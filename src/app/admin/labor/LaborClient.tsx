@@ -247,7 +247,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
       {/* Entries list */}
       {entries.length === 0 ? (
         <div className="text-center py-10">
-          <img src="/assets/flowers/marigold.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
+          <img src="/assets/pressfarm/flowers/marigold.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
           <h3 className="text-base font-semibold text-farm-dark">Track your hours</h3>
           <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
             Log farm work to see weekly totals and pay reports. Tap &ldquo;Log Hours&rdquo; above to add your first entry.

@@ -78,16 +78,20 @@ export function ItemRow({
     <div className={cn("py-3 border-b border-gray-100 last:border-0", isUnavailable && "opacity-50")}>
       {/* Main row: photo + name + badges + stepper (only for items WITHOUT sizes) */}
       <div className="flex items-center gap-3">
-        {/* Photo — admin-set photo, or floral wreath placeholder */}
+        {/* Photo — admin-set photo, auto-matched brand flower, or wreath placeholder */}
         {(() => {
           const imgUrl = getItemImageUrl({ name: item.name, image_url: (item as any).image_url });
+          const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
           if (imgUrl) {
             return (
-              <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+              <div className={cn(
+                "w-24 h-24 rounded-lg overflow-hidden flex-shrink-0",
+                isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-gray-100"
+              )}>
                 <img
                   src={imgUrl}
                   alt={item.name}
-                  className="w-full h-full object-cover"
+                  className={cn("w-full h-full", isFlower ? "object-contain p-1.5" : "object-cover")}
                   loading="lazy"
                 />
               </div>

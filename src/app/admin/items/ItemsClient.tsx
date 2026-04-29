@@ -146,7 +146,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
                     <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
                       {(() => {
                         const imgUrl = getItemImageUrl(item);
-                        const isFlower = imgUrl?.startsWith("/assets/flowers/");
+                        const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
                         if (imgUrl) {
                           return (
                             <div className={`w-20 h-20 rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-gray-100"}`}>
@@ -255,7 +255,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
           </p>
         ) : (
           <div className="text-center py-10">
-            <img src="/assets/flowers/nasturtium.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
+            <img src="/assets/pressfarm/flowers/nasturtium.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
             <h3 className="text-base font-semibold text-farm-dark">Your item catalog is empty</h3>
             <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
               Add the produce you grow so chefs can order it. Start with one or import in bulk via Settings.
