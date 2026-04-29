@@ -127,25 +127,25 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/calendula.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <img src="/assets/pressfarm/flowers/calendula.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
             <p className="text-xs text-gray-400 relative">{monthName} Revenue</p>
             <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
             <p className="text-[10px] text-gray-400 mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
           </Link>
           <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/thyme.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <img src="/assets/pressfarm/flowers/chive-blossom.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
             <p className="text-xs text-gray-400 relative">{monthName} Expenses</p>
             <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
             <p className="text-[10px] text-gray-400 mt-1 relative">{(monthExpenses ?? []).length} entries</p>
           </Link>
           <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/borage.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <img src="/assets/pressfarm/flowers/borage.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
             <p className="text-xs text-gray-400 relative">Pending Orders</p>
             <p className="text-2xl font-bold text-blue-600 mt-1 relative">{pendingOrders ?? 0}</p>
             <p className="text-[10px] text-gray-400 mt-1 relative">awaiting fulfillment</p>
           </Link>
           <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
-            <img src="/assets/pressfarm/flowers/lavender.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <img src="/assets/pressfarm/flowers/viola.png" alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
             <p className="text-xs text-gray-400 relative">Labor (7 days)</p>
             <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
             <p className="text-[10px] text-gray-400 mt-1 relative">this week</p>
