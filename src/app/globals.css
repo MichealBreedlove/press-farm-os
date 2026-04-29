@@ -167,6 +167,62 @@
     text-transform: uppercase;
     margin: 0;
     line-height: 1.4;
+    position: relative;
+  }
+  /* Section eyebrow with a small flower bullet — modifier:
+     <p className="section-eyebrow with-flower">Overview</p> */
+  .section-eyebrow.with-flower::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    vertical-align: -2px;
+    background-image: url("/assets/pressfarm/flowers/marigold-2.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  /* Page-title floral decoration — drops a small flower above a page title.
+     Use on a wrapper <div className="page-title-floral"><h1>...</h1></div> */
+  .page-title-floral {
+    position: relative;
+    padding-top: 4px;
+  }
+  .page-title-floral::before {
+    content: "";
+    display: block;
+    width: 32px;
+    height: 32px;
+    margin: 0 0 6px 0;
+    background-image: url("/assets/pressfarm/flowers/squash-blossom.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left center;
+    opacity: 0.85;
+  }
+
+  /* Decorative card top accent — small floral bookend at top-right of a card.
+     Add: <div className="card with-floral-accent">...</div> */
+  .with-floral-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .with-floral-accent::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 64px;
+    height: 64px;
+    background-image: url("/assets/pressfarm/flowers/calendula.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.18;
+    pointer-events: none;
+    transform: rotate(15deg);
   }
 
   /* Filled card variants for KPI/summary blocks */

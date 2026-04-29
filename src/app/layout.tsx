@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Roboto, Baskervville, Inter, Cormorant_Garamond, JetBrains_Mono } from "next/font/google";
 import { ServiceWorkerRegistrar } from "@/components/shared/ServiceWorkerRegistrar";
+import { FloralCorners } from "@/components/shared/FloralCorners";
 import "./globals.css";
 import "./pressfarm-tokens.css";
 
@@ -78,6 +79,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
       </head>
       <body>
+        <FloralCorners opacity={0.09} />
         {children}
         <ServiceWorkerRegistrar />
       </body>
