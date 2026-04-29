@@ -63,17 +63,9 @@ export default function AboutPage() {
     <main className="min-h-screen bg-farm-cream">
 
       {/* ============================================================
-           HERO — masthead with floating flower accents
+           HERO — masthead, clean (no floating flowers)
            ============================================================ */}
       <section className="relative px-6 py-20 sm:py-28 text-center overflow-hidden bg-farm-cream/60">
-        {/* Floating flower accents around the hero — soft, watercolor */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <img src="/assets/pressfarm/flowers/borage.png" className="absolute top-[10%] left-[8%] w-20 sm:w-28 opacity-50" alt="" style={{ transform: "rotate(-18deg)" }} />
-          <img src="/assets/pressfarm/flowers/marigold.png" className="absolute top-[14%] right-[10%] w-24 sm:w-32 opacity-50" alt="" style={{ transform: "rotate(15deg)" }} />
-          <img src="/assets/pressfarm/flowers/viola.png" className="absolute bottom-[15%] left-[12%] w-20 sm:w-24 opacity-45" alt="" style={{ transform: "rotate(8deg)" }} />
-          <img src="/assets/pressfarm/flowers/chamomile.png" className="absolute bottom-[18%] right-[14%] w-16 sm:w-20 opacity-50" alt="" style={{ transform: "rotate(-12deg)" }} />
-        </div>
-
         <div className="relative max-w-2xl mx-auto space-y-6">
           <PressFarmLogo size="lg" />
 
