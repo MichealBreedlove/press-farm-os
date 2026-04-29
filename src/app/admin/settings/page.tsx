@@ -13,7 +13,6 @@ interface NavCard {
 const NAV_CARDS: NavCard[] = [
   { href: "/admin/settings/users", title: "User Management", description: "Invite chefs, manage accounts, assign restaurants" },
   { href: "/admin/settings/emails", title: "Email Settings", description: "Configure email addresses for notifications and reminders" },
-  { href: "/admin/settings/import", title: "Data Import", description: "Import items and delivery history from Excel" },
   { href: "/admin/settings/suggestions", title: "Suggestion Box", description: "Ideas and feedback for improving the system" },
   { href: "/admin/settings/data-check", title: "Data Check", description: "Verify item counts, deliveries, and import completeness" },
 ];

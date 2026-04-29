@@ -113,7 +113,6 @@ export default async function AdminDashboardPage() {
       eyebrow: "Configuration",
       cards: [
         { href: "/admin/settings/users", title: "Users", description: "Manage accounts", flower: "pansy" },
-        { href: "/admin/settings/import", title: "Import", description: "Excel data", flower: "chamomile" },
         { href: "/admin/settings", title: "Settings", description: "App config", flower: "fennel" },
         { href: "/admin/ui-kit", title: "UI Kit", description: "Brand reference", flower: "allium" },
       ],

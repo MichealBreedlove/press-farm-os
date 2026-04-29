@@ -34,6 +34,36 @@ function pick(row: Record<string, unknown>, ...keys: string[]): string {
   return "";
 }
 
+/** Legacy KEY-tab category detector — keyword matching on item name. */
+function detectCategoryFromName(name: string): ItemCategory {
+  const n = name.toLowerCase();
+  if (/nasturtium|pansy|viola|borage|marigold|calendula|chive blossom|flower|petal|bloom/.test(n)) return "flowers";
+  if (/micro|shoot|tendril|pea tip|sunflower|radish|beet|cress|amaranth|basil micro/.test(n)) return "micros_leaves";
+  if (/basil|mint|thyme|oregano|rosemary|sage|tarragon|chive|dill|cilantro|parsley|herb|leaf|leaves|sorrel|shiso|perilla/.test(n)) return "herbs_leaves";
+  if (/tomato|pepper|squash|zucchini|cucumber|eggplant|bean|pea|corn|carrot|beet|radish|potato|onion|garlic|leek|kale|chard|spinach|lettuce|arugula|fennel|celery|kohlrabi/.test(n)) return "fruit_veg";
+  if (/kit/.test(n)) return "kits";
+  return "herbs_leaves";
+}
+
+/** Normalize a free-text unit string to a valid unit code. */
+const LEGACY_UNIT_MAP: Record<string, string> = {
+  ea: "ea", each: "ea",
+  sm: "sm", small: "sm",
+  lg: "lg", large: "lg",
+  gb: "gb", "green bin": "gb",
+  lbs: "lbs", lb: "lbs", pound: "lbs", pounds: "lbs",
+  bu: "bu", bunch: "bu", bunches: "bu",
+  qt: "qt", quart: "qt",
+  bx: "bx", box: "bx",
+  cs: "cs", case: "cs",
+  pt: "pt", pint: "pt",
+  kit: "kit",
+};
+function normalizeLegacyUnit(raw: string): string {
+  const key = String(raw).trim().toLowerCase();
+  return LEGACY_UNIT_MAP[key] ?? "ea";
+}
+
 function parsePricesField(raw: string): Record<string, number> {
   if (!raw) return {};
   const out: Record<string, number> = {};
@@ -83,12 +113,25 @@ export async function POST(request: Request) {
   // SheetJS handles both CSV and XLSX; first sheet is used for both.
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", raw: false, cellText: true });
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-  if (!firstSheet) {
+
+  // Auto-detect: if the workbook has a sheet named "KEY" (the legacy Daily
+  // Delivery Tracking Sheet format), parse THAT sheet using the legacy
+  // column shape ("Item Name", "Unit", "Price Per Unit") and auto-categorize
+  // by keyword. Otherwise, treat the first sheet as our 13-column CSV format.
+  const keySheetName = workbook.SheetNames.find(
+    (n) => n.trim().toUpperCase() === "KEY"
+  );
+  const isLegacyKeyTab = Boolean(keySheetName);
+
+  const sourceSheet = isLegacyKeyTab
+    ? workbook.Sheets[keySheetName!]
+    : workbook.Sheets[workbook.SheetNames[0]];
+
+  if (!sourceSheet) {
     return NextResponse.json({ error: "Empty file — no sheet found" }, { status: 422 });
   }
 
-  const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sourceSheet, { defval: "" });
 
   const parsed: ParsedRow[] = [];
   const skipped: { row: number; name: string; reason: string }[] = [];
@@ -99,6 +142,35 @@ export async function POST(request: Request) {
     const name = pick(raw, "Name", "Item Name", "Item");
     if (!name) {
       skipped.push({ row: rowNum, name: "(blank)", reason: "missing Name" });
+      return;
+    }
+
+    // ── Legacy KEY-tab path: 3-column shape (Item Name, Unit, Price Per Unit) ──
+    // Auto-categorize by keyword + single unit + flat price.
+    if (isLegacyKeyTab) {
+      const unitRaw = pick(raw, "Unit", "UNIT", "Containers");
+      const priceRaw = pick(raw, "Price Per Unit", "Price", "PRICE");
+      const priceNum = parseFloat(String(priceRaw).replace(/[^0-9.]/g, ""));
+      if (!Number.isFinite(priceNum) || priceNum < 0) {
+        skipped.push({ row: rowNum, name, reason: "invalid Price" });
+        return;
+      }
+      const unit = normalizeLegacyUnit(unitRaw);
+      parsed.push({
+        name,
+        category: detectCategoryFromName(name),
+        variety: null,
+        color: null,
+        size: null,
+        unit_type: unit,
+        unit_prices: { [unit]: priceNum },
+        default_price: priceNum,
+        chef_notes: null,
+        internal_notes: null,
+        source: null,
+        season_status: "available",
+        is_archived: false,
+      });
       return;
     }
 
@@ -158,6 +230,7 @@ export async function POST(request: Request) {
       total: parsed.length,
       skipped: skipped.length,
       skippedRows: skipped.slice(0, 10),
+      format: isLegacyKeyTab ? "legacy-key-tab" : "items-csv",
       preview: parsed.slice(0, 20).map((r) => ({
         name: r.name,
         category: r.category,
@@ -223,5 +296,6 @@ export async function POST(request: Request) {
     skipped: skipped.length,
     errors: errors.length,
     errorDetails: errors.slice(0, 10),
+    format: isLegacyKeyTab ? "legacy-key-tab" : "items-csv",
   });
 }

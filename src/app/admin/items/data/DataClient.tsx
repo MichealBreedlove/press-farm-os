@@ -18,6 +18,7 @@ interface PreviewResult {
   skipped: number;
   preview: PreviewRow[];
   skippedRows: { row: number; name: string; reason: string }[];
+  format?: "legacy-key-tab" | "items-csv";
 }
 
 interface ImportResult {
@@ -27,6 +28,7 @@ interface ImportResult {
   skipped: number;
   errors: number;
   errorDetails: { name: string; error: string }[];
+  format?: "legacy-key-tab" | "items-csv";
 }
 
 interface Props {
@@ -254,10 +256,11 @@ export function DataClient({ activeCount, archivedCount }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v9a3 3 0 01-3 3H7a3 3 0 01-3-3V8m12 4l-4-4m0 0l-4 4m4-4v12" />
                 </svg>
               </div>
-              <p className="font-display text-lg text-farm-dark">Drop your CSV here</p>
+              <p className="font-display text-lg text-farm-dark">Drop your file here</p>
               <p className="text-sm text-farm-muted mt-1">or tap to browse — accepts .csv or .xlsx</p>
               <p className="text-[11px] text-farm-muted/70 mt-3 max-w-sm mx-auto">
-                Use the export above as a template. Headers must match: Name, Category, Containers, Prices, …
+                CSV with the export columns, <em>or</em> drop the original Daily Delivery Tracking Sheet
+                — we&apos;ll detect the <strong>KEY</strong> tab automatically.
               </p>
             </div>
           )}
@@ -321,6 +324,14 @@ export function DataClient({ activeCount, archivedCount }: Props) {
                 <p className="font-display text-2xl text-farm-dark mt-1">
                   {preview.total} item{preview.total === 1 ? "" : "s"} ready
                 </p>
+                {preview.format === "legacy-key-tab" && (
+                  <p className="text-xs text-farm-muted mt-1.5 inline-flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Detected legacy <strong>KEY</strong> tab — items auto-categorized by name
+                  </p>
+                )}
                 {preview.skipped > 0 && (
                   <p className="text-sm text-orange-600 mt-1">
                     {preview.skipped} skipped — {preview.skippedRows.length > 0 ? `e.g. row ${preview.skippedRows[0].row}: ${preview.skippedRows[0].reason}` : "missing required fields"}
