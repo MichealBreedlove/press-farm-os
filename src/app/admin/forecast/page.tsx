@@ -157,7 +157,7 @@ export default async function ForecastPage({
         ) : (
           Object.entries(byCategory).map(([cat, items]) => (
             <section key={cat}>
-              <p className="section-eyebrow text-farm-muted mb-3">
+              <p className="section-eyebrow with-flower text-farm-muted mb-3">
                 {cat}
               </p>
               <div className="card overflow-hidden">

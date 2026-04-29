@@ -141,7 +141,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
         {/* Delivery list */}
         {rows.length > 0 ? (
           <div className="space-y-2">
-            <p className="section-eyebrow text-farm-muted">
+            <p className="section-eyebrow with-flower text-farm-muted">
               Deliveries ({rows.length})
             </p>
             {rows.map((d: any) => (

@@ -122,7 +122,7 @@ export default async function AdminDashboardPage() {
       <div className="px-4 py-5 space-y-6">
         {/* Live stats */}
         <div className="flex items-center justify-between">
-          <p className="section-eyebrow text-farm-muted">{monthName} Overview</p>
+          <p className="section-eyebrow with-flower text-farm-muted">{monthName} Overview</p>
           <RefreshButton />
         </div>
         <div className="grid grid-cols-2 gap-3">

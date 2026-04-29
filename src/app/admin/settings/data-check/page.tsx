@@ -112,7 +112,7 @@ export default async function DataCheckPage() {
       <div className="px-4 py-6 space-y-4">
         {/* Items by category */}
         <div className="card p-4">
-          <p className="section-eyebrow text-farm-muted mb-3">Items by Category</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">Items by Category</p>
           <div className="space-y-1">
             {Object.entries(categories ?? {}).sort(([, a]: any, [, b]: any) => b - a).map(([cat, count]: any) => (
               <div key={cat} className="flex justify-between text-sm">

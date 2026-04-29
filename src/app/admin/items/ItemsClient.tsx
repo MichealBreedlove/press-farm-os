@@ -131,7 +131,7 @@ export function ItemsClient({ items, addItemHref }: Props) {
           }))
       ).map(({ key, items: catItems, label }) => (
         <div key={key}>
-          <p className="section-eyebrow text-farm-muted mb-2">{label}</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">{label}</p>
           <div className="space-y-1">
             {catItems.map((item) => (
               <div

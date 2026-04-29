@@ -112,7 +112,7 @@ export default function OrderReviewPage() {
         {/* Order items */}
         <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
-            <p className="section-eyebrow text-farm-muted">Items · {items.length}</p>
+            <p className="section-eyebrow with-flower text-farm-muted">Items · {items.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
             {items.map((item) => {

@@ -133,7 +133,7 @@ export default async function OrderDetailPage({
         {/* Order items */}
         <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
-            <p className="section-eyebrow text-farm-muted">Items · {orderItems.length}</p>
+            <p className="section-eyebrow with-flower text-farm-muted">Items · {orderItems.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
             {orderItems.map((oi: any) => {

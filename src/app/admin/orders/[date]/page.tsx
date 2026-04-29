@@ -153,7 +153,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   return (
                     <div key={category}>
                       <div className="px-4 py-2 bg-farm-cream/60">
-                        <p className="section-eyebrow text-farm-muted">
+                        <p className="section-eyebrow with-flower text-farm-muted">
                           {CATEGORY_LABELS[category as ItemCategory] ?? category}
                         </p>
                       </div>

@@ -121,7 +121,7 @@ export default async function AdminDeliveriesPage({
         )}
         {/* Current month summary card */}
         <div className="card-success">
-          <p className="section-eyebrow text-white/70">{monthLabel(today)} Total</p>
+          <p className="section-eyebrow with-flower text-white/70">{monthLabel(today)} Total</p>
           <p className="text-3xl font-bold mt-2">{formatCurrency(monthTotal)}</p>
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-white/80">

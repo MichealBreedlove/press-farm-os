@@ -92,7 +92,7 @@ export default async function YoYReportPage() {
       <div className="px-4 py-5 space-y-6">
         {/* Year totals */}
         <section>
-          <p className="section-eyebrow text-farm-muted mb-3">Annual Totals</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">Annual Totals</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-4">
               <p className="text-xs text-gray-400">Revenue</p>

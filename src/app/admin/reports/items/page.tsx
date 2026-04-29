@@ -163,7 +163,7 @@ export default async function ItemPerformancePage({
 
         {/* Top Revenue */}
         <section>
-          <p className="section-eyebrow text-farm-muted mb-3">
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">
             Top Revenue
           </p>
           <div className="card overflow-hidden">

@@ -194,7 +194,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       {/* Admins */}
       {admins.length > 0 && (
         <div>
-          <p className="section-eyebrow text-farm-muted mb-2">Admin</p>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">Admin</p>
           {admins.map((u) => (
             <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">

@@ -169,7 +169,7 @@ export default function OrderFormClient({
       <div className="px-4 py-3 space-y-6">
         {Object.entries(itemsByCategory).map(([cat, catItems]) => (
           <div key={cat}>
-            <p className="section-eyebrow text-farm-muted mb-2 px-1">
+            <p className="section-eyebrow with-flower text-farm-muted mb-2 px-1">
               {CATEGORY_LABELS[cat as ItemCategory]}
             </p>
             <div className="space-y-2">
