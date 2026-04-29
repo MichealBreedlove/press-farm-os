@@ -126,25 +126,29 @@ export default async function AdminDashboardPage() {
           <RefreshButton />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4">
-            <p className="text-xs text-gray-400">{monthName} Revenue</p>
-            <p className="text-2xl font-bold text-farm-green mt-1">{formatCurrency(monthRevenue)}</p>
-            <p className="text-[10px] text-gray-400 mt-1">{(monthDeliveries ?? []).length} deliveries</p>
+          <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+            <img src="/assets/pressfarm/flowers/calendula.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <p className="text-xs text-gray-400 relative">{monthName} Revenue</p>
+            <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
+            <p className="text-[10px] text-gray-400 mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
           </Link>
-          <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4">
-            <p className="text-xs text-gray-400">{monthName} Expenses</p>
-            <p className="text-2xl font-bold text-red-500 mt-1">{formatCurrency(monthExpenseTotal)}</p>
-            <p className="text-[10px] text-gray-400 mt-1">{(monthExpenses ?? []).length} entries</p>
+          <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
+            <img src="/assets/pressfarm/flowers/thyme.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <p className="text-xs text-gray-400 relative">{monthName} Expenses</p>
+            <p className="text-2xl font-bold text-red-500 mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
+            <p className="text-[10px] text-gray-400 mt-1 relative">{(monthExpenses ?? []).length} entries</p>
           </Link>
-          <Link href="/admin/orders?status=submitted" className="card-interactive p-4">
-            <p className="text-xs text-gray-400">Pending Orders</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{pendingOrders ?? 0}</p>
-            <p className="text-[10px] text-gray-400 mt-1">awaiting fulfillment</p>
+          <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">
+            <img src="/assets/pressfarm/flowers/borage.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <p className="text-xs text-gray-400 relative">Pending Orders</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1 relative">{pendingOrders ?? 0}</p>
+            <p className="text-[10px] text-gray-400 mt-1 relative">awaiting fulfillment</p>
           </Link>
-          <Link href="/admin/labor" className="card-interactive p-4">
-            <p className="text-xs text-gray-400">Labor (7 days)</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">{weekLaborHours.toFixed(1)}h</p>
-            <p className="text-[10px] text-gray-400 mt-1">this week</p>
+          <Link href="/admin/labor" className="card-interactive p-4 relative overflow-hidden">
+            <img src="/assets/pressfarm/flowers/lavender.png" alt="" aria-hidden="true" className="absolute -top-3 -right-3 w-20 h-20 opacity-25 pointer-events-none" />
+            <p className="text-xs text-gray-400 relative">Labor (7 days)</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1 relative">{weekLaborHours.toFixed(1)}h</p>
+            <p className="text-[10px] text-gray-400 mt-1 relative">this week</p>
           </Link>
         </div>
 

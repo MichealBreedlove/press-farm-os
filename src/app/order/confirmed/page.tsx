@@ -25,8 +25,24 @@ export default function OrderConfirmedPage() {
   }, []);
 
   return (
-    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      <div className="text-center max-w-sm">
+    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
+      {/* Celebration flowers — small, soft, drifting in around the hero */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <img src="/assets/pressfarm/flowers/borage.png"     className="absolute top-[10%] left-[12%] w-14 sm:w-20 opacity-70 animate-[pf-float_5s_ease-in-out_infinite]" alt="" style={{ transform: "rotate(-12deg)" }} />
+        <img src="/assets/pressfarm/flowers/calendula.png"  className="absolute top-[14%] right-[10%] w-16 sm:w-24 opacity-75 animate-[pf-float_6s_ease-in-out_infinite_0.6s]" alt="" style={{ transform: "rotate(15deg)" }} />
+        <img src="/assets/pressfarm/flowers/viola.png"      className="absolute bottom-[28%] left-[8%] w-14 sm:w-20 opacity-70 animate-[pf-float_7s_ease-in-out_infinite_1.2s]" alt="" style={{ transform: "rotate(8deg)" }} />
+        <img src="/assets/pressfarm/flowers/chamomile.png"  className="absolute bottom-[22%] right-[12%] w-12 sm:w-16 opacity-70 animate-[pf-float_5.5s_ease-in-out_infinite_0.3s]" alt="" style={{ transform: "rotate(-18deg)" }} />
+        <img src="/assets/pressfarm/flowers/bachelor-button.png" className="absolute top-[40%] right-[6%] w-10 sm:w-14 opacity-65 animate-[pf-float_6.5s_ease-in-out_infinite_1.8s]" alt="" style={{ transform: "rotate(22deg)" }} />
+        <img src="/assets/pressfarm/flowers/marigold.png"   className="absolute top-[44%] left-[4%] w-10 sm:w-14 opacity-65 animate-[pf-float_6s_ease-in-out_infinite_2.2s]" alt="" style={{ transform: "rotate(-25deg)" }} />
+      </div>
+      <style>{`
+        @keyframes pf-float {
+          0%, 100% { transform: translateY(0) rotate(var(--pf-rot, 0deg)); }
+          50%      { transform: translateY(-10px) rotate(var(--pf-rot, 0deg)); }
+        }
+      `}</style>
+
+      <div className="text-center max-w-sm relative z-10">
         {/* Hero floral mark — replaces generic checkmark with brand illustration */}
         <div className="relative mx-auto mb-6 w-56 h-56 sm:w-72 sm:h-72 animate-[scale-in_0.4s_ease-out]">
           <img

@@ -28,11 +28,11 @@ export function PageHeader({ title, subtitle, children, dashboardHref = "/admin/
             PRESS FARM
           </span>
           <Image
-            src="/icon-192.png"
+            src="/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png"
             alt="Press Farm"
-            width={24}
-            height={24}
-            className="rounded-full"
+            width={28}
+            height={28}
+            className="opacity-90"
           />
         </Link>
       </div>

@@ -5,6 +5,23 @@ import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus } from "@/types";
 
+/** Pool of flowers used for per-order accents in the history list. */
+const HISTORY_FLOWERS = [
+  "squash-blossom", "nasturtium", "marigold", "gem-marigold", "viola",
+  "pansy", "pea-flower", "chive-blossom", "borage", "calendula",
+  "chamomile", "lavender", "alyssum", "fairy-vetch", "fava-flower",
+  "anise-hyssop", "bachelor-button", "thyme", "rosemary", "dill",
+];
+
+/** Stable hash from an order ID -> non-negative int (so each order gets a consistent flower). */
+function hashOrderId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
 /**
  * /history — Chef order history list (Server Component)
  *
@@ -68,22 +85,40 @@ export default async function HistoryPage() {
 
       <div className="px-4 py-4">
         {!orders || orders.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-sm">
-            No past orders yet.
+          <div className="text-center py-12">
+            <img
+              src="/assets/pressfarm/flowers/squash-bud.png"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto h-24 w-auto mb-4 opacity-90"
+            />
+            <h3 className="text-base font-semibold text-farm-dark">No past orders yet</h3>
+            <p className="text-sm text-gray-400 mt-1.5 max-w-sm mx-auto">
+              Once you place an order, it&apos;ll show up here.
+            </p>
           </div>
         ) : (
           <ul className="space-y-2">
             {orders.map((order: any) => {
               const itemCount = order.order_items?.length ?? 0;
               const status = order.status as OrderStatus;
+              const flower = HISTORY_FLOWERS[hashOrderId(order.id) % HISTORY_FLOWERS.length];
 
               return (
                 <li key={order.id}>
                   <Link
                     href={`/history/${order.id}`}
-                    className="flex items-center justify-between card-interactive px-4 py-4 min-h-[64px]"
+                    className="flex items-center gap-3 card-interactive px-4 py-3 min-h-[64px]"
                   >
-                    <div>
+                    <div className="w-12 h-12 rounded-full bg-farm-cream border border-farm-dark/5 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={`/assets/pressfarm/flowers/${flower}.png`}
+                        alt=""
+                        aria-hidden="true"
+                        className="w-9 h-9 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-farm-dark">
                         {formatDeliveryDate(order.delivery_date)}
                       </p>
@@ -91,7 +126,7 @@ export default async function HistoryPage() {
                         {itemCount} {itemCount === 1 ? "item" : "items"}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <StatusPill status={status} />
                       <span className="text-gray-300 text-lg">›</span>
                     </div>
