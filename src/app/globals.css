@@ -569,7 +569,7 @@
   left: -40px;
   width: clamp(180px, 28vw, 320px);
   height: clamp(180px, 28vw, 320px);
-  background-image: url("/assets/pressfarm/flowers/nasturtium.png");
+  background-image: url("/assets/pressfarm/flowers/borage.png");
   transform: rotate(-12deg);
 }
 /* Bottom-right floral cluster */
@@ -578,7 +578,7 @@
   right: -50px;
   width: clamp(200px, 30vw, 360px);
   height: clamp(200px, 30vw, 360px);
-  background-image: url("/assets/pressfarm/flowers/squash-blossom.png");
+  background-image: url("/assets/pressfarm/flowers/calendula.png");
   transform: rotate(15deg);
 }
 /* Mobile: smaller and even more subtle */
