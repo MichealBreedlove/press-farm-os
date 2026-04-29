@@ -61,12 +61,12 @@ export async function POST(request: Request) {
   // Find the most recent delivery date before target_date that has availability rows
   const { data: rawLastRows, error: findError } = await adminClient
     .from("availability_items")
-    .select("delivery_date, item_id, status, limited_qty, cycle_notes")
+    .select("delivery_date, item_id, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units")
     .eq("restaurant_id", restaurant_id)
     .lt("delivery_date", target_date)
     .order("delivery_date", { ascending: false })
     .limit(500);
-  const lastRows = rawLastRows as Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes">[] | null;
+  const lastRows = rawLastRows as (Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes"> & { available_sizes: string | null; available_colors: string | null; available_units: string | null })[] | null;
 
   if (findError) {
     console.error("Find last cycle error:", findError);
@@ -92,6 +92,9 @@ export async function POST(request: Request) {
     status: row.status,
     limited_qty: row.limited_qty,
     cycle_notes: row.cycle_notes,
+    available_sizes: row.available_sizes,
+    available_colors: row.available_colors,
+    available_units: row.available_units,
     updated_at: new Date().toISOString(),
   }));
 

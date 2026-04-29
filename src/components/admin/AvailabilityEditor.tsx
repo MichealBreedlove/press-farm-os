@@ -2,8 +2,16 @@
 
 import { useState, useTransition, useCallback } from "react";
 import type { Item, AvailabilityItem, Restaurant } from "@/types";
-import type { AvailabilityStatus, ItemCategory } from "@/types/database";
+import type { AvailabilityStatus, ItemCategory, UnitType } from "@/types/database";
 import { CATEGORY_ORDER, CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
+
+/** Parse a comma-separated unit_type field into individual unit codes. */
+function parseUnits(unitType: string | null | undefined): UnitType[] {
+  return String(unitType ?? "")
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean) as UnitType[];
+}
 
 // ============================================
 // Types
@@ -15,6 +23,7 @@ interface ItemState {
   cycle_notes: string;
   available_sizes: string | null;
   available_colors: string | null;
+  available_units: string | null;
 }
 
 type ItemStates = Record<string, ItemState>;
@@ -35,6 +44,7 @@ const DEFAULT_STATE: ItemState = {
   cycle_notes: "",
   available_sizes: null,
   available_colors: null,
+  available_units: null,
 };
 
 // ============================================
@@ -53,6 +63,7 @@ function buildStatesForRestaurant(items: Item[], availability: AvailabilityItem[
       cycle_notes: e?.cycle_notes ?? "",
       available_sizes: (e as any)?.available_sizes ?? null,
       available_colors: (e as any)?.available_colors ?? null,
+      available_units: (e as any)?.available_units ?? null,
     };
   }
   return state;
@@ -64,7 +75,8 @@ function statesEqual(a: ItemState | undefined, b: ItemState | undefined): boolea
     && a.limited_qty === b.limited_qty
     && a.cycle_notes === b.cycle_notes
     && a.available_sizes === b.available_sizes
-    && a.available_colors === b.available_colors;
+    && a.available_colors === b.available_colors
+    && a.available_units === b.available_units;
 }
 
 // Derive base (most common state) and overrides from per-restaurant states
@@ -171,7 +183,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     setSaveSuccess(false);
   }, []);
 
-  const toggleBaseSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) => {
+  const toggleBaseSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors" | "available_units", value: string, allValues: string[]) => {
     setBaseStates(prev => {
       const current = prev[itemId];
       if (!current) return prev;
@@ -210,7 +222,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     setSaveSuccess(false);
   }, [editMode]);
 
-  const toggleSingleSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors", value: string, allValues: string[]) => {
+  const toggleSingleSizeColor = useCallback((itemId: string, field: "available_sizes" | "available_colors" | "available_units", value: string, allValues: string[]) => {
     if (editMode === "all") return;
     setAllStates(prev => {
       const current = prev[editMode]?.[itemId];
@@ -242,6 +254,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 cycle_notes: merged.cycle_notes || null,
                 available_sizes: merged.available_sizes || null,
                 available_colors: merged.available_colors || null,
+                available_units: merged.available_units || null,
               };
             });
             const res = await fetch("/api/availability", {
@@ -267,6 +280,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 cycle_notes: s.cycle_notes || null,
                 available_sizes: s.available_sizes || null,
                 available_colors: s.available_colors || null,
+                available_units: s.available_units || null,
               })),
             }),
           });
@@ -436,7 +450,37 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                       <div className="flex items-center gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
-                          <p className="text-xs text-farm-muted">{UNIT_LABELS[item.unit_type]}</p>
+                          {(() => {
+                            const allUnits = parseUnits(item.unit_type);
+                            return (
+                              <p className="text-xs text-farm-muted">
+                                {allUnits.map(u => UNIT_LABELS[u] ?? u.toUpperCase()).join(" · ") || "—"}
+                              </p>
+                            );
+                          })()}
+
+                          {/* Units (only if item has multiple unit types) */}
+                          {(() => {
+                            const allUnits = parseUnits(item.unit_type);
+                            if (allUnits.length < 2) return null;
+                            const sel = state.available_units === null
+                              ? new Set(allUnits)
+                              : new Set(state.available_units?.split(",").filter(Boolean) ?? []);
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-farm-muted">Units:</span>
+                                {allUnits.map(u => {
+                                  const label = UNIT_LABELS[u] ?? u.toUpperCase();
+                                  return (
+                                    <button key={u} type="button" onClick={() => toggleFn(item.id, "available_units", u, allUnits)}
+                                      className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(u) ? "bg-blue-600 text-white" : "bg-farm-cream/60 text-farm-muted line-through"}`}
+                                      title={label}
+                                    >{label}</button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
 
                           {/* Sizes */}
                           {(item as any).size && (() => {

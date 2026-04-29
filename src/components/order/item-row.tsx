@@ -2,9 +2,20 @@
 
 import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
+import type { UnitType } from "@/types/database";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
+
+/** Resolve which units this availability row exposes to the chef.
+ *  Falls back to the item-level unit_type list if the per-cycle override is null. */
+function resolveUnits(item: { unit_type: string }, availableUnits: string | null | undefined): UnitType[] {
+  const itemUnits = String(item.unit_type ?? "")
+    .split(",").map(u => u.trim()).filter(Boolean) as UnitType[];
+  if (!availableUnits) return itemUnits;
+  const allowed = new Set(availableUnits.split(",").map(u => u.trim()).filter(Boolean));
+  return itemUnits.filter(u => allowed.has(u));
+}
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
@@ -103,12 +114,36 @@ export function ItemRow({
 
   const sizes = (item as any).size ? (item as any).size.split(", ").filter(Boolean) : [];
   const colors = (item as any).color ? (item as any).color.split(", ").filter(Boolean) : [];
+  const units = resolveUnits(item, (availabilityItem as any).available_units);
   const hasSizes = sizes.length > 0;
+  const hasMultiUnits = units.length > 1;
 
-  // For items with sizes: qty keyed by "id__size", for items without: keyed by "id"
-  const totalQty = hasSizes
-    ? sizes.reduce((sum: number, s: string) => sum + (quantities[`${availabilityItem.id}__${s}`] ?? 0), 0)
-    : (quantities[availabilityItem.id] ?? 0);
+  /**
+   * Quantity-key strategy:
+   *  - multi-unit + sizes:   `${availId}__unit:${unit}__${size}`
+   *  - multi-unit, no sizes: `${availId}__unit:${unit}`
+   *  - single unit, sizes:   `${availId}__${size}`              (legacy)
+   *  - single unit, no sizes: `${availId}`                       (legacy)
+   */
+  function qtyKey(unit?: string, size?: string): string {
+    let k = availabilityItem.id;
+    if (unit && hasMultiUnits) k += `__unit:${unit}`;
+    if (size) k += `__${size}`;
+    return k;
+  }
+
+  const totalQty = (() => {
+    if (hasMultiUnits && hasSizes) {
+      return units.reduce((sum, u) => sum + sizes.reduce((s2: number, sz: string) => s2 + (quantities[qtyKey(u, sz)] ?? 0), 0), 0);
+    }
+    if (hasMultiUnits) {
+      return units.reduce((sum, u) => sum + (quantities[qtyKey(u)] ?? 0), 0);
+    }
+    if (hasSizes) {
+      return sizes.reduce((sum: number, s: string) => sum + (quantities[`${availabilityItem.id}__${s}`] ?? 0), 0);
+    }
+    return quantities[availabilityItem.id] ?? 0;
+  })();
 
   // Auto-expand sizes when something is ordered
   const [sizesExpanded, setSizesExpanded] = useState(false);
@@ -155,7 +190,11 @@ export function ItemRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-farm-dark">{item.name}</span>
-            <span className="text-xs text-farm-muted flex-shrink-0">{UNIT_LABELS[item.unit_type]} container</span>
+            <span className="text-xs text-farm-muted flex-shrink-0">
+              {hasMultiUnits
+                ? `${units.length} containers`
+                : `${UNIT_LABELS[units[0]] ?? (units[0] ?? "").toUpperCase()} container`}
+            </span>
             {(availabilityItem as any)._isEventsItem && <span className="text-[10px] bg-pf-master-gold/15 text-pf-master-gold px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">Events</span>}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
@@ -188,8 +227,8 @@ export function ItemRow({
           )}
         </div>
 
-        {/* Single stepper for items WITHOUT sizes */}
-        {!hasSizes && (
+        {/* Single stepper — only when item has exactly one unit AND no sizes */}
+        {!hasMultiUnits && !hasSizes && (
           <QuantityStepper
             value={quantities[availabilityItem.id] ?? 0}
             onChange={(v) => onQuantityChange(availabilityItem.id, v)}
@@ -199,30 +238,106 @@ export function ItemRow({
           />
         )}
 
-        {/* Expand button for items WITH sizes (when collapsed) */}
-        {hasSizes && !showSizes && !isUnavailable && (
+        {/* Expand button when item has sizes/units (collapsed state) */}
+        {(hasMultiUnits || hasSizes) && !showSizes && !isUnavailable && (
           <button
             type="button"
             onClick={() => setSizesExpanded(true)}
             className="flex-shrink-0 min-h-[44px] min-w-[44px] px-3 rounded-full bg-farm-green-light text-farm-green text-sm font-semibold hover:bg-farm-green hover:text-white transition-colors"
-            aria-label={`Pick sizes for ${item.name}`}
+            aria-label={`Pick options for ${item.name}`}
           >
-            {sizes.length} sizes
+            {hasMultiUnits && hasSizes
+              ? `${units.length}×${sizes.length}`
+              : hasMultiUnits
+                ? `${units.length} sizes`
+                : `${sizes.length} sizes`}
           </button>
         )}
       </div>
 
-      {/* Size preview when collapsed (no quantity yet) */}
-      {hasSizes && !showSizes && (
+      {/* Preview pills when collapsed */}
+      {(hasMultiUnits || hasSizes) && !showSizes && (
         <div className="flex items-center gap-1 mt-1.5 ml-0 flex-wrap">
-          {sizes.map((s: string) => (
+          {hasMultiUnits && units.map(u => (
+            <span key={u} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+              {UNIT_LABELS[u] ?? u.toUpperCase()}
+            </span>
+          ))}
+          {!hasMultiUnits && sizes.map((s: string) => (
             <span key={s} className="text-[10px] bg-farm-cream/40 text-farm-muted px-2 py-1 rounded-md">{s}</span>
           ))}
         </div>
       )}
 
-      {/* Per-size quantity steppers + per-size color pickers */}
-      {hasSizes && showSizes && (
+      {/* Per-unit (and optionally per-size within each unit) steppers */}
+      {hasMultiUnits && showSizes && (
+        <div className="mt-2 ml-0 space-y-1.5">
+          {units.map(unit => {
+            const unitLabel = UNIT_LABELS[unit] ?? unit.toUpperCase();
+            // No sizes → single stepper per unit
+            if (!hasSizes) {
+              const key = qtyKey(unit);
+              const unitQty = quantities[key] ?? 0;
+              const unitColors = itemColors[key] ?? [];
+              return (
+                <div key={unit} className="bg-blue-50/40 border border-blue-100 rounded-lg px-3 py-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-sm", unitQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>
+                      {unitLabel}
+                    </span>
+                    <QuantityStepper
+                      value={unitQty}
+                      onChange={(v) => onQuantityChange(key, v)}
+                      disabled={isUnavailable}
+                      maxQty={maxQty}
+                      label={`${item.name} ${unitLabel}`}
+                    />
+                  </div>
+                  {colors.length > 0 && unitQty > 0 && (
+                    <ColorPicker colors={colors} selected={unitColors} onToggle={(next) => onColorChange(key, next)} />
+                  )}
+                </div>
+              );
+            }
+            // Multi-unit + sizes → nested grid (sizes within each unit)
+            return (
+              <div key={unit} className="bg-blue-50/40 border border-blue-100 rounded-lg px-3 py-2 space-y-1.5">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{unitLabel}</p>
+                {sizes.map((size: string) => {
+                  const key = qtyKey(unit, size);
+                  const sizeQty = quantities[key] ?? 0;
+                  const sizeColors = itemColors[key] ?? [];
+                  return (
+                    <div key={size} className="bg-white/70 rounded-md px-2.5 py-1.5 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
+                        <QuantityStepper
+                          value={sizeQty}
+                          onChange={(v) => onQuantityChange(key, v)}
+                          disabled={isUnavailable}
+                          maxQty={maxQty}
+                          label={`${item.name} ${unitLabel} ${size}`}
+                        />
+                      </div>
+                      {colors.length > 0 && sizeQty > 0 && (
+                        <ColorPicker colors={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {totalQty === 0 && (
+            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0">
+              Hide options
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Single-unit + sizes (legacy path) */}
+      {!hasMultiUnits && hasSizes && showSizes && (
         <div className="mt-2 ml-0 space-y-1.5">
           {sizes.map((size: string) => {
             const key = `${availabilityItem.id}__${size}`;
@@ -240,24 +355,14 @@ export function ItemRow({
                     label={`${item.name} ${size}`}
                   />
                 </div>
-                {/* Per-size color picker — visible when this size has qty > 0 */}
                 {colors.length > 0 && sizeQty > 0 && (
-                  <ColorPicker
-                    colors={colors}
-                    selected={sizeColors}
-                    onToggle={(next) => onColorChange(key, next)}
-                  />
+                  <ColorPicker colors={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
                 )}
               </div>
             );
           })}
-          {/* Collapse button when nothing ordered */}
           {totalQty === 0 && (
-            <button
-              type="button"
-              onClick={() => setSizesExpanded(false)}
-              className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0"
-            >
+            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0">
               Hide sizes
             </button>
           )}

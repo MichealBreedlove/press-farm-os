@@ -2,11 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_ORDER, MAX_NOTES_LENGTH } from "@/lib/constants";
+import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
+import type { UnitType } from "@/types/database";
+
+/** Resolve which units this availability row exposes to the chef. */
+function resolveUnits(item: { unit_type: string }, availableUnits: string | null | undefined): UnitType[] {
+  const itemUnits = String(item.unit_type ?? "")
+    .split(",").map(u => u.trim()).filter(Boolean) as UnitType[];
+  if (!availableUnits) return itemUnits;
+  const allowed = new Set(availableUnits.split(",").map(u => u.trim()).filter(Boolean));
+  return itemUnits.filter(u => allowed.has(u));
+}
 
 interface OrderFormProps {
   availabilityItems: AvailabilityItemWithItem[];
@@ -78,20 +88,34 @@ export function OrderForm({
     setItemNotes((prev) => ({ ...prev, [id]: note }));
   }
 
+  /** Iterate every (unit?, size?) combination an item exposes, yielding its quantity key. */
+  function* enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
+    const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
+    const units = resolveUnits(ai.item, (ai as any).available_units);
+    const hasMultiUnits = units.length > 1;
+    const hasSizes = sizes.length > 0;
+    if (hasMultiUnits && hasSizes) {
+      for (const u of units) for (const s of sizes) yield { key: `${ai.id}__unit:${u}__${s}`, unit: u, size: s };
+    } else if (hasMultiUnits) {
+      for (const u of units) yield { key: `${ai.id}__unit:${u}`, unit: u };
+    } else if (hasSizes) {
+      for (const s of sizes) yield { key: `${ai.id}__${s}`, size: s };
+    } else {
+      yield { key: ai.id };
+    }
+  }
+
   // Check if any item has quantity > 0 (across ALL items, not just searched)
   const hasAnyOrdered = allAvailable.some((ai) => {
-    if ((quantities[ai.id] ?? 0) > 0) return true;
-    const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ") : [];
-    return sizes.some((s: string) => (quantities[`${ai.id}__${s}`] ?? 0) > 0);
+    for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) return true;
+    return false;
   });
 
-  // Total items with quantity > 0
+  // Total order lines with quantity > 0
   const orderedCount = allAvailable.reduce((count, ai) => {
-    const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
-    if (sizes.length > 0) {
-      return count + sizes.filter((s: string) => (quantities[`${ai.id}__${s}`] ?? 0) > 0).length;
-    }
-    return count + ((quantities[ai.id] ?? 0) > 0 ? 1 : 0);
+    let n = 0;
+    for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) n++;
+    return count + n;
   }, 0);
 
   function handleReview() {
@@ -102,45 +126,33 @@ export function OrderForm({
 
     // Use allAvailable so search doesn't hide ordered items
     for (const ai of allAvailable) {
-      const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
-      // For items WITHOUT sizes the color key is just the avail-item id.
-      // For items WITH sizes, each size has its OWN color set keyed by `id__size`.
       const itemNote = itemNotes[ai.id] ?? "";
 
-      if (sizes.length > 0) {
-        // Create one order item per size that has quantity > 0
-        for (const size of sizes) {
-          const qty = quantities[`${ai.id}__${size}`] ?? 0;
-          if (qty > 0) {
-            const sizeColors = itemColors[`${ai.id}__${size}`] ?? [];
-            const sizeColorNote = sizeColors.length > 0 ? `Color: ${sizeColors.join(", ")}` : "";
-            const note = [sizeColorNote, itemNote].filter(Boolean).join(" | ");
-            orderedItems.push({
-              availabilityItemId: ai.id,
-              itemName: `${ai.item.name} (${size})`,
-              unitType: ai.item.unit_type,
-              quantity: qty,
-              unitPrice: ai.item.default_price ?? null,
-              itemNote: note,
-            });
-          }
-        }
-      } else {
-        // No sizes — single quantity. Colors keyed by avail-item id directly.
-        const qty = quantities[ai.id] ?? 0;
-        if (qty > 0) {
-          const colors = itemColors[ai.id] ?? [];
-          const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
-          const note = [colorNote, itemNote].filter(Boolean).join(" | ");
-          orderedItems.push({
-            availabilityItemId: ai.id,
-            itemName: ai.item.name,
-            unitType: ai.item.unit_type,
-            quantity: qty,
-            unitPrice: ai.item.default_price ?? null,
-            itemNote: note,
-          });
-        }
+      for (const { key, unit, size } of enumerateKeys(ai)) {
+        const qty = quantities[key] ?? 0;
+        if (qty <= 0) continue;
+
+        // Suffix the displayed name with unit + size when present
+        const unitLabel = unit ? (UNIT_LABELS[unit] ?? unit.toUpperCase()) : null;
+        const suffixParts = [unitLabel, size].filter(Boolean) as string[];
+        const itemName = suffixParts.length > 0 ? `${ai.item.name} (${suffixParts.join(" · ")})` : ai.item.name;
+
+        // Colors live at the same key as the qty
+        const colors = itemColors[key] ?? [];
+        const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
+        const note = [colorNote, itemNote].filter(Boolean).join(" | ");
+
+        // Persist the specific unit chosen (or fall back to whatever's on the item)
+        const unitForOrder = unit ?? (String(ai.item.unit_type).split(",")[0]?.trim() || ai.item.unit_type);
+
+        orderedItems.push({
+          availabilityItemId: ai.id,
+          itemName,
+          unitType: unitForOrder,
+          quantity: qty,
+          unitPrice: ai.item.default_price ?? null,
+          itemNote: note,
+        });
       }
     }
 
