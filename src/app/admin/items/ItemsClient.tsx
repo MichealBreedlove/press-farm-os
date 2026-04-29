@@ -117,21 +117,21 @@ export function ItemsClient({ items, addItemHref }: Props) {
         )}
       </div>
 
-      {/* Count + Export */}
+      {/* Count + Import/Export shortcut */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-farm-muted">
           {filtered.length} {filtered.length === 1 ? "item" : "items"}
         </p>
-        <a
-          href={`/api/items/export?archived=${showArchived ? "true" : "false"}`}
+        <Link
+          href="/admin/items/data"
           className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
-          title="Download all items as CSV (matches the import-prompt format)"
+          title="Bulk import / export"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          Export CSV
-        </a>
+          Import / Export
+        </Link>
       </div>
       {/* When searching, show flat list. Otherwise, group by category. */}
       {(search.trim()
