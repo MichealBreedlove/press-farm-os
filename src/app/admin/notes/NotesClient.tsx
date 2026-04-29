@@ -165,7 +165,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
       {filtered.length === 0 ? (
         notes.length === 0 ? (
           <div className="text-center py-10">
-            <img src="/assets/pressfarm/flowers/viola.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
+            <img src="/assets/pressfarm/flowers/pansy.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
             <h3 className="text-base font-semibold text-farm-dark">Start your field journal</h3>
             <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
               Quick observations save hours later. &ldquo;Mustard frills bolting&rdquo; or &ldquo;Borage flowering early&rdquo; — anything worth remembering.

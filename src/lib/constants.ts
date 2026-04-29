@@ -55,26 +55,32 @@ export const SEASON_STATUSES: { value: string; label: string; color: string }[] 
 // ============================================
 
 export const ITEM_SIZES = [
+  // To-Go containers — most common chef-facing packaging sizes
+  { value: "small-to-go", label: "Small To Go" },
+  { value: "large-to-go", label: "Large To Go" },
+  // Generic descriptors
   { value: "tiny", label: "Tiny" },
   { value: "small", label: "Small" },
   { value: "medium", label: "Medium" },
   { value: "large", label: "Large" },
+  { value: "baby", label: "Baby" },
+  { value: "micro", label: "Micro" },
+  { value: "microgreen", label: "Microgreen" },
+  // Coin / hand-scale references
   { value: "dime-nickel", label: "Dime - Nickel" },
   { value: "quarter", label: "Quarter" },
   { value: "dollar", label: "Dollar" },
-  { value: "palm", label: "Palm" },
-  { value: "pencil-eraser", label: "Pencil Eraser" },
-  { value: "thumbnail", label: "Thumbnail" },
   { value: "silver-dollar", label: "Silver Dollar" },
+  { value: "thumbnail", label: "Thumbnail" },
+  { value: "pencil-eraser", label: "Pencil Eraser" },
+  { value: "palm", label: "Palm" },
+  { value: "palm-size", label: "Palm Size" },
+  // Inch-scale + specials
   { value: "1-inch", label: "1 inch" },
   { value: "2-inch", label: "2 inch" },
   { value: "3-inch", label: "3 inch" },
-  { value: "baby", label: "Baby" },
   { value: "crudite", label: "Crudite" },
-  { value: "micro", label: "Micro" },
-  { value: "microgreen", label: "Microgreen" },
   { value: "heart-leaf", label: "Heart Leaf" },
-  { value: "palm-size", label: "Palm Size" },
 ] as const;
 
 export type ItemSize = (typeof ITEM_SIZES)[number]["value"];

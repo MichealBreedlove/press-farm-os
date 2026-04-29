@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
-const FLOWERS_BRAND = [
+const FLOWERS = [
+  // Brand-sheet 13 canonical botanicals
   { name: "Squash Blossom", file: "squash-blossom.png", role: "Signature crop", color: "Yellow", chip: "pf-crop-squash" },
   { name: "Nasturtium", file: "nasturtium.png", role: "Edible flower", color: "Orange / Red", chip: "pf-crop-nasturtium" },
   { name: "Marigold", file: "marigold.png", role: "Harvest garnish", color: "Orange", chip: "pf-crop-marigold" },
@@ -14,12 +15,10 @@ const FLOWERS_BRAND = [
   { name: "Chive Blossom", file: "chive-blossom.png", role: "Allium globe", color: "Pink / Purple", chip: "pf-crop-chive-blossom" },
   { name: "Mustard Flower", file: "mustard-flower.png", role: "Brassica bloom", color: "Yellow", chip: "pf-crop-mustard" },
   { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "White / Black", chip: "pf-crop-fava" },
-  { name: "Fairy Vetch", file: "fairy-vetch.png", role: "Soil health", color: "Cream / Violet", chip: "pf-crop-fairy-vetch" },
+  { name: "Hairy Vetch", file: "hairy-vetch.png", role: "Soil health", color: "Cream / Violet", chip: "pf-crop-hairy-vetch" },
   { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "Cream", chip: "pf-crop-alyssum" },
   { name: "Green Leaf", file: "green-leaf.png", role: "Foliage accent", color: "Green", chip: "pf-crop-leaf" },
-];
-
-const FLOWERS_EXTENDED = [
+  // Extended chef-garden 17 herbs & seasonals
   { name: "Borage", file: "borage.png", role: "Cucumber garnish", color: "Cornflower Blue", chip: "pf-crop-borage" },
   { name: "Calendula", file: "calendula.png", role: "Tasting menu petals", color: "Orange", chip: "pf-crop-calendula" },
   { name: "Chamomile", file: "chamomile.png", role: "Tea + garnish", color: "White / Yellow", chip: "pf-crop-chamomile" },
@@ -37,20 +36,16 @@ const FLOWERS_EXTENDED = [
   { name: "Buttercup", file: "buttercup.png", role: "Wild meadow accent", color: "Yellow", chip: "pf-crop-buttercup" },
   { name: "California Poppy", file: "california-poppy.png", role: "State wildflower", color: "Orange", chip: "pf-crop-california-poppy" },
   { name: "Allium", file: "allium.png", role: "Ornamental globe", color: "Deep Violet", chip: "pf-crop-allium" },
+  // 8 alternate head-only views
+  { name: "Borage", file: "borage-2.png", role: "Tighter head crop", color: "Blue", chip: "pf-crop-borage" },
+  { name: "Chamomile", file: "chamomile-2.png", role: "Head only, no stem", color: "White / Yellow", chip: "pf-crop-chamomile" },
+  { name: "Chive Blossom", file: "chive-blossom-2.png", role: "Magenta variant", color: "Magenta", chip: "pf-crop-chive-blossom" },
+  { name: "Chive Blossom", file: "chive-blossom-3.png", role: "Light lavender variant", color: "Lavender", chip: "pf-crop-chive-blossom" },
+  { name: "Gem Marigold", file: "gem-marigold-2.png", role: "Head only", color: "Yellow", chip: "pf-crop-gem-marigold" },
+  { name: "Marigold", file: "marigold-2.png", role: "Head only, no stem", color: "Orange", chip: "pf-crop-marigold" },
+  { name: "Nasturtium", file: "nasturtium-2.png", role: "Head only", color: "Orange", chip: "pf-crop-nasturtium" },
+  { name: "Pansy", file: "pansy-2.png", role: "Head only, no stem", color: "Purple", chip: "pf-crop-pansy" },
 ];
-
-const FLOWERS_ALTS = [
-  { name: "Borage (alt)", file: "borage-2.png", role: "Tighter head crop", color: "Blue", chip: "pf-crop-borage" },
-  { name: "Chamomile (alt)", file: "chamomile-2.png", role: "Head only, no stem", color: "White / Yellow", chip: "pf-crop-chamomile" },
-  { name: "Chive Blossom (alt 2)", file: "chive-blossom-2.png", role: "Magenta variant", color: "Magenta", chip: "pf-crop-chive-blossom" },
-  { name: "Chive Blossom (alt 3)", file: "chive-blossom-3.png", role: "Light lavender variant", color: "Lavender", chip: "pf-crop-chive-blossom" },
-  { name: "Gem Marigold (alt)", file: "gem-marigold-2.png", role: "Head only", color: "Yellow", chip: "pf-crop-gem-marigold" },
-  { name: "Marigold (alt)", file: "marigold-2.png", role: "Head only, no stem", color: "Orange", chip: "pf-crop-marigold" },
-  { name: "Nasturtium (alt)", file: "nasturtium-2.png", role: "Head only", color: "Orange", chip: "pf-crop-nasturtium" },
-  { name: "Pansy (alt)", file: "pansy-2.png", role: "Head only, no stem", color: "Purple", chip: "pf-crop-pansy" },
-];
-
-const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED, ...FLOWERS_ALTS];
 
 const PF_PALETTE = [
   { group: "Cream", swatches: [
@@ -258,58 +253,14 @@ export default async function UIKitPage() {
           </div>
         </section>
 
-        {/* FLOWER SYSTEM — BRAND SHEET */}
+        {/* FLOWER SYSTEM — UNIFIED */}
         <section>
           <div className="flex items-baseline justify-between mb-4">
-            <p className="section-eyebrow text-farm-muted">Flower System · Brand Sheet</p>
-            <p className="text-xs text-farm-muted">13 canonical botanicals</p>
+            <p className="section-eyebrow text-farm-muted">Flower System</p>
+            <p className="text-xs text-farm-muted">{FLOWERS.length} botanicals</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {FLOWERS_BRAND.map((f) => (
-              <div key={f.file} className="card overflow-hidden text-center">
-                <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
-                  <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
-                </div>
-                <div className="p-4">
-                  <p className="font-display text-base text-farm-dark m-0">{f.name}</p>
-                  <p className="text-[11px] text-farm-muted mt-1">{f.role}</p>
-                  <p className="text-[10px] text-farm-muted/70 tracking-wide uppercase mt-1">{f.color}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* FLOWER SYSTEM — EXTENDED CHEF GARDEN */}
-        <section>
-          <div className="flex items-baseline justify-between mb-4">
-            <p className="section-eyebrow text-farm-muted">Flower System · Extended Chef Garden</p>
-            <p className="text-xs text-farm-muted">17 herbs & seasonals</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {FLOWERS_EXTENDED.map((f) => (
-              <div key={f.file} className="card overflow-hidden text-center">
-                <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
-                  <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
-                </div>
-                <div className="p-4">
-                  <p className="font-display text-base text-farm-dark m-0">{f.name}</p>
-                  <p className="text-[11px] text-farm-muted mt-1">{f.role}</p>
-                  <p className="text-[10px] text-farm-muted/70 tracking-wide uppercase mt-1">{f.color}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* FLOWER SYSTEM — ALTERNATE VIEWS */}
-        <section>
-          <div className="flex items-baseline justify-between mb-4">
-            <p className="section-eyebrow text-farm-muted">Flower System · Alternates</p>
-            <p className="text-xs text-farm-muted">8 alternate head-only views</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {FLOWERS_ALTS.map((f) => (
+            {FLOWERS.map((f) => (
               <div key={f.file} className="card overflow-hidden text-center">
                 <div className="bg-farm-cream py-6 flex items-center justify-center" style={{ minHeight: "160px" }}>
                   <img src={`/assets/pressfarm/flowers/${f.file}`} alt={f.name} className="max-h-32 w-auto" />
@@ -375,7 +326,7 @@ export default async function UIKitPage() {
           <div className="card p-5 space-y-3">
             {[
               { chef: "PRESS", item: "Squash blossoms", qty: "48 ct", status: "Harvest tomorrow", flower: "squash-blossom.png" },
-              { chef: "UNDER-STUDY", item: "Violas + alyssum", qty: "3 clamshells", status: "Ready to pack", flower: "viola.png" },
+              { chef: "UNDER-STUDY", item: "Violas + alyssum", qty: "3 clamshells", status: "Ready to pack", flower: "pansy.png" },
               { chef: "PRESS", item: "Nasturtium leaves/flowers", qty: "2 trays", status: "Chef confirmed", flower: "nasturtium.png" },
             ].map((order) => (
               <div key={`${order.chef}-${order.item}`} className="flex items-center gap-4 p-3 bg-farm-cream/50 rounded-xl border border-farm-dark/5">

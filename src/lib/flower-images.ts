@@ -9,7 +9,7 @@
  *
  * The auto-match uses a normalized lookup against known species
  * names + common aliases (e.g. "Bachelor Buttons" → bachelor-button,
- * "Squash Blossoms" → squash-blossom, "Hairy Vetch" → fairy-vetch).
+ * "Squash Blossoms" → squash-blossom, "Hairy Vetch" → hairy-vetch).
  */
 
 const FLOWERS_BASE = "/assets/pressfarm/flowers";
@@ -29,8 +29,8 @@ const FLOWER_NAME_MAP: Record<string, string> = {
   "cornflower": "bachelor-button",
   "chiveblossom": "chive-blossom",
   "chiveflower": "chive-blossom",
-  "fairyvetch": "fairy-vetch",
-  "hairyvetch": "fairy-vetch", // legacy alias
+  "hairyvetch": "hairy-vetch",
+  "fairyvetch": "hairy-vetch", // legacy alias (was mislabelled fairy)
   "favaflower": "fava-flower",
   "favabean": "fava-flower",
   "favabloom": "fava-flower",
@@ -48,7 +48,6 @@ const FLOWER_NAME_MAP: Record<string, string> = {
   "sweetpea": "pea-flower",
   "squashblossom": "squash-blossom",
   "squashflower": "squash-blossom",
-  "viola": "viola",
   // Extended chef-garden 14
   "anisehyssop": "anise-hyssop",
   "agastache": "anise-hyssop",

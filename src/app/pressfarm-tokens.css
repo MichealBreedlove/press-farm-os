@@ -67,7 +67,7 @@
   --pf-crop-viola: var(--pf-master-violet);
   --pf-crop-fava: #f7f4ea;
   --pf-crop-fava-pod: var(--pf-master-bottle-green);
-  --pf-crop-fairy-vetch: var(--pf-master-violet);
+  --pf-crop-hairy-vetch: var(--pf-master-violet);
   --pf-crop-leaf: var(--pf-master-olive);
   --pf-crop-chive-blossom: var(--pf-master-violet);
 
@@ -344,7 +344,7 @@
 .pf-crop-alyssum { --pf-crop-color: var(--pf-crop-alyssum); }
 .pf-crop-viola { --pf-crop-color: var(--pf-crop-viola); }
 .pf-crop-fava { --pf-crop-color: var(--pf-crop-fava); }
-.pf-crop-fairy-vetch { --pf-crop-color: var(--pf-crop-fairy-vetch); }
+.pf-crop-hairy-vetch { --pf-crop-color: var(--pf-crop-hairy-vetch); }
 .pf-crop-leaf { --pf-crop-color: var(--pf-crop-leaf); }
 .pf-crop-chive-blossom { --pf-crop-color: var(--pf-crop-chive-blossom); }
 .pf-crop-borage { --pf-crop-color: var(--pf-crop-borage); }

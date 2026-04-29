@@ -64,7 +64,7 @@ const config: Config = {
             alyssum: "#f4efe3",
             viola: "#5b21b6",
             fava: "#f7f4ea",
-            "fairy-vetch": "#8b5cf6",
+            "hairy-vetch": "#8b5cf6",
             "leaf": "#556B2F",
             // Extended chef-garden
             borage: "#3b5bbb",

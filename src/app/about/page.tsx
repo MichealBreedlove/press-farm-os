@@ -16,7 +16,7 @@ const SUPPORTING_FLOWERS = [
   { src: "/assets/pressfarm/flowers/chive-blossom.png", name: "Chive Blossom" },
   { src: "/assets/pressfarm/flowers/fava-flower.png", name: "Fava Flower" },
   { src: "/assets/pressfarm/flowers/alyssum.png", name: "Alyssum" },
-  { src: "/assets/pressfarm/flowers/fairy-vetch.png", name: "Fairy Vetch" },
+  { src: "/assets/pressfarm/flowers/hairy-vetch.png", name: "Hairy Vetch" },
   { src: "/assets/pressfarm/flowers/chamomile.png", name: "Chamomile" },
   { src: "/assets/pressfarm/flowers/lavender.png", name: "Lavender" },
   { src: "/assets/pressfarm/flowers/anise-hyssop.png", name: "Anise Hyssop" },

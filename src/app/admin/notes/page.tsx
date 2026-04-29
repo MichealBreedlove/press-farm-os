@@ -25,7 +25,7 @@ export default async function AdminNotesPage() {
         eyebrow="Farm Management"
         title="Field Journal"
         subtitle="Quick observations from the rows"
-        flower="viola"
+        flower="pansy"
         backHref="/admin/dashboard"
       />
       <div className="px-4 py-6">

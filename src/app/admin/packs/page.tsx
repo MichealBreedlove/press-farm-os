@@ -22,7 +22,7 @@ export default async function PacksPage() {
         eyebrow="Farm Management"
         title="Pack Manager"
         subtitle="Container inventory + usage"
-        flower="fairy-vetch"
+        flower="hairy-vetch"
         backHref="/admin/dashboard"
       />
       <div className="px-4 py-6">

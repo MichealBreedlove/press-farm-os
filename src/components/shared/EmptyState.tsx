@@ -7,10 +7,10 @@ const FLOWERS_BASE = "/assets/pressfarm/flowers";
 const ALL_FLOWERS = [
   "allium", "alyssum", "anise-hyssop", "bachelor-button", "borage",
   "buttercup", "calendula", "california-poppy", "chamomile", "chervil",
-  "chive-blossom", "dill", "fairy-vetch", "fava-flower", "fennel",
+  "chive-blossom", "dill", "hairy-vetch", "fava-flower", "fennel",
   "garlic-chive", "gem-marigold", "green-leaf", "lavender", "marigold",
   "mustard-flower", "nasturtium", "nasturtium-leaf", "pansy", "pea-flower",
-  "rosemary", "squash-blossom", "squash-bud", "thai-basil", "thyme", "viola",
+  "rosemary", "squash-blossom", "squash-bud", "thai-basil", "thyme",
 ] as const;
 
 export type FlowerName = typeof ALL_FLOWERS[number] | "random";

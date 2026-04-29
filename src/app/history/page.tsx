@@ -7,9 +7,9 @@ import type { OrderStatus } from "@/types";
 
 /** Pool of flowers used for per-order accents in the history list. */
 const HISTORY_FLOWERS = [
-  "squash-blossom", "nasturtium", "marigold", "gem-marigold", "viola",
+  "squash-blossom", "nasturtium", "marigold", "gem-marigold",
   "pansy", "pea-flower", "chive-blossom", "borage", "calendula",
-  "chamomile", "lavender", "alyssum", "fairy-vetch", "fava-flower",
+  "chamomile", "lavender", "alyssum", "hairy-vetch", "fava-flower",
   "anise-hyssop", "bachelor-button", "thyme", "rosemary", "dill",
 ];
 

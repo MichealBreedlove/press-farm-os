@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 const FLOWER_POOL = [
   "alyssum", "anise-hyssop", "bachelor-button", "borage", "buttercup",
   "calendula", "california-poppy", "chamomile", "chervil", "chive-blossom",
-  "dill", "fairy-vetch", "fava-flower", "fennel", "garlic-chive",
+  "dill", "hairy-vetch", "fava-flower", "fennel", "garlic-chive",
   "gem-marigold", "lavender", "marigold", "mustard-flower", "nasturtium",
   "pansy", "pea-flower", "rosemary", "squash-blossom", "thai-basil",
-  "thyme", "viola",
+  "thyme",
 ];
 
 interface FloralCornersProps {

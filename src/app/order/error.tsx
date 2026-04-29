@@ -18,7 +18,7 @@ export default function OrderError({
       <div className="text-center space-y-5 max-w-sm">
         <div className="relative mx-auto w-32 h-32">
           <img
-            src="/assets/pressfarm/flowers/fairy-vetch.png"
+            src="/assets/pressfarm/flowers/hairy-vetch.png"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-contain opacity-90"
