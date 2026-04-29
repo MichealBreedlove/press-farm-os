@@ -16,7 +16,6 @@ const FLOWERS_BRAND = [
   { name: "Fava Flower", file: "fava-flower.png", role: "Cover-crop bloom", color: "White / Black", chip: "pf-crop-fava" },
   { name: "Fairy Vetch", file: "fairy-vetch.png", role: "Soil health", color: "Cream / Violet", chip: "pf-crop-fairy-vetch" },
   { name: "Alyssum", file: "alyssum.png", role: "Delicate filler", color: "Cream", chip: "pf-crop-alyssum" },
-  { name: "Viola", file: "viola.png", role: "Plate flower", color: "Purple / Yellow", chip: "pf-crop-viola" },
   { name: "Green Leaf", file: "green-leaf.png", role: "Foliage accent", color: "Green", chip: "pf-crop-leaf" },
 ];
 
@@ -91,7 +90,7 @@ const ASSET_PATHS = [
   { label: "Light monochrome (for dark UI)", path: "/assets/pressfarm/logo/pressfarm-light.svg" },
   { label: "Favicon (ICO + PNG variants)", path: "/assets/pressfarm/favicon/" },
   { label: "Bank Gothic LT font", path: "/assets/fonts/BankGothicLT.woff2" },
-  { label: "Flower illustrations (31 species + 8 alternates)", path: "/assets/pressfarm/flowers/" },
+  { label: "Flower illustrations (30 species + 8 alternates)", path: "/assets/pressfarm/flowers/" },
 ];
 
 export default async function UIKitPage() {
@@ -263,7 +262,7 @@ export default async function UIKitPage() {
         <section>
           <div className="flex items-baseline justify-between mb-4">
             <p className="section-eyebrow text-farm-muted">Flower System · Brand Sheet</p>
-            <p className="text-xs text-farm-muted">14 canonical botanicals</p>
+            <p className="text-xs text-farm-muted">13 canonical botanicals</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FLOWERS_BRAND.map((f) => (
