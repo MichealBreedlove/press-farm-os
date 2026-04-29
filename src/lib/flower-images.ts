@@ -80,6 +80,12 @@ const FLOWER_NAME_MAP: Record<string, string> = {
   "thaibasilflower": "thai-basil",
   "thyme": "thyme",
   "thymeflower": "thyme",
+  // Newly added wildflower species
+  "buttercup": "buttercup",
+  "ranunculus": "buttercup",
+  "californiapoppy": "california-poppy",
+  "poppy": "california-poppy",
+  "eschscholzia": "california-poppy",
 };
 
 /**

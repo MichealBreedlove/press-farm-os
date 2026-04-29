@@ -81,6 +81,8 @@ const config: Config = {
             "thai-basil": "#7c3aed",
             "nasturtium-leaf": "#556B2F",
             "squash-bud": "#f4c75f",
+            buttercup: "#f4d03f",
+            "california-poppy": "#ea580c",
           },
         },
       },

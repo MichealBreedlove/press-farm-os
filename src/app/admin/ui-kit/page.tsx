@@ -35,6 +35,8 @@ const FLOWERS_EXTENDED = [
   { name: "Thai Basil", file: "thai-basil.png", role: "Aromatic stalk", color: "Violet", chip: "pf-crop-thai-basil" },
   { name: "Nasturtium Leaf", file: "nasturtium-leaf.png", role: "Peltate foliage", color: "Green", chip: "pf-crop-nasturtium-leaf" },
   { name: "Squash Bud", file: "squash-bud.png", role: "Closed blossom", color: "Yellow", chip: "pf-crop-squash-bud" },
+  { name: "Buttercup", file: "buttercup.png", role: "Wild meadow accent", color: "Yellow", chip: "pf-crop-buttercup" },
+  { name: "California Poppy", file: "california-poppy.png", role: "State wildflower", color: "Orange", chip: "pf-crop-california-poppy" },
 ];
 
 const FLOWERS = [...FLOWERS_BRAND, ...FLOWERS_EXTENDED];
@@ -67,7 +69,7 @@ const ASSET_PATHS = [
   { label: "Light monochrome (for dark UI)", path: "/assets/pressfarm/logo/pressfarm-light.svg" },
   { label: "Favicon (ICO + PNG variants)", path: "/assets/pressfarm/favicon/" },
   { label: "Bank Gothic LT font", path: "/assets/fonts/BankGothicLT.woff2" },
-  { label: "Flower illustrations (28)", path: "/assets/pressfarm/flowers/" },
+  { label: "Flower illustrations (30)", path: "/assets/pressfarm/flowers/" },
 ];
 
 export default async function UIKitPage() {
@@ -170,7 +172,7 @@ export default async function UIKitPage() {
         <section>
           <div className="flex items-baseline justify-between mb-4">
             <p className="section-eyebrow text-farm-muted">Flower System · Extended Chef Garden</p>
-            <p className="text-xs text-farm-muted">14 herbs & seasonals</p>
+            <p className="text-xs text-farm-muted">16 herbs & seasonals</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FLOWERS_EXTENDED.map((f) => (

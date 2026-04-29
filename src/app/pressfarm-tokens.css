@@ -86,6 +86,8 @@
   --pf-crop-thai-basil: var(--pf-master-violet);
   --pf-crop-nasturtium-leaf: var(--pf-master-olive);
   --pf-crop-squash-bud: var(--pf-master-yellow);
+  --pf-crop-buttercup: var(--pf-master-yellow);
+  --pf-crop-california-poppy: var(--pf-master-orange);
 
   /* Semantic aliases */
   --pf-bg-page: var(--pf-color-cream-200);
@@ -358,6 +360,8 @@
 .pf-crop-thai-basil { --pf-crop-color: var(--pf-crop-thai-basil); }
 .pf-crop-nasturtium-leaf { --pf-crop-color: var(--pf-crop-nasturtium-leaf); }
 .pf-crop-squash-bud { --pf-crop-color: var(--pf-crop-squash-bud); }
+.pf-crop-buttercup { --pf-crop-color: var(--pf-crop-buttercup); }
+.pf-crop-california-poppy { --pf-crop-color: var(--pf-crop-california-poppy); }
 
 .pf-crop-chip {
   border: 1px solid color-mix(in srgb, var(--pf-crop-color, #ccc) 45%, white);
