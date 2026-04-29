@@ -56,13 +56,16 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
     >
       {corners.map((corner, i) => {
         const flower = picks[i] ?? picks[0];
-        // Mirror right-side corners horizontally and bottom corners vertically
-        // so each flower's stem points OFF the viewport corner and the bloom
-        // faces INWARD toward the page content.
+        // Flowers natively have stem at bottom + bloom at top.
+        // - Top corners: flip vertically so stem points UP off-screen and
+        //   bloom HANGS DOWN into the page (visible).
+        // - Right corners: flip horizontally so bloom faces left (inward).
+        // - Bottom corners stay un-flipped vertically (stem off bottom,
+        //   bloom growing up into view).
         const isRight = corner.pos.includes("right");
-        const isBottom = corner.pos.includes("bottom");
+        const isTop = corner.pos.includes("top");
         const scaleX = isRight ? -1 : 1;
-        const scaleY = isBottom ? -1 : 1;
+        const scaleY = isTop ? -1 : 1;
         const transform = `scale(${scaleX}, ${scaleY}) rotate(${corner.rot}deg)`;
 
         const offsetMap: Record<string, React.CSSProperties> = {
