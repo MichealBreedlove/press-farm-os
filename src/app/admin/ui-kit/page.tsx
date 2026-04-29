@@ -68,6 +68,8 @@ const ASSET_PATHS = [
   { label: "Mandala monochrome — deep green", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-deep-green.png" },
   { label: "Mandala monochrome — black", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-black.png" },
   { label: "Mandala monochrome — gold", path: "/assets/pressfarm/logo/png/pressfarm-mandala-mono-gold.png" },
+  { label: "Circular seal (dark)", path: "/assets/pressfarm/logo/png/pressfarm-circular-seal-dark.png" },
+  { label: "App icon (dark green tile)", path: "/assets/pressfarm/logo/png/pressfarm-app-icon.png" },
   { label: "Seal logo (cream background)", path: "/assets/pressfarm/logo/pressfarm-seal.png" },
   { label: "Icon only (squash blossom)", path: "/assets/pressfarm/logo/pressfarm-icon.png" },
   { label: "Dark monochrome", path: "/assets/pressfarm/logo/pressfarm-dark.svg" },

@@ -28,7 +28,7 @@ export function PageHeader({ title, subtitle, children, dashboardHref = "/admin/
             PRESS FARM
           </span>
           <Image
-            src="/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png"
+            src="/assets/pressfarm/flowers/marigold-2.png"
             alt="Press Farm"
             width={28}
             height={28}
