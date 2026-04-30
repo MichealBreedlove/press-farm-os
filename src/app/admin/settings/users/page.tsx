@@ -18,7 +18,14 @@ export default async function AdminUsersPage() {
       .select("id, full_name, role, is_active, created_at, restaurant_users(restaurant_id, restaurants(name))")
       .order("created_at", { ascending: true }),
     admin.auth.admin.listUsers(),
-    (admin as any).from("restaurants").select("id, name").order("name"),
+    // Hide the legacy "Events" pseudo-restaurant from the invite picker.
+    // Events are now a tag on items (migration 023); chefs invited to a real
+    // restaurant automatically see event items in their order form.
+    (admin as any)
+      .from("restaurants")
+      .select("id, name")
+      .not("name", "ilike", "%event%")
+      .order("name"),
   ]);
 
   const emailMap: Record<string, string> = {};
@@ -32,7 +39,11 @@ export default async function AdminUsersPage() {
     email: emailMap[p.id] ?? "",
     role: p.role,
     is_active: p.is_active,
-    restaurants: (p.restaurant_users ?? []).map((ru: any) => ru.restaurants?.name).filter(Boolean),
+    // Strip the legacy "Events" pseudo-restaurant from the displayed list —
+    // it's not a real restaurant assignment anymore.
+    restaurants: (p.restaurant_users ?? [])
+      .map((ru: any) => ru.restaurants?.name)
+      .filter((n: string | undefined) => Boolean(n) && !/event/i.test(n!)),
   }));
 
   return (

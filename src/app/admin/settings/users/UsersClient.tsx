@@ -179,6 +179,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
+            <p className="text-[11px] text-farm-muted/80 mt-1.5 leading-relaxed">
+              Chefs at any restaurant automatically see the Events Menu in their order form.
+            </p>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button
