@@ -332,7 +332,7 @@ export function ExpensesDataClient({ totalCount, totalAmount, latestDate }: Prop
                   {preview.skipped > 0 && ` · ${preview.skipped} skipped`}
                 </p>
                 {preview.skipped > 0 && preview.skippedRows.length > 0 && (
-                  <p className="text-xs text-orange-600 mt-1">
+                  <p className="text-xs text-amber-700 mt-1">
                     e.g. row {preview.skippedRows[0].row}: {preview.skippedRows[0].reason}
                   </p>
                 )}
@@ -403,11 +403,11 @@ export function ExpensesDataClient({ totalCount, totalAmount, latestDate }: Prop
                   <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">New</p>
                 </div>
                 <div className="bg-white border border-farm-dark/5 rounded-xl p-3 text-center shadow-sm">
-                  <p className="font-display text-2xl text-blue-600">{result.updated}</p>
+                  <p className="font-display text-2xl text-blue-700">{result.updated}</p>
                   <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">Updated</p>
                 </div>
                 <div className="bg-white border border-farm-dark/5 rounded-xl p-3 text-center shadow-sm">
-                  <p className={`font-display text-2xl ${result.errors > 0 ? "text-red-600" : "text-farm-muted"}`}>{result.errors}</p>
+                  <p className={`font-display text-2xl ${result.errors > 0 ? "text-red-700" : "text-farm-muted"}`}>{result.errors}</p>
                   <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">Errors</p>
                 </div>
               </div>

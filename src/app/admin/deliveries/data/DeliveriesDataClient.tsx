@@ -9,6 +9,8 @@ interface PreviewResult {
   lines?: number;
   skipped: number;
   sample?: { key: string; items: { item: string; qty: number; unit: string; price: number }[] }[];
+  format?: "legacy-delivery-tracker" | "deliveries-csv";
+  skippedRows?: { row: number; reason: string }[];
 }
 
 interface ImportResult {
@@ -16,6 +18,9 @@ interface ImportResult {
   importedLines?: number;
   lineErrors?: number;
   skipped: number;
+  format?: "legacy-delivery-tracker" | "deliveries-csv";
+  unknownItems?: string[];
+  unknownRestaurants?: string[];
 }
 
 interface Props {
@@ -63,7 +68,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/import/delivery-history?preview=true", { method: "POST", body: form });
+      const res = await fetch("/api/import/deliveries-csv?preview=true", { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Preview failed");
       setPreview(json);
@@ -82,7 +87,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/import/delivery-history?preview=false", { method: "POST", body: form });
+      const res = await fetch("/api/import/deliveries-csv?preview=false", { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Import failed");
       setResult(json);
@@ -208,14 +213,16 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
 
       {/* Helper banner */}
       <div className="bg-gradient-to-br from-blue-50 to-farm-cream/30 border border-blue-100 rounded-2xl p-4">
-        <p className="text-[10px] tracking-[0.18em] uppercase text-blue-700/80 font-semibold">DELIVERY TRACKER tab</p>
+        <p className="text-[10px] tracking-[0.18em] uppercase text-blue-700/80 font-semibold">Two formats accepted</p>
         <p className="text-sm text-farm-dark mt-1.5 leading-relaxed">
-          Drop your <em>Daily Delivery Tracking Sheet</em>. We&apos;ll read the
-          <strong> DELIVERY TRACKER</strong> tab, group rows by date + restaurant,
-          and create finalized deliveries with all line items matched to your catalog.
+          Drop the export CSV from the tab above to round-trip edits, <em>or</em> drop your
+          original <em>Daily Delivery Tracking Sheet</em> — we&apos;ll detect the
+          <strong> DELIVERY TRACKER</strong> tab automatically.
         </p>
         <p className="text-xs text-farm-muted/80 mt-2 leading-relaxed">
-          Items in the tracker that don&apos;t exist in your catalog yet will be skipped — import items first via the items page.
+          Either way: rows are grouped by date + restaurant. If a delivery already exists for that
+          pair, its line items are wiped and re-inserted from the file. Items not in your catalog are
+          skipped with a warning — import items first via the items page.
         </p>
       </div>
 
@@ -233,7 +240,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".xlsx,.xls"
+            accept=".csv,.xlsx,.xls"
             className="sr-only"
             onChange={(e) => { reset(); setFile(e.target.files?.[0] ?? null); }}
           />
@@ -242,8 +249,8 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 8v9a3 3 0 01-3 3H7a3 3 0 01-3-3V8m12 4l-4-4m0 0l-4 4m4-4v12" />
             </svg>
           </div>
-          <p className="font-display text-lg text-farm-dark">Drop your XLSX here</p>
-          <p className="text-sm text-farm-muted mt-1">or tap to browse</p>
+          <p className="font-display text-lg text-farm-dark">Drop your file here</p>
+          <p className="text-sm text-farm-muted mt-1">.csv or .xlsx — both formats auto-detected</p>
         </div>
       )}
 
@@ -301,8 +308,19 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
             <p className="font-display text-2xl text-farm-dark mt-1">
               {preview.deliveries} deliver{preview.deliveries === 1 ? "y" : "ies"} · {preview.lines} line items
             </p>
+            {preview.format === "legacy-delivery-tracker" && (
+              <p className="text-xs text-farm-muted mt-1.5 inline-flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Detected legacy <strong>DELIVERY TRACKER</strong> tab
+              </p>
+            )}
             {preview.skipped > 0 && (
-              <p className="text-sm text-orange-600 mt-1">{preview.skipped} rows skipped (missing data or unknown items)</p>
+              <p className="text-sm text-amber-700 mt-1">
+                {preview.skipped} rows skipped
+                {preview.skippedRows && preview.skippedRows.length > 0 && ` — e.g. row ${preview.skippedRows[0].row}: ${preview.skippedRows[0].reason}`}
+              </p>
             )}
           </div>
 
@@ -355,11 +373,11 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
               <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">Deliveries</p>
             </div>
             <div className="bg-white border border-farm-dark/5 rounded-xl p-3 text-center shadow-sm">
-              <p className="font-display text-2xl text-blue-600">{result.importedLines ?? 0}</p>
+              <p className="font-display text-2xl text-blue-700">{result.importedLines ?? 0}</p>
               <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">Line Items</p>
             </div>
             <div className="bg-white border border-farm-dark/5 rounded-xl p-3 text-center shadow-sm">
-              <p className={`font-display text-2xl ${(result.lineErrors ?? 0) > 0 ? "text-red-600" : "text-farm-muted"}`}>{result.lineErrors ?? 0}</p>
+              <p className={`font-display text-2xl ${(result.lineErrors ?? 0) > 0 ? "text-red-700" : "text-farm-muted"}`}>{result.lineErrors ?? 0}</p>
               <p className="text-[10px] tracking-wider uppercase text-farm-muted mt-0.5">Errors</p>
             </div>
           </div>
@@ -368,11 +386,57 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
             <p className="text-xs text-farm-muted text-center">{result.skipped} rows skipped</p>
           )}
 
+          {result.unknownItems && result.unknownItems.length > 0 && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+              <p className="text-sm font-semibold text-amber-800 mb-1">
+                {result.unknownItems.length} item name{result.unknownItems.length === 1 ? "" : "s"} not in catalog
+              </p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                These rows were dropped — add them via items first, then re-import:
+              </p>
+              <ul className="text-xs text-amber-800 mt-2 space-y-0.5 ml-4 list-disc">
+                {result.unknownItems.map((n, i) => (<li key={i}>{n}</li>))}
+              </ul>
+            </div>
+          )}
+
+          {result.unknownRestaurants && result.unknownRestaurants.length > 0 && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+              <p className="text-xs text-amber-800">
+                <strong>Note:</strong> {result.unknownRestaurants.length} restaurant name{result.unknownRestaurants.length === 1 ? "" : "s"} not matched
+                — fell back to the first restaurant: {result.unknownRestaurants.join(", ")}
+              </p>
+            </div>
+          )}
+
           <button onClick={reset} className="w-full min-h-[48px] bg-white border border-farm-dark/15 text-farm-dark/85 rounded-xl text-sm font-semibold hover:border-farm-green hover:text-farm-green transition-colors">
             Import Another File
           </button>
         </div>
       )}
+
+      <details className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm overflow-hidden group">
+        <summary className="px-4 py-3 cursor-pointer flex items-center justify-between">
+          <span className="text-sm font-medium text-farm-dark">Need the column format?</span>
+          <svg className="w-4 h-4 text-farm-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+        <div className="px-4 pb-4 text-xs text-farm-muted space-y-2 leading-relaxed">
+          <p>For CSV imports, headers (first row):</p>
+          <code className="block bg-farm-cream/60 p-2.5 rounded text-[11px] font-pf-mono text-farm-dark overflow-x-auto whitespace-nowrap">
+            Date, Restaurant, Item, Quantity, Unit, Unit Price, Line Total, Status, Notes
+          </code>
+          <ul className="space-y-1 ml-4 list-disc">
+            <li><strong>Date</strong>: ISO YYYY-MM-DD, M/D/YY, or any standard date string.</li>
+            <li><strong>Restaurant</strong>: matches by full name first, then first-word fuzzy fallback.</li>
+            <li><strong>Item</strong>: matches by name (case-insensitive). Items not in catalog are skipped.</li>
+            <li><strong>Unit</strong>: ea, sm, lg, gb, bu, qt, pt, lbs, bx, cs, kit (or full names like "Bunch").</li>
+            <li><strong>Status</strong>: pending, logged, finalized (defaults to <code>finalized</code> for legacy XLSX, <code>logged</code> for CSV).</li>
+            <li><strong>Re-imports</strong>: existing delivery for that date+restaurant has its line items wiped and re-inserted from the file.</li>
+          </ul>
+        </div>
+      </details>
       </>)}
     </div>
   );
