@@ -8,7 +8,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { styles, MANDALA_URL, WORDMARK_URL, colors } from "./_shared";
+import { styles, MANDALA_URL, WORDMARK_URL, colors, restaurantLogoUrl, restaurantBadgeStyles } from "./_shared";
 
 interface ShortageItem {
   itemName: string;
@@ -34,6 +34,8 @@ export default function ShortageNotice({
   deliveryDate,
   shortages,
 }: ShortageNoticeProps) {
+  const restLogo = restaurantLogoUrl(restaurantName);
+
   return (
     <Html>
       <Head />
@@ -45,6 +47,15 @@ export default function ShortageNotice({
               <Img src={MANDALA_URL} alt="Press Farm mandala" width="120" height="120" style={{ display: "block", margin: "0 auto", width: "120px", height: "auto" }} />
               <Img src={WORDMARK_URL} alt="PRESS FARM" width="240" height="auto" style={{ display: "block", margin: "20px auto 6px", maxWidth: "240px", height: "auto" }} />
               <Text style={styles.tagline}>Cultivated with Chefs</Text>
+
+              {/* Restaurant co-brand */}
+              <hr style={restaurantBadgeStyles.divider} />
+              <Text style={restaurantBadgeStyles.forLabel}>For</Text>
+              {restLogo ? (
+                <Img src={restLogo} alt={restaurantName} style={restaurantBadgeStyles.logo} />
+              ) : (
+                <Text style={restaurantBadgeStyles.fallbackText}>{restaurantName}</Text>
+              )}
             </Section>
 
             <hr style={styles.goldRule} />

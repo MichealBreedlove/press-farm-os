@@ -12,8 +12,12 @@ import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 
 /**
- * GET /api/test-emails-bulk?to=email
- * Sends sample versions of all 6 transactional emails to the given address.
+ * GET /api/test-emails-bulk?to=email&restaurant=Press
+ *
+ * Sends sample versions of all 6 transactional emails. By default, sends one
+ * full set per restaurant (Press + Under-Study) → 12 emails total. Pass
+ * ?restaurant=Press (or any single name) to scope to one set.
+ *
  * Admin only.
  */
 export async function GET(request: Request) {
@@ -35,133 +39,146 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "RESEND_API_KEY not configured" }, { status: 503 });
   }
 
+  // Restaurant scope: ?restaurant=Press → just that one. Default → both.
+  const restaurantParam = url.searchParams.get("restaurant");
+  const restaurants = restaurantParam ? [restaurantParam] : ["Press", "Under-Study"];
+
   const resend = getResendClient();
   const sampleDate = "Thursday, May 1";
-  const results: { template: string; status: string; id?: string; error?: any }[] = [];
+  const results: { template: string; restaurant: string; status: string; id?: string; error?: any }[] = [];
 
-  // Helper
-  async function send(template: string, fromAddress: string, subject: string, react: React.ReactElement) {
+  async function send(template: string, restaurant: string, fromAddress: string, subject: string, react: React.ReactElement) {
     try {
       const { data, error } = await resend.emails.send({
         from: fromAddress,
         to,
-        subject: `[SAMPLE] ${subject}`,
+        subject: `[SAMPLE · ${restaurant}] ${subject}`,
         react,
       });
       if (error) {
-        results.push({ template, status: "failed", error });
+        results.push({ template, restaurant, status: "failed", error });
       } else {
-        results.push({ template, status: "sent", id: data?.id });
+        results.push({ template, restaurant, status: "sent", id: data?.id });
       }
     } catch (err: any) {
-      results.push({ template, status: "exception", error: err?.message ?? String(err) });
+      results.push({ template, restaurant, status: "exception", error: err?.message ?? String(err) });
     }
   }
 
-  // 1. Welcome
-  await send(
-    "chef-welcome",
-    FROM_ADDRESSES.noreply,
-    "Welcome to Press Farm",
-    ChefWelcome({
-      chefName: "Chef Sample",
-      restaurantName: "Press",
-      loginUrl: `${APP_URL}/login`,
-    }) as React.ReactElement,
-  );
+  // Send the full 6-template set for each requested restaurant.
+  for (const restaurant of restaurants) {
+    // 1. Welcome
+    await send(
+      "chef-welcome",
+      restaurant,
+      FROM_ADDRESSES.noreply,
+      "Welcome to Press Farm",
+      ChefWelcome({
+        chefName: "Chef Sample",
+        restaurantName: restaurant,
+        loginUrl: `${APP_URL}/login`,
+      }) as React.ReactElement,
+    );
 
-  // 2. Availability published
-  await send(
-    "availability-published",
-    FROM_ADDRESSES.availability,
-    `New Availability — ${sampleDate}`,
-    AvailabilityPublished({
-      chefName: "Chef Sample",
-      restaurantName: "Press",
-      deliveryDate: sampleDate,
-      itemCount: 28,
-    }) as React.ReactElement,
-  );
+    // 2. Availability published
+    await send(
+      "availability-published",
+      restaurant,
+      FROM_ADDRESSES.availability,
+      `New Availability — ${sampleDate}`,
+      AvailabilityPublished({
+        chefName: "Chef Sample",
+        restaurantName: restaurant,
+        deliveryDate: sampleDate,
+        itemCount: 28,
+      }) as React.ReactElement,
+    );
 
-  // 3. Order confirmation (chef-facing)
-  await send(
-    "order-confirmation",
-    FROM_ADDRESSES.orders,
-    `Order Confirmed — ${sampleDate}`,
-    OrderConfirmation({
-      chefName: "Chef Sample",
-      restaurantName: "Press",
-      deliveryDate: sampleDate,
-      freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
-      items: [
-        { itemName: "Nasturtium", quantity: 200, unit: "ea" },
-        { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
-        { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
-        { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
-        { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
-        { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
-      ],
-    }) as React.ReactElement,
-  );
+    // 3. Order confirmation (chef-facing)
+    await send(
+      "order-confirmation",
+      restaurant,
+      FROM_ADDRESSES.orders,
+      `Order Confirmed — ${sampleDate}`,
+      OrderConfirmation({
+        chefName: "Chef Sample",
+        restaurantName: restaurant,
+        deliveryDate: sampleDate,
+        freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
+        items: [
+          { itemName: "Nasturtium", quantity: 200, unit: "ea" },
+          { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
+          { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
+          { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
+          { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
+          { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
+        ],
+      }) as React.ReactElement,
+    );
 
-  // 4. Order received (admin notification)
-  await send(
-    "order-received",
-    FROM_ADDRESSES.orders,
-    `Press submitted order for ${sampleDate}`,
-    OrderReceived({
-      restaurantName: "Press",
-      chefName: "Chef Sample",
-      deliveryDate: sampleDate,
-      submittedAt: "Wednesday 8:42 PM",
-      freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
-      items: [
-        { itemName: "Nasturtium", quantity: 200, unit: "ea" },
-        { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
-        { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
-        { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
-        { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
-        { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
-      ],
-    }) as React.ReactElement,
-  );
+    // 4. Order received (admin notification)
+    await send(
+      "order-received",
+      restaurant,
+      FROM_ADDRESSES.orders,
+      `${restaurant} submitted order for ${sampleDate}`,
+      OrderReceived({
+        restaurantName: restaurant,
+        chefName: "Chef Sample",
+        deliveryDate: sampleDate,
+        submittedAt: "Wednesday 8:42 PM",
+        freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
+        items: [
+          { itemName: "Nasturtium", quantity: 200, unit: "ea" },
+          { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
+          { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
+          { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
+          { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
+          { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
+        ],
+      }) as React.ReactElement,
+    );
 
-  // 5. Order fulfilled
-  await send(
-    "order-fulfilled",
-    FROM_ADDRESSES.orders,
-    `Order ready for ${sampleDate}`,
-    OrderFulfilled({
-      chefName: "Chef Sample",
-      restaurantName: "Press",
-      deliveryDate: sampleDate,
-      items: [
-        { itemName: "Nasturtium", requestedQty: 200, fulfilledQty: 200, unit: "ea", isShorted: false },
-        { itemName: "Mustard Flowers", requestedQty: 2, fulfilledQty: 2, unit: "qt", isShorted: false },
-        { itemName: "Fava Flowers", requestedQty: 1, fulfilledQty: 1, unit: "lg", isShorted: false },
-        { itemName: "Squash Blossoms", requestedQty: 12, fulfilledQty: 8, unit: "ea", isShorted: true },
-      ],
-    }) as React.ReactElement,
-  );
+    // 5. Order fulfilled
+    await send(
+      "order-fulfilled",
+      restaurant,
+      FROM_ADDRESSES.orders,
+      `Order ready for ${sampleDate}`,
+      OrderFulfilled({
+        chefName: "Chef Sample",
+        restaurantName: restaurant,
+        deliveryDate: sampleDate,
+        items: [
+          { itemName: "Nasturtium", requestedQty: 200, fulfilledQty: 200, unit: "ea", isShorted: false },
+          { itemName: "Mustard Flowers", requestedQty: 2, fulfilledQty: 2, unit: "qt", isShorted: false },
+          { itemName: "Fava Flowers", requestedQty: 1, fulfilledQty: 1, unit: "lg", isShorted: false },
+          { itemName: "Squash Blossoms", requestedQty: 12, fulfilledQty: 8, unit: "ea", isShorted: true },
+        ],
+      }) as React.ReactElement,
+    );
 
-  // 6. Shortage notice
-  await send(
-    "shortage-notice",
-    FROM_ADDRESSES.orders,
-    `Shortage notice — ${sampleDate}`,
-    ShortageNotice({
-      chefName: "Chef Sample",
-      restaurantName: "Press",
-      deliveryDate: sampleDate,
-      shortages: [
-        { itemName: "Squash Blossoms", requestedQty: 12, fulfilledQty: 8, unit: "ea", reason: "Pest damage on three plants" },
-        { itemName: "Borage Flowers", requestedQty: 50, fulfilledQty: 30, unit: "ea", reason: "Bolted early — replanting next week" },
-      ],
-    }) as React.ReactElement,
-  );
+    // 6. Shortage notice
+    await send(
+      "shortage-notice",
+      restaurant,
+      FROM_ADDRESSES.orders,
+      `Shortage notice — ${sampleDate}`,
+      ShortageNotice({
+        chefName: "Chef Sample",
+        restaurantName: restaurant,
+        deliveryDate: sampleDate,
+        shortages: [
+          { itemName: "Squash Blossoms", requestedQty: 12, fulfilledQty: 8, unit: "ea", reason: "Pest damage on three plants" },
+          { itemName: "Borage Flowers", requestedQty: 50, fulfilledQty: 30, unit: "ea", reason: "Bolted early — replanting next week" },
+        ],
+      }) as React.ReactElement,
+    );
+  }
 
   const summary = {
     sent_to: to,
+    restaurants,
     total: results.length,
     succeeded: results.filter(r => r.status === "sent").length,
     failed: results.filter(r => r.status !== "sent").length,

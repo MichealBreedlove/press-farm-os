@@ -266,3 +266,60 @@ export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-manda
 export const STACKED_LOCKUP_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-stacked-lockup.png`;
 /** Bank Gothic LT "PRESS FARM" wordmark rendered as PNG (email clients can't load custom fonts) */
 export const WORDMARK_URL = `${APP_URL}/assets/logo/logo-wordmark-bank-gothic-transparent.png`;
+
+/**
+ * Resolve a partner-restaurant logo URL by name.
+ * Used in email headers to co-brand transactional sends with the recipient
+ * restaurant. Returns null when the name doesn't match a known logo so the
+ * caller can fall back to plain text.
+ *
+ * Matching is loose — handles "Under-Study", "Understudy", "under_study", etc.
+ */
+export function restaurantLogoUrl(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const normalized = name.toLowerCase().replace(/[^a-z]/g, "");
+  // Order matters: check "under-study" first since it contains the literal "study"
+  if (normalized.includes("understudy") || normalized.includes("under")) {
+    return `${APP_URL}/assets/restaurants/under-study.png`;
+  }
+  if (normalized.includes("press")) {
+    return `${APP_URL}/assets/restaurants/press.png`;
+  }
+  return null;
+}
+
+/** Email-friendly co-brand block: gold divider + small "for" label + restaurant logo. */
+export const restaurantBadgeStyles = {
+  divider: {
+    display: "block",
+    width: "120px",
+    height: "1px",
+    backgroundColor: colors.goldLight,
+    margin: "20px auto 12px",
+    border: "none",
+  },
+  forLabel: {
+    fontFamily: FONT_STACK,
+    fontSize: "9px",
+    letterSpacing: "0.32em",
+    textTransform: "uppercase" as const,
+    color: colors.textLight,
+    margin: "0 0 8px",
+    textAlign: "center" as const,
+  },
+  logo: {
+    display: "block",
+    margin: "0 auto",
+    maxWidth: "150px",
+    height: "auto",
+  },
+  fallbackText: {
+    fontFamily: FONT_STACK,
+    fontSize: "16px",
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    color: colors.greenDark,
+    margin: 0,
+    textAlign: "center" as const,
+  },
+};

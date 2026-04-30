@@ -9,7 +9,7 @@ import {
   Text,
 } from "@react-email/components";
 import { APP_URL } from "@/lib/constants";
-import { styles, MANDALA_URL, WORDMARK_URL, colors, FONT_STACK } from "./_shared";
+import { styles, MANDALA_URL, WORDMARK_URL, colors, FONT_STACK, restaurantLogoUrl, restaurantBadgeStyles } from "./_shared";
 
 interface OrderReceivedProps {
   restaurantName: string;
@@ -31,6 +31,8 @@ export default function OrderReceived({
   freeformNotes,
   submittedAt,
 }: OrderReceivedProps) {
+  const restLogo = restaurantLogoUrl(restaurantName);
+
   return (
     <Html>
       <Head />
@@ -42,6 +44,15 @@ export default function OrderReceived({
               <Img src={MANDALA_URL} alt="Press Farm mandala" width="120" height="120" style={{ display: "block", margin: "0 auto", width: "120px", height: "auto" }} />
               <Img src={WORDMARK_URL} alt="PRESS FARM" width="240" height="auto" style={{ display: "block", margin: "20px auto 6px", maxWidth: "240px", height: "auto" }} />
               <Text style={styles.tagline}>Cultivated with Chefs</Text>
+
+              {/* Restaurant co-brand */}
+              <hr style={restaurantBadgeStyles.divider} />
+              <Text style={restaurantBadgeStyles.forLabel}>From</Text>
+              {restLogo ? (
+                <Img src={restLogo} alt={restaurantName} style={restaurantBadgeStyles.logo} />
+              ) : (
+                <Text style={restaurantBadgeStyles.fallbackText}>{restaurantName}</Text>
+              )}
             </Section>
 
             <hr style={styles.goldRule} />
