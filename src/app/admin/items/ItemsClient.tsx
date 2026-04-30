@@ -15,6 +15,7 @@ interface Item {
   default_price: number | null;
   unit_prices?: Record<string, number> | null;
   is_archived: boolean;
+  is_event_item?: boolean;
   chef_notes: string | null;
   image_url: string | null;
 }
@@ -32,6 +33,9 @@ export function ItemsClient({ items, addItemHref }: Props) {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
   const [savingNote, setSavingNote] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState<null | "archive" | "unarchive">(null);
 
   function startEditNote(item: Item) {
     setEditingNote(item.id);
@@ -85,8 +89,56 @@ export function ItemsClient({ items, addItemHref }: Props) {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelected(new Set());
+  }
+
+  function selectAllVisible() {
+    setSelected(new Set(filtered.map((i) => i.id)));
+  }
+
+  async function runBulk(action: "archive" | "unarchive") {
+    if (selected.size === 0) return;
+    setBulkBusy(action);
+    try {
+      const res = await fetch("/api/items/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected), action }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "Bulk update failed" }));
+        alert(error || "Bulk update failed");
+        return;
+      }
+      exitSelectionMode();
+      router.refresh();
+    } finally {
+      setBulkBusy(null);
+    }
+  }
+
+  // Counts of currently-visible items in each archive state — drives which bulk
+  // actions we even offer (don't show "Archive" if everything selected is already archived).
+  const selectedItems = useMemo(
+    () => items.filter((i) => selected.has(i.id)),
+    [items, selected],
+  );
+  const selectedActiveCount = selectedItems.filter((i) => !i.is_archived).length;
+  const selectedArchivedCount = selectedItems.length - selectedActiveCount;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       {/* Search + filters */}
       <div className="flex gap-2">
         <input
@@ -106,7 +158,17 @@ export function ItemsClient({ items, addItemHref }: Props) {
         >
           Archived
         </button>
-        {addItemHref && (
+        <button
+          onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
+            selectionMode
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
+          }`}
+        >
+          {selectionMode ? "Done" : "Select"}
+        </button>
+        {addItemHref && !selectionMode && (
           <Link
             href={addItemHref}
             className="px-4 py-2.5 rounded-xl bg-farm-green text-white text-sm font-medium hover:bg-farm-green-dark transition-colors min-h-0 flex items-center gap-1 whitespace-nowrap"
@@ -117,22 +179,46 @@ export function ItemsClient({ items, addItemHref }: Props) {
         )}
       </div>
 
-      {/* Count + Import/Export shortcut */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-farm-muted">
-          {filtered.length} {filtered.length === 1 ? "item" : "items"}
-        </p>
-        <Link
-          href="/admin/items/data"
-          className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
-          title="Bulk import / export"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
-          </svg>
-          Import / Export
-        </Link>
-      </div>
+      {/* Count + Import/Export shortcut — or selection controls */}
+      {selectionMode ? (
+        <div className="flex items-center justify-between text-xs text-farm-muted">
+          <p>
+            {selected.size} selected · {filtered.length} visible
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={selectAllVisible}
+              disabled={filtered.length === 0 || selected.size === filtered.length}
+              className="text-xs text-farm-green font-medium hover:underline min-h-0 disabled:opacity-40 disabled:no-underline"
+            >
+              Select all visible
+            </button>
+            <button
+              onClick={() => setSelected(new Set())}
+              disabled={selected.size === 0}
+              className="text-xs text-farm-muted font-medium hover:underline min-h-0 disabled:opacity-40 disabled:no-underline"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-farm-muted">
+            {filtered.length} {filtered.length === 1 ? "item" : "items"}
+          </p>
+          <Link
+            href="/admin/items/data"
+            className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+            title="Bulk import / export"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            Import / Export
+          </Link>
+        </div>
+      )}
       {/* When searching, show flat list. Otherwise, group by category. */}
       {(search.trim()
         ? [{ key: "search", items: filtered, label: `Search Results (${filtered.length})` }]
@@ -184,7 +270,14 @@ export function ItemsClient({ items, addItemHref }: Props) {
                       })()}
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
-                      <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                        {item.is_event_item && (
+                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Event
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-farm-muted mt-0.5">
                         {(() => {
                           const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);

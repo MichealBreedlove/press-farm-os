@@ -29,6 +29,7 @@ interface Item {
   variety?: string | null;
   color?: string | null;
   unit_prices?: Record<string, number> | null;
+  is_event_item?: boolean;
 }
 
 interface Props {
@@ -60,6 +61,7 @@ export function ItemForm({ item }: Props) {
     size: item?.size ?? "",
     variety: item?.variety ?? "",
     color: item?.color ?? "",
+    is_event_item: item?.is_event_item ?? false,
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -84,6 +86,10 @@ export function ItemForm({ item }: Props) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function toggleEventItem() {
+    setForm((f) => ({ ...f, is_event_item: !f.is_event_item }));
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -106,6 +112,7 @@ export function ItemForm({ item }: Props) {
         unit_type: form.unit_type,
         default_price: form.default_price ? parseFloat(form.default_price) : null,
         unit_prices: unitPricesPayload,
+        is_event_item: Boolean(form.is_event_item),
         chef_notes: form.chef_notes || null,
         internal_notes: form.internal_notes || null,
         source: form.source || null,
@@ -212,6 +219,35 @@ export function ItemForm({ item }: Props) {
           ))}
         </select>
       </div>
+
+      {/* Event Item toggle — when on, this item appears in the chef order form
+          under a separate "Events Menu" section instead of the regular menu. */}
+      <label
+        className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+          form.is_event_item
+            ? "bg-pf-master-violet/10 border border-pf-master-violet/30"
+            : "bg-farm-cream/40 border border-farm-dark/5 hover:bg-farm-cream/60"
+        }`}
+      >
+        <div>
+          <p className="text-sm font-medium text-farm-dark">Event item</p>
+          <p className="text-xs text-farm-muted mt-0.5">
+            {form.is_event_item
+              ? "Shown to chefs under the Events Menu section"
+              : "Toggle on for items only ordered for special events"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleEventItem}
+          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${form.is_event_item ? "bg-pf-master-violet" : "bg-gray-300"}`}
+          aria-pressed={form.is_event_item}
+        >
+          <span
+            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.is_event_item ? "translate-x-5" : "translate-x-0.5"}`}
+          />
+        </button>
+      </label>
 
       {/* Unit (multi-select with per-unit pricing).
           Each selected container chip reveals its own price input. */}

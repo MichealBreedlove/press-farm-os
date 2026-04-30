@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Params }) {
 
   const { data: item, error } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, sort_order")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, sort_order")
     .eq("id", itemId)
     .single();
 
@@ -87,6 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.internal_notes !== undefined) updates.internal_notes = body.internal_notes || null;
   if (body.source !== undefined) updates.source = body.source || null;
   if (body.is_archived !== undefined) updates.is_archived = Boolean(body.is_archived);
+  if (body.is_event_item !== undefined) updates.is_event_item = Boolean(body.is_event_item);
   if (body.image_url !== undefined) updates.image_url = body.image_url || null;
   if (body.season_status !== undefined) updates.season_status = body.season_status || "available";
   if (body.season_note !== undefined) updates.season_note = body.season_note || null;
@@ -110,7 +111,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     .from("items")
     .update(updates)
     .eq("id", itemId)
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

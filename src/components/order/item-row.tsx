@@ -199,7 +199,6 @@ export function ItemRow({
               const p = priceForUnit(item, units[0]);
               return p != null ? <span className="text-xs text-farm-muted flex-shrink-0">· ${p.toFixed(2)}</span> : null;
             })()}
-            {(availabilityItem as any)._isEventsItem && <span className="text-[10px] bg-pf-master-gold/15 text-pf-master-gold px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">Events</span>}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}

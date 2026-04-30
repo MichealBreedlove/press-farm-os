@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     .from("items")
     .select(`
       id, name, category, unit_type, default_price, unit_prices,
-      chef_notes, internal_notes, source, is_archived, season_status,
+      chef_notes, internal_notes, source, is_archived, is_event_item, season_status,
       size, variety, color
     `)
     .order("category")
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   const headers = [
     "Name", "Category", "Variety", "Color", "Sizes", "Containers",
     "Prices", "Default Price", "Chef Notes", "Internal Notes",
-    "Source", "Season Status", "Archived",
+    "Source", "Season Status", "Archived", "Event Item",
   ];
 
   const lines: string[] = [headers.join(",")];
@@ -87,6 +87,7 @@ export async function GET(request: Request) {
       csvEscape(item.source ?? ""),
       csvEscape(item.season_status ?? "available"),
       csvEscape(item.is_archived ? "true" : "false"),
+      csvEscape(item.is_event_item ? "true" : "false"),
     ].join(","));
   }
 

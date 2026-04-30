@@ -203,7 +203,7 @@ export function DataClient({ activeCount, archivedCount }: Props) {
                 {[
                   "Name", "Category", "Variety", "Color", "Sizes", "Containers",
                   "Prices", "Default Price", "Chef Notes", "Internal Notes",
-                  "Source", "Season Status", "Archived",
+                  "Source", "Season Status", "Archived", "Event Item",
                 ].map((col) => (
                   <span key={col} className="text-[10px] bg-farm-cream/60 text-farm-dark/80 px-2 py-0.5 rounded">
                     {col}

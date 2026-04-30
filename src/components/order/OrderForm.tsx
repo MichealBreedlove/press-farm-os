@@ -70,14 +70,23 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
-  // Group filtered items by category (search-aware)
-  const itemsByCategory = CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
-    (acc, cat) => {
-      acc[cat] = visibleItems.filter((ai) => ai.item.category === cat);
-      return acc;
-    },
-    {} as Record<ItemCategory, AvailabilityItemWithItem[]>
-  );
+  // Split visible items into Regular Menu vs Events Menu, then group each by category.
+  // Items with item.is_event_item = true land in Events; everything else is Regular.
+  const regularItems = visibleItems.filter((ai) => !(ai.item as any).is_event_item);
+  const eventItems = visibleItems.filter((ai) => (ai.item as any).is_event_item);
+
+  function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
+    return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
+      (acc, cat) => {
+        acc[cat] = items.filter((ai) => ai.item.category === cat);
+        return acc;
+      },
+      {} as Record<ItemCategory, AvailabilityItemWithItem[]>,
+    );
+  }
+
+  const regularByCategory = groupByCategory(regularItems);
+  const eventsByCategory = groupByCategory(eventItems);
 
   const isSearching = search.trim().length > 0;
 
@@ -221,23 +230,73 @@ export function OrderForm({
           </div>
         ) : (
           <>
-            {CATEGORY_ORDER.map((cat) => {
-              const catItems = itemsByCategory[cat];
-              if (catItems.length === 0) return null;
-              return (
-                <CategorySection
-                  key={cat}
-                  category={cat}
-                  items={catItems}
-                  quantities={quantities}
-                  itemNotes={itemNotes}
-                  itemColors={itemColors}
-                  onQuantityChange={handleQuantityChange}
-                  onNoteChange={handleNoteChange}
-                  onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
-                />
-              );
-            })}
+            {/* ── REGULAR MENU ──────────────────────────────────────── */}
+            {regularItems.length > 0 && (
+              <>
+                {eventItems.length > 0 && (
+                  <div className="flex items-baseline justify-between mt-1 mb-3 px-1">
+                    <p className="font-display text-lg text-farm-dark">Regular Menu</p>
+                    <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
+                      {regularItems.length} item{regularItems.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                )}
+                {CATEGORY_ORDER.map((cat) => {
+                  const catItems = regularByCategory[cat];
+                  if (catItems.length === 0) return null;
+                  return (
+                    <CategorySection
+                      key={`reg-${cat}`}
+                      category={cat}
+                      items={catItems}
+                      quantities={quantities}
+                      itemNotes={itemNotes}
+                      itemColors={itemColors}
+                      onQuantityChange={handleQuantityChange}
+                      onNoteChange={handleNoteChange}
+                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                    />
+                  );
+                })}
+              </>
+            )}
+
+            {/* ── EVENTS MENU ───────────────────────────────────────── */}
+            {eventItems.length > 0 && (
+              <>
+                <div className="mt-8 mb-3 pt-5 border-t border-pf-master-violet/20">
+                  <div className="flex items-baseline justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-pf-master-violet" aria-hidden="true" />
+                      <p className="font-display text-lg text-farm-dark">Events Menu</p>
+                    </div>
+                    <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
+                      {eventItems.length} item{eventItems.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-farm-muted mt-1.5 px-1 leading-relaxed">
+                    Special-occasion items — only order these if you&apos;re hosting an event on this delivery date.
+                  </p>
+                </div>
+                {CATEGORY_ORDER.map((cat) => {
+                  const catItems = eventsByCategory[cat];
+                  if (catItems.length === 0) return null;
+                  return (
+                    <CategorySection
+                      key={`evt-${cat}`}
+                      category={cat}
+                      items={catItems}
+                      quantities={quantities}
+                      itemNotes={itemNotes}
+                      itemColors={itemColors}
+                      onQuantityChange={handleQuantityChange}
+                      onNoteChange={handleNoteChange}
+                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                    />
+                  );
+                })}
+              </>
+            )}
 
             {/* General notes */}
             <div className="card px-4 py-4 mt-2">

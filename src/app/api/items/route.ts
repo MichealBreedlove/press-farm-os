@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   let query = (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, sort_order")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, sort_order")
     .order("category")
     .order("name");
 
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     chef_notes?: string;
     internal_notes?: string;
     source?: string;
+    is_event_item?: boolean;
   };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
       chef_notes: chef_notes?.trim() ?? null,
       internal_notes: internal_notes?.trim() ?? null,
       source: source?.trim() ?? null,
+      is_event_item: Boolean(body.is_event_item),
     })
     .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
     .single();

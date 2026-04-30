@@ -23,6 +23,7 @@ interface ParsedRow {
   source: string | null;
   season_status: string;
   is_archived: boolean;
+  is_event_item: boolean;
 }
 
 /** Normalize header keys: trim, lowercase, collapse whitespace. */
@@ -170,6 +171,7 @@ export async function POST(request: Request) {
         source: null,
         season_status: "available",
         is_archived: false,
+        is_event_item: false,
       });
       return;
     }
@@ -208,6 +210,10 @@ export async function POST(request: Request) {
     const archivedRaw = pick(raw, "Archived").toLowerCase();
     const is_archived = archivedRaw === "true" || archivedRaw === "yes" || archivedRaw === "1";
 
+    // Event-item flag — accepts "true"/"yes"/"1"
+    const eventRaw = pick(raw, "Event Item", "EventItem", "Event").toLowerCase();
+    const is_event_item = eventRaw === "true" || eventRaw === "yes" || eventRaw === "1";
+
     parsed.push({
       name,
       category,
@@ -222,6 +228,7 @@ export async function POST(request: Request) {
       source: pick(raw, "Source") || null,
       season_status,
       is_archived,
+      is_event_item,
     });
   });
 
@@ -271,6 +278,7 @@ export async function POST(request: Request) {
       source: row.source,
       season_status: row.season_status,
       is_archived: row.is_archived,
+      is_event_item: row.is_event_item,
       size: row.size,
       variety: row.variety,
       color: row.color,

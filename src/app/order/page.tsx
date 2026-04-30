@@ -121,9 +121,9 @@ export default async function OrderPage({
     );
   }
 
-  // Fetch availability items for this date + restaurant (auto-rollover to prior date if empty)
-
-  // Persistent availability — fall back to most recent prior date if no rows for this date
+  // Fetch availability items for this date + restaurant (auto-rollover to prior date if empty).
+  // Events items are now tagged on the item itself (item.is_event_item) and live in the same
+  // per-restaurant availability table — no separate Events-restaurant fetch / merge.
   const { data: rawItems } = await fetchAvailabilityWithRollover(supabase, {
     deliveryDate: deliveryDate.date,
     restaurantId: restaurant.id,
@@ -131,37 +131,9 @@ export default async function OrderPage({
     hideUnavailable: true,
   });
 
-  // Also fetch Events availability (if chef's restaurant isn't Events)
-  // So Press/Under-Study chefs can order Events items too
-  let eventsItems: any[] = [];
-  const isEvents = restaurant.name.toLowerCase().includes("event");
-  if (!isEvents) {
-    const { data: eventsRestaurant } = await supabase
-      .from("restaurants")
-      .select("id")
-      .ilike("name", "%event%")
-      .single() as any;
-
-    if (eventsRestaurant) {
-      const { data: rawEventsItems } = await fetchAvailabilityWithRollover(supabase, {
-        deliveryDate: deliveryDate.date,
-        restaurantId: eventsRestaurant.id,
-        withItem: true,
-        hideUnavailable: true,
-      });
-
-      // Only include Events items that aren't already in the restaurant's own list
-      const ownItemIds = new Set((rawItems ?? []).map((ai: any) => ai.item_id));
-      eventsItems = (rawEventsItems ?? [])
-        .filter((ai: any) => ai.item && !ai.item.is_archived && !ownItemIds.has(ai.item_id))
-        .map((ai: any) => ({ ...ai, _isEventsItem: true }));
-    }
-  }
-
-  const availabilityItems: AvailabilityItemWithItem[] = [
-    ...(rawItems ?? []).filter((ai: any) => ai.item && !ai.item.is_archived),
-    ...eventsItems,
-  ];
+  const availabilityItems: AvailabilityItemWithItem[] = (rawItems ?? []).filter(
+    (ai: any) => ai.item && !ai.item.is_archived,
+  );
 
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
   const isEditing = editOrderId && targetDate === deliveryDate.date;
