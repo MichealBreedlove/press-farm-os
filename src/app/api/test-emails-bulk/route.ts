@@ -6,13 +6,14 @@ import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
 import ChefWelcome from "@/emails/chef-welcome";
 import AvailabilityPublished from "@/emails/availability-published";
+import OrderConfirmation from "@/emails/order-confirmation";
 import OrderReceived from "@/emails/order-received";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 
 /**
  * GET /api/test-emails-bulk?to=email
- * Sends sample versions of all 5 transactional emails to the given address.
+ * Sends sample versions of all 6 transactional emails to the given address.
  * Admin only.
  */
 export async function GET(request: Request) {
@@ -82,7 +83,28 @@ export async function GET(request: Request) {
     }) as React.ReactElement,
   );
 
-  // 3. Order received (admin notification)
+  // 3. Order confirmation (chef-facing)
+  await send(
+    "order-confirmation",
+    FROM_ADDRESSES.orders,
+    `Order Confirmed — ${sampleDate}`,
+    OrderConfirmation({
+      chefName: "Chef Sample",
+      restaurantName: "Press",
+      deliveryDate: sampleDate,
+      freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
+      items: [
+        { itemName: "Nasturtium", quantity: 200, unit: "ea" },
+        { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
+        { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
+        { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
+        { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
+        { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
+      ],
+    }) as React.ReactElement,
+  );
+
+  // 4. Order received (admin notification)
   await send(
     "order-received",
     FROM_ADDRESSES.orders,
@@ -104,7 +126,7 @@ export async function GET(request: Request) {
     }) as React.ReactElement,
   );
 
-  // 4. Order fulfilled
+  // 5. Order fulfilled
   await send(
     "order-fulfilled",
     FROM_ADDRESSES.orders,
@@ -122,7 +144,7 @@ export async function GET(request: Request) {
     }) as React.ReactElement,
   );
 
-  // 5. Shortage notice
+  // 6. Shortage notice
   await send(
     "shortage-notice",
     FROM_ADDRESSES.orders,
