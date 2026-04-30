@@ -46,13 +46,6 @@ export async function POST(
   const email = authUser?.user?.email;
   if (!email) return NextResponse.json({ error: "User has no email" }, { status: 400 });
 
-  // Generate magic link
-  const { data: magicLink } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-    options: { redirectTo: `${APP_URL}/auth/callback` },
-  });
-
   const restaurantName = chef.restaurant_users?.[0]?.restaurants?.name ?? "your restaurant";
 
   // Render and send
@@ -61,10 +54,15 @@ export async function POST(
   }
 
   try {
+    // Always link to the /login page — never an embedded magic-link URL.
+    // Magic-link OTPs from generateLink() expire in 1 hour, are one-shot, and
+    // get consumed by mail-security scanners (Outlook SafeLinks, gmail preview)
+    // before the chef even sees the email. The /login page lets the chef
+    // request a fresh magic link on demand, which is reliable.
     const reactEl = ChefWelcome({
       chefName: chef.full_name ?? "Chef",
       restaurantName,
-      loginUrl: magicLink?.properties?.action_link ?? `${APP_URL}/login`,
+      loginUrl: `${APP_URL}/login`,
     }) as React.ReactElement;
 
     const { data: sendData, error: sendErr } = await getResendClient().emails.send({

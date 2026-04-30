@@ -175,7 +175,33 @@ export const DELIVERY_DAYS = ["thursday", "saturday", "monday"] as const;
 // App Config
 // ============================================
 
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+/**
+ * Public-facing URL for emails, magic-link redirects, and OG metadata.
+ *
+ * Resolution order (first hit wins):
+ *  1. NEXT_PUBLIC_APP_URL — explicit production override (set this in Vercel
+ *     to your custom domain, e.g. https://pressfarm.app)
+ *  2. VERCEL_PROJECT_PRODUCTION_URL — Vercel sets this on production builds
+ *     (the project's main public domain, e.g. press-farm-os.vercel.app)
+ *  3. NEXT_PUBLIC_VERCEL_URL / VERCEL_URL — Vercel sets this on every deploy
+ *     including previews
+ *  4. http://localhost:3000 — local dev fallback
+ *
+ * This guards against the failure mode where an unset NEXT_PUBLIC_APP_URL
+ * causes /login URLs and magic-link redirect_to params to point at
+ * localhost from a production-deployed email.
+ */
+function resolveAppUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL;
+  if (explicit && explicit.trim()) return explicit.replace(/\/+$/, "");
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (prod) return `https://${prod.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  const any = process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL;
+  if (any) return `https://${any.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  return "http://localhost:3000";
+}
+
+export const APP_URL = resolveAppUrl();
 
 export const ADMIN_EMAIL = "micheal@pressfarm.io";
 
