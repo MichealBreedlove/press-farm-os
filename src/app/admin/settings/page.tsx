@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "./SignOutButton";
+import { SignOutButton } from "@/components/shared/SignOutButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 
 interface NavCard {

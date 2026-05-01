@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { SignOutButton } from "@/components/shared/SignOutButton";
 import { formatDeliveryDate } from "@/lib/utils";
 import { ReceiverClient } from "./ReceiverClient";
 
@@ -95,10 +95,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
   return (
     <main className="min-h-screen pb-24 bg-farm-cream">
       <header className="page-header">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="page-title">Receiving</h1>
-          <Link href="/api/auth/sign-out" className="text-xs text-white/60 hover:text-white">Sign out</Link>
-        </div>
+        <h1 className="page-title">Receiving</h1>
         <p className="text-xs text-white/60">{profile.full_name ?? "Receiver"}</p>
       </header>
 
@@ -122,6 +119,12 @@ export default async function ReceiverPage({ searchParams }: Props) {
           orders={orders ?? []}
           deliveries={deliveries ?? []}
         />
+
+        {/* Sign out — same card pattern used on /admin/settings */}
+        <div className="mt-8">
+          <p className="section-eyebrow text-farm-muted mb-2">Account</p>
+          <SignOutButton />
+        </div>
       </div>
     </main>
   );

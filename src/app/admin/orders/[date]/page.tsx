@@ -5,6 +5,8 @@ import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
 import { NotifyReceiverButton } from "./NotifyReceiverButton";
+import { AddExtraRow } from "./AddExtraRow";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import Link from "next/link";
@@ -41,6 +43,16 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     .eq("delivery_date", date);
 
   const orders: any[] = ordersRaw ?? [];
+
+  // Catalog for the AddExtraRow picker — non-archived items, lightweight columns only.
+  // Uses admin client so RLS doesn't filter by chef-restaurant linkage.
+  const admin = createAdminClient();
+  const { data: catalogRaw } = await (admin as any)
+    .from("items")
+    .select("id, name, category, unit_type, default_price, unit_prices")
+    .eq("is_archived", false)
+    .order("name");
+  const catalogItems = catalogRaw ?? [];
 
   return (
     <main>
@@ -185,6 +197,15 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   );
                 })}
               </div>
+
+              {/* Add extras during pick-and-pack — only when the order is still
+                  open (not fulfilled or cancelled). Shows up inline below the
+                  items list so admin can throw produce in without leaving the page. */}
+              {order.status !== "fulfilled" && order.status !== "cancelled" && (
+                <div className="px-4 py-3 border-t border-farm-dark/5">
+                  <AddExtraRow orderId={order.id} allItems={catalogItems} />
+                </div>
+              )}
 
               {/* Actions */}
               <div className="px-4 py-3 border-t border-farm-dark/5 flex items-center justify-between">
