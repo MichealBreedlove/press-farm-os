@@ -92,6 +92,18 @@ export default async function ReceiverPage({ searchParams }: Props) {
     `)
     .eq("delivery_date", selected);
 
+  // Most recent notify event for this date — drives the "last notified at"
+  // caption under the editorial hero so receivers know whether the data
+  // they're seeing is post-finish or still in-progress.
+  const { data: lastNotifyRaw } = await (admin as any)
+    .from("receiver_notify_log")
+    .select("sent_at")
+    .eq("delivery_date", selected)
+    .order("sent_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const lastNotifiedAt = (lastNotifyRaw as { sent_at: string } | null)?.sent_at ?? null;
+
   return (
     <main className="min-h-screen pb-24 bg-farm-cream">
       <header className="page-header">
@@ -107,6 +119,20 @@ export default async function ReceiverPage({ searchParams }: Props) {
       />
 
       <div className="px-4 py-6 max-w-3xl mx-auto">
+        {/* "Last notified" timestamp — tells the receiver whether the
+            current dashboard reflects the post-pick state (admin hit
+            Finish & Send) or is still mid-pick. */}
+        {lastNotifiedAt && (
+          <p className="text-[11px] tracking-[0.18em] uppercase text-farm-muted text-center mb-4">
+            Notified {new Date(lastNotifiedAt).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
+
         <ReceiverClient
           selectedDate={selected}
           dates={(recentDates ?? []).map((d: any) => ({

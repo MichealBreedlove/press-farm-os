@@ -3,8 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+interface InitialLastNotify {
+  sentAt: string;
+  succeeded: number;
+  failed: number;
+}
+
 interface Props {
   deliveryDate: string;
+  /** Most recent notify event for this date (server-rendered).
+   *  Drives the "Last sent X mins ago" caption on the idle button. */
+  initialLastNotify?: InitialLastNotify | null;
 }
 
 interface Summary {
@@ -56,7 +65,7 @@ const STATUS_DOT: Record<keyof Summary["counts"], string> = {
  * the email goes out. Also exposes a toggle to mark all open orders
  * as fulfilled (default on — that's what "Finish" implies).
  */
-export function NotifyReceiverButton({ deliveryDate }: Props) {
+export function NotifyReceiverButton({ deliveryDate, initialLastNotify }: Props) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<NotifyResult | null>(null);
@@ -263,6 +272,17 @@ export function NotifyReceiverButton({ deliveryDate }: Props) {
           Preview
         </a>
       </div>
+      {/* Inline "last sent" caption — pulled in from the server-side log
+          query. Surfaces accidental double-sends without the admin having
+          to open the confirmation panel. */}
+      {initialLastNotify && (
+        <p className="text-[11px] text-amber-700 text-center">
+          Last sent {timeAgo(initialLastNotify.sentAt)}
+          {" — "}
+          {initialLastNotify.succeeded} succeeded
+          {initialLastNotify.failed > 0 && ` · ${initialLastNotify.failed} failed`}
+        </p>
+      )}
     </div>
   );
 }

@@ -69,6 +69,26 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     `)
     .eq("delivery_date", date);
 
+  // Most recent notify event for this date — drives the idle-state "last sent"
+  // line on the NotifyReceiverButton without an extra round-trip.
+  const { data: lastNotifyRaw } = await (admin as any)
+    .from("receiver_notify_log")
+    .select("sent_at, succeeded_count, failed_count")
+    .eq("delivery_date", date)
+    .order("sent_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const lastNotify = lastNotifyRaw as { sent_at: string; succeeded_count: number; failed_count: number } | null;
+
+  // Active-receiver count — for the empty-state banner that surfaces the
+  // gap BEFORE pick-and-pack (so admin can invite a receiver before
+  // wasting time annotating shortages).
+  const { count: activeReceiverCount } = await (admin as any)
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "receiver")
+    .eq("is_active", true);
+
   // Build a map: restaurant_id → list of "extras" (delivery_items not on the order)
   const extrasByRestaurant: Record<string, Array<{ id: string; itemName: string; quantity: number; unit: string }>> = {};
   for (const order of orders) {
@@ -110,6 +130,24 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       />
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+        {/* Empty-receiver banner — shown only when there are orders to pick
+            (otherwise it'd be noise on a "no orders yet" date). Surfaces
+            the gap BEFORE pick-and-pack starts so admin can invite a
+            receiver without losing context later. */}
+        {orders.length > 0 && (activeReceiverCount ?? 0) === 0 && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <p className="text-sm font-semibold text-amber-800">No active receivers</p>
+            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+              The &quot;Finish &amp; Send to Receiver&quot; button needs at least one active
+              receiver account.{" "}
+              <Link href="/admin/settings/users" className="underline font-medium">
+                Invite a receiver
+              </Link>
+              {" "}so they get today&apos;s incoming summary by email.
+            </p>
+          </div>
+        )}
+
         {orders.length === 0 && (
           <div className="text-center py-10">
             <img src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
@@ -269,7 +307,14 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
             {/* End-of-pick-and-pack: notify the receiver. Lives below the
                 harvest list link so it's the last action in the flow. */}
-            <NotifyReceiverButton deliveryDate={date} />
+            <NotifyReceiverButton
+              deliveryDate={date}
+              initialLastNotify={lastNotify ? {
+                sentAt: lastNotify.sent_at,
+                succeeded: lastNotify.succeeded_count,
+                failed: lastNotify.failed_count,
+              } : null}
+            />
           </>
         )}
       </div>
