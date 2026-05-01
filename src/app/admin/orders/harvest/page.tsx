@@ -73,6 +73,13 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
         ? (oi.quantity_fulfilled ?? 0)
         : (oi.quantity_requested ?? 0);
 
+      // unit_type may be comma-separated for multi-unit items (sm,lg,ea).
+      // The harvest list shows one bucket per item; pick the first declared
+      // unit as the display unit so the column header is a valid UnitType.
+      // (Once the order line itself persists the chosen unit, swap to that.)
+      const firstUnit = String(item.unit_type ?? "")
+        .split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
+
       const existing = itemMap.get(item.id);
       if (existing) {
         if (isPress) {
@@ -86,7 +93,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
           itemId: item.id,
           name: item.name,
           category: item.category as ItemCategory,
-          unit: item.unit_type as UnitType,
+          unit: firstUnit as UnitType,
           pressQty: isPress ? qty : null,
           understudyQty: isPress ? null : qty,
           total: qty,

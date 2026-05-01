@@ -129,6 +129,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Reject re-submits when admin has already moved the order out of the
+  // chef-editable states. Otherwise a chef could overwrite an order that
+  // admin already started picking, fulfilled, or cancelled — including
+  // racing with a "Finish & Send" that just emailed the receiver.
+  const { data: existingOrder } = await (supabase.from("orders") as any)
+    .select("status")
+    .eq("restaurant_id", restaurant_id)
+    .eq("delivery_date", delivery_date)
+    .maybeSingle();
+  if (existingOrder && !["draft", "submitted"].includes(existingOrder.status)) {
+    return NextResponse.json(
+      {
+        error: `This order has already moved to "${existingOrder.status}" — contact Press Farm to make changes.`,
+      },
+      { status: 409 },
+    );
+  }
+
   // Upsert order (one per restaurant per delivery date — unique constraint handles conflict)
   const { data: order, error: orderError } = await (supabase
     .from("orders") as any)
@@ -154,14 +172,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
   }
 
-  // Fix 4: Get canonical prices from availability_items → items (do not trust client-supplied unit_price)
-  const { data: availItems } = await (supabase
-    .from('availability_items') as any)
-    .select('id, item:items(default_price)')
-    .in('id', items.map((i: any) => i.availability_item_id));
+  // Fetch canonical availability rows scoped to THIS restaurant + date + not
+  // unavailable. Don't trust client-supplied availability_item_ids — a
+  // tampered ID could otherwise reference another restaurant's availability,
+  // a different date, or an unavailable item. We require every submitted ID
+  // to round-trip through this scoped fetch.
+  const submittedIds = items.map((i: any) => i.availability_item_id);
+  const { data: availItems } = await (supabase.from("availability_items") as any)
+    .select("id, item:items(default_price)")
+    .eq("restaurant_id", restaurant_id)
+    .eq("delivery_date", delivery_date)
+    .neq("status", "unavailable")
+    .in("id", submittedIds);
+
+  const validIdSet = new Set((availItems ?? []).map((a: any) => a.id));
+  const tamperedIds = submittedIds.filter((id: string) => !validIdSet.has(id));
+  if (tamperedIds.length > 0) {
+    return NextResponse.json(
+      { error: "One or more items are not available for this restaurant/date" },
+      { status: 400 },
+    );
+  }
 
   const priceMap = new Map(
-    (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null])
+    (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null]),
   );
 
   // Delete existing order items then reinsert (simplest approach for re-orders)

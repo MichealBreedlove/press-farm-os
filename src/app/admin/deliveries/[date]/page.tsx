@@ -67,11 +67,17 @@ export default async function AdminDeliveryLogPage({
     status: o.status,
     order_items: (o.order_items ?? []).map((oi: any) => {
       const item = oi.availability_items?.item;
+      // unit_type may be comma-separated ("sm,lg") for multi-unit items.
+      // delivery_items.unit has a CHECK constraint on a single code, so
+      // we pick the first declared unit. Once order lines persist the
+      // chosen unit, this should read from oi.unit instead.
+      const firstUnit = String(item?.unit_type ?? "")
+        .split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
       return {
         item_id: item?.id,
         quantity_ordered: oi.quantity_requested,
         quantity_fulfilled: oi.quantity_fulfilled,
-        unit: item?.unit_type ?? "ea",
+        unit: firstUnit,
         unit_price: oi.unit_price_at_order ?? item?.default_price ?? 0,
       };
     }).filter((oi: any) => oi.item_id),

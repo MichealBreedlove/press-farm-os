@@ -163,7 +163,11 @@ export default function DeliveryLogForm({
         name: item.name,
         category: item.category,
         quantity: "1",
-        unit: item.unit_type,
+        // unit_type may be "sm,lg" for multi-unit items; pick the first as
+        // the default. Admin can edit the unit field on the row before save
+        // if a different one is needed (the delivery_items CHECK constraint
+        // requires a single valid code).
+        unit: String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea",
         unit_price: String(item.default_price ?? 0),
         is_bonus: false,
         bonus_note: "",
