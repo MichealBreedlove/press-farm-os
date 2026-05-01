@@ -14,6 +14,7 @@ import OrderConfirmation from "@/emails/order-confirmation";
 import OrderReceived from "@/emails/order-received";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
+import ReceiverDaily from "@/emails/receiver-daily";
 
 /**
  * GET /api/test-emails-bulk?to=email&restaurant=Press
@@ -184,6 +185,46 @@ export async function GET(request: Request) {
       }) as React.ReactElement,
     );
   }
+
+  // 7. Receiver daily summary — single email covering ALL restaurants
+  // (only sent when restaurants param is unset OR includes both, so the
+  // sample makes sense regardless of scope)
+  await send(
+    "receiver-daily",
+    "Both",
+    FROM_ADDRESSES.orders,
+    `Today's Receiving — ${sampleDate}`,
+    ReceiverDaily({
+      receiverName: "Sample Receiver",
+      deliveryDate: sampleDate,
+      restaurants: [
+        {
+          restaurantName: "Press",
+          freeformNotes: "Please send the smaller nasturtium leaves if available — doing a tasting menu Friday.",
+          lines: [
+            { itemName: "Nasturtium", quantity: 200, unit: "ea" },
+            { itemName: "Mustard Flowers", quantity: 2, unit: "qt" },
+            { itemName: "Fava Flowers", quantity: 1, unit: "lg" },
+            { itemName: "Pea Tendrils", quantity: 4, unit: "lg" },
+            { itemName: "Squash Blossoms", quantity: 12, unit: "ea" },
+            { itemName: "Mustard Greens", quantity: 2, unit: "lg" },
+            { itemName: "Pansy Petals", quantity: 1, unit: "pt", isEvent: true },
+            { itemName: "Borage Flowers", quantity: 50, unit: "ea", isEvent: true },
+          ],
+        },
+        {
+          restaurantName: "Under-Study",
+          freeformNotes: undefined,
+          lines: [
+            { itemName: "Calendula", quantity: 1, unit: "qt" },
+            { itemName: "Pea Tendrils", quantity: 2, unit: "lg" },
+            { itemName: "Marigold", quantity: 24, unit: "ea" },
+            { itemName: "Chamomile", quantity: 100, unit: "ea", isEvent: true },
+          ],
+        },
+      ],
+    }) as React.ReactElement,
+  );
 
   const summary = {
     sent_to: to,
