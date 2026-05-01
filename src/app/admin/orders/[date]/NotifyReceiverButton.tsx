@@ -281,6 +281,13 @@ export function NotifyReceiverButton({ deliveryDate, initialLastNotify }: Props)
           {" — "}
           {initialLastNotify.succeeded} succeeded
           {initialLastNotify.failed > 0 && ` · ${initialLastNotify.failed} failed`}
+          {" · "}
+          <a
+            href={`/admin/orders/${deliveryDate}/notifications`}
+            className="underline font-medium hover:text-amber-900"
+          >
+            History
+          </a>
         </p>
       )}
     </div>
