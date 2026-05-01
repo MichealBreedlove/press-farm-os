@@ -1,0 +1,5 @@
+id,farm_id,text,author,status,created_at,updated_at
+094fe97e-068e-4cff-80f4-91774db58415,5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d,in the availability section i should be able to modify what sizes and colors are availible,Anonymous,reviewed,2026-04-12T18:39:44.167688+00:00,2026-04-13T02:14:40.633715+00:00
+d25896f3-59a2-45ec-86d5-184898b0a0f2,5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d,i should be able to transfer availability from each restaurant to another,Anonymous,reviewed,2026-04-12T18:46:26.532376+00:00,2026-04-13T02:14:40.803479+00:00
+149f7f42-4bc7-4a7c-b3e1-4ddb36658d62,5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d,"When adding expenses to the system, it doesn't save the vendor.",Anonymous,new,2026-04-13T06:07:17.318737+00:00,2026-04-13T06:07:17.318737+00:00
+3d06428d-f645-4654-800a-7e6b8b8b537a,5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d,In the executive summary it looks like the expenses are for this month change it to this month and year,Anonymous,new,2026-04-27T17:54:02.693436+00:00,2026-04-27T17:54:02.693436+00:00

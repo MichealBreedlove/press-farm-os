@@ -1,0 +1,34 @@
+[
+  {
+    "id": "c17d3e59-7b6a-4e02-a524-c408a3a14756",
+    "farm_id": "5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d",
+    "key": "email_labor_report",
+    "value": "Mikejohnbreedlove@comcast.net",
+    "created_at": "2026-04-09T16:11:12.984753+00:00",
+    "updated_at": "2026-04-28T06:42:56.979948+00:00"
+  },
+  {
+    "id": "d0b8fc41-8bd5-4406-aa81-0e73fe57d3e8",
+    "farm_id": "5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d",
+    "key": "email_availability_updates",
+    "value": "Mikejohnbreedlove@comcast.net",
+    "created_at": "2026-04-09T16:11:13.333586+00:00",
+    "updated_at": "2026-04-28T06:42:57.114418+00:00"
+  },
+  {
+    "id": "06c54837-8577-44d5-8898-b0e6d607a7f9",
+    "farm_id": "5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d",
+    "key": "email_order_notifications",
+    "value": "Mikejohnbreedlove@comcast.net",
+    "created_at": "2026-04-09T16:11:13.631794+00:00",
+    "updated_at": "2026-04-28T06:42:57.246532+00:00"
+  },
+  {
+    "id": "4f1d7827-835e-448f-b9f3-6d6bb9a46aff",
+    "farm_id": "5f7e9d0f-e91b-4a78-92f9-37505fa5aa3d",
+    "key": "email_admin",
+    "value": "Mikejohnbreedlove@gmail.com",
+    "created_at": "2026-04-09T16:11:13.809195+00:00",
+    "updated_at": "2026-04-28T06:42:57.385191+00:00"
+  }
+]

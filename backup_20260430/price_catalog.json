@@ -1,0 +1,2936 @@
+[
+  {
+    "id": "ed4b755d-b0cd-4a6b-8afd-08e6dab91541",
+    "item_id": "b90584d8-fc78-420b-91e1-490117cd30cd",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "c2d6c1e0-15d6-4d91-90f0-9d281794cf71",
+    "item_id": "dff21156-fd38-405e-a857-e7ad8bffa7f5",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "f230785f-0d70-4b17-978d-c950662bb9db",
+    "item_id": "cde06dcc-2c7a-4476-8a23-469ecb9e3940",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "4410f351-2408-4c44-8aa2-f88e6719b340",
+    "item_id": "e81c39b6-82fe-4505-b835-ed93e4220988",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "03ac97b4-9dd1-4b53-9209-985593598d8b",
+    "item_id": "11848d52-fa67-4b56-8b9e-87239a753911",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "a6a9834e-fdaf-474c-ac51-bc52478560ee",
+    "item_id": "ea4552f9-565d-4bdb-98c5-539a307ea325",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "e279ba5f-1048-4bf3-8c80-2cbcaedb8899",
+    "item_id": "7dde3a19-d1ad-4170-a663-7bd83ee8d3a2",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "50d96507-fcd6-4dca-91aa-cef9a2fcd1e8",
+    "item_id": "e17fe9fd-652f-4542-8a29-65e80a791a00",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "224461da-8b43-4170-942b-8f95042113a6",
+    "item_id": "f14e1eaa-9677-4120-b8b5-37209f399915",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "f4b58a0a-61b0-483d-8a09-bb3bc025f477",
+    "item_id": "fb11eb56-4d65-413d-8125-ae24b42ae442",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "6b519888-c897-48fb-9add-84a4fa1979e0",
+    "item_id": "c9f1257a-9015-4783-86de-82819569ea0a",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "7d082c37-12c7-4df0-999b-f45e8bea8eb3",
+    "item_id": "336fc578-e349-4e59-bcd2-e1c2b1beadb3",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "1c8fb222-2e69-4e0d-8a73-b591f8f8dafe",
+    "item_id": "f0c608fc-95ab-4c48-a3ba-877a7937f660",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ea8abc88-1cb5-485a-a161-7172053cb7be",
+    "item_id": "10a1cffa-f6d9-4692-8d99-cec08f07ef0d",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "648ab1b8-93cc-4c25-bf0a-1511e10fd67b",
+    "item_id": "0ae60db8-9ea0-479d-aa4a-55755241cad5",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "78faacdd-27a9-4c17-9169-dc4c33dd7894",
+    "item_id": "be637780-281f-4436-8c97-6efb129cfd2b",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "c9ffb74e-de79-43eb-a072-705a26fa107d",
+    "item_id": "c3916820-1dce-4d0e-a249-f47e95d54255",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ed876954-da8a-4af4-8976-b9eb2f8c5649",
+    "item_id": "f30e6ede-1de9-4e46-a56d-384b77d3780e",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "0842f8b6-da2a-45ab-841d-9a73e2896dee",
+    "item_id": "f3d61783-a8b2-4f4d-bdca-caa6f8e0e54a",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "c5b36f05-c022-45c1-9fab-8ac5af65148a",
+    "item_id": "2f002bb7-6444-4ace-87ff-7c547b3f03bd",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "3933aeee-3988-4e2a-9b93-d83d48cbe9b2",
+    "item_id": "0e124df5-de3e-4013-a192-423ea8975de4",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ca9a3fe7-4abf-4901-836a-eaef5868c397",
+    "item_id": "04912bb8-8ae3-47d1-b26e-21cc9c673432",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "da2523ae-06ac-4a36-ad94-791ac6b73e5a",
+    "item_id": "4ced9319-ef22-4afb-8131-15662b65ef52",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "11dd29fa-2282-46aa-b383-037267d0f4d7",
+    "item_id": "111ca1c2-8e31-471a-bae3-0da35ce73b81",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "3dd2300a-fbf4-4447-afe7-caa2fbccd4b9",
+    "item_id": "e4368078-2f9e-44f5-bafe-48f8b1fa741f",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "99214b24-67a2-4127-909e-d2e12983ab7e",
+    "item_id": "6176833b-8baf-4d60-84c7-6e2546e070c0",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ab5e61f3-d811-4489-b1bb-2f33b559b5a3",
+    "item_id": "f6145d14-6ea4-47b8-b171-5485403ce4a8",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "257d1e54-e9d1-4301-8e43-67739c168582",
+    "item_id": "d37629f0-f0aa-401f-931d-d6af6da3b86c",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "6ecc50fa-704c-4f3b-aa3b-cad9a2964fd4",
+    "item_id": "405a5d42-18bf-4fed-9975-efc1f85edb15",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "b1a9f821-c095-4575-960a-dfe75ea3b68c",
+    "item_id": "309781c4-ed69-40dc-860a-712d7414d66e",
+    "unit": "lg",
+    "price_per_unit": 16.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "dc95f41a-3304-479b-aad8-490f51168ba6",
+    "item_id": "b0017451-3a96-49f3-9e48-ea4ef19383bf",
+    "unit": "ea",
+    "price_per_unit": 0.2,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "a345494f-6718-4d35-a89a-5134f5f9666d",
+    "item_id": "25317688-27ec-456d-8b73-c00ff0ad3284",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "7bba92f6-6a3f-45b3-b1ac-b7e77ccd4e49",
+    "item_id": "048e8a46-b58e-4c8d-9cd8-f93ec8ad107a",
+    "unit": "ea",
+    "price_per_unit": 0.35,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "8014d897-55ab-42c5-9a70-0d1266646bfe",
+    "item_id": "1fcf3901-e345-4476-b740-0d01c2592627",
+    "unit": "ea",
+    "price_per_unit": 0.35,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "be90a586-df2f-4c5c-808d-e61e9a034d91",
+    "item_id": "81c16996-0b85-475e-a250-65be09ccef20",
+    "unit": "lg",
+    "price_per_unit": 18.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "a075d3a2-260d-4a9d-87cc-f11dfe25fca6",
+    "item_id": "daddf87a-52e4-4130-bcfb-6c57d484bf4f",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ec706127-dcc1-42e2-a804-f775c506de1c",
+    "item_id": "f5639c9e-b6d3-4ba5-a804-c0b05b0eecad",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "0fd191a8-10c8-4020-8bac-66dc3be474be",
+    "item_id": "b8f48312-5ce2-436f-974e-3f41913ee188",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "3f8b58a8-f647-4c1f-9bc2-fd8f6c197e14",
+    "item_id": "c4880391-d815-4553-ad03-34066e1f1145",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "ae4724ec-5655-495e-ae23-f089713093c2",
+    "item_id": "2ce5e1a4-8597-4d64-addc-651953a7a868",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "7cf0fa46-0971-4ea8-a4c0-48f7a9aad309",
+    "item_id": "69393448-7532-4c5c-afd9-f21c8a87c021",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "212158fd-d71d-4bde-9387-7330d88d471b",
+    "item_id": "080205a7-44fc-49aa-a1c9-072aa3859d8f",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-01-01",
+    "source": "market",
+    "created_at": "2026-04-07T08:22:27.187182+00:00"
+  },
+  {
+    "id": "fb658994-3dd1-4736-a402-42f038895d21",
+    "item_id": "80715009-1569-4eb1-bc15-3f1b74e45280",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:17.741997+00:00"
+  },
+  {
+    "id": "93090222-e2b1-46f8-90ac-2d4854d9e0c8",
+    "item_id": "aa1f52af-a81a-43fc-84f2-8739dc579d52",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:17.969561+00:00"
+  },
+  {
+    "id": "e4381c9a-28fa-446a-a8ed-643febe0cc41",
+    "item_id": "0abbd494-b25b-4f13-a55e-dcf6db986965",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:18.207509+00:00"
+  },
+  {
+    "id": "206b1f3a-f334-4537-8467-6dd96ceafd33",
+    "item_id": "62ef1b1f-0f0c-4ea8-ae97-8262c836aca4",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:18.429643+00:00"
+  },
+  {
+    "id": "0a3cd877-92eb-45c3-ab08-aa6f019ada9d",
+    "item_id": "b7208d85-35b3-448f-8cbe-35500f1559dd",
+    "unit": "ea",
+    "price_per_unit": 1.4,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:18.634996+00:00"
+  },
+  {
+    "id": "411f3e37-b68c-422b-b8cc-48a0b7c2a3d5",
+    "item_id": "20a2301c-797c-4953-9efd-b28ccf27e775",
+    "unit": "ea",
+    "price_per_unit": 1.4,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:18.845315+00:00"
+  },
+  {
+    "id": "8691a471-64a5-42e9-ade5-4866527f7543",
+    "item_id": "40b5c780-6569-4806-8e95-e2c92eaa87c9",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:19.060635+00:00"
+  },
+  {
+    "id": "2ccab532-064c-481a-974f-eca59ce8c38f",
+    "item_id": "d78ec394-051b-4132-aa11-92a24197f565",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:19.256774+00:00"
+  },
+  {
+    "id": "0b195711-fc57-4b0b-a011-d8611031e26c",
+    "item_id": "b56af66b-bf5b-40d8-9c9c-da4455afe5e3",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:19.486374+00:00"
+  },
+  {
+    "id": "15f89e76-b90f-47e9-af3b-d89f57550422",
+    "item_id": "e61bb04a-6523-4f0a-b945-dae17b2ab3c6",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:19.678182+00:00"
+  },
+  {
+    "id": "48f5ad81-f0ba-460a-9297-573f3d3bd345",
+    "item_id": "b8e32f9a-56c0-4915-9d71-413234d11bff",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:19.908802+00:00"
+  },
+  {
+    "id": "a9ef5e3c-408c-4599-8de9-073c4bd00446",
+    "item_id": "1ef573f5-82a5-437f-b478-f09a7c3a3b06",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:20.103964+00:00"
+  },
+  {
+    "id": "8dfd6530-9e4e-410a-b663-744f366e5e17",
+    "item_id": "1fba7f38-e8ac-4d0a-a165-40681248749a",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:20.300335+00:00"
+  },
+  {
+    "id": "627bb142-91a3-44b7-bfcd-1104523e6b96",
+    "item_id": "f14e1eaa-9677-4120-b8b5-37209f399915",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:20.501242+00:00"
+  },
+  {
+    "id": "be5099f8-dfe5-425a-a919-f8cf011f272e",
+    "item_id": "2c6f9099-8630-4310-9a1c-b81f5170e839",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:20.697045+00:00"
+  },
+  {
+    "id": "584fcb13-e7aa-44d4-a616-21ced0efe20a",
+    "item_id": "772df8d5-6962-487a-99d2-78d6ef150e85",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:20.895387+00:00"
+  },
+  {
+    "id": "7bc5b77c-111f-499a-aacb-48da85f5e9c2",
+    "item_id": "a02772eb-54d3-4b3f-97a6-223043efe589",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:21.096584+00:00"
+  },
+  {
+    "id": "81581bdb-d630-438d-914e-3b8a34fb8013",
+    "item_id": "942cbf39-99e6-40cd-8034-2eacf88611f2",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:21.495836+00:00"
+  },
+  {
+    "id": "41c36a74-073d-4095-aea1-7f25a9efabc7",
+    "item_id": "5d2be0b1-c8e4-4de7-becc-b24c8655215d",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:21.700283+00:00"
+  },
+  {
+    "id": "9a72dd93-f96c-44b2-a643-532490a51333",
+    "item_id": "ff117f7e-e829-4c9b-94be-583211e2b8eb",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:21.899541+00:00"
+  },
+  {
+    "id": "966a4317-2a8f-481e-b136-82680729de2d",
+    "item_id": "47a0a430-3e3c-4cb4-85c9-47cc22a0b918",
+    "unit": "sm",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:22.099974+00:00"
+  },
+  {
+    "id": "a91532f4-7172-4c89-9d49-a7f9db3bdf5e",
+    "item_id": "a5ac6324-2319-4372-a71b-2fcd580315da",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:22.30372+00:00"
+  },
+  {
+    "id": "7b34d206-47c8-4045-9711-61e65655c241",
+    "item_id": "9da89b63-0331-4cc7-a3cd-61ca235b49f7",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:22.504167+00:00"
+  },
+  {
+    "id": "dc85caa2-215e-4da1-bf3c-752822e5d8c8",
+    "item_id": "c6110ff1-93d1-471e-b0b1-bdb584068e25",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:22.706673+00:00"
+  },
+  {
+    "id": "d6570835-0967-48a7-87d7-0a5a239d9739",
+    "item_id": "f64ae6e9-98b8-4d49-96ba-8d2b7cb99216",
+    "unit": "ea",
+    "price_per_unit": 1.68,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:22.904874+00:00"
+  },
+  {
+    "id": "c799f057-d88c-4d2b-9417-68e6f1382c85",
+    "item_id": "267a7ea2-953e-49dd-8b14-79e115a8efc7",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:23.102505+00:00"
+  },
+  {
+    "id": "57ac6b65-e012-4695-8d22-516e94fe9c4d",
+    "item_id": "1b643468-628a-4ec8-a769-b0ae8bc8af71",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:23.325296+00:00"
+  },
+  {
+    "id": "e1fefb8c-b487-4684-84b2-373a96e9b520",
+    "item_id": "ba787ccf-f590-4338-a42d-06071e35b23c",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:23.532778+00:00"
+  },
+  {
+    "id": "5d74dfdf-f672-472d-a9a8-49d2fe286660",
+    "item_id": "fb11eb56-4d65-413d-8125-ae24b42ae442",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:23.731907+00:00"
+  },
+  {
+    "id": "eb75095c-2211-4b13-828b-897e70ba28cb",
+    "item_id": "44bdbde8-576d-4d7f-b668-d2f2bf72fb2e",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:23.929633+00:00"
+  },
+  {
+    "id": "cbfb2ff7-80b1-4944-85e9-8efd87e7ae67",
+    "item_id": "5da6dc1f-43a1-4182-bea0-4d1036c97b6d",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:24.129112+00:00"
+  },
+  {
+    "id": "61eed0b6-f74c-43ec-addb-4af4f90210cb",
+    "item_id": "6a383d81-af24-4d74-a14e-ec5dd8b4653d",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:24.324673+00:00"
+  },
+  {
+    "id": "957d9dc2-e226-46ad-96ab-c9a9327f7f8a",
+    "item_id": "21d117ac-f8fb-45fd-bf02-a0f11942e9a3",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:24.524591+00:00"
+  },
+  {
+    "id": "1bb261ef-c29f-4c3f-b0fe-d4de660a4bda",
+    "item_id": "5d480edd-15b4-4457-b01b-8b369f82cae4",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:24.718664+00:00"
+  },
+  {
+    "id": "e1dad854-e080-4e58-b676-83e4b550f71c",
+    "item_id": "b0d98b9a-7524-48e8-89b3-d8a93d7340c8",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:24.912529+00:00"
+  },
+  {
+    "id": "aab3df96-e84f-444c-9a8b-79e24d2b6a82",
+    "item_id": "e17fe9fd-652f-4542-8a29-65e80a791a00",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:25.118099+00:00"
+  },
+  {
+    "id": "05b584e5-42f9-435c-85d9-48d6a1e16065",
+    "item_id": "0299c9ab-abbe-49fa-a8ea-2f63027fb6f5",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:25.327+00:00"
+  },
+  {
+    "id": "6363d49d-ccff-45a3-bd97-cc64d7cd0b2b",
+    "item_id": "78352cbe-90e6-4e26-8e68-95ff4931e2a4",
+    "unit": "lbs",
+    "price_per_unit": 4.95,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:25.523481+00:00"
+  },
+  {
+    "id": "971fb937-9b16-4f5b-95db-41ba99af0422",
+    "item_id": "eca26cbb-d6eb-4cf3-bded-833d0c82c2cc",
+    "unit": "ea",
+    "price_per_unit": 3.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:25.724588+00:00"
+  },
+  {
+    "id": "e4f6608e-36d8-4677-a8b4-01103f51a2c4",
+    "item_id": "feaad469-a829-41b2-988e-5efed6c64b6c",
+    "unit": "ea",
+    "price_per_unit": 3.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:26.353866+00:00"
+  },
+  {
+    "id": "7748d109-937c-45a7-8fb3-04da132132aa",
+    "item_id": "3cb29cc2-866b-4360-90a3-15d01db8714a",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:26.556218+00:00"
+  },
+  {
+    "id": "8aa05c07-f48a-430a-bf07-6b58189f663a",
+    "item_id": "89deecdc-4aaf-4b43-9716-bc54563a3e98",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:26.75877+00:00"
+  },
+  {
+    "id": "471794a8-1ff9-478a-bedc-d07438d11199",
+    "item_id": "b90584d8-fc78-420b-91e1-490117cd30cd",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:17.518686+00:00"
+  },
+  {
+    "id": "c3cfdb47-2743-4a4e-9438-aed2d2c8a315",
+    "item_id": "45a1142b-7760-4e8c-a1af-989c15a5fdc4",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:27.775636+00:00"
+  },
+  {
+    "id": "2a570f43-5125-4f6d-9973-46e2baac67c9",
+    "item_id": "10c6b8e6-72c6-4198-8dbb-9afc48473d68",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:28.169106+00:00"
+  },
+  {
+    "id": "898e3c34-6190-4524-991c-82c9d08aaa61",
+    "item_id": "6f6dcd58-46f9-4796-8b12-f65aeb26ab1e",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:28.567444+00:00"
+  },
+  {
+    "id": "64b537eb-5f53-4169-a913-a937be1b79fb",
+    "item_id": "ecbae0c7-4bea-436b-9f87-b80c26ec150f",
+    "unit": "cs",
+    "price_per_unit": 40.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:28.988593+00:00"
+  },
+  {
+    "id": "6574327d-915e-47af-b28d-47ba269a599c",
+    "item_id": "8e08ef07-dafc-46a6-8d05-a8ed0e1cb79c",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:29.392779+00:00"
+  },
+  {
+    "id": "3288a69c-19b6-48de-97f9-d96aa08145a4",
+    "item_id": "53d4c1e2-c93c-4f45-8fb1-f0bd64ef921e",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:29.773678+00:00"
+  },
+  {
+    "id": "d06faf74-cdca-4bbf-b3db-ba8c58ab1278",
+    "item_id": "953a114e-45a0-47ca-8ac0-c0e188cd65c2",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:30.185838+00:00"
+  },
+  {
+    "id": "ed2b9fd1-2310-4d80-aed5-8e00e4c01007",
+    "item_id": "7190d607-72e8-48cb-96d6-9c43c2d930f3",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:30.581362+00:00"
+  },
+  {
+    "id": "78df6a4b-c3e1-4872-a125-fe38c6db7fb4",
+    "item_id": "dea0d41c-bb8b-4b5d-a829-28e07fff0010",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:30.962377+00:00"
+  },
+  {
+    "id": "94edbcbd-9913-4315-b469-0fb8b8732d05",
+    "item_id": "e6c3b55d-0838-4760-b4e8-30ec6b724c69",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:31.352758+00:00"
+  },
+  {
+    "id": "7b02c837-c631-4602-85d2-ecdb080c1186",
+    "item_id": "6058be35-369e-435d-8373-442cac7b65f8",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:31.765631+00:00"
+  },
+  {
+    "id": "9843314a-80e2-4233-afc4-9bd74822ce08",
+    "item_id": "bfa7d4bd-6923-4d5f-9b63-2801c4cd92b2",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:32.163667+00:00"
+  },
+  {
+    "id": "b3401f06-459d-46bf-9038-cf72dd3fdaa0",
+    "item_id": "4d8341f1-1d5f-49e5-95e6-bda4f2816a28",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:32.548504+00:00"
+  },
+  {
+    "id": "09a078f8-c330-440f-a995-08a05314f45f",
+    "item_id": "6d8db724-4152-43b2-bf1b-ca96881952e6",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:32.934929+00:00"
+  },
+  {
+    "id": "5c34021e-3079-49f2-a1f0-97fcc75c15f2",
+    "item_id": "c884d033-d490-4ccb-ba1f-646407b6ab42",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:33.324683+00:00"
+  },
+  {
+    "id": "3aa3d40b-7697-4e00-972d-addfdc03ee04",
+    "item_id": "1ce0b2b8-6262-4b17-98f9-60bed3365ecb",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:33.73976+00:00"
+  },
+  {
+    "id": "cffacbff-f5ca-4989-b798-8a9595d3a38a",
+    "item_id": "4af25fcb-085b-4071-97d0-4af42e4a5f0b",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:34.147961+00:00"
+  },
+  {
+    "id": "a1bbebdf-b92b-4548-bde2-528c6483a4c2",
+    "item_id": "e0ac9138-c667-4899-b1a7-25684d83684c",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:34.932852+00:00"
+  },
+  {
+    "id": "af55d2b9-f4fc-454c-b57d-2ee0bb49b711",
+    "item_id": "03ac3e2a-cd94-4a27-a5eb-b34640786fae",
+    "unit": "bx",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:35.337246+00:00"
+  },
+  {
+    "id": "297b626d-630d-4c85-be29-2e3751a2c350",
+    "item_id": "86233651-f0cf-4660-9e65-f1bda5ed5e58",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:35.731107+00:00"
+  },
+  {
+    "id": "73698cf4-584b-439e-9e9c-459df4b32bd5",
+    "item_id": "5920adcc-3687-45b2-a0ad-50b17f24faef",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:36.109228+00:00"
+  },
+  {
+    "id": "6ee4b640-e9b9-42bf-bee3-8295a5c6aaac",
+    "item_id": "3b390b60-bc5f-4a6c-8366-90501656ce20",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:36.518162+00:00"
+  },
+  {
+    "id": "7d01b51e-48b3-424b-bfcd-69fc944e6ae6",
+    "item_id": "e3ec98c5-fd0d-4087-ae6f-8b84410a0199",
+    "unit": "lbs",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:36.910067+00:00"
+  },
+  {
+    "id": "19853856-79f3-4399-b226-b2e7cf13f1eb",
+    "item_id": "e704a939-0821-4540-b342-fec5e79de79a",
+    "unit": "bx",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:37.30335+00:00"
+  },
+  {
+    "id": "ae296594-788f-4c66-a934-218e2c9f907c",
+    "item_id": "cd527a80-68b8-45c9-b657-a2bb8e48c3b3",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:37.686896+00:00"
+  },
+  {
+    "id": "214a5634-69a5-46e1-b935-7f1be322c0f1",
+    "item_id": "6b4c8cc4-4376-4ab6-9ee6-c624b72485a6",
+    "unit": "lbs",
+    "price_per_unit": 4.95,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:38.108069+00:00"
+  },
+  {
+    "id": "4b4041cf-8e7d-491e-8dee-605993884159",
+    "item_id": "ffa03313-d46c-46fc-a98c-fc495db887c8",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:38.485148+00:00"
+  },
+  {
+    "id": "fe13aa71-37fa-4972-ad2d-5d84b0f6e7f3",
+    "item_id": "da3fa041-df6e-4d09-8877-2f105c12936c",
+    "unit": "lbs",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:38.89564+00:00"
+  },
+  {
+    "id": "7b1bbba0-2caa-4f6f-94c7-8c8857ce8ee7",
+    "item_id": "9e04d666-3178-44da-a5ad-75ca73a39c2b",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:39.312842+00:00"
+  },
+  {
+    "id": "124aa9f9-b81d-4138-96d4-9b0e42eab999",
+    "item_id": "c19c0355-5119-46a4-956d-310776ade079",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:39.725782+00:00"
+  },
+  {
+    "id": "6ce60402-4f41-46db-b704-fa8e7b3c2bd2",
+    "item_id": "5f1621cc-8a4c-4563-88bf-daffe78af0ff",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:40.133558+00:00"
+  },
+  {
+    "id": "4f07a406-a894-496d-beb0-75e3dc9337bb",
+    "item_id": "b2d63f78-299d-4331-911f-a96c4941df55",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:40.523664+00:00"
+  },
+  {
+    "id": "4ee35632-22fe-493b-812e-cfd047239ca9",
+    "item_id": "25992891-0940-467e-8aa4-4a02bb64c2f8",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:41.020486+00:00"
+  },
+  {
+    "id": "8f561df5-9795-4342-9d8a-3a87477764dd",
+    "item_id": "27133740-8739-4086-b026-370f41fedf92",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:41.422846+00:00"
+  },
+  {
+    "id": "53bb33f6-f263-42d4-b219-69f348eb5d17",
+    "item_id": "7f6dd06a-83e0-4750-b802-b1f90cefa97f",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:41.825566+00:00"
+  },
+  {
+    "id": "3fffc74e-d71c-4279-8116-98b3294d0d97",
+    "item_id": "ae35edf7-0f5f-42cb-b1da-7ab6b187d19d",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:42.209141+00:00"
+  },
+  {
+    "id": "22decc64-912b-4709-b06e-24cc0ea324c0",
+    "item_id": "d2d10fe8-69a3-4554-89d2-dedf9ea06203",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:42.608802+00:00"
+  },
+  {
+    "id": "48f4ae43-a9c6-4cb0-a7c5-a9fe51405797",
+    "item_id": "fe837eeb-c43f-4324-9484-e363c26f5829",
+    "unit": "ea",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:43.009701+00:00"
+  },
+  {
+    "id": "7cb0d873-4669-4fc4-ac11-c3cb169f842c",
+    "item_id": "cb8885fa-21df-4a06-9dcc-911e9c6c474d",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:43.420084+00:00"
+  },
+  {
+    "id": "1209e465-0aac-479d-ae2a-52b19b2a09c3",
+    "item_id": "07a79088-9fa0-477d-b4e2-42c943951872",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:44.225458+00:00"
+  },
+  {
+    "id": "2c6e0693-1a82-4f6c-b43f-a93c3e8fe419",
+    "item_id": "4e67157b-7aca-400e-b55c-0bc10087721c",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:44.62968+00:00"
+  },
+  {
+    "id": "c154df85-8a69-4ac1-b433-945fa176b50c",
+    "item_id": "4ced9319-ef22-4afb-8131-15662b65ef52",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:45.031571+00:00"
+  },
+  {
+    "id": "b5f6440e-4347-4e42-b6c9-e0c07f5a03ae",
+    "item_id": "932a215a-a3c9-4327-8839-53e7802676c2",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:45.427288+00:00"
+  },
+  {
+    "id": "79abac29-3c02-4498-ac7b-edd9744ce7b7",
+    "item_id": "8ee929fd-00ee-4ed8-9cc5-1bac874eb3d3",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:45.867379+00:00"
+  },
+  {
+    "id": "186e0158-17a7-4a3d-95d0-fcd5ed2eee8d",
+    "item_id": "28a2c4c0-22bf-4592-a7e7-88fd299fd33c",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:46.26301+00:00"
+  },
+  {
+    "id": "b790753e-e6f6-4609-b75d-b79288c17fac",
+    "item_id": "7ccef569-6034-454f-bc79-4368995ec492",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:46.679485+00:00"
+  },
+  {
+    "id": "185c3ffb-39fe-4e57-baf4-b91cb1b68d74",
+    "item_id": "f78aa6c9-4936-4695-8e1f-26ab48dbab93",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:47.056764+00:00"
+  },
+  {
+    "id": "347d5a04-0286-40d5-8467-b6a610e9daf9",
+    "item_id": "d4827392-69e6-4ecd-838d-fc9e8ce847cf",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:47.456077+00:00"
+  },
+  {
+    "id": "b4fc71ca-84b9-4e45-8f7b-568da5e700df",
+    "item_id": "56f75098-ef8d-4fde-86e8-fbfa21bd8964",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:47.855672+00:00"
+  },
+  {
+    "id": "e28e3f18-ed3e-451d-9b4d-8e5e66305a02",
+    "item_id": "1112445f-aba5-4629-b399-08d2c0baf4f8",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:48.261769+00:00"
+  },
+  {
+    "id": "bfe3c61e-1361-4ffe-b8e4-041473ec62de",
+    "item_id": "f0b42ce6-df17-407c-aba5-2abb389e2662",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:48.637962+00:00"
+  },
+  {
+    "id": "ea5d2c25-fea6-4762-9112-9d7d22dc4d07",
+    "item_id": "79baadf2-9252-4ed8-bc44-5f183e823ed6",
+    "unit": "lbs",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:49.067863+00:00"
+  },
+  {
+    "id": "f7110406-f89e-4ae1-9c88-e3fabc3c72d5",
+    "item_id": "0b56583d-f70a-49bd-a226-d86b7983ad6c",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:49.468319+00:00"
+  },
+  {
+    "id": "6f8d4fa1-b28e-405a-a3f5-041fdae02d25",
+    "item_id": "fea7d0a4-a2d7-4f78-8c00-7a0890303058",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:49.87793+00:00"
+  },
+  {
+    "id": "c9a95be4-ba3b-4f12-9900-ba88f0a40f5e",
+    "item_id": "324152b2-0646-40d1-be88-877c753f6ef2",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:50.269172+00:00"
+  },
+  {
+    "id": "9563c656-b96e-4517-a8c7-dd1f3591184e",
+    "item_id": "38af6777-f227-4692-8704-1fe94901ac9f",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:50.657561+00:00"
+  },
+  {
+    "id": "a0d6926e-f0a5-4ed4-896f-d7626bffaa95",
+    "item_id": "2eaadb66-8823-4457-a67a-eaed6282bc1f",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:51.035855+00:00"
+  },
+  {
+    "id": "dd7e81b4-628d-4f3b-bc89-bfbb9964af3a",
+    "item_id": "511d5694-6147-4322-960a-eb6e5cd1e291",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:51.424923+00:00"
+  },
+  {
+    "id": "0f37230b-bb02-49ea-b10e-63d24b3dc769",
+    "item_id": "2f04860a-b177-4a1c-8af1-08b2ac1ad567",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:51.808518+00:00"
+  },
+  {
+    "id": "43727f0b-0c03-4641-a6a9-5a27f6052ab0",
+    "item_id": "cb2f08e7-057b-4cb0-a9f0-b041a5b2e8dc",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.221031+00:00"
+  },
+  {
+    "id": "b85cbc3d-0fcc-4b81-bc31-545a6b62d264",
+    "item_id": "df88a062-1568-4a88-ac22-499b4effa2db",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.60767+00:00"
+  },
+  {
+    "id": "f0a831c8-5e4c-41ad-930d-1c28679eea83",
+    "item_id": "0c7cb9cf-e1ea-4476-ae2c-972475824bcb",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:53.382266+00:00"
+  },
+  {
+    "id": "e3e46c0c-5349-4909-a6c5-dae2da109d2b",
+    "item_id": "947e461d-8872-41ee-b7de-9b7ecce25287",
+    "unit": "lbs",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:53.802221+00:00"
+  },
+  {
+    "id": "89722526-7d8e-40b1-8b4d-16cd97e74707",
+    "item_id": "da0edabf-c611-4f36-ab53-1fd0188e5464",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:54.234219+00:00"
+  },
+  {
+    "id": "dc46e3e7-92e1-45ed-ab06-29988e600430",
+    "item_id": "4e6a0de1-43b6-4120-a6cd-ef1457e85a6e",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:54.653319+00:00"
+  },
+  {
+    "id": "08aa7f81-b868-4f08-bb7e-6d488ce6453a",
+    "item_id": "cfb3d243-a1fd-4330-bfce-7e9f169f8277",
+    "unit": "ea",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:55.053137+00:00"
+  },
+  {
+    "id": "87c57dda-d574-4c4c-8631-a1849f9cb427",
+    "item_id": "c451e667-831d-4237-9b09-79123b641d17",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:55.456559+00:00"
+  },
+  {
+    "id": "09a4a0e2-0066-43b2-b122-abf0bb4881f1",
+    "item_id": "27e7c46d-f7dd-4593-9578-85a9c38acf4e",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:55.871512+00:00"
+  },
+  {
+    "id": "420dc52d-64bf-4407-83d2-41d4af1715d5",
+    "item_id": "4cab8fc9-fc23-4a60-9cf8-8a1b08ef6e04",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:56.263938+00:00"
+  },
+  {
+    "id": "894a6250-5e4c-403f-8d02-b02dc82b62eb",
+    "item_id": "a976be5b-40c5-4152-9f0d-5b4ef48dd44b",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:56.672855+00:00"
+  },
+  {
+    "id": "f5c08c4f-59c5-4a26-b5b9-6b9c2eb2a708",
+    "item_id": "90570ad5-2c58-4ab5-a1bd-a7dc59a50222",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:57.071141+00:00"
+  },
+  {
+    "id": "d5343dea-5032-43cf-ae05-5b61d5b2ff83",
+    "item_id": "332f1a66-feeb-4e51-8c9f-db3ac84453f3",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:57.483485+00:00"
+  },
+  {
+    "id": "704d3a1f-a28b-46d1-9db8-c586e0b53f5d",
+    "item_id": "309781c4-ed69-40dc-860a-712d7414d66e",
+    "unit": "lg",
+    "price_per_unit": 16.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:57.898389+00:00"
+  },
+  {
+    "id": "b8c68437-d5bb-4eed-a55c-0a3c0c9b1bd0",
+    "item_id": "b0017451-3a96-49f3-9e48-ea4ef19383bf",
+    "unit": "ea",
+    "price_per_unit": 0.2,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:58.287908+00:00"
+  },
+  {
+    "id": "5c689e7a-4b01-40ba-96ff-abee3060fb1b",
+    "item_id": "5d9fdebd-7dde-4fd3-9c41-021a59a373a0",
+    "unit": "lbs",
+    "price_per_unit": 7.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:58.684413+00:00"
+  },
+  {
+    "id": "a89eb5de-2479-4f39-bb41-0882c92f2f52",
+    "item_id": "9c203b49-8a07-4319-aae9-fcfd68b34579",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:59.104363+00:00"
+  },
+  {
+    "id": "965eda12-5943-4c4d-ac8f-d5d341c9374d",
+    "item_id": "7387900d-0b1d-4fe5-b9e6-7c968c2003b3",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:59.494209+00:00"
+  },
+  {
+    "id": "5f2784ad-01de-4da8-bcab-7d3e8d1e4214",
+    "item_id": "924c513c-c422-4c24-9515-e4544f493394",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:59.883866+00:00"
+  },
+  {
+    "id": "8fc34426-a0f5-47bf-96c1-875a67d7bcfb",
+    "item_id": "e0562212-cda5-4a74-ac19-db857f843dbd",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:00.306807+00:00"
+  },
+  {
+    "id": "c42f115f-1239-4f4e-b9de-fbe18ce8018f",
+    "item_id": "b66e80d0-7f23-44ac-a6d3-5db4212284e6",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:00.714743+00:00"
+  },
+  {
+    "id": "dd21a0f0-beab-4c79-8e62-404cafea5000",
+    "item_id": "604ea0ee-856f-4bd8-90a3-a067244e31db",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:01.110818+00:00"
+  },
+  {
+    "id": "df366c45-107b-41cc-ad9c-e857385e10c3",
+    "item_id": "c60051a9-4d42-4198-bd08-b24181a2481d",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:01.514736+00:00"
+  },
+  {
+    "id": "482b1705-fc55-483f-ac1d-4721b28ebea0",
+    "item_id": "09d6b27b-cbab-4ce2-b97b-cd849d5588b2",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:01.909636+00:00"
+  },
+  {
+    "id": "51e9d8c4-a45f-4946-b794-37faad366e48",
+    "item_id": "5b3f4657-21b0-44a7-8f0a-3f0ecd43f712",
+    "unit": "lg",
+    "price_per_unit": 18.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:27.971787+00:00"
+  },
+  {
+    "id": "b1ae6568-8702-49be-b839-1ab64e95a69f",
+    "item_id": "c8b51b5d-7fe1-40db-ad18-7b79258828a1",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:28.367777+00:00"
+  },
+  {
+    "id": "e6dd7538-3f35-4ce1-bc57-dde7abfc6f19",
+    "item_id": "188cfea9-8ce2-4ee6-aa4a-8ace3bb24307",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:28.779042+00:00"
+  },
+  {
+    "id": "9226a87e-1847-422d-a7f3-36b4ebef12e3",
+    "item_id": "acc2e31f-8c70-4ae8-82e0-30c047f6bc1f",
+    "unit": "ea",
+    "price_per_unit": 0.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:29.19307+00:00"
+  },
+  {
+    "id": "a703128e-77a8-449a-9de6-00bda910fcbb",
+    "item_id": "5faef9e7-1115-4fbf-a391-fc83e8635b70",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:29.586793+00:00"
+  },
+  {
+    "id": "ab58a9df-2361-4ac7-9a76-0de40e0872ca",
+    "item_id": "f0c608fc-95ab-4c48-a3ba-877a7937f660",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:29.983789+00:00"
+  },
+  {
+    "id": "96c177ba-9aed-4ddf-8fab-7c65fc28ac9c",
+    "item_id": "a3d78333-79fb-4040-8a2f-6f43aa351556",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:30.391217+00:00"
+  },
+  {
+    "id": "71f4c1e6-5738-4a55-9f7b-44cdaa2753b2",
+    "item_id": "e466e1b5-0324-484f-be32-9f1e792d73e0",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:30.769055+00:00"
+  },
+  {
+    "id": "d40082e5-2dbf-4c2c-8e30-5cc2898f290d",
+    "item_id": "31bb4896-e136-4f61-8c9a-44f45a24b9db",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:31.148587+00:00"
+  },
+  {
+    "id": "3f6b6238-c9cd-4564-9b0e-7bbf39733431",
+    "item_id": "b4e55d8f-e956-442f-a4ad-595da88885fb",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:31.571176+00:00"
+  },
+  {
+    "id": "43d52c18-9a67-474b-b3d2-38589cd561bf",
+    "item_id": "9adeb556-ece2-498f-abb0-869e7ea01aa8",
+    "unit": "ea",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:31.953302+00:00"
+  },
+  {
+    "id": "6d5d2aec-c054-4621-a9c7-91e8357f7c6b",
+    "item_id": "bf479c71-9394-4a55-b9ac-c81c237fa309",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:32.35482+00:00"
+  },
+  {
+    "id": "ef55ed2b-89b0-4c55-ace3-5476e479dbf0",
+    "item_id": "f6723b26-0b45-4a30-bfa8-1ee732565796",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:32.742435+00:00"
+  },
+  {
+    "id": "23f4a0af-6932-4bf5-97c4-b571124b32e9",
+    "item_id": "5aace772-3b44-4925-820b-042fba96ee1b",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:33.128416+00:00"
+  },
+  {
+    "id": "081e4425-9718-49bc-88b5-c9ec12dc6f2e",
+    "item_id": "1e313572-571e-46b4-b012-80449350cf3f",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:33.514752+00:00"
+  },
+  {
+    "id": "a7766b35-fd0e-49a6-8af6-6bf9c8b83f64",
+    "item_id": "d9bf2e1e-2f9d-4952-97aa-c74fdd095b34",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:33.93819+00:00"
+  },
+  {
+    "id": "93b75c81-de07-4956-9dfd-7c15894a9a0e",
+    "item_id": "d04984bc-eb16-411e-8c99-ba6beb94db3c",
+    "unit": "lbs",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:34.345418+00:00"
+  },
+  {
+    "id": "f12bb10e-c5e3-489a-a8b5-dadcd6bdcfce",
+    "item_id": "aec9b1ec-e511-4850-bfc1-ca8d1f749687",
+    "unit": "lbs",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:35.136393+00:00"
+  },
+  {
+    "id": "aad83a9f-8485-4d5e-82ea-f47f485d72a4",
+    "item_id": "f5639c9e-b6d3-4ba5-a804-c0b05b0eecad",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:35.531496+00:00"
+  },
+  {
+    "id": "f5dffb33-1a86-4364-88d7-b65f052ddc01",
+    "item_id": "4f0ecc4f-9d09-4bab-9a9c-06ce5326a219",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:35.918376+00:00"
+  },
+  {
+    "id": "7a3814d4-a9ca-4415-9820-97eacfb4e927",
+    "item_id": "19508c8b-5f9f-4cda-bffa-d36ef4c07bc2",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:36.315339+00:00"
+  },
+  {
+    "id": "341e459b-7eec-41fa-8f62-57ce78599183",
+    "item_id": "1312210e-9cd8-4bac-96a8-11da91414ca2",
+    "unit": "lbs",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:36.711041+00:00"
+  },
+  {
+    "id": "8c7febcb-d24d-4faf-8df0-6328f488e257",
+    "item_id": "3d082f2c-37ab-422a-bcad-71da0369d206",
+    "unit": "lbs",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:37.111439+00:00"
+  },
+  {
+    "id": "beb9f6d8-d72d-40b3-9909-c808e1e7d0de",
+    "item_id": "e81c39b6-82fe-4505-b835-ed93e4220988",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:37.490934+00:00"
+  },
+  {
+    "id": "0d9f8a03-d73b-414a-aacf-dd5af483e695",
+    "item_id": "faa337de-416b-4c93-bc16-3b37c4f24049",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:37.890417+00:00"
+  },
+  {
+    "id": "68746a83-bb2a-4769-95d8-20f824ab0aee",
+    "item_id": "bfdd8bbb-5373-4e16-9c52-492471349f90",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:38.294967+00:00"
+  },
+  {
+    "id": "3c610659-0187-4dc5-98ae-51229dd938b9",
+    "item_id": "254f04b8-24d1-4501-82ab-3de9aa297e4a",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:38.695907+00:00"
+  },
+  {
+    "id": "26531efb-0013-4c0d-af24-85ae0bab240e",
+    "item_id": "c2a76342-b6cd-4037-89e3-ebfa887bbb51",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:39.108589+00:00"
+  },
+  {
+    "id": "64e5638a-a5a1-4c74-aca8-2de09b788216",
+    "item_id": "9111d6fd-f6d3-4ade-9915-bbfde0232f4b",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:39.512439+00:00"
+  },
+  {
+    "id": "0f3dc4ed-edb4-4201-9132-a1d3de848178",
+    "item_id": "fffc7b60-42d2-4f14-831e-1a4e4d71e26d",
+    "unit": "ea",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:39.918348+00:00"
+  },
+  {
+    "id": "aee95079-f877-4918-85a3-1c861abf019a",
+    "item_id": "148e5b83-9381-443e-9afd-b6991092c090",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:40.326265+00:00"
+  },
+  {
+    "id": "aee7faf7-469e-47b9-9e47-7896bcfaf1b1",
+    "item_id": "06f3c06f-0fee-48b6-af1d-2f1e6d9ac65e",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:40.826558+00:00"
+  },
+  {
+    "id": "911a32d1-b59a-4836-85bf-1cdab83a0263",
+    "item_id": "07facaef-e20c-417b-9419-6486f1ac9071",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:41.21896+00:00"
+  },
+  {
+    "id": "d1cfbbee-37c6-4468-9a08-938ae7e08c2b",
+    "item_id": "60ee9721-045f-41c3-91e8-d4c34e5d7175",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:41.628531+00:00"
+  },
+  {
+    "id": "2b5fa315-5c40-41d2-ab72-a3c3a087f5b7",
+    "item_id": "05f66656-45df-4cb0-bf70-229ad1938df6",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:42.01853+00:00"
+  },
+  {
+    "id": "c69c7904-e7b1-43ff-ab3e-e3b085ac8d17",
+    "item_id": "c1a8700d-9fe7-4842-97e2-84acd9d975b3",
+    "unit": "ea",
+    "price_per_unit": 0.1,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:42.409286+00:00"
+  },
+  {
+    "id": "0d28ad44-0e9a-46f8-8ec7-27256cca4f1f",
+    "item_id": "4f4e920c-2cf6-4d2e-bd9b-e81927d9a495",
+    "unit": "ea",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:42.808712+00:00"
+  },
+  {
+    "id": "038b4eeb-4ad9-42e9-871b-2c7001a879e8",
+    "item_id": "5e50859d-1508-4fb1-84a9-adeef4b333ff",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:43.217582+00:00"
+  },
+  {
+    "id": "a39e60a5-586c-421a-bdfe-6468c9cf76c2",
+    "item_id": "90df21cf-925e-4fb0-85eb-9ee42c1a1449",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:43.617824+00:00"
+  },
+  {
+    "id": "7f1742cd-6ace-4541-9838-795214907c01",
+    "item_id": "f95b7a6f-37f8-4de1-9fdc-7ac2ef7d7af4",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:44.422945+00:00"
+  },
+  {
+    "id": "cdadfd6e-3542-4b62-84f6-2383fc9d1c4d",
+    "item_id": "4261d2fb-71d3-4a3f-a3a2-ae6a3306afd6",
+    "unit": "ea",
+    "price_per_unit": 1.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:44.822945+00:00"
+  },
+  {
+    "id": "f7c967fc-48a8-4bc0-bf2d-80d483611736",
+    "item_id": "05bf9d69-e5d2-48cb-9592-6325e9b0cb39",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:45.220851+00:00"
+  },
+  {
+    "id": "693f68ad-d0d0-4050-8174-fc34d994ef7b",
+    "item_id": "11be587c-f07a-4b41-94bc-757516dda887",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:45.649514+00:00"
+  },
+  {
+    "id": "6a8e245e-aa2f-4fe5-9661-83b9fe8ee00f",
+    "item_id": "3c8b8fbc-4f9e-4953-a4bd-37799b337807",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:46.069457+00:00"
+  },
+  {
+    "id": "f6fb0638-7958-44ba-a89d-f1932c06177c",
+    "item_id": "a65f4504-ba08-4da1-82ee-339201545673",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:46.474752+00:00"
+  },
+  {
+    "id": "dec8651d-0717-4a7b-8432-451908d520aa",
+    "item_id": "bc40e179-aea5-4151-92b0-fe927c84fba3",
+    "unit": "lg",
+    "price_per_unit": 40.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:46.865499+00:00"
+  },
+  {
+    "id": "197935a8-cd75-49f1-a6c8-d20b3e48c08f",
+    "item_id": "96989aa8-bb4c-456d-8bb4-605939db7a97",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:47.258242+00:00"
+  },
+  {
+    "id": "91fbb627-5cc6-4760-9869-b88229777410",
+    "item_id": "04cc3ab8-f1fa-4e6c-a4aa-9a4d53f1dc53",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:47.649326+00:00"
+  },
+  {
+    "id": "0769c003-f6cf-4dd4-af83-e95ed3f69d4c",
+    "item_id": "b0c6ac67-3d61-415c-8d9a-8683b6ea618d",
+    "unit": "lbs",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:48.06051+00:00"
+  },
+  {
+    "id": "0b4ec4f6-3589-488a-9832-a85dbcf26a25",
+    "item_id": "9b9060f3-6432-46c9-a091-a3d8e9560bb2",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:48.451369+00:00"
+  },
+  {
+    "id": "2039c04b-91ad-4933-b2fc-855231dd02fd",
+    "item_id": "e662ef45-6aed-4a2e-ab16-cead317ac5b0",
+    "unit": "ea",
+    "price_per_unit": 0.35,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:48.855324+00:00"
+  },
+  {
+    "id": "a967bb50-9bf5-41c8-afa5-b8425fc49029",
+    "item_id": "7761e060-b17e-4cdf-811a-ddb5846d266e",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:49.267537+00:00"
+  },
+  {
+    "id": "f87a0675-2a3b-4f0a-9f6d-aac51a6bb3ee",
+    "item_id": "1e6a3cbe-88f7-4cf8-b0d8-b5c6d24cc7b5",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:49.678394+00:00"
+  },
+  {
+    "id": "96bd070a-4fbe-4d97-bbcd-0f31f858a482",
+    "item_id": "c3573a8c-ee80-4e96-90b2-faedf186756a",
+    "unit": "bx",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:50.080019+00:00"
+  },
+  {
+    "id": "7f737c17-a8d5-4769-abc0-3ec930e2b86d",
+    "item_id": "76a7e596-d654-4fa0-b7ab-4d60ee3da1cb",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:50.464617+00:00"
+  },
+  {
+    "id": "9e43ba22-3815-4bd4-a27d-c68d014294e8",
+    "item_id": "258b9b82-338f-4fef-a2ec-fd339af13b9a",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:50.847401+00:00"
+  },
+  {
+    "id": "a9dcae0d-ba6f-47c6-9ecb-1bb1971e9b4e",
+    "item_id": "4e61147f-1e4a-4c78-9aad-365a3a25406b",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:51.23611+00:00"
+  },
+  {
+    "id": "39b51594-944d-4423-9943-f3b7e01b5f50",
+    "item_id": "cd22ecb1-9eea-4ce8-ac14-289d2e8f5e9c",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:51.61249+00:00"
+  },
+  {
+    "id": "26ad282c-e776-417b-8104-95d0702c5e21",
+    "item_id": "cbf76c50-2ebd-4fee-a8a3-0eab9d8366ee",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.019264+00:00"
+  },
+  {
+    "id": "300737f2-a3eb-4ab5-b7bf-01a9c96634fb",
+    "item_id": "d00c8ebc-9fbe-4581-9e90-068368dde389",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.409759+00:00"
+  },
+  {
+    "id": "c0fb5dd4-7f16-4c4e-ba13-70d44ccf63e4",
+    "item_id": "8fe53475-a2ce-4dd6-802b-19151fab1430",
+    "unit": "lbs",
+    "price_per_unit": 1.25,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.789147+00:00"
+  },
+  {
+    "id": "ed7c8480-f112-40a0-957b-e5f62e4c358d",
+    "item_id": "de38634a-5fba-4125-835d-f248ee29f830",
+    "unit": "lbs",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:53.599855+00:00"
+  },
+  {
+    "id": "eb9315c1-bdb6-4746-9e73-bb984beb2ba2",
+    "item_id": "c314664e-d9e7-4d46-aa69-64a1ca26f59b",
+    "unit": "ea",
+    "price_per_unit": 3.75,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:54.01208+00:00"
+  },
+  {
+    "id": "7d61d593-dcb9-4b26-aef3-2f761c411d0e",
+    "item_id": "a8bb4cea-3aad-45ff-96c4-a5af02335e12",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:54.461472+00:00"
+  },
+  {
+    "id": "88b245ae-8718-47a2-a83e-751b3b1d94f4",
+    "item_id": "76881990-2ec7-40b9-8ea1-579a5e1192ad",
+    "unit": "ea",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:54.845567+00:00"
+  },
+  {
+    "id": "d244ac2c-31ba-44b7-9b64-49de07a0d916",
+    "item_id": "0415b9aa-5c61-4f79-9479-7dce2c76d1a8",
+    "unit": "ea",
+    "price_per_unit": 6.4,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:55.259728+00:00"
+  },
+  {
+    "id": "1adec26c-1686-4b55-8f6e-be9dab3bd9cf",
+    "item_id": "0f564608-78ba-405b-bd40-8d80a71c196e",
+    "unit": "sm",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:55.660802+00:00"
+  },
+  {
+    "id": "67ca2f9e-e991-4d67-a95c-0d96b64e9a93",
+    "item_id": "aef966a7-cec2-4f64-a7c5-f461033d608a",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:56.063889+00:00"
+  },
+  {
+    "id": "00758df5-9223-4f68-a964-b3fa91b5c168",
+    "item_id": "7aab3ed9-e8d8-4bf0-877b-d0e9722a850b",
+    "unit": "ea",
+    "price_per_unit": 1.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:56.474252+00:00"
+  },
+  {
+    "id": "49a2db79-7c9e-4dad-a918-d423c9e9c040",
+    "item_id": "fd29e7ff-5086-468d-85a1-7f73829dd930",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:56.863579+00:00"
+  },
+  {
+    "id": "3d02a867-14ac-4401-829a-516b15440ea4",
+    "item_id": "c8bbe30a-a177-430d-86c5-6616a6f62a0d",
+    "unit": "lg",
+    "price_per_unit": 30.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:57.27807+00:00"
+  },
+  {
+    "id": "4ff81487-cf9c-4202-a7f2-e949895f5092",
+    "item_id": "7a452ff1-9cab-4d77-8e7f-81ab30889099",
+    "unit": "lbs",
+    "price_per_unit": 7.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:57.694297+00:00"
+  },
+  {
+    "id": "15c11a8a-fba1-445b-a46e-de9a4f0767ca",
+    "item_id": "cd0f66ef-f670-46a5-983a-60066c8c2825",
+    "unit": "lg",
+    "price_per_unit": 16.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:58.092295+00:00"
+  },
+  {
+    "id": "1babde1c-44d6-409f-8c58-f6c25c9b4011",
+    "item_id": "185693e3-9895-45d7-ab62-3562a30a27e7",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:58.48462+00:00"
+  },
+  {
+    "id": "9aece710-dca7-45b6-a306-441caaaff88e",
+    "item_id": "89c1246f-c6d6-48c1-b253-ac897aeb1d11",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:58.88354+00:00"
+  },
+  {
+    "id": "7b829e2f-229c-43ac-a570-a4eee7ba8def",
+    "item_id": "d2d14373-69ff-4301-81a2-ba77a96b56cd",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:59.294781+00:00"
+  },
+  {
+    "id": "60a155cb-face-46ed-89e6-39d964a27fdc",
+    "item_id": "0ca63d24-8e2c-4cb8-af36-ceb8ced7f103",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:59.688064+00:00"
+  },
+  {
+    "id": "82324162-cc7f-46c7-a380-b5c744affa47",
+    "item_id": "79bea6a3-4268-4ae7-8665-deb6b1cf1a9a",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:00.089222+00:00"
+  },
+  {
+    "id": "a98c8ec5-7dca-4eea-9808-b851e3b6aad3",
+    "item_id": "35f4a879-0b57-4581-9e91-c47200a23c78",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:00.504033+00:00"
+  },
+  {
+    "id": "15dec37e-a25f-4f07-86c3-5bb2213b5e0b",
+    "item_id": "4acd4dc2-eb69-48a4-8f0d-dc509f93beb4",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:00.914418+00:00"
+  },
+  {
+    "id": "6587809d-27f3-4294-9add-5a495ae19c7e",
+    "item_id": "2ec9bf07-c28b-4a11-809e-a7be42c4db76",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:01.304108+00:00"
+  },
+  {
+    "id": "7ab9922f-a0a2-4024-8ebd-e7e4922cbaf5",
+    "item_id": "d87652f1-bb0b-444f-ad23-97c5c4d8b7de",
+    "unit": "sm",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:01.715805+00:00"
+  },
+  {
+    "id": "8913566e-d277-4dac-9855-91cf8da75519",
+    "item_id": "d17e62b0-3615-4ac3-8fb3-f9b22955600f",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:02.141158+00:00"
+  },
+  {
+    "id": "0e7eedca-1aaf-485b-846a-4c13910dad69",
+    "item_id": "1188873c-8be1-42d3-a242-da6f15bf5e4a",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:10.156413+00:00"
+  },
+  {
+    "id": "dbdcabec-74df-4372-bd9b-88da9bed8cf7",
+    "item_id": "3c2f77cd-57af-4557-93a8-25f866c7ef0a",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:10.624627+00:00"
+  },
+  {
+    "id": "97b7805c-744e-4b15-a2b2-1668025b62f1",
+    "item_id": "4e30357c-cab4-454a-8698-3f7413a38b2c",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:11.143511+00:00"
+  },
+  {
+    "id": "077f8711-2b55-4e15-b33d-ce7c4abeca66",
+    "item_id": "2d018036-1224-40a3-82ac-e3644690ab0a",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:11.607636+00:00"
+  },
+  {
+    "id": "537fd2bc-6c5d-4f09-8afc-187e5b0d3601",
+    "item_id": "5d083c30-fb85-4d4f-9757-9cda19fc2821",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:12.075588+00:00"
+  },
+  {
+    "id": "e0923cca-8530-4813-b44d-59f2f09ad41c",
+    "item_id": "afb8cdfd-4cc1-40f7-9f70-df7cbbb78d06",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:12.554626+00:00"
+  },
+  {
+    "id": "f96f07d5-3eec-4dfb-85cd-e85c7f52eb59",
+    "item_id": "29686763-0ead-43f0-9d3a-59f2ccfb2477",
+    "unit": "lbs",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:13.005448+00:00"
+  },
+  {
+    "id": "0bf4444d-f51f-4d1d-bc2a-3499804a9641",
+    "item_id": "d675726f-44a7-475c-9b4b-9ba2bf13996d",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:13.4684+00:00"
+  },
+  {
+    "id": "9ed9345a-72fa-4693-8dad-bafc203b1e7b",
+    "item_id": "2070ea5c-435b-4080-9a08-46095b69baca",
+    "unit": "lg",
+    "price_per_unit": 40.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:13.942486+00:00"
+  },
+  {
+    "id": "261fa569-2e53-41fd-9691-a15f114cc3cd",
+    "item_id": "e29757bb-c15b-4791-8b7e-c0e26dbc2d4c",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:14.421026+00:00"
+  },
+  {
+    "id": "3ac0cbc7-528d-4910-a1d6-648dcf3ad95c",
+    "item_id": "ad510ff3-14e5-40fa-b454-26ebc4bf299c",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:14.887094+00:00"
+  },
+  {
+    "id": "d48e9cb5-0cdf-41ac-b30d-928d1f2d8513",
+    "item_id": "25149f32-ee59-48d7-a941-9f6c35ca2855",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:15.360294+00:00"
+  },
+  {
+    "id": "dc0ee769-bf1a-4650-a307-0c3b3d67cdbd",
+    "item_id": "de69bc0d-febf-4b24-8450-eb1dd74bd7d8",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:15.831009+00:00"
+  },
+  {
+    "id": "685c37b9-8653-487d-95f7-d88e9747b3e6",
+    "item_id": "ec0e87bd-f105-4509-a148-beb9bf6eae42",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:02.331848+00:00"
+  },
+  {
+    "id": "17f24613-46d6-4442-9bde-744a8ca9a986",
+    "item_id": "6c3dfe2a-d412-409f-a2b0-15345fbd2981",
+    "unit": "ea",
+    "price_per_unit": 0.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:02.731011+00:00"
+  },
+  {
+    "id": "20bb2c23-c187-4734-b72f-00cd9d768c89",
+    "item_id": "9f56c78e-827c-4cbe-bb50-b014f03485d7",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:03.114919+00:00"
+  },
+  {
+    "id": "09b7bf08-88b2-47d6-8094-d020ff84ca4f",
+    "item_id": "34ab878d-5fc3-40ab-8fb7-7c1496accbf0",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:03.505643+00:00"
+  },
+  {
+    "id": "e65c77f0-3bf7-4fe6-9581-8e3e61c75b34",
+    "item_id": "ede7731f-5bf6-4a39-95f4-5d3301c929b8",
+    "unit": "lg",
+    "price_per_unit": 20.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:03.927912+00:00"
+  },
+  {
+    "id": "f99ee9d6-f7c4-4d50-a80c-e094d53b2c10",
+    "item_id": "19a5d381-d434-4482-aee6-9b44308ff7d3",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:04.349161+00:00"
+  },
+  {
+    "id": "828db8f4-b33d-4243-a527-c487c785ab93",
+    "item_id": "1b5e7f69-0650-4d5d-a6bf-e6d54d03f21e",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:04.754979+00:00"
+  },
+  {
+    "id": "62a357c5-3674-4798-931d-95b928b17eda",
+    "item_id": "a6a57270-840f-41ff-998e-0b1d3cefbe24",
+    "unit": "ea",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:05.151575+00:00"
+  },
+  {
+    "id": "ba02c803-3a49-4df2-bdf2-868665b8b2c9",
+    "item_id": "7070a97e-2956-4082-b31e-c16321071149",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:05.546922+00:00"
+  },
+  {
+    "id": "1450a636-fe44-4f6d-8f31-523775505736",
+    "item_id": "a2e7a71f-6efe-4d67-b41f-a1338754ff3b",
+    "unit": "lg",
+    "price_per_unit": 24.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:05.955778+00:00"
+  },
+  {
+    "id": "1d1d4fa2-621b-4ac6-95d1-478192eacfa0",
+    "item_id": "1f32ff5a-f9b7-440a-8285-ab2ad1ecaa05",
+    "unit": "ea",
+    "price_per_unit": 1.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:06.373301+00:00"
+  },
+  {
+    "id": "56308858-28e7-4428-9107-76c9b24fe082",
+    "item_id": "61a1375c-3254-4fe0-a471-8b8b660f4135",
+    "unit": "ea",
+    "price_per_unit": 1.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:06.822716+00:00"
+  },
+  {
+    "id": "2712af0b-0c56-4f7c-becc-91f38ba27ad4",
+    "item_id": "5a9c3504-8fef-4b40-8129-d20f88fbe563",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:07.257192+00:00"
+  },
+  {
+    "id": "b3707ee2-e2bc-464b-8108-6a2b8dade797",
+    "item_id": "3d50b41b-54e3-4ea7-b559-e40d8a1ea7e3",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:07.72558+00:00"
+  },
+  {
+    "id": "d734b1a8-72bf-40d8-b263-0d36ac4c3007",
+    "item_id": "4fd2406d-0cce-4013-9585-72c23407ceae",
+    "unit": "lbs",
+    "price_per_unit": 4.99,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:08.196829+00:00"
+  },
+  {
+    "id": "75c8e780-94b5-405e-8935-fedb068bbb87",
+    "item_id": "ad8151cf-0a93-4205-9f92-19b1bc595a8f",
+    "unit": "lbs",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:08.658488+00:00"
+  },
+  {
+    "id": "0bc9a871-30b5-46e0-81ef-1d03823692b5",
+    "item_id": "0516781f-0290-44a1-9f8f-adbf8db38425",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:09.143293+00:00"
+  },
+  {
+    "id": "93496b43-4967-4219-a7f6-dc8bc8eb4751",
+    "item_id": "96c9c583-6be1-473c-8531-e58107199fa6",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:09.629436+00:00"
+  },
+  {
+    "id": "73174bb3-328f-42ee-9d0b-7be84829518a",
+    "item_id": "95a59580-6440-4afa-95b7-90e438e0b33b",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:15.596085+00:00"
+  },
+  {
+    "id": "71b3089b-36b3-4d79-ac4f-a2c0584ed92c",
+    "item_id": "22370f93-2d06-4891-841e-4cf159e301ca",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:16.075019+00:00"
+  },
+  {
+    "id": "4ba56722-4c58-4500-b666-2298def828b7",
+    "item_id": "2d7c5b8a-f3f9-462d-a7b0-06f5ac2dc976",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:17.147613+00:00"
+  },
+  {
+    "id": "5c94e3b2-9daf-42a0-b2e8-9f49c00e5e07",
+    "item_id": "1cd8cacb-9218-4990-9bbf-a2e7ce216f54",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:21.294171+00:00"
+  },
+  {
+    "id": "536915c9-e038-409f-86bc-942378ea0186",
+    "item_id": "0a36520c-f191-437c-9745-c85a53861102",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:25.939409+00:00"
+  },
+  {
+    "id": "ee3185f3-fb3c-458a-b745-5e2e0fb3a8ff",
+    "item_id": "66056ffe-bed5-4f29-9efc-b3451224d474",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:26.978747+00:00"
+  },
+  {
+    "id": "4db91041-4f87-483c-a619-780265eba7b6",
+    "item_id": "2c6d8e1e-5fca-4ef0-8171-db565a70bb02",
+    "unit": "lg",
+    "price_per_unit": 36.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:27.185968+00:00"
+  },
+  {
+    "id": "9e00e086-e615-410a-bc17-53b52790edf1",
+    "item_id": "4cb1a70a-69ff-40a0-a510-294ba986d499",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:27.380403+00:00"
+  },
+  {
+    "id": "40ec880e-6b0d-4075-a64e-bf973b22ba91",
+    "item_id": "2f002bb7-6444-4ace-87ff-7c547b3f03bd",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:27.58488+00:00"
+  },
+  {
+    "id": "a85e7b95-04ac-40d4-8089-e539ed8ee80d",
+    "item_id": "dfcf3978-e149-42ff-90c3-5ee66fc11c77",
+    "unit": "lbs",
+    "price_per_unit": 8.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:34.540486+00:00"
+  },
+  {
+    "id": "b56e3bd7-33ca-4dae-a388-619f7fe128b9",
+    "item_id": "f0fe9b25-dd6c-40ca-b3a2-5ad353a1c66e",
+    "unit": "ea",
+    "price_per_unit": 3.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:34.739018+00:00"
+  },
+  {
+    "id": "7649ac0c-3d75-4176-af85-7f9c51b112ab",
+    "item_id": "09dd43ee-5456-4692-9016-433d77d3b6cb",
+    "unit": "sm",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:43.819168+00:00"
+  },
+  {
+    "id": "05c17243-e5df-4aa4-8559-fead453e8d4d",
+    "item_id": "c34f7e2a-f610-4e56-847b-495bf4739360",
+    "unit": "sm",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:44.017807+00:00"
+  },
+  {
+    "id": "ee82fa88-3625-420a-a872-52369b0d9343",
+    "item_id": "f43cda55-dd93-4947-ae92-1129a86c1d82",
+    "unit": "lbs",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:52.990864+00:00"
+  },
+  {
+    "id": "5c2783c9-6207-4c4a-89f8-51f0e350c035",
+    "item_id": "d7c99f48-1aa3-45ea-a247-2d7262cc3929",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:22:53.188246+00:00"
+  },
+  {
+    "id": "8e5d7b50-f6ad-4c8b-81a9-9ae81242640f",
+    "item_id": "9ba79172-9ab7-433c-a656-4b584d3eab1e",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:02.531154+00:00"
+  },
+  {
+    "id": "8eb069ed-c868-4894-8cb7-60b6a97ddd39",
+    "item_id": "98073499-8a1a-4ca5-99ad-0486e2769c76",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:02.92646+00:00"
+  },
+  {
+    "id": "0b023745-ead9-4a0f-81b1-0ff3651c114e",
+    "item_id": "b7693f65-7b87-4620-a292-f9e60fd3cfa9",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:03.305636+00:00"
+  },
+  {
+    "id": "390e1416-9c17-40c4-b46d-eb2d21e7f758",
+    "item_id": "f74886a6-2688-4903-92e2-b277ac3871b9",
+    "unit": "bx",
+    "price_per_unit": 48.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:03.717295+00:00"
+  },
+  {
+    "id": "9bf976d9-a1b2-458d-a7e0-a41c7b251ef3",
+    "item_id": "1b44a5a2-7c8e-4381-b545-3cecb689cce4",
+    "unit": "ea",
+    "price_per_unit": 1.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:04.141561+00:00"
+  },
+  {
+    "id": "3a1b2529-e451-46e2-aead-d856f969d80a",
+    "item_id": "d744e61c-c90f-4181-9247-ae706cf2295d",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:04.562096+00:00"
+  },
+  {
+    "id": "1e9da439-205f-43ca-aaf3-604336e9b298",
+    "item_id": "aef96fc8-88ea-48ab-bc0f-0c812c919007",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:04.960819+00:00"
+  },
+  {
+    "id": "2388305b-9b9e-469e-bdb0-963306c477e7",
+    "item_id": "b78ea1c0-57d8-4155-bc7e-f9178f5c5ee1",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:05.352835+00:00"
+  },
+  {
+    "id": "8abaf2c4-f6cb-4db8-8b16-8e466a8bcdbd",
+    "item_id": "bbc3545a-c547-48c5-a757-735e33dc47ec",
+    "unit": "lbs",
+    "price_per_unit": 4.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:05.753094+00:00"
+  },
+  {
+    "id": "e8e4d05a-70e9-4fe4-9aeb-0939c01796e5",
+    "item_id": "407a2c77-9fc9-495a-ba00-749131cac905",
+    "unit": "lg",
+    "price_per_unit": 6.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:06.171112+00:00"
+  },
+  {
+    "id": "b1301311-bec1-4271-96f7-7b954a276c8c",
+    "item_id": "304ed108-096d-4022-b673-87feae1b5a1a",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:06.586967+00:00"
+  },
+  {
+    "id": "b4d761f5-fbb6-433d-afd9-ecb57936b755",
+    "item_id": "ad22aeeb-e301-4beb-9bf9-36b11a302944",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:07.026773+00:00"
+  },
+  {
+    "id": "6b41cda0-61ca-42e9-aadb-9e5585e9c1db",
+    "item_id": "c6fdc2be-53bd-4c2a-8a6f-665e612aa3b5",
+    "unit": "lg",
+    "price_per_unit": 12.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:07.485957+00:00"
+  },
+  {
+    "id": "4ef274ee-a9bc-4ad0-bcb3-40d96ce5dd8f",
+    "item_id": "97ee9b66-2711-4df2-99bd-ed1a32f40eb4",
+    "unit": "lg",
+    "price_per_unit": 5.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:07.961508+00:00"
+  },
+  {
+    "id": "6b251fd0-6176-44ec-a843-91f07d2f50d5",
+    "item_id": "334edaad-9be5-43ff-a28a-6a165d97d13e",
+    "unit": "lbs",
+    "price_per_unit": 4.99,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:08.427033+00:00"
+  },
+  {
+    "id": "a9de301a-27dc-440e-8ad1-66aaf60dc5f1",
+    "item_id": "9c2ebb31-687b-428e-a2c5-a5e552f7b5cc",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:08.880178+00:00"
+  },
+  {
+    "id": "17d78e59-11ad-403b-9311-58fe9efe6dbd",
+    "item_id": "3f899f50-df5f-4364-ba3f-3ef814961309",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:09.385684+00:00"
+  },
+  {
+    "id": "f6d46fae-bb71-4f5c-9273-54674ee05497",
+    "item_id": "949a9839-c640-4bf7-a7b6-59e93d5e927e",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:09.905206+00:00"
+  },
+  {
+    "id": "0faca172-1dd1-4b41-a988-ae3d289a0ff4",
+    "item_id": "924984fd-6cab-4b4a-8b62-1fc6860ad5a5",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:10.393414+00:00"
+  },
+  {
+    "id": "99018439-9e9a-4600-ad5e-91116b1ab0b0",
+    "item_id": "20af3438-94f4-44dd-a150-079cf139a7a5",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:10.868501+00:00"
+  },
+  {
+    "id": "f3125b1b-d05f-4518-b930-8ea4a7651d1d",
+    "item_id": "a3d8e08f-8e02-46e5-af59-a2895bf61e63",
+    "unit": "lbs",
+    "price_per_unit": 4.5,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:11.373685+00:00"
+  },
+  {
+    "id": "d5e7ff42-0992-4061-babc-cfd3b285c442",
+    "item_id": "fd5f8362-52f1-410c-97dc-bbe084c2c8e4",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:11.838922+00:00"
+  },
+  {
+    "id": "167300b1-bd68-46a7-8956-91b2c2b77d9d",
+    "item_id": "e63f9153-d195-48fa-b7e7-19ad412c36da",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:12.32573+00:00"
+  },
+  {
+    "id": "425841c9-fe0a-4284-9fb5-fbdbf85655e4",
+    "item_id": "66732b90-15ff-4bb5-a9d8-b84ac997d183",
+    "unit": "lg",
+    "price_per_unit": 25.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:12.788017+00:00"
+  },
+  {
+    "id": "69d080c1-6c23-4eb4-81ca-ae4463251679",
+    "item_id": "0a960158-e3fa-4ee6-aabd-55578dfe8faa",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:13.226255+00:00"
+  },
+  {
+    "id": "0c2b2d38-d911-4133-a683-4129ad94be3a",
+    "item_id": "07c6eec6-46c9-4e7c-8cab-a524795d38b7",
+    "unit": "lg",
+    "price_per_unit": 10.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:13.708071+00:00"
+  },
+  {
+    "id": "e49122be-4795-4829-8562-afe5b5c6940b",
+    "item_id": "d399f7cb-cd56-4360-9e60-ccab8382fb61",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:14.191179+00:00"
+  },
+  {
+    "id": "4c3436c6-3919-4da3-a7f9-4a844e2c6aa9",
+    "item_id": "72322dd6-8045-401b-aa0e-67ed58ebe0ff",
+    "unit": "ea",
+    "price_per_unit": 4.95,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:14.646934+00:00"
+  },
+  {
+    "id": "0d47a733-1842-4c49-a77f-2862d8e399bb",
+    "item_id": "f928dfeb-fbe7-4518-a98a-0d77b37478dc",
+    "unit": "lg",
+    "price_per_unit": 15.0,
+    "effective_date": "2026-04-07",
+    "source": "market",
+    "created_at": "2026-04-07T10:23:15.117155+00:00"
+  }
+]
