@@ -73,7 +73,17 @@ export async function POST(request: Request) {
   let body: {
     restaurant_id: string;
     delivery_date: string;
-    items: { availability_item_id: string; quantity: number; unit_price?: number | null }[];
+    items: {
+      availability_item_id: string;
+      quantity: number;
+      unit_price?: number | null;
+      /** Single unit code chosen by the chef (sm/lg/ea/...). Required for new orders. */
+      unit_type?: string | null;
+      /** Size descriptor when the item has sizes ("Quarter", "Palm", ...). null when none. */
+      size_label?: string | null;
+      /** Comma-separated colors selected for this line ("red,blue"). null when none. */
+      color_key?: string | null;
+    }[];
     freeform_notes?: string;
   };
 
@@ -176,10 +186,11 @@ export async function POST(request: Request) {
   // unavailable. Don't trust client-supplied availability_item_ids — a
   // tampered ID could otherwise reference another restaurant's availability,
   // a different date, or an unavailable item. We require every submitted ID
-  // to round-trip through this scoped fetch.
+  // to round-trip through this scoped fetch. Pull unit_type so we can
+  // backfill the per-line unit when the client omits it (legacy callers).
   const submittedIds = items.map((i: any) => i.availability_item_id);
   const { data: availItems } = await (supabase.from("availability_items") as any)
-    .select("id, item:items(default_price)")
+    .select("id, item:items(default_price, unit_type)")
     .eq("restaurant_id", restaurant_id)
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable")
@@ -197,11 +208,22 @@ export async function POST(request: Request) {
   const priceMap = new Map(
     (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null]),
   );
+  // first declared unit per item — fallback when the client didn't tell us
+  // which unit was chosen
+  const firstUnitMap = new Map(
+    (availItems ?? []).map((a: any) => [
+      a.id,
+      String(a.item?.unit_type ?? "").split(",")[0]?.trim() || null,
+    ]),
+  );
 
   // Delete existing order items then reinsert (simplest approach for re-orders)
   await supabase.from("order_items").delete().eq("order_id", order.id);
 
   // Insert new order items (skip zero-qty items)
+  // Persist the (unit, size, color) discriminators so chefs can order
+  // multiple sizes/colors of the same item and have them round-trip through
+  // the receiver dashboard, email, and edit-order hydration.
   const orderItems = items
     .filter((item) => item.quantity > 0)
     .map((item) => ({
@@ -209,6 +231,12 @@ export async function POST(request: Request) {
       availability_item_id: item.availability_item_id,
       quantity_requested: item.quantity,
       unit_price_at_order: priceMap.get(item.availability_item_id) ?? null,
+      unit_type:
+        (item.unit_type ?? null) ||
+        firstUnitMap.get(item.availability_item_id) ||
+        null,
+      size_label: item.size_label ?? null,
+      color_key: item.color_key ?? null,
     }));
 
   if (orderItems.length > 0) {

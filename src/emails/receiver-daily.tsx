@@ -27,6 +27,10 @@ type ReceiverLineStatus = "ready" | "short" | "pending" | "extra";
 interface ReceiverLine {
   itemName: string;
   unit: string;
+  /** Size descriptor when the chef picked one ("Quarter", "Palm"). undefined otherwise. */
+  sizeLabel?: string;
+  /** Comma-separated colors the chef picked ("red,blue"). undefined when none. */
+  colorKey?: string;
   /** What the chef ordered. 0 means it wasn't ordered (extra). */
   ordered: number;
   /** What's actually being delivered. May be < ordered (short) or > 0 with ordered=0 (extra). */
@@ -295,7 +299,20 @@ function LineRow({ line, isLast }: { line: ReceiverLine; isLast: boolean }) {
           <tbody>
             <tr>
               <td style={{ verticalAlign: "middle", paddingRight: "8px" }}>
-                <Text style={styles.itemName}>{line.itemName}</Text>
+                <Text style={styles.itemName}>
+                  {line.itemName}
+                  {(line.sizeLabel || line.colorKey) && (
+                    <span style={{
+                      fontFamily: FONT_STACK_INLINE,
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      color: colors.textMuted,
+                      marginLeft: "6px",
+                    }}>
+                      {[line.sizeLabel, line.colorKey ? line.colorKey.split(",").join(" / ") : null].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </Text>
               </td>
               <td style={{ verticalAlign: "middle", whiteSpace: "nowrap", textAlign: "right" }}>
                 <span style={{

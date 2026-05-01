@@ -19,6 +19,10 @@ export type ReceiverLineStatus = "ready" | "short" | "pending" | "extra";
 export interface ReceiverLine {
   itemName: string;
   unit: string;
+  /** Size descriptor when the chef picked one ("Quarter", "Palm"). undefined otherwise. */
+  sizeLabel?: string;
+  /** Comma-separated colors the chef picked ("red,blue"). undefined when none. */
+  colorKey?: string;
   ordered: number;
   delivered: number;
   status: ReceiverLineStatus;
@@ -58,6 +62,7 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       id, restaurant_id, freeform_notes,
       order_items (
         id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
+        unit_type, size_label, color_key,
         availability_items (
           id, item_id,
           items ( id, name, unit_type, is_event_item )
@@ -81,6 +86,16 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
     const order = (orders ?? []).find((o: any) => o.restaurant_id === r.id);
     const delivery = (deliveries ?? []).find((d: any) => d.restaurant_id === r.id);
 
+    // Composite key: (item.id, unit, size, color). Without this, multiple
+    // sizes/colors of the same item get collapsed into one row and the
+    // receiver can't tell what to pick.
+    const lineKey = (
+      itemId: string,
+      unit: string | null | undefined,
+      size: string | null | undefined,
+      color: string | null | undefined,
+    ) => `${itemId}__${unit ?? ""}__${size ?? ""}__${color ?? ""}`;
+
     const linesByItem = new Map<string, ReceiverLine>();
 
     for (const oi of order?.order_items ?? []) {
@@ -89,16 +104,24 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       const ordered = Number(oi.quantity_requested ?? 0);
       const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
       const shorted = Boolean(oi.is_shorted);
-      const unit = String(item.unit_type ?? "").split(",")[0]?.trim() ?? "";
+      // Prefer the unit chosen at submit time. Fall back to the item's first
+      // declared unit for legacy rows where unit_type is null.
+      const unit =
+        oi.unit_type ??
+        (String(item.unit_type ?? "").split(",")[0]?.trim() || "");
+      const sizeLabel: string | null = oi.size_label ?? null;
+      const colorKey: string | null = oi.color_key ?? null;
 
       let status: ReceiverLineStatus;
       if (shorted) status = "short";
       else if (fulfilled != null) status = "ready";
       else status = "pending";
 
-      linesByItem.set(item.id, {
+      linesByItem.set(lineKey(item.id, unit, sizeLabel, colorKey), {
         itemName: item.name,
         unit,
+        sizeLabel: sizeLabel ?? undefined,
+        colorKey: colorKey ?? undefined,
         ordered,
         delivered: fulfilled ?? 0,
         status,
@@ -107,15 +130,31 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       });
     }
 
+    // Delivery items don't carry size/color today, so they always overlay
+    // onto the bare (item, unit, null, null) bucket. If the receiver
+    // pre-pulled extras outside an order, they show up as "extra" lines.
     for (const di of delivery?.delivery_items ?? []) {
       const item = di.items;
       if (!item) continue;
       const delivered = Number(di.quantity ?? 0);
-      const existing = linesByItem.get(item.id);
       const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim() ?? "";
+      const key = lineKey(item.id, unit, null, null);
+
+      // Try the unit-specific bucket first; if missing, look for any line for
+      // this item under that same unit (regardless of size/color) so a
+      // delivery without size data still cancels out a pending order.
+      let existing = linesByItem.get(key);
+      if (!existing) {
+        for (const [k, line] of linesByItem) {
+          if (k.startsWith(`${item.id}__${unit}__`) && line.status === "pending") {
+            existing = line;
+            break;
+          }
+        }
+      }
 
       if (!existing) {
-        linesByItem.set(item.id, {
+        linesByItem.set(key, {
           itemName: item.name,
           unit,
           ordered: 0,

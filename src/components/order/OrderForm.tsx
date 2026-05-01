@@ -27,6 +27,8 @@ interface OrderFormProps {
   deliveryDate: string;
   deliveryDateFormatted: string;
   initialQuantities?: Record<string, number>;
+  /** Per-(quantity-key) color selections, hydrated when editing an existing order. */
+  initialColors?: Record<string, string[]>;
   initialNotes?: string;
   editingOrderId?: string;
 }
@@ -40,6 +42,10 @@ export interface OrderFormData {
     availabilityItemId: string;
     itemName: string;
     unitType: string;
+    /** Size descriptor when item has sizes ("Quarter", "Palm", ...). null otherwise. */
+    sizeLabel: string | null;
+    /** Comma-separated colors selected for this line ("red,blue"). null when none. */
+    colorKey: string | null;
     quantity: number;
     unitPrice: number | null;
     itemNote: string;
@@ -55,13 +61,14 @@ export function OrderForm({
   deliveryDate,
   deliveryDateFormatted,
   initialQuantities = {},
+  initialColors = {},
   initialNotes = "",
   editingOrderId,
 }: OrderFormProps) {
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [itemColors, setItemColors] = useState<Record<string, string[]>>({});
+  const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
 
@@ -130,10 +137,7 @@ export function OrderForm({
   }, 0);
 
   function handleReview() {
-    const orderedItems: {
-      availabilityItemId: string; itemName: string; unitType: string;
-      quantity: number; unitPrice: number | null; itemNote: string;
-    }[] = [];
+    const orderedItems: OrderFormData["items"] = [];
 
     // Use allAvailable so search doesn't hide ordered items
     for (const ai of allAvailable) {
@@ -150,6 +154,10 @@ export function OrderForm({
 
         // Colors live at the same key as the qty
         const colors = itemColors[key] ?? [];
+        const colorKey = colors.length > 0 ? colors.join(",") : null;
+        // Keep the human-readable color note in itemNote for backwards-compat
+        // displays; the structured colorKey field is what receiver/edit
+        // hydration round-trips through.
         const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
         const note = [colorNote, itemNote].filter(Boolean).join(" | ");
 
@@ -164,6 +172,8 @@ export function OrderForm({
           availabilityItemId: ai.id,
           itemName,
           unitType: unitForOrder,
+          sizeLabel: size ?? null,
+          colorKey,
           quantity: qty,
           unitPrice,
           itemNote: note,

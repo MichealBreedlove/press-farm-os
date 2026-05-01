@@ -87,11 +87,16 @@ export function PwaInstallPrompt() {
 
   if (!visible || !variant) return null;
 
+  // Sit above the chef/admin bottom nav (h-16 = 64px) AND any sticky action
+  // bar a page may render above the nav (e.g. OrderForm's "Review Order").
+  // 64 (nav) + ~60 (sticky button) + ~16 (gap) ≈ 140px. We use the safe-area
+  // inset on top so the prompt doesn't tuck under the iPhone home indicator.
   return (
     <div
       role="dialog"
       aria-label="Install Press Farm"
-      className="fixed inset-x-2 bottom-2 sm:bottom-4 sm:inset-x-auto sm:right-4 sm:max-w-sm z-50"
+      style={{ bottom: "calc(140px + env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-2 sm:inset-x-auto sm:right-4 sm:max-w-sm z-50"
     >
       <div className="bg-white rounded-2xl border border-farm-dark/10 shadow-lg overflow-hidden">
         <div className="px-4 py-3 bg-gradient-to-br from-farm-green/10 to-farm-cream/40 border-b border-farm-dark/5 flex items-start gap-3">

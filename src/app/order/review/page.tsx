@@ -69,6 +69,9 @@ export default function OrderReviewPage() {
             availability_item_id: item.availabilityItemId,
             quantity: item.quantity,
             unit_price: item.unitPrice,
+            unit_type: item.unitType,
+            size_label: item.sizeLabel,
+            color_key: item.colorKey,
           })),
           freeform_notes: freeformNotes || undefined,
         }),
@@ -115,10 +118,13 @@ export default function OrderReviewPage() {
             <p className="section-eyebrow with-flower text-farm-muted">Items · {items.length}</p>
           </div>
           <ul className="divide-y divide-gray-50">
-            {items.map((item) => {
+            {items.map((item, idx) => {
               const flowerSrc = flowerImageForName(item.itemName);
+              // Composite React key — chefs can order multiple sizes/colors of
+              // the same availability_item_id; bare id alone collides.
+              const liKey = `${item.availabilityItemId}__${item.unitType}__${item.sizeLabel ?? ""}__${item.colorKey ?? ""}__${idx}`;
               return (
-                <li key={item.availabilityItemId} className="px-4 py-3">
+                <li key={liKey} className="px-4 py-3">
                   <div className="flex items-start gap-3">
                     {flowerSrc && (
                       <div className="w-12 h-12 rounded-lg bg-farm-cream border border-farm-dark/5 flex items-center justify-center flex-shrink-0">

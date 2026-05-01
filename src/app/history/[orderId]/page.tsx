@@ -46,6 +46,9 @@ export default async function OrderDetailPage({
         is_shorted,
         shortage_reason,
         unit_price_at_order,
+        unit_type,
+        size_label,
+        color_key,
         availability_items(
           id,
           status,
@@ -172,7 +175,12 @@ export default async function OrderDetailPage({
               const item = availItem?.item as any;
               if (!item) return null;
 
-              const unit = item.unit_type as UnitType;
+              // Prefer the chef's chosen unit (oi.unit_type). Fall back to
+              // the item's first declared unit for legacy rows.
+              const persistedUnit: string | null = oi.unit_type ?? null;
+              const unit = (persistedUnit ?? String(item.unit_type ?? "").split(",")[0]?.trim() ?? "") as UnitType;
+              const sizeLabel: string | null = oi.size_label ?? null;
+              const colorKey: string | null = oi.color_key ?? null;
               const ordered = Number(oi.quantity_requested ?? 0);
               const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
               const isShorted = Boolean(oi.is_shorted);
@@ -188,7 +196,19 @@ export default async function OrderDetailPage({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                        <p className="text-sm font-medium text-farm-dark truncate">
+                          {item.name}
+                          {(sizeLabel || colorKey) && (
+                            <span className="ml-1.5 text-xs font-normal text-farm-muted">
+                              {[
+                                sizeLabel,
+                                colorKey ? colorKey.split(",").join(" / ") : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          )}
+                        </p>
                         {status === "short" && (
                           <span className="text-[9px] tracking-wider uppercase bg-pf-master-orange/[0.12] text-pf-master-orange px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
                             Short

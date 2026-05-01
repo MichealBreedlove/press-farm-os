@@ -7,10 +7,17 @@ import { getItemImageUrl } from "@/lib/flower-images";
 type Status = "ready" | "short" | "pending" | "extra";
 
 interface Line {
+  /** Composite map key: itemId__unit__size__color. Differentiates rows when a chef
+   *  orders multiple sizes/colors of the same item. */
+  lineKey: string;
   itemId: string;
   itemName: string;
   category: string;
   unit: string;
+  /** Size descriptor (e.g. "Quarter", "Palm"). null when item has no sizes. */
+  sizeLabel: string | null;
+  /** Comma-separated colors selected ("red,blue"). null when none. */
+  colorKey: string | null;
   imageUrl: string | null;
   isEvent: boolean;
   ordered: number;
@@ -68,19 +75,38 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
       const delivery = deliveries.find((d: any) => d.restaurant_id === r.id);
       const lines = new Map<string, Line>();
 
+      // Composite key — keep multiple sizes/colors of the same item visible
+      // as separate rows.
+      const buildKey = (
+        itemId: string,
+        unit: string,
+        size: string | null,
+        color: string | null,
+      ) => `${itemId}__${unit}__${size ?? ""}__${color ?? ""}`;
+
       // Pass 1 — record every ordered item
       for (const oi of order?.order_items ?? []) {
         const item = oi.availability_items?.items;
         if (!item) continue;
-        const key = item.id;
+        // Prefer the chef's chosen unit; fall back to the item's first
+        // declared unit for legacy rows where unit_type is null.
+        const unit =
+          (oi.unit_type ?? "").toString().toUpperCase() ||
+          (String(item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "");
+        const sizeLabel: string | null = oi.size_label ?? null;
+        const colorKey: string | null = oi.color_key ?? null;
+        const key = buildKey(item.id, unit, sizeLabel, colorKey);
         const ordered = Number(oi.quantity_requested ?? 0);
         const isShortedFlag = Boolean(oi.is_shorted);
         const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
         lines.set(key, {
+          lineKey: key,
           itemId: item.id,
           itemName: item.name,
           category: item.category,
-          unit: String(item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "",
+          unit,
+          sizeLabel,
+          colorKey,
           imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
           isEvent: Boolean(item.is_event_item),
           ordered,
@@ -90,20 +116,35 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         });
       }
 
-      // Pass 2 — overlay delivery_items: confirm "ready", flag "extra", upgrade "short" with real qty
+      // Pass 2 — overlay delivery_items. Deliveries don't carry size/color
+      // today, so fall back to "any line for this item under the same unit"
+      // when there isn't a (item, unit, null, null) bucket.
       for (const di of delivery?.delivery_items ?? []) {
         const item = di.items;
         if (!item) continue;
-        const key = item.id;
+        const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "";
         const delivered = Number(di.quantity ?? 0);
-        const existing = lines.get(key);
+        const exactKey = buildKey(item.id, unit, null, null);
+        let existing = lines.get(exactKey);
+        if (!existing) {
+          for (const line of lines.values()) {
+            if (line.itemId === item.id && line.unit === unit && line.status === "pending") {
+              existing = line;
+              break;
+            }
+          }
+        }
+
         if (!existing) {
           // Delivered but never ordered → extra
-          lines.set(key, {
+          lines.set(exactKey, {
+            lineKey: exactKey,
             itemId: item.id,
             itemName: item.name,
             category: item.category,
-            unit: String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "",
+            unit,
+            sizeLabel: null,
+            colorKey: null,
             imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
             isEvent: Boolean(item.is_event_item),
             ordered: 0,
@@ -269,7 +310,7 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
 
       {regularLines.length > 0 && (
         <ul className="divide-y divide-farm-dark/5">
-          {regularLines.map((line) => <LineRow key={line.itemId} line={line} />)}
+          {regularLines.map((line) => <LineRow key={line.lineKey} line={line} />)}
         </ul>
       )}
 
@@ -281,7 +322,7 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
             </p>
           </div>
           <ul className="divide-y divide-farm-dark/5">
-            {eventLines.map((line) => <LineRow key={line.itemId} line={line} />)}
+            {eventLines.map((line) => <LineRow key={line.lineKey} line={line} />)}
           </ul>
         </>
       )}
@@ -302,7 +343,19 @@ function LineRow({ line }: { line: Line }) {
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-semibold text-farm-dark truncate">{line.itemName}</p>
+          <p className="text-sm font-semibold text-farm-dark truncate">
+            {line.itemName}
+            {(line.sizeLabel || line.colorKey) && (
+              <span className="ml-1.5 text-xs font-normal text-farm-muted">
+                {[
+                  line.sizeLabel,
+                  line.colorKey ? line.colorKey.split(",").join(" / ") : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
+          </p>
           <span className={`text-[10px] tracking-wider uppercase px-1.5 py-0.5 rounded font-semibold flex-shrink-0 ${meta.pill}`}>
             <span aria-hidden="true">{meta.icon}</span> {meta.label}
           </span>

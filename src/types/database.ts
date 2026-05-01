@@ -256,6 +256,9 @@ export interface Database {
           is_shorted: boolean;
           shortage_reason: string | null;
           unit_price_at_order: number | null;
+          unit_type: string | null;
+          size_label: string | null;
+          color_key: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -268,6 +271,9 @@ export interface Database {
           is_shorted?: boolean;
           shortage_reason?: string | null;
           unit_price_at_order?: number | null;
+          unit_type?: string | null;
+          size_label?: string | null;
+          color_key?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -277,6 +283,9 @@ export interface Database {
           is_shorted?: boolean;
           shortage_reason?: string | null;
           unit_price_at_order?: number | null;
+          unit_type?: string | null;
+          size_label?: string | null;
+          color_key?: string | null;
           updated_at?: string;
         };
       };

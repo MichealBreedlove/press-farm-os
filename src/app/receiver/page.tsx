@@ -65,13 +65,16 @@ export default async function ReceiverPage({ searchParams }: Props) {
 
   const restaurantList: { id: string; name: string }[] = restaurants ?? [];
 
-  // Orders for selected date — need the order_items joined with availability_items → items
+  // Orders for selected date — need the order_items joined with availability_items → items.
+  // Pull unit_type/size_label/color_key so the dashboard can render
+  // separate rows when a chef ordered multiple sizes/colors of the same item.
   const { data: orders } = await (admin as any)
     .from("orders")
     .select(`
       id, restaurant_id, delivery_date, status, freeform_notes,
       order_items (
         id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
+        unit_type, size_label, color_key,
         availability_item_id,
         availability_items (
           id, item_id,
