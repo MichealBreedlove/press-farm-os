@@ -65,6 +65,36 @@ export default async function OrderDetailPage({
     notFound();
   }
 
+  // Pull delivery_items for the same date+restaurant so we can surface
+  // "extras" — produce Press Farm threw in that wasn't on the chef's order.
+  // Chef RLS allows reading their own restaurant's deliveries.
+  const { data: chefDelivery } = await supabase
+    .from("deliveries")
+    .select(`
+      id, total_value,
+      delivery_items (
+        id, item_id, quantity, unit, unit_price,
+        items ( id, name, unit_type )
+      )
+    `)
+    .eq("delivery_date", order.delivery_date)
+    .eq("restaurant_id", order.restaurant_id)
+    .maybeSingle() as any;
+
+  // "Extras" = delivery_items whose item_id is NOT on the order.
+  const orderedItemIds = new Set<string>(
+    (order.order_items ?? []).map((oi: any) => oi.availability_items?.item?.id).filter(Boolean),
+  );
+  const extras = (chefDelivery?.delivery_items ?? [])
+    .filter((di: any) => di.items && !orderedItemIds.has(di.items.id))
+    .map((di: any) => ({
+      id: di.id,
+      itemName: di.items.name,
+      quantity: Number(di.quantity ?? 0),
+      unit: String(di.unit ?? "").toUpperCase(),
+      unitPrice: di.unit_price != null ? Number(di.unit_price) : null,
+    }));
+
   // Check if ordering is still open for this delivery date
   const { data: deliveryDateRow } = await supabase
     .from("delivery_dates")
@@ -121,11 +151,12 @@ export default async function OrderDetailPage({
       </header>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Shortage warning banner */}
+        {/* Shortage warning banner — uses pf-master-orange to match the
+            receiver dashboard's "short" status semantics. */}
         {hasShortages && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
-            <p className="text-sm font-medium text-yellow-800">
-              Some items in this order were shorted.
+          <div className="bg-pf-master-orange/[0.08] border border-pf-master-orange/30 rounded-xl px-4 py-3">
+            <p className="text-sm font-medium text-pf-master-orange">
+              Some items were shorted — see details below.
             </p>
           </div>
         )}
@@ -142,15 +173,39 @@ export default async function OrderDetailPage({
               if (!item) return null;
 
               const unit = item.unit_type as UnitType;
-              const isShorted = oi.is_shorted;
-              const qtyFulfilled = oi.quantity_fulfilled;
+              const ordered = Number(oi.quantity_requested ?? 0);
+              const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
+              const isShorted = Boolean(oi.is_shorted);
+
+              // Status mirrors the receiver dashboard — same model, same pills.
+              let status: "ready" | "short" | "pending";
+              if (isShorted) status = "short";
+              else if (fulfilled != null) status = "ready";
+              else status = "pending";
 
               return (
                 <li key={oi.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                        {status === "short" && (
+                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-orange/[0.12] text-pf-master-orange px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Short
+                          </span>
+                        )}
+                        {status === "ready" && (
+                          <span className="text-[9px] tracking-wider uppercase bg-farm-green-light text-farm-green px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Ready
+                          </span>
+                        )}
+                        {status === "pending" && (
+                          <span className="text-[9px] tracking-wider uppercase bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-farm-muted mt-0.5">
                         {UNIT_LABELS[unit] ?? unit}
                         {oi.unit_price_at_order != null && (
                           <span className="ml-1">
@@ -159,23 +214,29 @@ export default async function OrderDetailPage({
                         )}
                       </p>
                       {isShorted && oi.shortage_reason && (
-                        <p className="text-xs text-yellow-700 mt-1 bg-yellow-50 rounded px-2 py-1">
-                          Shortage: {oi.shortage_reason}
+                        <p className="text-xs text-pf-master-orange mt-1 italic">
+                          {oi.shortage_reason}
                         </p>
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-semibold text-gray-900">
-                        &times; {oi.quantity_requested}
-                      </p>
-                      {isShorted && qtyFulfilled != null && (
-                        <p className="text-xs text-yellow-700">
-                          Fulfilled: {qtyFulfilled}
+                      {status === "short" && fulfilled != null ? (
+                        <>
+                          <p className="text-sm font-semibold text-pf-master-orange">
+                            {fulfilled} of {ordered}
+                          </p>
+                          <p className="text-[10px] text-farm-muted">
+                            short by {ordered - fulfilled}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm font-semibold text-farm-dark">
+                          &times; {ordered}
                         </p>
                       )}
                       {oi.unit_price_at_order != null && (
-                        <p className="text-xs text-gray-500">
-                          {formatCurrency(oi.unit_price_at_order * oi.quantity_requested)}
+                        <p className="text-xs text-farm-muted">
+                          {formatCurrency(oi.unit_price_at_order * ordered)}
                         </p>
                       )}
                     </div>
@@ -195,6 +256,39 @@ export default async function OrderDetailPage({
             </div>
           )}
         </div>
+
+        {/* Extras — produce Press Farm threw in beyond the order. Uses the
+            same pf-master-blue tone the receiver dashboard uses for "extra"
+            so the visual semantics carry across roles. */}
+        {extras.length > 0 && (
+          <div className="bg-white rounded-2xl border border-pf-master-blue/15 overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-pf-master-blue/15 bg-pf-master-blue/[0.04]">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-pf-master-blue font-semibold">
+                Extras Included · {extras.length}
+              </p>
+              <p className="text-xs text-farm-muted mt-0.5 leading-relaxed">
+                Bonus produce from Press Farm — not on your order.
+              </p>
+            </div>
+            <ul className="divide-y divide-farm-dark/5">
+              {extras.map((extra: any) => (
+                <li key={extra.id} className="px-4 py-3 flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-farm-dark truncate">{extra.itemName}</p>
+                      <span className="text-[9px] tracking-wider uppercase bg-pf-master-blue/[0.12] text-pf-master-blue px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                        Extra
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-farm-dark flex-shrink-0">
+                    {extra.quantity} {extra.unit}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Freeform notes */}
         {order.freeform_notes && (
