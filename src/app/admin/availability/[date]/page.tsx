@@ -147,6 +147,19 @@ export default async function AdminAvailabilityEditorPage({
         backHref="/admin/availability"
       />
 
+      {/* Offer-sheet shortcut — printable / shareable PDF view of this date */}
+      <div className="px-4 pt-4 max-w-3xl mx-auto">
+        <a
+          href={`/admin/availability/${date}/offer-sheet`}
+          className="inline-flex items-center gap-2 text-xs text-farm-green font-medium hover:underline"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h6m0 0l-3-3m3 3l-3 3" />
+          </svg>
+          Open Offer Sheet
+        </a>
+      </div>
+
       {inheritedFromDate && (
         <div className="bg-farm-cream/60 border-b border-farm-green/15 px-4 py-2.5 flex items-start gap-2">
           <span className="text-farm-green">↻</span>
