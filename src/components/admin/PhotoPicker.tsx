@@ -9,9 +9,15 @@ interface PhotoPickerProps {
   onChange: (url: string | null) => void;
 }
 
+interface Photo {
+  name: string;
+  path: string;
+  url: string;
+}
+
 export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
   const [open, setOpen] = useState(false);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -28,7 +34,13 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
       const data = await res.json();
       if (data.url) {
         onChange(data.url);
-        setPhotos((prev) => [data.url, ...prev]);
+        // Splice the new upload into the head of the list so the picker
+        // immediately reflects it (with a placeholder name/path — refresh
+        // on next open will pull canonical metadata).
+        setPhotos((prev) => [
+          { name: file.name, path: data.url, url: data.url },
+          ...prev,
+        ]);
         setOpen(false);
       }
     } catch {}
@@ -36,18 +48,21 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  // Fetch from /api/photos (Supabase Storage) instead of the old static
+  // photo-index.json — so newly uploaded photos always appear and deleted
+  // ones disappear without redeploying.
   useEffect(() => {
     if (open && photos.length === 0) {
       setLoading(true);
-      fetch("/photo-index.json")
+      fetch("/api/photos")
         .then((r) => r.json())
-        .then((data) => setPhotos(Array.isArray(data) ? data : []))
+        .then((data) => setPhotos(Array.isArray(data?.photos) ? data.photos : []))
         .finally(() => setLoading(false));
     }
   }, [open]);
 
   const filtered = search
-    ? photos.filter((p) => p.toLowerCase().includes(search.toLowerCase()))
+    ? photos.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
     : photos;
 
   function selectPhoto(url: string) {
@@ -145,16 +160,13 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {filtered.map((photo) => {
-                    const isSelected = photo === value;
-                    const label = photo
-                      .replace("/items/", "")
-                      .replace(".jpg", "")
-                      .replace(/-/g, " ");
+                    const isSelected = photo.url === value;
+                    const label = photo.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
                     return (
                       <button
-                        key={photo}
+                        key={photo.path}
                         type="button"
-                        onClick={() => selectPhoto(photo)}
+                        onClick={() => selectPhoto(photo.url)}
                         className={`aspect-square rounded-lg overflow-hidden border-2 transition-all min-h-0 min-w-0 ${
                           isSelected
                             ? "border-farm-green ring-2 ring-farm-green/30"
@@ -163,7 +175,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
                         title={label}
                       >
                         <img
-                          src={photo}
+                          src={photo.url}
                           alt={label}
                           className="w-full h-full object-cover"
                           loading="lazy"

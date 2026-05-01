@@ -203,20 +203,32 @@ export function ItemsClient({ items, addItemHref }: Props) {
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-farm-muted">
             {filtered.length} {filtered.length === 1 ? "item" : "items"}
           </p>
-          <Link
-            href="/admin/items/data"
-            className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
-            title="Bulk import / export"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            Import / Export
-          </Link>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Link
+              href="/admin/items/photos"
+              className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+              title="Bulk upload / delete catalog photos"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              Photos
+            </Link>
+            <Link
+              href="/admin/items/data"
+              className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+              title="Bulk import / export"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m-8 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Import / Export
+            </Link>
+          </div>
         </div>
       )}
       {/* When searching, show flat list. Otherwise, group by category. */}
