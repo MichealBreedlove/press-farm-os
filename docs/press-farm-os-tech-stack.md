@@ -358,8 +358,9 @@ press-farm-os/
 │   │       ├── expenses/
 │   │       │   └── route.ts          # CRUD farm expenses
 │   │       ├── import/
-│   │       │   ├── key-tab/route.ts  # POST: import KEY tab (289 items + prices)
-│   │       │   └── delivery-history/route.ts  # POST: import DELIVERY TRACKER
+│   │       │   ├── items-csv/route.ts        # POST: items CSV (auto-detects KEY-tab XLSX)
+│   │       │   ├── deliveries-csv/route.ts   # POST: deliveries CSV (auto-detects DELIVERY TRACKER)
+│   │       │   └── expenses-csv/route.ts     # POST: expenses CSV import
 │   │       └── reports/
 │   │           ├── monthly/route.ts  # GET: monthly value report
 │   │           ├── income/route.ts   # GET: quarterly income statement

@@ -88,8 +88,8 @@ function ColorPicker({
             aria-pressed={isSelected}
             className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
               isSelected
-                ? "bg-purple-600 text-white"
-                : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                ? "bg-pf-master-violet text-white"
+                : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]"
             }`}
           >{c}</button>
         );

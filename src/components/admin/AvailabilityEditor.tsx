@@ -108,7 +108,7 @@ function deriveBaseAndOverrides(
 function StatusToggle({ value, onChange }: { value: AvailabilityStatus; onChange: (v: AvailabilityStatus) => void }) {
   const options: { value: AvailabilityStatus; label: string; activeClass: string }[] = [
     { value: "available", label: "✓", activeClass: "bg-farm-green text-white" },
-    { value: "limited", label: "⚠", activeClass: "bg-yellow-500 text-white" },
+    { value: "limited", label: "⚠", activeClass: "bg-amber-500 text-white" },
     { value: "unavailable", label: "✗", activeClass: "bg-gray-300 text-farm-muted/90" },
   ];
   return (
@@ -133,7 +133,7 @@ const STATUS_LABELS: Record<AvailabilityStatus, string> = {
 
 const STATUS_PILL: Record<AvailabilityStatus, string> = {
   available: "bg-green-100 text-green-700",
-  limited: "bg-yellow-100 text-yellow-700",
+  limited: "bg-amber-100 text-amber-700",
   unavailable: "bg-farm-cream/60 text-farm-muted",
 };
 
@@ -507,7 +507,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                                 <span className="text-[9px] text-farm-muted">Colors:</span>
                                 {allColors.map(c => (
                                   <button key={c} type="button" onClick={() => toggleFn(item.id, "available_colors", c, allColors)}
-                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(c) ? "bg-purple-600 text-white" : "bg-farm-cream/60 text-farm-muted line-through"}`}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${sel.has(c) ? "bg-pf-master-violet text-white" : "bg-farm-cream/60 text-farm-muted line-through"}`}
                                   >{c}</button>
                                 ))}
                               </div>
@@ -547,7 +547,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                           {state.status === "limited" && (
                             <input type="number" min="0" placeholder="Qty" value={state.limited_qty}
                               onChange={e => updateFn(item.id, { limited_qty: e.target.value })}
-                              className="w-20 px-2 py-1.5 text-sm border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-yellow-50"
+                              className="w-20 px-2 py-1.5 text-sm border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-amber-50"
                             />
                           )}
                           <input type="text" placeholder="Notes (optional)" value={state.cycle_notes}
