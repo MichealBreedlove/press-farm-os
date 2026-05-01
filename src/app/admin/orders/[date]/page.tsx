@@ -6,6 +6,7 @@ import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
 import { NotifyReceiverButton } from "./NotifyReceiverButton";
 import { AddExtraRow } from "./AddExtraRow";
+import { ExtrasList } from "./ExtrasList";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
@@ -53,6 +54,38 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     .eq("is_archived", false)
     .order("name");
   const catalogItems = catalogRaw ?? [];
+
+  // Fetch delivery_items for this date so we can surface "extras" admin has
+  // already added during pick-and-pack. An extra is a delivery_item whose
+  // item_id has no matching order_item on the same restaurant's order.
+  const { data: deliveriesRaw } = await (admin as any)
+    .from("deliveries")
+    .select(`
+      id, restaurant_id, delivery_date,
+      delivery_items (
+        id, item_id, quantity, unit, unit_price,
+        items ( id, name, unit_type )
+      )
+    `)
+    .eq("delivery_date", date);
+
+  // Build a map: restaurant_id → list of "extras" (delivery_items not on the order)
+  const extrasByRestaurant: Record<string, Array<{ id: string; itemName: string; quantity: number; unit: string }>> = {};
+  for (const order of orders) {
+    const orderedItemIds = new Set(
+      (order.order_items ?? []).map((oi: any) => oi.availability_item?.item?.id).filter(Boolean),
+    );
+    const delivery = (deliveriesRaw ?? []).find((d: any) => d.restaurant_id === order.restaurant?.id);
+    const extras = (delivery?.delivery_items ?? [])
+      .filter((di: any) => di.items && !orderedItemIds.has(di.items.id))
+      .map((di: any) => ({
+        id: di.id,
+        itemName: di.items.name,
+        quantity: Number(di.quantity ?? 0),
+        unit: String(di.unit ?? "").toUpperCase(),
+      }));
+    extrasByRestaurant[order.id] = extras;
+  }
 
   return (
     <main>
@@ -197,6 +230,11 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   );
                 })}
               </div>
+
+              {/* Extras already added (delivery_items not on the original order).
+                  Always renders if any exist — admin needs visibility on what's
+                  going out beyond the chef's order even after fulfillment. */}
+              <ExtrasList orderId={order.id} extras={extrasByRestaurant[order.id] ?? []} />
 
               {/* Add extras during pick-and-pack — only when the order is still
                   open (not fulfilled or cancelled). Shows up inline below the
