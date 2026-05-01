@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendOrderSubmittedEmail } from "@/lib/email";
+import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -186,25 +186,26 @@ export async function POST(request: Request) {
     }
   }
 
-  // Send email notification to admin — non-blocking, errors do not fail the response
+  // Send email notifications — non-blocking, errors do not fail the response.
+  // Two emails fire: one to admin (OrderReceived) and one to chef (OrderConfirmation).
   try {
-    // Fetch restaurant name
     const { data: restaurant } = await (supabase.from("restaurants") as any)
       .select("name")
       .eq("id", restaurant_id)
       .single();
 
-    // Fetch chef profile name
     const { data: chefProfile } = await (supabase.from("profiles") as any)
       .select("full_name")
       .eq("id", user.id)
       .single();
 
-    // Fetch item details for ordered items (join availability_items → items)
+    // Fetch item details for ordered items. Note: items.unit_type (not items.unit
+    // — that column doesn't exist; the previous query was silently returning
+    // undefined and the email rendered "Unknown item" with no unit).
     const orderedAvailIds = orderItems.map((oi) => oi.availability_item_id);
     const { data: availDetails } = orderedAvailIds.length > 0
       ? await (supabase.from("availability_items") as any)
-          .select("id, item:items(name, unit)")
+          .select("id, item:items(name, unit_type)")
           .in("id", orderedAvailIds)
       : { data: [] };
 
@@ -214,13 +215,18 @@ export async function POST(request: Request) {
 
     const emailItems = orderItems.map((oi) => {
       const item = availMap.get(oi.availability_item_id) as any;
+      // unit_type may be comma-separated (e.g. "sm,lg") — surface the first
+      // for the email line. The actual ordered unit is stored on the line
+      // item itself (via the OrderForm's enumerateKeys flow).
+      const unitFirst = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
       return {
         itemName: item?.name ?? "Unknown item",
         quantity: oi.quantity_requested,
-        unit: item?.unit ?? "",
+        unit: unitFirst,
       };
     });
 
+    // 1. Admin notification
     await sendOrderSubmittedEmail({
       restaurantName: restaurant?.name ?? "Unknown restaurant",
       chefName: chefProfile?.full_name ?? "Chef",
@@ -229,8 +235,20 @@ export async function POST(request: Request) {
       freeformNotes: freeform_notes,
       submittedAt: new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
     });
+
+    // 2. Chef confirmation — only if we can resolve their email
+    if (user.email) {
+      await sendOrderConfirmationEmail({
+        toEmail: user.email,
+        chefName: chefProfile?.full_name ?? "Chef",
+        restaurantName: restaurant?.name ?? "your restaurant",
+        deliveryDate: delivery_date,
+        items: emailItems,
+        freeformNotes: freeform_notes,
+      });
+    }
   } catch (emailErr) {
-    console.error("[EMAIL] Failed to send order submitted email:", emailErr);
+    console.error("[EMAIL] Failed to send order submit/confirmation emails:", emailErr);
   }
 
   return NextResponse.json({ data: { orderId: order.id }, error: null }, { status: 200 });

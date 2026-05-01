@@ -9,6 +9,7 @@ import { render } from "@react-email/render";
 import { getResendClient } from "@/lib/resend/client";
 import { ADMIN_EMAIL, FROM_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import OrderReceived from "@/emails/order-received";
+import OrderConfirmation from "@/emails/order-confirmation";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 
@@ -35,6 +36,15 @@ export interface OrderConfirmedEmailParams {
     unit: string;
     isShorted: boolean;
   }[];
+}
+
+export interface OrderSubmittedToChefParams {
+  toEmail: string;
+  chefName: string;
+  restaurantName: string;
+  deliveryDate: string;
+  items: { itemName: string; quantity: number; unit: string }[];
+  freeformNotes?: string;
 }
 
 export interface ShortageEmailParams {
@@ -121,6 +131,42 @@ export async function sendOrderSubmittedEmail(
     to: ADMIN_EMAIL,
     subject,
     react: OrderReceived(params) as React.ReactElement,
+    fallbackText,
+    from: FROM_ADDRESSES.orders,
+  });
+}
+
+/**
+ * Sent to the chef immediately after they submit/update their order.
+ * Confirms what we received, with the line items + their freeform note.
+ */
+export async function sendOrderConfirmationEmail(
+  params: OrderSubmittedToChefParams,
+): Promise<void> {
+  const { toEmail, chefName, restaurantName, deliveryDate, items, freeformNotes } = params;
+  const subject = `Order Confirmed — ${deliveryDate}`;
+
+  const fallbackText = [
+    `Hi ${chefName},`,
+    `Your order for ${restaurantName} on ${deliveryDate} has been received.`,
+    ``,
+    `Items:`,
+    ...items.map((i) => `  ${i.itemName} — ${i.quantity} ${i.unit}`),
+    freeformNotes ? `\nYour note: ${freeformNotes}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await sendOrLog({
+    to: toEmail,
+    subject,
+    react: OrderConfirmation({
+      chefName,
+      restaurantName,
+      deliveryDate,
+      items,
+      freeformNotes,
+    }) as React.ReactElement,
     fallbackText,
     from: FROM_ADDRESSES.orders,
   });
