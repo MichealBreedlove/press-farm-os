@@ -44,7 +44,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
     .lte("date", end)
     .order("date", { ascending: false });
 
-  const expenses: { id: string; date: string; category: string; description: string | null; amount: number }[] =
+  const expenses: { id: string; date: string; category: string; description: string | null; amount: number; vendor: string | null }[] =
     expensesRaw ?? [];
 
   // Aggregate by category

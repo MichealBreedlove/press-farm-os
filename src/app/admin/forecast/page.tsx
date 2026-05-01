@@ -41,8 +41,8 @@ export default async function ForecastPage({
   const admin = createAdminClient();
 
   // Get next upcoming delivery date if no date param
-  const today = new Date().toISOString().split("T")[0];
-  let targetDate = dateParam;
+  const today = new Date().toISOString().split("T")[0]!;
+  let targetDate: string = dateParam ?? "";
   if (!targetDate) {
     const { data: nextDate } = await (admin as any)
       .from("delivery_dates")
@@ -98,14 +98,14 @@ export default async function ForecastPage({
   const forecasts: Forecast[] = [];
   for (const data of byItem.values()) {
     if (data.entries.length < 2) continue; // Need at least 2 data points
-    const totalQty = data.entries.reduce((s, e) => s + e.qty, 0);
+    const totalQty = data.entries.reduce((s: number, e: { date: string; qty: number }) => s + e.qty, 0);
     const avgQty = totalQty / data.entries.length;
 
     // Trend: compare last 2 vs prior 2
     const sorted = [...data.entries].sort((a, b) => b.date.localeCompare(a.date));
-    const recent = sorted.slice(0, 2).reduce((s, e) => s + e.qty, 0) / Math.min(2, sorted.length);
+    const recent = sorted.slice(0, 2).reduce((s: number, e: { date: string; qty: number }) => s + e.qty, 0) / Math.min(2, sorted.length);
     const older = sorted.slice(2, 4);
-    const olderAvg = older.length > 0 ? older.reduce((s, e) => s + e.qty, 0) / older.length : recent;
+    const olderAvg = older.length > 0 ? older.reduce((s: number, e: { date: string; qty: number }) => s + e.qty, 0) / older.length : recent;
     let trend: "up" | "down" | "flat" = "flat";
     if (recent > olderAvg * 1.15) trend = "up";
     else if (recent < olderAvg * 0.85) trend = "down";

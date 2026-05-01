@@ -14,19 +14,19 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
+  const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
-  if (profile?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if ((profile as any)?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { date, open } = await request.json();
   if (!date || typeof open !== "boolean") {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const { error } = await admin
+  const { error } = await (admin as any)
     .from("delivery_dates")
     .update({ ordering_open: open })
     .eq("date", date);

@@ -86,7 +86,7 @@ async function sendDigest() {
   const totalLaborHours = (labor ?? []).reduce((s: number, l: any) => s + (l.hours ?? 0), 0);
   const totalLaborCost = (labor ?? []).reduce((s: number, l: any) => s + (l.hours * (l.hourly_rate ?? 0)), 0);
   const deliveryCount = (deliveries ?? []).length;
-  const workers = Array.from(new Set((labor ?? []).map((l: any) => l.worker_name)));
+  const workers: string[] = Array.from(new Set((labor ?? []).map((l: any) => l.worker_name as string)));
 
   // Build email
   const deliveryLines = (deliveries ?? []).map((d: any) =>

@@ -108,7 +108,7 @@ export async function PATCH(
         is_shorted,
         shortage_reason,
         availability_item:availability_items(
-          item:items(name, unit)
+          item:items(name, unit_type)
         )
       )
     `)
@@ -128,13 +128,18 @@ export async function PATCH(
       const chefEmail = chefUserData?.user?.email;
 
       if (chefEmail) {
-        const shortages = shortedItems.map((oi: any) => ({
-          itemName: oi.availability_item?.item?.name ?? "Unknown item",
-          requestedQty: oi.quantity_requested,
-          fulfilledQty: oi.quantity_fulfilled ?? 0,
-          unit: oi.availability_item?.item?.unit ?? "",
-          reason: oi.shortage_reason ?? "",
-        }));
+        const shortages = shortedItems.map((oi: any) => {
+          const item = oi.availability_item?.item;
+          // unit_type may be comma-separated; surface the first as the email's display unit
+          const unit = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
+          return {
+            itemName: item?.name ?? "Unknown item",
+            requestedQty: oi.quantity_requested,
+            fulfilledQty: oi.quantity_fulfilled ?? 0,
+            unit,
+            reason: oi.shortage_reason ?? "",
+          };
+        });
 
         await sendShortageEmail({
           toEmail: chefEmail,

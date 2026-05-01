@@ -87,10 +87,7 @@ export default function ReceiverDaily({
   return (
     <Html>
       <Head />
-      <Preview>
-        Today&apos;s incoming for {deliveryDate} — {totalItems} items across{" "}
-        {restaurants.length} restaurant{restaurants.length === 1 ? "" : "s"}
-      </Preview>
+      <Preview>{`Today's incoming for ${deliveryDate} — ${totalItems} items across ${restaurants.length} restaurant${restaurants.length === 1 ? "" : "s"}`}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           <div style={styles.card}>

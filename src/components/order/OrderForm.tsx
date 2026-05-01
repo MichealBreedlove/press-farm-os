@@ -144,7 +144,7 @@ export function OrderForm({
         if (qty <= 0) continue;
 
         // Suffix the displayed name with unit + size when present
-        const unitLabel = unit ? (UNIT_LABELS[unit] ?? unit.toUpperCase()) : null;
+        const unitLabel = unit ? ((UNIT_LABELS as Record<string, string>)[unit] ?? unit.toUpperCase()) : null;
         const suffixParts = [unitLabel, size].filter(Boolean) as string[];
         const itemName = suffixParts.length > 0 ? `${ai.item.name} (${suffixParts.join(" · ")})` : ai.item.name;
 

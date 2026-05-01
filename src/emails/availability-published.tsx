@@ -32,7 +32,7 @@ export default function AvailabilityPublished({
   return (
     <Html>
       <Head />
-      <Preview>New availability for {deliveryDate} — {itemCount} items</Preview>
+      <Preview>{`New availability for ${deliveryDate} — ${itemCount} items`}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
           <div style={styles.card}>

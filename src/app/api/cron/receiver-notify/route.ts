@@ -25,9 +25,22 @@ export const maxDuration = 30;
  * CRON_SECRET in Vercel env vars; Vercel cron will pass it automatically.
  */
 export async function GET(request: Request) {
-  // Auth gate — only accept signed Vercel cron pings (or matching bearer).
+  // Auth gate — Bearer ${CRON_SECRET}. Fail-closed in production: a missing
+  // CRON_SECRET in a deployed environment is treated as a misconfiguration,
+  // not as "anyone can fire this." Local dev is the only place where unset
+  // CRON_SECRET allows access (so npm run dev curl-tests still work).
   const expected = process.env.CRON_SECRET;
-  if (expected) {
+  const isProd = process.env.VERCEL_ENV === "production"
+    || process.env.NODE_ENV === "production";
+  if (!expected) {
+    if (isProd) {
+      return NextResponse.json(
+        { error: "Misconfigured: CRON_SECRET not set in production" },
+        { status: 500 },
+      );
+    }
+    // dev/local: allow through
+  } else {
     const auth = request.headers.get("authorization") ?? "";
     if (auth !== `Bearer ${expected}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

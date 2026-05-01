@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate } from "@/lib/utils";
+import { APP_URL } from "@/lib/constants";
 
 /**
  * POST /api/availability/notify — Send availability email to all chefs
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
         from: FROM_ADDRESSES.availability,
         to: email,
         subject: `New Availability — ${formattedDate}`,
-        text: `Hi ${chefProfile.full_name},\n\nAvailability has been posted for ${restaurant.name} on ${formattedDate}. ${itemCount} items available.\n\nPlace your order at ${process.env.NEXT_PUBLIC_APP_URL}/order${seasonSection}\n\n— Press Farm`,
+        text: `Hi ${chefProfile.full_name},\n\nAvailability has been posted for ${restaurant.name} on ${formattedDate}. ${itemCount} items available.\n\nPlace your order at ${APP_URL}/order${seasonSection}\n\n— Press Farm`,
       });
       emailsSent++;
     } catch (err) {

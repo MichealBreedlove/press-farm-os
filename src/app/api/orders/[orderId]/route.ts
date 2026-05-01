@@ -61,23 +61,34 @@ export async function PATCH(
 
   // When status changes to 'fulfilled', auto-fill quantity_fulfilled on any
   // line item that wasn't explicitly marked short. Without this, items that
-  // admin never tapped (because they weren't short) stay at NULL fulfilled,
-  // and downstream the receiver email computes them as "pending" — even
-  // though the chef will receive the full ordered quantity. After this
-  // patch they correctly read as "ready".
+  // admin never tapped stay at NULL and the receiver email computes them as
+  // "pending" — even though the chef will receive the full ordered quantity.
+  //
+  // Group lines by their requested quantity so we issue ~5 batched UPDATEs
+  // instead of one per line (most orders have a small set of distinct qtys).
   if (status === "fulfilled") {
-    await (adminClient as any).rpc; // no-op to satisfy TS; the SQL update is below
     const { data: openLines } = await (adminClient as any)
       .from("order_items")
       .select("id, quantity_requested")
       .eq("order_id", orderId)
       .eq("is_shorted", false)
       .is("quantity_fulfilled", null);
-    for (const line of (openLines ?? []) as any[]) {
-      await (adminClient as any)
-        .from("order_items")
-        .update({ quantity_fulfilled: line.quantity_requested })
-        .eq("id", line.id);
+    const lines = (openLines ?? []) as Array<{ id: string; quantity_requested: number }>;
+    if (lines.length > 0) {
+      const byQty = new Map<number, string[]>();
+      for (const line of lines) {
+        const arr = byQty.get(line.quantity_requested) ?? [];
+        arr.push(line.id);
+        byQty.set(line.quantity_requested, arr);
+      }
+      await Promise.all(
+        Array.from(byQty.entries()).map(([qty, ids]) =>
+          (adminClient as any)
+            .from("order_items")
+            .update({ quantity_fulfilled: qty })
+            .in("id", ids),
+        ),
+      );
     }
   }
 

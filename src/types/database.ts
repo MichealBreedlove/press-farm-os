@@ -70,7 +70,7 @@ export interface Database {
         Row: {
           id: string;
           full_name: string | null;
-          role: "admin" | "chef";
+          role: "admin" | "chef" | "receiver";
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -78,14 +78,14 @@ export interface Database {
         Insert: {
           id: string;
           full_name?: string | null;
-          role?: "admin" | "chef";
+          role?: "admin" | "chef" | "receiver";
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           full_name?: string | null;
-          role?: "admin" | "chef";
+          role?: "admin" | "chef" | "receiver";
           is_active?: boolean;
           updated_at?: string;
         };

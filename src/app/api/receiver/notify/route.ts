@@ -148,6 +148,12 @@ export async function POST(request: Request) {
   // Optionally close out any open orders for this date so they move to
   // 'fulfilled' status. Done BEFORE the data join so the email reflects
   // the post-finish state.
+  //
+  // Auto-fill quantity_fulfilled for any non-shorted line that's still NULL
+  // — same fix the PATCH /api/orders/[orderId] handler applies. Without
+  // this, lines admin never tapped (because they weren't shorted) stay at
+  // NULL and the receiver email computes them as "pending" instead of
+  // "ready" even though they'll be delivered in full.
   let fulfilledCount = 0;
   if (markFulfilled) {
     const { data: openOrders } = await (admin as any)
@@ -157,6 +163,21 @@ export async function POST(request: Request) {
       .not("status", "in", "(fulfilled,cancelled)");
     const ids = (openOrders ?? []).map((o: any) => o.id);
     if (ids.length > 0) {
+      // 1. Auto-fill quantity_fulfilled = quantity_requested for non-shorted
+      //    lines on these orders that don't have an explicit fulfilled qty.
+      const { data: openLines } = await (admin as any)
+        .from("order_items")
+        .select("id, quantity_requested")
+        .in("order_id", ids)
+        .eq("is_shorted", false)
+        .is("quantity_fulfilled", null);
+      for (const line of (openLines ?? []) as Array<{ id: string; quantity_requested: number }>) {
+        await (admin as any)
+          .from("order_items")
+          .update({ quantity_fulfilled: line.quantity_requested })
+          .eq("id", line.id);
+      }
+      // 2. Then flip the orders to 'fulfilled'.
       const { error: fErr } = await (admin as any)
         .from("orders")
         .update({ status: "fulfilled" })

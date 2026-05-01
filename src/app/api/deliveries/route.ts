@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     delivery_date: string;
     restaurant_id: string;
     notes?: string;
-    items: { item_id: string; quantity: number; unit: string; unit_price: number }[];
+    items: { item_id: string; quantity: number; unit: string; unit_price: number; is_bonus?: boolean; bonus_note?: string | null }[];
   };
   try {
     body = await request.json();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { APP_URL } from "@/lib/constants";
 
 /**
  * GET /api/users — List all chef profiles with restaurant assignments. Admin only.
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
   // Invite via Supabase Auth (sends magic link email)
   const { data: inviteData, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: full_name.trim() },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    redirectTo: `${APP_URL}/auth/callback`,
   });
 
   if (inviteErr) return NextResponse.json({ error: inviteErr.message }, { status: 500 });
