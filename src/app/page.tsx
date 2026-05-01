@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Root page: redirect to the appropriate portal based on user role.
- * - Admin → /admin/orders
- * - Chef → /order
+ * - Admin    → /admin/dashboard
+ * - Receiver → /receiver
+ * - Chef     → /order
  * - Unauthenticated → /login (handled by middleware)
  */
 export default async function RootPage() {
@@ -24,9 +25,9 @@ export default async function RootPage() {
     .eq("id", user.id)
     .single() as any;
 
-  if ((profile as any)?.role === "admin") {
-    redirect("/admin/dashboard");
-  }
+  const role = (profile as any)?.role;
+  if (role === "admin") redirect("/admin/dashboard");
+  if (role === "receiver") redirect("/receiver");
 
   redirect("/order");
 }

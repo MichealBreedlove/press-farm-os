@@ -65,13 +65,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { email: string; full_name: string; restaurant_id: string };
+  let body: { email: string; full_name: string; restaurant_id?: string; role?: string };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { email, full_name, restaurant_id } = body;
-  if (!email || !full_name?.trim() || !restaurant_id) {
-    return NextResponse.json({ error: "email, full_name, and restaurant_id required" }, { status: 400 });
+  const { email, full_name } = body;
+  // Default role is "chef" for back-compat with the original invite form
+  const role = body.role === "receiver" ? "receiver" : "chef";
+  const restaurant_id = body.restaurant_id;
+
+  if (!email || !full_name?.trim()) {
+    return NextResponse.json({ error: "email and full_name required" }, { status: 400 });
+  }
+  // Chefs MUST have a restaurant; receivers don't.
+  if (role === "chef" && !restaurant_id) {
+    return NextResponse.json({ error: "restaurant_id required for chef role" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -86,15 +94,17 @@ export async function POST(request: Request) {
 
   const newUserId = inviteData.user.id;
 
-  // Upsert profile
+  // Upsert profile with the chosen role
   await (admin as any)
     .from("profiles")
-    .upsert({ id: newUserId, full_name: full_name.trim(), role: "chef", is_active: true }, { onConflict: "id" });
+    .upsert({ id: newUserId, full_name: full_name.trim(), role, is_active: true }, { onConflict: "id" });
 
-  // Link to restaurant
-  await (admin as any)
-    .from("restaurant_users")
-    .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
+  // Link to restaurant only when chef — receivers see all restaurants by role
+  if (role === "chef" && restaurant_id) {
+    await (admin as any)
+      .from("restaurant_users")
+      .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
+  }
 
-  return NextResponse.json({ userId: newUserId }, { status: 201 });
+  return NextResponse.json({ userId: newUserId, role }, { status: 201 });
 }

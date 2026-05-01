@@ -27,7 +27,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showInvite, setShowInvite] = useState(false);
-  const [form, setForm] = useState({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "" });
+  const [form, setForm] = useState({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef" });
   const [inviting, setInviting] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Invite failed");
       setSuccess(`Invite sent to ${form.email}`);
-      setForm({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "" });
+      setForm({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef" });
       setShowInvite(false);
       startTransition(() => router.refresh());
     } catch (err: any) {
@@ -123,6 +123,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
   const chefs = users.filter((u) => u.role === "chef");
   const admins = users.filter((u) => u.role === "admin");
+  const receivers = users.filter((u) => u.role === "receiver");
 
   return (
     <div className="space-y-4">
@@ -169,20 +170,64 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
-            <select
-              value={form.restaurant_id}
-              onChange={(e) => setForm((f) => ({ ...f, restaurant_id: e.target.value }))}
-              className="input-field"
-            >
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
-            <p className="text-[11px] text-farm-muted/80 mt-1.5 leading-relaxed">
-              Chefs at any restaurant automatically see the Events Menu in their order form.
-            </p>
+            <label className="block text-xs text-farm-muted mb-1">Role</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, role: "chef" }))}
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 ${
+                  form.role === "chef"
+                    ? "bg-farm-green text-white border-farm-green shadow-sm"
+                    : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
+                }`}
+              >
+                <p className="font-semibold">Chef</p>
+                <p className={`text-[11px] mt-0.5 ${form.role === "chef" ? "text-white/80" : "text-farm-muted"}`}>
+                  Places orders for one restaurant
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, role: "receiver" }))}
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 ${
+                  form.role === "receiver"
+                    ? "bg-pf-master-violet text-white border-pf-master-violet shadow-sm"
+                    : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-violet/30"
+                }`}
+              >
+                <p className="font-semibold">Receiver</p>
+                <p className={`text-[11px] mt-0.5 ${form.role === "receiver" ? "text-white/80" : "text-farm-muted"}`}>
+                  Sees incoming for both restaurants
+                </p>
+              </button>
+            </div>
           </div>
+
+          {form.role === "chef" && (
+            <div>
+              <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
+              <select
+                value={form.restaurant_id}
+                onChange={(e) => setForm((f) => ({ ...f, restaurant_id: e.target.value }))}
+                className="input-field"
+              >
+                {restaurants.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-farm-muted/80 mt-1.5 leading-relaxed">
+                Chefs at any restaurant automatically see the Events Menu in their order form.
+              </p>
+            </div>
+          )}
+
+          {form.role === "receiver" && (
+            <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-pf-master-violet/[0.06] border border-pf-master-violet/15 rounded-lg p-3">
+              Receivers don&apos;t need a restaurant assignment — they see incoming
+              from both Press and Under-Study, plus event items, on a single dashboard.
+              Read-only: they can&apos;t place or edit orders.
+            </p>
+          )}
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button
             type="submit"
@@ -207,6 +252,28 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full flex-shrink-0">Admin</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Receivers */}
+      {receivers.length > 0 && (
+        <div>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">
+            Receivers ({receivers.length})
+          </p>
+          <div className="space-y-2">
+            {receivers.map((u) => (
+              <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "Receiver"}</p>
+                  <p className="text-xs text-farm-muted truncate">{u.email}</p>
+                </div>
+                <span className="text-xs px-2 py-1 bg-pf-master-violet/[0.12] text-pf-master-violet rounded-full flex-shrink-0 font-semibold">
+                  Receiver
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
