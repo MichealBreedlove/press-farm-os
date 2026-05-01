@@ -146,8 +146,21 @@ export default async function ReceiverPage({ searchParams }: Props) {
           deliveries={deliveries ?? []}
         />
 
-        {/* Sign out — same card pattern used on /admin/settings */}
+        {/* Archive shortcut — older deliveries beyond the 7-day picker */}
         <div className="mt-8">
+          <a
+            href="/receiver/archive"
+            className="block w-full min-h-[48px] rounded-xl border border-farm-dark/10 bg-white text-sm font-medium text-farm-dark/85 hover:border-farm-green hover:text-farm-green transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            View Past Deliveries
+          </a>
+        </div>
+
+        {/* Sign out — same card pattern used on /admin/settings */}
+        <div className="mt-6">
           <p className="section-eyebrow text-farm-muted mb-2">Account</p>
           <SignOutButton />
         </div>
