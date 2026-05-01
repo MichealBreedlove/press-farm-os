@@ -117,15 +117,15 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
     <div className="space-y-4">
       {/* Reorder alerts */}
       {lowStock.length > 0 && (
-        <div className="bg-pf-master-orange/8 border border-orange-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-orange-800 mb-1">
+        <div className="bg-pf-master-orange/[0.08] border border-pf-master-orange/30 rounded-xl p-4">
+          <p className="text-sm font-semibold text-pf-master-orange mb-1">
             ⚠ {lowStock.length} container{lowStock.length !== 1 ? "s" : ""} below reorder threshold
           </p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {lowStock.map((p) => (
               <span
                 key={p.id}
-                className="text-xs bg-orange-100 text-pf-master-orange px-2 py-1 rounded-full font-medium"
+                className="text-xs bg-pf-master-orange/[0.12] text-pf-master-orange px-2 py-1 rounded-full font-medium"
               >
                 {p.display_name}: {p.on_hand} left
               </span>
@@ -202,7 +202,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
           return (
             <div
               key={pack.id}
-              className={`card p-4 ${isLow ? "border-orange-300 bg-pf-master-orange/8/40" : ""}`}
+              className={`card p-4 ${isLow ? "border-pf-master-orange/30 bg-pf-master-orange/[0.04]" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -211,7 +211,7 @@ export function PacksClient({ initialPacks }: { initialPacks: Pack[] }) {
                     <span className="text-[10px] text-farm-muted font-mono">{pack.container_type}</span>
                   </div>
                   {isLow && (
-                    <p className="text-xs text-orange-600 font-medium mt-0.5">Low stock — reorder soon</p>
+                    <p className="text-xs text-pf-master-orange font-medium mt-0.5">Low stock — reorder soon</p>
                   )}
                 </div>
                 <button

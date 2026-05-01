@@ -168,7 +168,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
 
       {/* Inline editor */}
       {expanded && canEdit && (
-        <div className="px-4 pb-3 pt-1 bg-pf-master-orange/8/40 space-y-2 border-t border-pf-master-orange/20">
+        <div className="px-4 pb-3 pt-1 bg-pf-master-orange/[0.04] space-y-2 border-t border-pf-master-orange/20">
           <div className="flex items-center gap-2">
             <span className="text-xs text-farm-muted flex-shrink-0">
               Picked:

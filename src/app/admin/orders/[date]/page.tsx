@@ -138,7 +138,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
               {/* Items by category — tap any row to mark/edit shortage */}
               {(order.status !== "fulfilled" && order.status !== "cancelled") && (
-                <div className="px-4 py-1.5 bg-pf-master-orange/8/40 border-b border-pf-master-orange/20">
+                <div className="px-4 py-1.5 bg-pf-master-orange/[0.04] border-b border-pf-master-orange/20">
                   <p className="text-[11px] text-pf-master-orange">
                     Tap any item to mark a shortage
                   </p>
