@@ -85,6 +85,7 @@ export default async function AdminDashboardPage() {
         { href: "/admin/orders", title: "Orders", description: `${pendingOrders ?? 0} pending`, flower: "squash-blossom" },
         { href: "/admin/availability", title: "Availability", description: "What's ready to harvest", flower: "calendula" },
         { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", flower: "marigold" },
+        { href: "/admin/calendar", title: "Calendar", description: "Month-at-a-glance", flower: "anise-hyssop" },
       ],
     },
     {
