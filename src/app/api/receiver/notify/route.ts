@@ -57,12 +57,24 @@ export async function GET(request: Request) {
       .eq("role", "receiver")
       .eq("is_active", true);
 
+    // Most recent send for this date — drives the re-send warning in the UI
+    const { data: lastLog } = await (admin2 as any)
+      .from("receiver_notify_log")
+      .select("sent_at, succeeded_count, failed_count, fulfilled_orders_count")
+      .eq("delivery_date", date)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     return NextResponse.json({
       delivery_date: date,
       restaurants: blocks.length,
       lineCount: blocks.reduce((s: number, b: any) => s + b.lines.length, 0),
       counts,
       receiverCount: receiverCount ?? 0,
+      lastSentAt: lastLog?.sent_at ?? null,
+      lastSendSucceeded: lastLog?.succeeded_count ?? null,
+      lastSendFailed: lastLog?.failed_count ?? null,
     });
   }
 
@@ -324,11 +336,35 @@ export async function POST(request: Request) {
     await new Promise((resolve) => setTimeout(resolve, 600));
   }
 
+  const succeeded = results.filter((r) => r.status === "sent").length;
+  const failed = results.filter((r) => r.status !== "sent").length;
+
+  // Audit log — one row per notify event. Status counts come from blocks.
+  const counts = restaurantBlocks.reduce(
+    (acc: any, b: any) => {
+      for (const line of b.lines) acc[line.status]++;
+      return acc;
+    },
+    { ready: 0, short: 0, pending: 0, extra: 0 },
+  );
+  await (admin as any).from("receiver_notify_log").insert({
+    delivery_date,
+    sent_by: user.id,
+    recipients_count: results.length,
+    succeeded_count: succeeded,
+    failed_count: failed,
+    fulfilled_orders_count: fulfilledCount,
+    ready_count: counts.ready,
+    short_count: counts.short,
+    pending_count: counts.pending,
+    extra_count: counts.extra,
+  });
+
   return NextResponse.json({
     delivery_date,
     sent_to: results.length,
-    succeeded: results.filter((r) => r.status === "sent").length,
-    failed: results.filter((r) => r.status !== "sent").length,
+    succeeded,
+    failed,
     fulfilled_orders: fulfilledCount,
     results,
   });

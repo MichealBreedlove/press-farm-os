@@ -13,6 +13,22 @@ interface Summary {
   lineCount: number;
   counts: { ready: number; short: number; pending: number; extra: number };
   receiverCount: number;
+  /** ISO timestamp of the most recent send for this date, or null if never sent. */
+  lastSentAt: string | null;
+  lastSendSucceeded: number | null;
+  lastSendFailed: number | null;
+}
+
+/** Human-readable "X minutes ago" — used for re-send detection. */
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 interface NotifyResult {
@@ -129,6 +145,21 @@ export function NotifyReceiverButton({ deliveryDate }: Props) {
             Every active receiver gets an email with the current state. Re-send any time after.
           </p>
         </div>
+
+        {/* Re-send warning — shown only when this date was already notified
+            in the last 24h. Helps prevent accidental double-sends. */}
+        {summary?.lastSentAt && (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800">
+            <p className="font-semibold">
+              Already sent {timeAgo(summary.lastSentAt)}
+            </p>
+            <p className="mt-0.5">
+              {summary.lastSendSucceeded ?? 0} succeeded
+              {(summary.lastSendFailed ?? 0) > 0 && ` · ${summary.lastSendFailed} failed`} ·
+              re-send only if status has changed.
+            </p>
+          </div>
+        )}
 
         {/* Live count summary so admin sees what's about to go out */}
         {summaryLoading && (
