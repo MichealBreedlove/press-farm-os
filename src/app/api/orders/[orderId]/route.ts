@@ -59,10 +59,35 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }
 
+  // When status changes to 'fulfilled', auto-fill quantity_fulfilled on any
+  // line item that wasn't explicitly marked short. Without this, items that
+  // admin never tapped (because they weren't short) stay at NULL fulfilled,
+  // and downstream the receiver email computes them as "pending" — even
+  // though the chef will receive the full ordered quantity. After this
+  // patch they correctly read as "ready".
+  if (status === "fulfilled") {
+    await (adminClient as any).rpc; // no-op to satisfy TS; the SQL update is below
+    const { data: openLines } = await (adminClient as any)
+      .from("order_items")
+      .select("id, quantity_requested")
+      .eq("order_id", orderId)
+      .eq("is_shorted", false)
+      .is("quantity_fulfilled", null);
+    for (const line of (openLines ?? []) as any[]) {
+      await (adminClient as any)
+        .from("order_items")
+        .update({ quantity_fulfilled: line.quantity_requested })
+        .eq("id", line.id);
+    }
+  }
+
   // When status changes to 'fulfilled', send confirmation email to the chef
   if (status === "fulfilled") {
     try {
       // Fetch order with order_items, restaurant, chef profile, and item details
+      // (Note: items.unit_type, not items.unit — the latter doesn't exist;
+      // the previous version returned undefined and the email body had no
+      // unit suffix on each line.)
       const { data: fullOrder } = await (adminClient.from("orders") as any)
         .select(`
           delivery_date,
@@ -73,7 +98,7 @@ export async function PATCH(
             quantity_fulfilled,
             is_shorted,
             availability_item:availability_items(
-              item:items(name, unit)
+              item:items(name, unit_type)
             )
           )
         `)
@@ -86,13 +111,18 @@ export async function PATCH(
         const chefEmail = chefUserData?.user?.email;
 
         if (chefEmail) {
-          const items = (fullOrder.order_items ?? []).map((oi: any) => ({
-            itemName: oi.availability_item?.item?.name ?? "Unknown item",
-            requestedQty: oi.quantity_requested,
-            fulfilledQty: oi.quantity_fulfilled ?? oi.quantity_requested,
-            unit: oi.availability_item?.item?.unit ?? "",
-            isShorted: oi.is_shorted ?? false,
-          }));
+          const items = (fullOrder.order_items ?? []).map((oi: any) => {
+            const item = oi.availability_item?.item;
+            // unit_type may be comma-separated; use the first as display unit
+            const unit = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
+            return {
+              itemName: item?.name ?? "Unknown item",
+              requestedQty: oi.quantity_requested,
+              fulfilledQty: oi.quantity_fulfilled ?? oi.quantity_requested,
+              unit,
+              isShorted: oi.is_shorted ?? false,
+            };
+          });
 
           await sendOrderConfirmedEmail({
             toEmail: chefEmail,
