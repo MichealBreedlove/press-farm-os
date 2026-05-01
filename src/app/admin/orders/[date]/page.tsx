@@ -4,6 +4,7 @@ import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
+import { NotifyReceiverButton } from "./NotifyReceiverButton";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import Link from "next/link";
@@ -199,12 +200,18 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         })}
 
         {orders.length > 0 && (
-          <Link
-            href={`/admin/orders/harvest?date=${date}`}
-            className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
-          >
-            View Harvest List
-          </Link>
+          <>
+            <Link
+              href={`/admin/orders/harvest?date=${date}`}
+              className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
+            >
+              View Harvest List
+            </Link>
+
+            {/* End-of-pick-and-pack: notify the receiver. Lives below the
+                harvest list link so it's the last action in the flow. */}
+            <NotifyReceiverButton deliveryDate={date} />
+          </>
         )}
       </div>
     </main>
