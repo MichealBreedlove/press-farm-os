@@ -38,6 +38,34 @@ export async function GET(request: Request) {
 
   const blocks = await buildReceiverBlocks(date);
 
+  // ?format=json → return summary counts for the pre-send confirmation UI.
+  // Default behaviour stays text/html so the existing Preview link works.
+  if (url.searchParams.get("format") === "json") {
+    const counts = blocks.reduce(
+      (acc: any, b: any) => {
+        for (const line of b.lines) acc[line.status]++;
+        return acc;
+      },
+      { ready: 0, short: 0, pending: 0, extra: 0 } as Record<string, number>,
+    );
+
+    // Count active receivers so the UI can warn admin if there's nobody to send to.
+    const admin2 = createAdminClient();
+    const { count: receiverCount } = await (admin2 as any)
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "receiver")
+      .eq("is_active", true);
+
+    return NextResponse.json({
+      delivery_date: date,
+      restaurants: blocks.length,
+      lineCount: blocks.reduce((s: number, b: any) => s + b.lines.length, 0),
+      counts,
+      receiverCount: receiverCount ?? 0,
+    });
+  }
+
   const html = await render(
     ReceiverDaily({
       receiverName: profile.role === "admin" ? "Admin (preview)" : "Receiver",
@@ -170,12 +198,17 @@ async function buildReceiverBlocks(delivery_date: string) {
 
 /**
  * POST /api/receiver/notify
- * Body: { delivery_date: "YYYY-MM-DD" }
+ * Body: { delivery_date: "YYYY-MM-DD", mark_fulfilled?: boolean }
  *
  * Builds the per-receiver "today's incoming" summary by joining orders +
  * deliveries for the given delivery date, computes ready/short/pending/extra
  * status per item (same logic as the /receiver dashboard), and emails every
  * active receiver.
+ *
+ * When mark_fulfilled = true (default) any orders for the date that aren't
+ * already 'fulfilled' or 'cancelled' are flipped to 'fulfilled' BEFORE the
+ * email is rendered — so the "Finish & Send" button closes pick-and-pack
+ * and notifies the receiver in a single tap.
  *
  * Intended trigger: admin's "Finish & Send" button on the orders dashboard
  * after pick-and-pack is done with shortages annotated. Admin only.
@@ -191,16 +224,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { delivery_date: string };
+  let body: { delivery_date: string; mark_fulfilled?: boolean };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
   const { delivery_date } = body;
+  // Default to true — the button is "Finish & Send" so closing the orders
+  // is the natural side effect. Pass false to send a heads-up without
+  // moving the orders out of in-progress.
+  const markFulfilled = body.mark_fulfilled !== false;
+
   if (!delivery_date || !/^\d{4}-\d{2}-\d{2}$/.test(delivery_date)) {
     return NextResponse.json({ error: "delivery_date required (YYYY-MM-DD)" }, { status: 400 });
   }
 
   const admin = createAdminClient();
+
+  // Optionally close out any open orders for this date so they move to
+  // 'fulfilled' status. Done BEFORE the data join so the email reflects
+  // the post-finish state.
+  let fulfilledCount = 0;
+  if (markFulfilled) {
+    const { data: openOrders } = await (admin as any)
+      .from("orders")
+      .select("id")
+      .eq("delivery_date", delivery_date)
+      .not("status", "in", "(fulfilled,cancelled)");
+    const ids = (openOrders ?? []).map((o: any) => o.id);
+    if (ids.length > 0) {
+      const { error: fErr } = await (admin as any)
+        .from("orders")
+        .update({ status: "fulfilled" })
+        .in("id", ids);
+      if (!fErr) fulfilledCount = ids.length;
+    }
+  }
 
   // 1. Find every active receiver. They have no restaurant_users link, so we
   //    fetch them from profiles + auth emails directly.
@@ -271,6 +329,7 @@ export async function POST(request: Request) {
     sent_to: results.length,
     succeeded: results.filter((r) => r.status === "sent").length,
     failed: results.filter((r) => r.status !== "sent").length,
+    fulfilled_orders: fulfilledCount,
     results,
   });
 }
