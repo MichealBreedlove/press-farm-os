@@ -107,15 +107,19 @@ export function PwaInstallPrompt() {
 
   if (!visible || !variant) return null;
 
-  // Sit above the chef/admin bottom nav (h-16 = 64px) plus a comfortable
-  // gap. SKIP_PATHS handles the harder case where a page also has a
-  // sticky action bar — those routes don't render the prompt at all.
+  // Position above the chef/admin bottom nav (h-16 = 64px + safe-area). The
+  // chef nav itself is z-50 and renders later in the DOM than this
+  // component (mounted in layouts as `<PwaInstallPrompt /><ChefNav />`),
+  // which means at equal z-index the nav stacks ON TOP and clips our
+  // buttons. We bump to z-[60] so the prompt sits above the nav layer
+  // even when their boxes overlap. SKIP_PATHS handles routes that ALSO
+  // have a sticky action bar — we just don't render there at all.
   return (
     <div
       role="dialog"
       aria-label="Install Press Farm"
-      style={{ bottom: "calc(80px + env(safe-area-inset-bottom))" }}
-      className="fixed inset-x-2 sm:inset-x-auto sm:right-4 sm:max-w-sm z-50"
+      style={{ bottom: "calc(96px + env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-2 sm:inset-x-auto sm:right-4 sm:max-w-sm z-[60]"
     >
       <div className="bg-white rounded-2xl border border-farm-dark/10 shadow-lg overflow-hidden">
         <div className="px-4 py-3 bg-gradient-to-br from-farm-green/10 to-farm-cream/40 border-b border-farm-dark/5 flex items-start gap-3">
