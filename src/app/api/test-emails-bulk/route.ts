@@ -48,6 +48,11 @@ export async function GET(request: Request) {
   const restaurantParam = url.searchParams.get("restaurant");
   const restaurants = restaurantParam ? [restaurantParam] : ["Press", "Under-Study"];
 
+  // ?only=receiver → skip the per-restaurant set and only fire the
+  // receiver-daily summary. Use to isolate that template for testing.
+  const onlyParam = url.searchParams.get("only");
+  const skipPerRestaurant = onlyParam === "receiver";
+
   const resend = getResendClient();
   const sampleDate = "Thursday, May 1";
   const results: { template: string; restaurant: string; status: string; id?: string; error?: any }[] = [];
@@ -76,7 +81,8 @@ export async function GET(request: Request) {
   }
 
   // Send the full 6-template set for each requested restaurant.
-  for (const restaurant of restaurants) {
+  // Skipped when ?only=receiver so we can isolate the receiver email.
+  for (const restaurant of skipPerRestaurant ? [] : restaurants) {
     // 1. Welcome
     await send(
       "chef-welcome",
