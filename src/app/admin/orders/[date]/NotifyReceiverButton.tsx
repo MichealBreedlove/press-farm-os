@@ -113,9 +113,20 @@ export function NotifyReceiverButton({ deliveryDate }: Props) {
         </svg>
         Finish &amp; Send to Receiver
       </button>
-      <p className="text-[11px] text-farm-muted text-center">
-        Sends a daily summary of what&apos;s coming in, with shortages and extras flagged.
-      </p>
+      <div className="flex items-center justify-center gap-3 text-[11px]">
+        <p className="text-farm-muted">
+          Sends a daily summary with shortages and extras flagged.
+        </p>
+        <span className="text-farm-muted/40">·</span>
+        <a
+          href={`/api/receiver/notify?date=${deliveryDate}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-pf-master-violet font-medium hover:underline"
+        >
+          Preview
+        </a>
+      </div>
     </div>
   );
 }

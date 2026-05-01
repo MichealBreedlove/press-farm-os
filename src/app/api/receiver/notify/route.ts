@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import React from "react";
+import { render } from "@react-email/render";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResendClient } from "@/lib/resend/client";
@@ -8,6 +9,164 @@ import { formatDeliveryDate } from "@/lib/utils";
 import ReceiverDaily from "@/emails/receiver-daily";
 
 export const maxDuration = 30;
+
+/**
+ * GET /api/receiver/notify?date=YYYY-MM-DD&preview=true
+ *
+ * Renders the receiver-daily email HTML for the given delivery date WITHOUT
+ * sending it. Returns text/html so admin can preview the exact email body
+ * the receiver will get. Mounts on the orders page as a "Preview" link.
+ *
+ * Admin only.
+ */
+export async function GET(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const url = new URL(request.url);
+  const date = url.searchParams.get("date") ?? "";
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ error: "date required (YYYY-MM-DD)" }, { status: 400 });
+  }
+
+  const blocks = await buildReceiverBlocks(date);
+
+  const html = await render(
+    ReceiverDaily({
+      receiverName: profile.role === "admin" ? "Admin (preview)" : "Receiver",
+      deliveryDate: formatDeliveryDate(date),
+      restaurants: blocks,
+    }) as React.ReactElement,
+  );
+
+  return new NextResponse(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+/**
+ * Two-pass status computation shared by GET (preview) + POST (send).
+ * Returns the per-restaurant blocks the email template expects.
+ */
+async function buildReceiverBlocks(delivery_date: string) {
+  const admin = createAdminClient();
+
+  const { data: restaurants } = await (admin as any)
+    .from("restaurants")
+    .select("id, name")
+    .not("name", "ilike", "%event%")
+    .order("name");
+
+  const { data: orders } = await (admin as any)
+    .from("orders")
+    .select(`
+      id, restaurant_id, freeform_notes,
+      order_items (
+        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
+        availability_items (
+          id, item_id,
+          items ( id, name, unit_type, is_event_item )
+        )
+      )
+    `)
+    .eq("delivery_date", delivery_date);
+
+  const { data: deliveries } = await (admin as any)
+    .from("deliveries")
+    .select(`
+      id, restaurant_id,
+      delivery_items (
+        id, item_id, quantity, unit,
+        items ( id, name, unit_type, is_event_item )
+      )
+    `)
+    .eq("delivery_date", delivery_date);
+
+  return (restaurants ?? []).map((r: any) => {
+    const order = (orders ?? []).find((o: any) => o.restaurant_id === r.id);
+    const delivery = (deliveries ?? []).find((d: any) => d.restaurant_id === r.id);
+
+    type Line = {
+      itemName: string;
+      unit: string;
+      ordered: number;
+      delivered: number;
+      status: "ready" | "short" | "pending" | "extra";
+      shortageReason?: string;
+      isEvent?: boolean;
+    };
+
+    const linesByItem = new Map<string, Line>();
+
+    for (const oi of order?.order_items ?? []) {
+      const item = oi.availability_items?.items;
+      if (!item) continue;
+      const ordered = Number(oi.quantity_requested ?? 0);
+      const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
+      const shorted = Boolean(oi.is_shorted);
+      const unit = String(item.unit_type ?? "").split(",")[0]?.trim() ?? "";
+
+      let status: Line["status"];
+      if (shorted) status = "short";
+      else if (fulfilled != null) status = "ready";
+      else status = "pending";
+
+      linesByItem.set(item.id, {
+        itemName: item.name,
+        unit,
+        ordered,
+        delivered: fulfilled ?? 0,
+        status,
+        shortageReason: oi.shortage_reason ?? undefined,
+        isEvent: Boolean(item.is_event_item),
+      });
+    }
+
+    for (const di of delivery?.delivery_items ?? []) {
+      const item = di.items;
+      if (!item) continue;
+      const delivered = Number(di.quantity ?? 0);
+      const existing = linesByItem.get(item.id);
+      const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim() ?? "";
+
+      if (!existing) {
+        linesByItem.set(item.id, {
+          itemName: item.name,
+          unit,
+          ordered: 0,
+          delivered,
+          status: "extra",
+          isEvent: Boolean(item.is_event_item),
+        });
+      } else {
+        existing.delivered += delivered;
+        if (existing.status === "pending") {
+          existing.status = existing.delivered >= existing.ordered ? "ready" : "short";
+        } else if (existing.status === "short" && existing.delivered >= existing.ordered) {
+          existing.status = "ready";
+          existing.shortageReason = undefined;
+        }
+      }
+    }
+
+    return {
+      restaurantName: r.name,
+      freeformNotes: order?.freeform_notes ?? undefined,
+      lines: Array.from(linesByItem.values()),
+    };
+  }).filter((b: any) => b.lines.length > 0);
+}
 
 /**
  * POST /api/receiver/notify
@@ -61,117 +220,10 @@ export async function POST(request: Request) {
     if (u.email) emailMap.set(u.id, u.email);
   }
 
-  // 2. Restaurants — exclude the legacy Events row (events are now an item tag)
-  const { data: restaurants } = await (admin as any)
-    .from("restaurants")
-    .select("id, name")
-    .not("name", "ilike", "%event%")
-    .order("name");
-
-  // 3. Orders for the date with full join down to items
-  const { data: orders } = await (admin as any)
-    .from("orders")
-    .select(`
-      id, restaurant_id, freeform_notes,
-      order_items (
-        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
-        availability_items (
-          id, item_id,
-          items ( id, name, unit_type, is_event_item )
-        )
-      )
-    `)
-    .eq("delivery_date", delivery_date);
-
-  // 4. Deliveries for the date — for "extras" detection (delivered but not ordered)
-  const { data: deliveries } = await (admin as any)
-    .from("deliveries")
-    .select(`
-      id, restaurant_id,
-      delivery_items (
-        id, item_id, quantity, unit,
-        items ( id, name, unit_type, is_event_item )
-      )
-    `)
-    .eq("delivery_date", delivery_date);
-
-  // 5. Build per-restaurant blocks with computed status
-  const restaurantBlocks = (restaurants ?? []).map((r: any) => {
-    const order = (orders ?? []).find((o: any) => o.restaurant_id === r.id);
-    const delivery = (deliveries ?? []).find((d: any) => d.restaurant_id === r.id);
-
-    type Line = {
-      itemName: string;
-      unit: string;
-      ordered: number;
-      delivered: number;
-      status: "ready" | "short" | "pending" | "extra";
-      shortageReason?: string;
-      isEvent?: boolean;
-    };
-
-    const linesByItem = new Map<string, Line>();
-
-    // Pass 1: every ordered item starts as pending or short (per is_shorted flag)
-    for (const oi of order?.order_items ?? []) {
-      const item = oi.availability_items?.items;
-      if (!item) continue;
-      const ordered = Number(oi.quantity_requested ?? 0);
-      const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
-      const shorted = Boolean(oi.is_shorted);
-      const unit = String(item.unit_type ?? "").split(",")[0]?.trim() ?? "";
-
-      let status: Line["status"];
-      if (shorted) status = "short";
-      else if (fulfilled != null) status = "ready";
-      else status = "pending";
-
-      linesByItem.set(item.id, {
-        itemName: item.name,
-        unit,
-        ordered,
-        delivered: fulfilled ?? 0,
-        status,
-        shortageReason: oi.shortage_reason ?? undefined,
-        isEvent: Boolean(item.is_event_item),
-      });
-    }
-
-    // Pass 2: overlay logged delivery_items — confirms ready, surfaces extras,
-    // and bumps short→short or pending→ready as appropriate.
-    for (const di of delivery?.delivery_items ?? []) {
-      const item = di.items;
-      if (!item) continue;
-      const delivered = Number(di.quantity ?? 0);
-      const existing = linesByItem.get(item.id);
-      const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim() ?? "";
-
-      if (!existing) {
-        linesByItem.set(item.id, {
-          itemName: item.name,
-          unit,
-          ordered: 0,
-          delivered,
-          status: "extra",
-          isEvent: Boolean(item.is_event_item),
-        });
-      } else {
-        existing.delivered += delivered;
-        if (existing.status === "pending") {
-          existing.status = existing.delivered >= existing.ordered ? "ready" : "short";
-        } else if (existing.status === "short" && existing.delivered >= existing.ordered) {
-          existing.status = "ready";
-          existing.shortageReason = undefined;
-        }
-      }
-    }
-
-    return {
-      restaurantName: r.name,
-      freeformNotes: order?.freeform_notes ?? undefined,
-      lines: Array.from(linesByItem.values()),
-    };
-  }).filter((b: any) => b.lines.length > 0);
+  // 2. Build per-restaurant blocks via the shared two-pass status computation
+  //    (same helper used by the GET /preview path so the rendered email
+  //    always matches what gets sent).
+  const restaurantBlocks = await buildReceiverBlocks(delivery_date);
 
   if (restaurantBlocks.length === 0) {
     return NextResponse.json({
