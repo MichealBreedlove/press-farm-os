@@ -62,7 +62,9 @@ export default async function HistoryPage() {
 
   const restaurant = restaurantUser.restaurants;
 
-  // Fetch all orders with item count
+  // Fetch all orders with item count + shortage flag so the list row
+  // can surface a "1 shortage" caption inline — chefs can spot problem
+  // orders without opening each one.
   const { data: orders } = await supabase
     .from("orders")
     .select(`
@@ -71,7 +73,7 @@ export default async function HistoryPage() {
       status,
       submitted_at,
       created_at,
-      order_items(id)
+      order_items(id, is_shorted)
     `)
     .eq("restaurant_id", restaurant.id)
     .order("delivery_date", { ascending: false }) as any;
@@ -101,6 +103,7 @@ export default async function HistoryPage() {
           <ul className="space-y-2">
             {orders.map((order: any) => {
               const itemCount = order.order_items?.length ?? 0;
+              const shortedCount = (order.order_items ?? []).filter((oi: any) => oi.is_shorted).length;
               const status = order.status as OrderStatus;
               const flower = HISTORY_FLOWERS[hashOrderId(order.id) % HISTORY_FLOWERS.length];
 
@@ -122,13 +125,18 @@ export default async function HistoryPage() {
                       <p className="text-sm font-semibold text-farm-dark">
                         {formatDeliveryDate(order.delivery_date)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-farm-muted mt-0.5">
                         {itemCount} {itemCount === 1 ? "item" : "items"}
+                        {shortedCount > 0 && (
+                          <span className="ml-1.5 text-pf-master-orange font-medium">
+                            · {shortedCount} short
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <StatusPill status={status} />
-                      <span className="text-gray-300 text-lg">›</span>
+                      <span className="text-farm-muted/60 text-lg">›</span>
                     </div>
                   </Link>
                 </li>

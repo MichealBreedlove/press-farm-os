@@ -44,7 +44,7 @@ export function CalendarGrid({ year, month, monthLabel, activity, prevHref, next
 
   return (
     <div className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm overflow-hidden">
-      {/* Month header with prev/next */}
+      {/* Month header with prev/next + Today shortcut */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-farm-dark/5 bg-farm-cream/40">
         <Link
           href={prevHref}
@@ -55,7 +55,19 @@ export function CalendarGrid({ year, month, monthLabel, activity, prevHref, next
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <p className="font-display text-lg text-farm-dark">{monthLabel}</p>
+        <div className="text-center">
+          <p className="font-display text-lg text-farm-dark leading-none">{monthLabel}</p>
+          {/* "Today" jumps back to the current month — only renders when not
+              already viewing it, so it doesn't add visual noise. */}
+          {!activity.some((d) => d.isToday) && (
+            <Link
+              href="/admin/calendar"
+              className="text-[10px] tracking-[0.18em] uppercase text-farm-green hover:underline mt-1 inline-block"
+            >
+              Today
+            </Link>
+          )}
+        </div>
         <Link
           href={nextHref}
           className="min-w-[44px] min-h-[44px] flex items-center justify-center text-farm-muted hover:text-farm-dark"
