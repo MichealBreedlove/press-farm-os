@@ -4,6 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getResendClient } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
+// 12 emails × 600ms throttle ≈ 7.2s of work; bump the function's max
+// runtime so we don't get cut off mid-batch on Vercel.
+export const maxDuration = 30;
+
 import ChefWelcome from "@/emails/chef-welcome";
 import AvailabilityPublished from "@/emails/availability-published";
 import OrderConfirmation from "@/emails/order-confirmation";
@@ -63,6 +67,11 @@ export async function GET(request: Request) {
     } catch (err: any) {
       results.push({ template, restaurant, status: "exception", error: err?.message ?? String(err) });
     }
+    // Resend's default rate limit is 2 requests/second. With 12 emails fired
+    // sequentially the second restaurant's batch (esp. the order family)
+    // hits 429 Too Many Requests and silently drops. Pace at ~600ms/send
+    // to stay safely under the cap.
+    await new Promise((resolve) => setTimeout(resolve, 600));
   }
 
   // Send the full 6-template set for each requested restaurant.
