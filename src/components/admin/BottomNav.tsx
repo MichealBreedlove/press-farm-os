@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, ClipboardList, PackageOpen, BarChart3 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, ClipboardList, PackageOpen, BarChart3, LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
@@ -15,6 +16,13 @@ const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
 
   return (
     <nav
@@ -44,6 +52,17 @@ export function BottomNav() {
             </Link>
           );
         })}
+
+        {/* Sign Out — same bottom-right tab pattern used by ChefNav. The
+            settings page no longer carries a SignOutButton card; sign-out
+            lives here so it's reachable from any admin page. */}
+        <button
+          onClick={handleSignOut}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-farm-muted hover:text-red-500 transition-colors min-h-[44px]"
+        >
+          <LogOut className="w-5 h-5" strokeWidth={1.5} />
+          <span>Sign Out</span>
+        </button>
       </div>
     </nav>
   );

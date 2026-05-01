@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const DISMISS_KEY = "press-farm:pwa-install-dismissed-at";
 const REPROMPT_AFTER_DAYS = 30;
+
+// Pages that render a sticky bottom action bar (Review Order, etc.). The
+// install prompt collides with those bars no matter where we anchor it
+// (top fights the sticky search; bottom fights the action button).
+// Skipping render on these routes keeps the prompt out of the way; users
+// still get prompted on /history and /receiver where the bottom is clear.
+const SKIP_PATHS = ["/order", "/order/review"];
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -26,12 +34,18 @@ interface BeforeInstallPromptEvent extends Event {
  * who say "no thanks" aren't pestered every visit.
  */
 export function PwaInstallPrompt() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [variant, setVariant] = useState<"ios" | "android" | null>(null);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
 
+  // Don't show on routes with a sticky bottom action bar. The chef will
+  // still hit /history and /receiver where the prompt has room to land.
+  const skip = SKIP_PATHS.includes(pathname);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (skip) return;
 
     // Already running as a standalone PWA → nothing to install.
     const standaloneIos = (window.navigator as any).standalone === true;
@@ -65,7 +79,13 @@ export function PwaInstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", onBefore as any);
     return () => window.removeEventListener("beforeinstallprompt", onBefore as any);
-  }, []);
+  }, [skip]);
+
+  // If the chef navigates back to a skip route while the prompt is showing,
+  // hide it immediately rather than letting it linger over the action bar.
+  useEffect(() => {
+    if (skip) setVisible(false);
+  }, [skip]);
 
   function dismiss() {
     setVisible(false);
@@ -87,15 +107,14 @@ export function PwaInstallPrompt() {
 
   if (!visible || !variant) return null;
 
-  // Sit above the chef/admin bottom nav (h-16 = 64px) AND any sticky action
-  // bar a page may render above the nav (e.g. OrderForm's "Review Order").
-  // 64 (nav) + ~60 (sticky button) + ~16 (gap) ≈ 140px. We use the safe-area
-  // inset on top so the prompt doesn't tuck under the iPhone home indicator.
+  // Sit above the chef/admin bottom nav (h-16 = 64px) plus a comfortable
+  // gap. SKIP_PATHS handles the harder case where a page also has a
+  // sticky action bar — those routes don't render the prompt at all.
   return (
     <div
       role="dialog"
       aria-label="Install Press Farm"
-      style={{ bottom: "calc(140px + env(safe-area-inset-bottom))" }}
+      style={{ bottom: "calc(80px + env(safe-area-inset-bottom))" }}
       className="fixed inset-x-2 sm:inset-x-auto sm:right-4 sm:max-w-sm z-50"
     >
       <div className="bg-white rounded-2xl border border-farm-dark/10 shadow-lg overflow-hidden">
