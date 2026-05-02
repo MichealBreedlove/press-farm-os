@@ -86,8 +86,8 @@ export function ItemForm({ item }: Props) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function toggleEventItem() {
-    setForm((f) => ({ ...f, is_event_item: !f.is_event_item }));
+  function setEventItem(value: boolean) {
+    setForm((f) => ({ ...f, is_event_item: value }));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -220,34 +220,64 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Event Item toggle — when on, this item appears in the chef order form
-          under a separate "Events Menu" section instead of the regular menu. */}
-      <label
-        className={`flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-          form.is_event_item
-            ? "bg-pf-master-violet/10 border border-pf-master-violet/30"
-            : "bg-farm-cream/40 border border-farm-dark/5 hover:bg-farm-cream/60"
-        }`}
-      >
-        <div>
-          <p className="text-sm font-medium text-farm-dark">Event item</p>
-          <p className="text-xs text-farm-muted mt-0.5">
-            {form.is_event_item
-              ? "Shown to chefs under the Events Menu section"
-              : "Toggle on for items only ordered for special events"}
-          </p>
+      {/* Menu placement — replaces the old pill toggle whose state was hard
+          to read at a glance. Two-card segmented control: both options
+          visible, the selected one highlighted in its menu's brand color
+          (farm-green for Regular, pf-master-violet for Events). */}
+      <div>
+        <p className="text-sm font-medium text-farm-dark mb-2">Menu</p>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Menu placement">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!form.is_event_item}
+            onClick={() => setEventItem(false)}
+            className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
+              !form.is_event_item
+                ? "border-farm-green bg-farm-green/5"
+                : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  !form.is_event_item ? "bg-farm-green" : "bg-farm-dark/15"
+                }`}
+                aria-hidden="true"
+              />
+              <p className="text-sm font-semibold text-farm-dark">Regular Menu</p>
+            </div>
+            <p className="text-xs text-farm-muted mt-1 leading-snug">
+              Shown on the everyday chef order form.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            role="radio"
+            aria-checked={form.is_event_item}
+            onClick={() => setEventItem(true)}
+            className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
+              form.is_event_item
+                ? "border-pf-master-violet bg-pf-master-violet/[0.06]"
+                : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  form.is_event_item ? "bg-pf-master-violet" : "bg-farm-dark/15"
+                }`}
+                aria-hidden="true"
+              />
+              <p className="text-sm font-semibold text-farm-dark">Events Menu</p>
+            </div>
+            <p className="text-xs text-farm-muted mt-1 leading-snug">
+              Special-occasion items only.
+            </p>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={toggleEventItem}
-          className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${form.is_event_item ? "bg-pf-master-violet" : "bg-gray-300"}`}
-          aria-pressed={form.is_event_item}
-        >
-          <span
-            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.is_event_item ? "translate-x-5" : "translate-x-0.5"}`}
-          />
-        </button>
-      </label>
+      </div>
 
       {/* Unit (multi-select with per-unit pricing).
           Each selected container chip reveals its own price input. */}
