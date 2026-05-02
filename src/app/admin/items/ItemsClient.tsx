@@ -323,8 +323,18 @@ export function ItemsClient({ items, addItemHref }: Props) {
                       })()}
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                        {/* Category pill — only shown while searching, since
+                            normally the items list is already grouped by
+                            category headers. During search the rows render
+                            in one flat list so the user loses that signal
+                            unless we surface it inline. */}
+                        {search.trim() && (
+                          <span className="text-[9px] tracking-wider uppercase bg-farm-cream/80 text-farm-muted px-1.5 py-0.5 rounded font-semibold flex-shrink-0 border border-farm-dark/5">
+                            {CATEGORY_LABELS[item.category] ?? item.category}
+                          </span>
+                        )}
                         {item.is_event_item && !item.is_press_bar_item && (
                           <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
                             Event
