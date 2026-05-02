@@ -6,7 +6,11 @@
  * Enables offline access to the chef order form.
  */
 
-const CACHE_NAME = "press-farm-v1";
+// Bump on every deploy that ships a behavioral change so the activate
+// handler purges old caches. v2 → forces all clients to drop the
+// pre-PwaInstallPrompt-fix bundle that kept the install banner visible
+// on /order despite the SKIP_PATHS guard.
+const CACHE_NAME = "press-farm-v2";
 
 const PRECACHE_URLS = [
   "/",

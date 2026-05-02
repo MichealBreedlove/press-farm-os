@@ -6,7 +6,6 @@ import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
-import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import type { UnitType } from "@/types/database";
@@ -198,7 +197,10 @@ export function OrderForm({
   return (
     <div className="flex flex-col min-h-screen bg-farm-cream">
       {!editingOrderId && <OnboardingTour />}
-      <PwaInstallPrompt />
+      {/* PwaInstallPrompt mounts in /history/layout.tsx instead — /order has
+          a sticky Review bar that fights the prompt no matter where it's
+          anchored, and SKIP_PATHS alone wasn't reliable when the bundle
+          was cached by the service worker. */}
       {editingOrderId && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2">
           <span className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</span>
