@@ -41,6 +41,15 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Danger zone — typed-confirmation modal for "delete all deliveries".
+  // The catch is that deliveries are the financial source of truth, so
+  // we want a confirmation gate beyond a one-tap modal: user must type
+  // the literal word DELETE before the destructive button enables.
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<null | { deleted: number; totalValueDeleted: number }>(null);
+
   function reset() {
     setFile(null);
     setPreview(null);
@@ -96,6 +105,33 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Wipe-all flow. Safety net beyond the typed-confirmation modal: the
+  // server re-checks { confirm: "DELETE" } in the body, so a misclick
+  // from a stale tab still can't fire this off without the literal token.
+  async function runDeleteAll() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/deliveries", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "all", confirm: "DELETE" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Delete failed");
+      setDeleteResult({
+        deleted: json.deleted ?? 0,
+        totalValueDeleted: json.totalValueDeleted ?? 0,
+      });
+      setConfirmOpen(false);
+      setConfirmText("");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -438,6 +474,109 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
         </div>
       </details>
       </>)}
+
+      {/* ── Danger zone ───────────────────────────────────────────────
+          Lives below the import/export tabs because it operates on the
+          full data set, not a single file. Deletes the entire deliveries
+          table (line items cascade via FK). Gated by a typed-confirmation
+          modal AND a server-side `confirm: "DELETE"` token check.
+          ──────────────────────────────────────────────────────────── */}
+      {deliveryCount > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 sm:p-5 space-y-2">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-red-700 font-semibold">
+            Danger zone
+          </p>
+          <p className="text-sm text-red-900 leading-relaxed">
+            <strong>Delete every delivery and its line items.</strong> This wipes the financial
+            source of truth — income, YoY, and executive reports will go to zero. Cannot be undone.
+          </p>
+          <p className="text-xs text-red-700/80">
+            Currently on record: {deliveryCount} deliver{deliveryCount === 1 ? "y" : "ies"} · {lineCount} line item{lineCount === 1 ? "" : "s"}.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setConfirmOpen(true); setConfirmText(""); }}
+            className="mt-2 inline-flex items-center gap-2 px-4 min-h-[40px] rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 4a2 2 0 012-2h2a2 2 0 012 2v3" />
+            </svg>
+            Delete all deliveries…
+          </button>
+        </div>
+      )}
+
+      {/* Typed-confirmation modal */}
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[60] bg-farm-dark/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-5 sm:p-6">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-red-600 font-semibold">
+              Permanent · Cannot be undone
+            </p>
+            <h2 className="font-display text-xl text-farm-dark mt-1">
+              Delete all {deliveryCount} deliveries?
+            </h2>
+            <div className="mt-3 space-y-2 text-sm text-farm-dark/85 leading-relaxed">
+              <p>
+                Every row in <code className="bg-farm-cream/60 px-1 rounded">deliveries</code> will be
+                removed. Their <strong>{lineCount}</strong> line items cascade-delete with them.
+              </p>
+              <p>
+                Reports that read from <code className="bg-farm-cream/60 px-1 rounded">deliveries</code>
+                {" "}(income, YoY, executive, monthly digest) will return zero until new deliveries are logged.
+              </p>
+            </div>
+            <label className="block mt-4 text-xs font-medium text-farm-dark">
+              Type <span className="font-mono text-red-600">DELETE</span> to enable the button
+            </label>
+            <input
+              type="text"
+              autoFocus
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              disabled={deleting}
+              placeholder="DELETE"
+              className="mt-1.5 w-full px-3 py-2 border border-farm-dark/15 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500/40 disabled:opacity-50"
+            />
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setConfirmOpen(false); setConfirmText(""); }}
+                disabled={deleting}
+                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runDeleteAll}
+                disabled={deleting || confirmText !== "DELETE"}
+                className="px-4 min-h-[40px] rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : `Delete ${deliveryCount}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-delete confirmation */}
+      {deleteResult && (
+        <div className="bg-farm-green/5 border border-farm-green/30 rounded-2xl p-4 sm:p-5">
+          <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green font-semibold">
+            Deletion complete
+          </p>
+          <p className="text-sm text-farm-dark mt-1">
+            Removed <strong>{deleteResult.deleted}</strong> deliver{deleteResult.deleted === 1 ? "y" : "ies"}
+            {deleteResult.totalValueDeleted > 0 && (
+              <> totaling <strong>${deleteResult.totalValueDeleted.toFixed(2)}</strong> in production value</>
+            )}.
+          </p>
+          <p className="text-xs text-farm-muted mt-1.5">
+            Refresh the page to see the empty state.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

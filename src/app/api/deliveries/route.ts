@@ -175,3 +175,93 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ delivery }, { status: existing ? 200 : 201 });
 }
+
+/**
+ * DELETE /api/deliveries
+ * Body: { scope: "all" } | { ids: string[] }
+ *
+ * Removes deliveries. delivery_items.delivery_id cascades on delete
+ * (per migration 005), so the line items go with each parent row —
+ * no manual cleanup needed.
+ *
+ * IMPORTANT: deliveries are the financial source of truth. The UI
+ * gates this behind a typed confirmation; the server checks admin
+ * role + requires an explicit `confirm: "DELETE"` body field as a
+ * second guard to prevent accidental wipes from a bad client.
+ *
+ * Returns: { deleted: number, totalValueDeleted: number }
+ */
+export async function DELETE(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if ((profile as any)?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: { scope?: string; ids?: unknown; confirm?: string };
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+
+  if (body.confirm !== "DELETE") {
+    return NextResponse.json(
+      { error: "Confirmation required — body must include { confirm: \"DELETE\" }" },
+      { status: 400 },
+    );
+  }
+
+  const admin = createAdminClient();
+
+  // Compute "before" stats for the response so the UI can confirm what
+  // was nuked. Cheap aggregate, runs against the same scope as the
+  // delete itself.
+  let baseQuery = (admin as any).from("deliveries");
+
+  let countBefore = 0;
+  let valueBefore = 0;
+
+  if (body.scope === "all") {
+    const { data: stats } = await baseQuery.select("id, total_value");
+    countBefore = (stats ?? []).length;
+    valueBefore = (stats ?? []).reduce(
+      (s: number, d: any) => s + (Number(d.total_value) || 0),
+      0,
+    );
+
+    const { error } = await (admin as any).from("deliveries").delete().not("id", "is", null);
+    if (error) {
+      console.error("DELETE all deliveries failed:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  } else if (Array.isArray(body.ids) && body.ids.length > 0) {
+    const ids = body.ids.filter((v): v is string => typeof v === "string");
+    if (ids.length === 0) {
+      return NextResponse.json({ error: "ids must be a non-empty string array" }, { status: 400 });
+    }
+    const { data: stats } = await baseQuery.select("id, total_value").in("id", ids);
+    countBefore = (stats ?? []).length;
+    valueBefore = (stats ?? []).reduce(
+      (s: number, d: any) => s + (Number(d.total_value) || 0),
+      0,
+    );
+
+    const { error } = await (admin as any).from("deliveries").delete().in("id", ids);
+    if (error) {
+      console.error("DELETE deliveries by id failed:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  } else {
+    return NextResponse.json(
+      { error: "Provide either scope: \"all\" or ids: string[]" },
+      { status: 400 },
+    );
+  }
+
+  return NextResponse.json({
+    deleted: countBefore,
+    totalValueDeleted: valueBefore,
+  });
+}
