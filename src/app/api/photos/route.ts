@@ -98,6 +98,14 @@ export async function DELETE(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Capture public URLs BEFORE remove() so we can null out matching
+  // items.image_url rows after the storage delete succeeds.
+  const urlsBeingDeleted = safePaths.map((p) => {
+    const { data } = admin.storage.from(BUCKET).getPublicUrl(p);
+    return data.publicUrl;
+  });
+
   const { data, error } = await admin.storage.from(BUCKET).remove(safePaths);
 
   if (error) {
@@ -105,5 +113,32 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ deleted: data?.length ?? 0 });
+  // Null out items.image_url for any items that referenced the deleted
+  // photos — keeps the catalog grid consistent (placeholder thumb)
+  // instead of leaving rows pointing at 404s. Logged but non-fatal:
+  // the storage delete already succeeded by the time we get here.
+  let itemsCleared = 0;
+  let itemsClearError: string | null = null;
+  try {
+    const { data: cleared, error: clearErr } = await (admin as any)
+      .from("items")
+      .update({ image_url: null })
+      .in("image_url", urlsBeingDeleted)
+      .select("id");
+    if (clearErr) {
+      console.error("items.image_url clear after delete failed:", clearErr);
+      itemsClearError = clearErr.message;
+    } else {
+      itemsCleared = cleared?.length ?? 0;
+    }
+  } catch (err: any) {
+    console.error("items.image_url clear after delete threw:", err);
+    itemsClearError = err?.message ?? "Unknown error";
+  }
+
+  return NextResponse.json({
+    deleted: data?.length ?? 0,
+    itemsCleared,
+    itemsClearError,
+  });
 }

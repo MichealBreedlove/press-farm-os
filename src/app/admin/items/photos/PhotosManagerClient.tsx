@@ -99,6 +99,9 @@ export function PhotosManagerClient() {
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Last server-reported items.image_url sync count — surfaces in a banner
+  // so admin knows N items were auto-reassigned after a rename/delete.
+  const [itemSyncMsg, setItemSyncMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -300,6 +303,7 @@ export function PhotosManagerClient() {
     if (paths.length === 0) return;
     setDeleting(true);
     setError(null);
+    setItemSyncMsg(null);
     try {
       const res = await fetch("/api/photos", {
         method: "DELETE",
@@ -316,6 +320,16 @@ export function PhotosManagerClient() {
         for (const p of paths) next.delete(p);
         return next;
       });
+      // Surface item-table sync result so admin knows N items had their
+      // image_url cleared (and thus need a new photo picked).
+      if (typeof json.itemsCleared === "number" && json.itemsCleared > 0) {
+        setItemSyncMsg(
+          `Cleared image on ${json.itemsCleared} item${json.itemsCleared === 1 ? "" : "s"} that referenced ${paths.length === 1 ? "this photo" : "these photos"}.`,
+        );
+      }
+      if (json.itemsClearError) {
+        setError(`Photo deleted, but couldn't update item links: ${json.itemsClearError}`);
+      }
       await refresh();
     } catch (err: any) {
       setError(err?.message ?? "Delete failed");
@@ -363,6 +377,7 @@ export function PhotosManagerClient() {
     }
     setRenameBusy(true);
     setError(null);
+    setItemSyncMsg(null);
     try {
       const res = await fetch("/api/photos/rename", {
         method: "POST",
@@ -388,6 +403,16 @@ export function PhotosManagerClient() {
         next.add(json.path);
         return next;
       });
+      // Surface how many items had their image_url auto-updated to the
+      // new URL — so admin knows the rename was non-destructive.
+      if (typeof json.itemsUpdated === "number" && json.itemsUpdated > 0) {
+        setItemSyncMsg(
+          `Updated ${json.itemsUpdated} item${json.itemsUpdated === 1 ? "" : "s"} that pointed at this photo.`,
+        );
+      }
+      if (json.itemsUpdateError) {
+        setError(`Photo renamed, but couldn't update item links: ${json.itemsUpdateError}`);
+      }
       cancelRename();
     } catch (err: any) {
       setError(err?.message ?? "Rename failed");
@@ -486,6 +511,26 @@ export function PhotosManagerClient() {
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {/* Items-table sync confirmation — shown after a rename or delete
+          touched at least one item.image_url. Dismissible because the
+          message can stack with the next mutation. */}
+      {itemSyncMsg && (
+        <div className="rounded-xl border border-farm-green/30 bg-farm-green/5 px-4 py-3 text-sm text-farm-dark flex items-start justify-between gap-3">
+          <p>
+            <span className="font-semibold text-farm-green">Catalog updated.</span>{" "}
+            {itemSyncMsg}
+          </p>
+          <button
+            type="button"
+            onClick={() => setItemSyncMsg(null)}
+            className="text-farm-muted hover:text-farm-dark min-h-0 flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

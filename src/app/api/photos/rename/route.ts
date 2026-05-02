@@ -95,6 +95,11 @@ export async function POST(request: Request) {
     );
   }
 
+  // Capture the OLD public URL BEFORE we move — once moved, the old path
+  // no longer resolves so we can't re-derive its URL after the fact.
+  const { data: oldUrlData } = admin.storage.from(BUCKET).getPublicUrl(path);
+  const oldUrl = oldUrlData.publicUrl;
+
   const { error } = await admin.storage.from(BUCKET).move(path, newPath);
   if (error) {
     console.error("Photo rename error:", error);
@@ -102,5 +107,39 @@ export async function POST(request: Request) {
   }
 
   const { data: urlData } = admin.storage.from(BUCKET).getPublicUrl(newPath);
-  return NextResponse.json({ path: newPath, name: newFile, url: urlData.publicUrl });
+  const newUrl = urlData.publicUrl;
+
+  // Keep items.image_url in sync — any item that referenced the old
+  // public URL now points at the renamed path. We do this AFTER the
+  // storage move succeeds; if the update step itself fails we log + warn
+  // but don't try to roll back the move (the storage object is already
+  // renamed and rolling back would break callers that already saw the
+  // 200 response). The items would just have broken thumbnails until
+  // someone re-picks — same outcome the rename had before this hookup.
+  let itemsUpdated = 0;
+  let itemsUpdateError: string | null = null;
+  try {
+    const { data: updated, error: upErr } = await (admin as any)
+      .from("items")
+      .update({ image_url: newUrl })
+      .eq("image_url", oldUrl)
+      .select("id");
+    if (upErr) {
+      console.error("items.image_url sync after rename failed:", upErr);
+      itemsUpdateError = upErr.message;
+    } else {
+      itemsUpdated = updated?.length ?? 0;
+    }
+  } catch (err: any) {
+    console.error("items.image_url sync after rename threw:", err);
+    itemsUpdateError = err?.message ?? "Unknown error";
+  }
+
+  return NextResponse.json({
+    path: newPath,
+    name: newFile,
+    url: newUrl,
+    itemsUpdated,
+    itemsUpdateError,
+  });
 }
