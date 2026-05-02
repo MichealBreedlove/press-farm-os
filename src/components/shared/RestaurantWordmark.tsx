@@ -44,7 +44,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     return (
       <span
         className="font-normal text-farm-dark tracking-[0.25em] uppercase"
-        style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
+        style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
       >
         EVENTS
       </span>
@@ -59,7 +59,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     return (
       <span
         className="font-normal text-farm-dark tracking-[0.25em] uppercase"
-        style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
+        style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
       >
         PRESS BAR
       </span>
