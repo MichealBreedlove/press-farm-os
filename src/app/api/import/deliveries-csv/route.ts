@@ -53,9 +53,23 @@ function parseDateValue(raw: unknown): string | null {
   return null;
 }
 
+/**
+ * Look up a row value by trying multiple header names — case-insensitive,
+ * whitespace/punctuation-insensitive. Real-world XLSX exports often have
+ * stray leading/trailing spaces (e.g. " Unit Price " from Excel quirks),
+ * which strict equality misses; normalize() collapses both sides.
+ */
+function normalizeKey(k: string): string {
+  return String(k ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 function pick(row: Record<string, unknown>, ...keys: string[]): string {
+  // Build a normalized lookup map once per call, then probe each candidate
+  const norm: Record<string, unknown> = {};
+  for (const [rawKey, val] of Object.entries(row)) {
+    norm[normalizeKey(rawKey)] = val;
+  }
   for (const k of keys) {
-    const v = row[k] ?? row[k.toLowerCase()] ?? row[k.toUpperCase()];
+    const v = norm[normalizeKey(k)];
     if (v != null && String(v).trim() !== "") return String(v).trim();
   }
   return "";
@@ -126,9 +140,10 @@ export async function POST(request: Request) {
   rows.forEach((row, idx) => {
     const rowNum = idx + 2;
 
-    const date = parseDateValue(
-      row["Date"] ?? row["date"] ?? row["DATE"] ?? row["Delivery Date"] ?? row["delivery_date"]
-    );
+    // Use the same normalize-insensitive lookup as pick() — survives the
+    // " Date " stray-space bug we just fixed for unit price / line total.
+    const dateRaw = pick(row, "Date", "Delivery Date", "delivery_date");
+    const date = parseDateValue(dateRaw);
     if (!date) {
       skipped.push({ row: rowNum, reason: "unparseable Date" });
       return;
