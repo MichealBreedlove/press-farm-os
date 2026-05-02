@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Upload, Trash2, X, Search, Check, Loader2, Pencil } from "lucide-react";
+import { Upload, Trash2, X, Search, Check, Loader2, Pencil, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { MatchPhotosDialog } from "./MatchPhotosDialog";
 
 const BUCKET = "item-photos";
 const MAX_FILE_BYTES = 15 * 1024 * 1024; // server cap — we pre-validate to fail fast on truly oversized files
@@ -115,6 +116,8 @@ export function PhotosManagerClient() {
   // Last server-reported items.image_url sync count — surfaces in a banner
   // so admin knows N items were auto-reassigned after a rename/delete.
   const [itemSyncMsg, setItemSyncMsg] = useState<string | null>(null);
+  // Match-to-Catalog dialog visibility
+  const [matchDialogOpen, setMatchDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -567,7 +570,7 @@ export function PhotosManagerClient() {
         </div>
       )}
 
-      {/* Search + selection toolbar */}
+      {/* Search + match-to-catalog */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted" />
@@ -579,7 +582,28 @@ export function PhotosManagerClient() {
             className="w-full pl-9 pr-3 py-2.5 min-h-[44px] border border-farm-dark/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setMatchDialogOpen(true)}
+          disabled={loading || photos.length === 0}
+          className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl border border-farm-green/30 bg-farm-green/[0.06] text-sm font-semibold text-farm-green hover:bg-farm-green hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          title="Suggest photo→item assignments by name similarity"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="hidden sm:inline">Match to Catalog</span>
+          <span className="sm:hidden">Match</span>
+        </button>
       </div>
+
+      <MatchPhotosDialog
+        open={matchDialogOpen}
+        onClose={() => setMatchDialogOpen(false)}
+        onApplied={(count) => {
+          if (count > 0) {
+            setItemSyncMsg(`Auto-matched ${count} item${count === 1 ? "" : "s"} to photos.`);
+          }
+        }}
+      />
 
       {/* Selection bar — shown when something is selected */}
       {selected.size > 0 && (
