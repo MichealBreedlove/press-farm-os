@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Upload, Trash2, X, Search, Check, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+
+const BUCKET = "item-photos";
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // mirrors server-side cap; we pre-validate so users see fast feedback
 
 interface Photo {
   name: string;
@@ -96,42 +100,127 @@ export function PhotosManagerClient() {
   }
 
   // ── Upload flow ──────────────────────────────────────────────────
+  //
+  // Direct-to-Supabase strategy: ask /api/upload/sign for one signed URL
+  // per file (in chunks of 50), then PUT each file straight to Supabase
+  // Storage from the browser. The bytes never touch our Vercel API route,
+  // so the platform's 4.5MB body cap doesn't apply — bulk uploads of
+  // hundreds of catalog photos work without "Request Entity Too Large"
+  // 413s. Concurrency cap keeps us under any per-bucket rate limits.
   async function uploadFiles(files: FileList | File[]) {
-    const list = Array.from(files);
-    if (list.length === 0) return;
+    const all = Array.from(files);
+    if (all.length === 0) return;
 
     setUploadResults(null);
     setError(null);
     setUploading(true);
 
-    // The bulk endpoint caps at 50 per request — chunk longer batches so
-    // someone dragging in 200 photos doesn't get an "all-or-nothing" error.
-    const CHUNK = 25;
-    const chunks: File[][] = [];
-    for (let i = 0; i < list.length; i += CHUNK) chunks.push(list.slice(i, i + CHUNK));
-
-    setUploadProgress({ done: 0, total: list.length });
-    const allResults: UploadResult[] = [];
-
-    for (const chunk of chunks) {
-      const fd = new FormData();
-      for (const f of chunk) fd.append("files", f);
-      try {
-        const res = await fetch("/api/upload/bulk", { method: "POST", body: fd });
-        const json = await res.json();
-        if (!res.ok) {
-          // Surface the server message and mark every file in this chunk as failed
-          for (const f of chunk) allResults.push({ name: f.name, ok: false, error: json.error ?? "Upload failed" });
-        } else {
-          allResults.push(...(json.results as UploadResult[]));
-        }
-      } catch (err: any) {
-        for (const f of chunk) allResults.push({ name: f.name, ok: false, error: err?.message ?? "Network error" });
+    // Pre-filter on the client so we surface obvious problems immediately
+    // and don't waste round-trips minting signed URLs for files we'd
+    // reject anyway. The server enforces the same rules.
+    const validFiles: File[] = [];
+    const preErrors: UploadResult[] = [];
+    for (const f of all) {
+      if (!f.type.startsWith("image/")) {
+        preErrors.push({ name: f.name, ok: false, error: "Not an image" });
+      } else if (f.size > MAX_FILE_BYTES) {
+        preErrors.push({ name: f.name, ok: false, error: "File too large (max 5MB)" });
+      } else {
+        validFiles.push(f);
       }
-      setUploadProgress((prev) => prev ? { done: Math.min(prev.done + chunk.length, prev.total), total: prev.total } : null);
     }
 
-    setUploadResults(allResults);
+    setUploadProgress({ done: 0, total: validFiles.length });
+    const supabase = createClient();
+    const results: UploadResult[] = [...preErrors];
+
+    // Chunk signed-URL minting — server caps at 50 per request, so we
+    // batch in 50s. Within each batch, the actual file PUTs run in
+    // parallel with a concurrency cap.
+    const SIGN_CHUNK = 50;
+    const UPLOAD_CONCURRENCY = 6;
+
+    for (let i = 0; i < validFiles.length; i += SIGN_CHUNK) {
+      const chunk = validFiles.slice(i, i + SIGN_CHUNK);
+
+      // Step 1 — get signed URLs for this chunk
+      let signed: Array<{ name: string; path: string; token: string; sourceName: string; url: string }> = [];
+      let signErrors: Array<{ name: string; error: string }> = [];
+      try {
+        const res = await fetch("/api/upload/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            files: chunk.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+          }),
+        });
+        const ct = res.headers.get("content-type") ?? "";
+        if (!ct.includes("application/json")) {
+          // Vercel error pages come back as HTML; surface a clean message
+          for (const f of chunk) results.push({ name: f.name, ok: false, error: `Sign failed (HTTP ${res.status})` });
+          setUploadProgress((p) => p ? { done: Math.min(p.done + chunk.length, p.total), total: p.total } : null);
+          continue;
+        }
+        const json = await res.json();
+        if (!res.ok) {
+          for (const f of chunk) results.push({ name: f.name, ok: false, error: json.error ?? "Sign failed" });
+          setUploadProgress((p) => p ? { done: Math.min(p.done + chunk.length, p.total), total: p.total } : null);
+          continue;
+        }
+        signed = json.signed ?? [];
+        signErrors = json.errors ?? [];
+      } catch (err: any) {
+        for (const f of chunk) results.push({ name: f.name, ok: false, error: err?.message ?? "Network error" });
+        setUploadProgress((p) => p ? { done: Math.min(p.done + chunk.length, p.total), total: p.total } : null);
+        continue;
+      }
+
+      // Files the server refused at sign time (bad type, too large, etc.)
+      for (const e of signErrors) results.push({ name: e.name, ok: false, error: e.error });
+
+      // Step 2 — upload each file directly to Supabase using its signed URL.
+      // Pair signed entries back to their File by sourceName so the order
+      // doesn't matter if the server reorders them.
+      const fileByName = new Map(chunk.map((f) => [f.name, f]));
+
+      // Bounded-concurrency upload pool. simpler than a full-blown queue
+      // library — yields the next file when a slot frees up.
+      let cursor = 0;
+      async function worker() {
+        while (cursor < signed.length) {
+          const my = cursor++;
+          const entry = signed[my];
+          const file = fileByName.get(entry.sourceName);
+          if (!file) {
+            results.push({ name: entry.sourceName, ok: false, error: "File missing locally" });
+            setUploadProgress((p) => p ? { done: Math.min(p.done + 1, p.total), total: p.total } : null);
+            continue;
+          }
+          try {
+            const { error: upErr } = await supabase.storage
+              .from(BUCKET)
+              .uploadToSignedUrl(entry.path, entry.token, file, {
+                contentType: file.type,
+                upsert: false,
+              });
+            if (upErr) {
+              results.push({ name: file.name, ok: false, error: upErr.message });
+            } else {
+              results.push({ name: file.name, ok: true, url: entry.url });
+            }
+          } catch (err: any) {
+            results.push({ name: file.name, ok: false, error: err?.message ?? "Upload exception" });
+          } finally {
+            setUploadProgress((p) => p ? { done: Math.min(p.done + 1, p.total), total: p.total } : null);
+          }
+        }
+      }
+
+      const workers = Array.from({ length: Math.min(UPLOAD_CONCURRENCY, signed.length) }, () => worker());
+      await Promise.all(workers);
+    }
+
+    setUploadResults(results);
     setUploading(false);
     setUploadProgress(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -223,7 +312,7 @@ export function PhotosManagerClient() {
             : "Choose Photos"}
         </button>
         <p className="text-xs text-farm-muted mt-2">
-          JPG / PNG / WebP · up to 5 MB each · up to 25 per batch
+          JPG / PNG / WebP · up to 5 MB each · drop hundreds at once
         </p>
         <input
           ref={fileInputRef}
