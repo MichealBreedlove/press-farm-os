@@ -1,7 +1,9 @@
 import Image from "next/image";
 
-// Press logo: 472×49px (wide horizontal wordmark)
 // Under-Study logo: 276×140px (stacked mark + wordmark)
+// Press / Events / Press Bar render as Bank Gothic LT typography
+// (see TypographicMark below) so the lookalike pseudo-restaurants
+// read as a consistent set across admin restaurant cards.
 
 interface RestaurantWordmarkProps {
   name: string;
@@ -11,19 +13,13 @@ interface RestaurantWordmarkProps {
 export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProps) {
   const normalized = name.toLowerCase().replace(/[-\s]/g, "");
 
-  if (normalized === "press") {
-    const height = size === "sm" ? 10 : size === "lg" ? 18 : 13;
-    const width = Math.round(height * (472 / 49));
-    return (
-      <Image
-        src="/logo-press.png"
-        alt="Press"
-        width={width}
-        height={height}
-        className="object-contain"
-      />
-    );
-  }
+  // Press uses the same typographic treatment as Events / Press Bar so
+  // the three lookalike pseudo-restaurants render consistently in the
+  // /admin/orders card row. Under-Study still uses its dedicated logo
+  // PNG below — it's a stacked mark with brand artwork that doesn't
+  // translate cleanly to a Bank Gothic wordmark.
+  // The TypographicMark component is defined further down — render it
+  // directly via JSX once we hit a match.
 
   if (normalized === "understudy") {
     const height = size === "sm" ? 40 : size === "lg" ? 64 : 52;
@@ -39,14 +35,12 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     );
   }
 
-  // Shared fallback typographic wordmark for Events / Press Bar (and any
+  // Shared typographic wordmark for Press / Events / Press Bar (and any
   // future pseudo-restaurant without a designed logo PNG). Bank Gothic LT
   // is loaded as a single Light weight, so font-weight:bold has no effect
   // on the strokes — we simulate a heavier "logo-grade" weight via
-  // -webkit-text-stroke. This brings the visual heft closer to the real
-  // Press / Under-Study logo PNGs that share the same row, so the four
-  // restaurant cards read as a consistent set rather than "two real
-  // logos plus two thin labels."
+  // -webkit-text-stroke. This brings the visual heft closer to the
+  // Under-Study logo PNG that shares the same restaurant card row.
   function TypographicMark({ label }: { label: string }) {
     const px = size === "sm" ? 17 : size === "lg" ? 28 : 22;
     // Stroke width scales with size so the "bold-ness" stays proportional
@@ -71,6 +65,7 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     );
   }
 
+  if (normalized === "press") return <TypographicMark label="PRESS" />;
   if (normalized === "events") return <TypographicMark label="EVENTS" />;
   if (normalized === "pressbar") return <TypographicMark label="PRESS BAR" />;
 
