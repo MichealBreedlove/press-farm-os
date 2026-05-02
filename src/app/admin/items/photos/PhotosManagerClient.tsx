@@ -9,6 +9,19 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024; // server cap — we pre-validate to fa
 const RESIZE_THRESHOLD_BYTES = 5 * 1024 * 1024; // anything larger gets auto-resized client-side
 const RESIZE_MAX_DIM = 2400; // longest-edge cap; product photos don't need more
 const RESIZE_QUALITY = 0.85; // JPEG quality after resize — visually lossless for catalog use
+const MAX_UPLOAD_ATTEMPTS = 3; // total tries per file when Supabase returns a transient error
+const UPLOAD_CONCURRENCY = 3;  // gentler on Supabase Storage edge — was 6, hit 502s under load
+
+/**
+ * Match transient infra errors that should be retried instead of surfaced.
+ * Supabase's edge throws these intermittently when a bucket is bombarded
+ * with parallel writes; the file isn't actually rejected, the request just
+ * needs to be redone after a short backoff.
+ */
+function isTransientUploadError(err: unknown): boolean {
+  const msg = String((err as any)?.message ?? err ?? "").toLowerCase();
+  return /bad gateway|gateway timeout|http 50[234]|fetch failed|network|timeout|econn|enotfound/i.test(msg);
+}
 
 /**
  * Downscale + re-encode a photo if it's bulky. Files under the threshold
@@ -197,9 +210,8 @@ export function PhotosManagerClient() {
 
     // Chunk signed-URL minting — server caps at 50 per request, so we
     // batch in 50s. Within each batch, the actual file PUTs run in
-    // parallel with a concurrency cap.
+    // parallel with a concurrency cap (UPLOAD_CONCURRENCY const above).
     const SIGN_CHUNK = 50;
-    const UPLOAD_CONCURRENCY = 6;
 
     for (let i = 0; i < validFiles.length; i += SIGN_CHUNK) {
       const chunk = validFiles.slice(i, i + SIGN_CHUNK);
@@ -244,8 +256,12 @@ export function PhotosManagerClient() {
       // doesn't matter if the server reorders them.
       const fileByName = new Map(chunk.map((f) => [f.name, f]));
 
-      // Bounded-concurrency upload pool. simpler than a full-blown queue
-      // library — yields the next file when a slot frees up.
+      // Bounded-concurrency upload pool. Simpler than a full-blown queue
+      // library — yields the next file when a slot frees up. Per-file
+      // retry-with-backoff handles transient 502/504/network blips
+      // (Supabase's edge is fine but flaky under bulk write load); a
+      // hard rejection bails immediately so we don't waste round-trips
+      // on permanent failures (auth errors, file-already-exists, etc).
       let cursor = 0;
       async function worker() {
         while (cursor < signed.length) {
@@ -257,23 +273,40 @@ export function PhotosManagerClient() {
             setUploadProgress((p) => p ? { done: Math.min(p.done + 1, p.total), total: p.total } : null);
             continue;
           }
-          try {
-            const { error: upErr } = await supabase.storage
-              .from(BUCKET)
-              .uploadToSignedUrl(entry.path, entry.token, file, {
-                contentType: file.type,
-                upsert: false,
-              });
-            if (upErr) {
-              results.push({ name: file.name, ok: false, error: upErr.message });
-            } else {
-              results.push({ name: file.name, ok: true, url: entry.url });
+
+          let lastErrorMsg = "Upload failed";
+          let succeeded = false;
+          for (let attempt = 1; attempt <= MAX_UPLOAD_ATTEMPTS; attempt++) {
+            try {
+              const { error: upErr } = await supabase.storage
+                .from(BUCKET)
+                .uploadToSignedUrl(entry.path, entry.token, file, {
+                  contentType: file.type,
+                  upsert: false,
+                });
+              if (!upErr) {
+                succeeded = true;
+                break;
+              }
+              lastErrorMsg = upErr.message ?? "Upload failed";
+              if (!isTransientUploadError(upErr)) break; // permanent failure, no point retrying
+            } catch (err: any) {
+              lastErrorMsg = err?.message ?? "Upload exception";
+              if (!isTransientUploadError(err)) break;
             }
-          } catch (err: any) {
-            results.push({ name: file.name, ok: false, error: err?.message ?? "Upload exception" });
-          } finally {
-            setUploadProgress((p) => p ? { done: Math.min(p.done + 1, p.total), total: p.total } : null);
+            if (attempt < MAX_UPLOAD_ATTEMPTS) {
+              // Exponential backoff with jitter — 600/1500/3000ms-ish
+              const backoff = 500 * Math.pow(2, attempt - 1) + Math.random() * 300;
+              await new Promise((resolve) => setTimeout(resolve, backoff));
+            }
           }
+
+          if (succeeded) {
+            results.push({ name: file.name, ok: true, url: entry.url });
+          } else {
+            results.push({ name: file.name, ok: false, error: lastErrorMsg });
+          }
+          setUploadProgress((p) => p ? { done: Math.min(p.done + 1, p.total), total: p.total } : null);
         }
       }
 
