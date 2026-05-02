@@ -129,18 +129,38 @@ export async function POST(request: Request) {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", raw: false, cellText: true });
 
-  // Auto-detect: if the workbook has a sheet named "KEY" (the legacy Daily
-  // Delivery Tracking Sheet format), parse THAT sheet using the legacy
-  // column shape ("Item Name", "Unit", "Price Per Unit") and auto-categorize
-  // by keyword. Otherwise, treat the first sheet as our 13-column CSV format.
-  const keySheetName = workbook.SheetNames.find(
-    (n) => n.trim().toUpperCase() === "KEY"
-  );
-  const isLegacyKeyTab = Boolean(keySheetName);
+  // Sheet selection priority:
+  //   1. Explicit ?sheet=name override from client (lets user pick)
+  //   2. "KEY" tab → legacy Daily Delivery Tracking Sheet format
+  //   3. Catalog-y sheet names ("Catalog", "Items", "Products", "Inventory",
+  //      "Crops", "Plants") — handles workbooks with mixed content where
+  //      the actual data isn't on the first tab
+  //   4. First sheet — fallback when nothing else matches
+  const { searchParams: qs } = new URL(request.url);
+  const requestedSheet = qs.get("sheet");
+  const explicitSheetName =
+    requestedSheet && workbook.SheetNames.find((n) => n === requestedSheet)
+      ? requestedSheet
+      : null;
 
-  const sourceSheet = isLegacyKeyTab
-    ? workbook.Sheets[keySheetName!]
-    : workbook.Sheets[workbook.SheetNames[0]];
+  const keySheetName = workbook.SheetNames.find(
+    (n) => n.trim().toUpperCase() === "KEY",
+  );
+  const CATALOG_SHEET_PRIORITIES = ["catalog", "items", "products", "inventory", "crops", "plants"];
+  const catalogSheetName = !explicitSheetName && !keySheetName
+    ? workbook.SheetNames.find((n) =>
+        CATALOG_SHEET_PRIORITIES.includes(n.trim().toLowerCase()),
+      )
+    : null;
+
+  // Resolve the chosen sheet name + whether to use the legacy parse path.
+  const chosenSheetName =
+    explicitSheetName ?? keySheetName ?? catalogSheetName ?? workbook.SheetNames[0];
+  // Only treat as legacy KEY when the user didn't explicitly pick a sheet
+  // (forcing a specific sheet implies "use the standard parser").
+  const isLegacyKeyTab = !explicitSheetName && Boolean(keySheetName);
+
+  const sourceSheet = workbook.Sheets[chosenSheetName];
 
   if (!sourceSheet) {
     return NextResponse.json({ error: "Empty file — no sheet found" }, { status: 422 });
@@ -263,6 +283,8 @@ export async function POST(request: Request) {
       skipped: skipped.length,
       skippedRows: skipped.slice(0, 10),
       format: isLegacyKeyTab ? "legacy-key-tab" : "items-csv",
+      sheetName: chosenSheetName,
+      availableSheets: workbook.SheetNames,
       preview: parsed.slice(0, 20).map((r) => ({
         name: r.name,
         category: r.category,
@@ -355,5 +377,7 @@ export async function POST(request: Request) {
     errors: errors.length,
     errorDetails: errors.slice(0, 10),
     format: isLegacyKeyTab ? "legacy-key-tab" : "items-csv",
+    sheetName: chosenSheetName,
+    availableSheets: workbook.SheetNames,
   });
 }

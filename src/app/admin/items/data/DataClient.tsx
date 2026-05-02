@@ -19,6 +19,8 @@ interface PreviewResult {
   preview: PreviewRow[];
   skippedRows: { row: number; name: string; reason: string }[];
   format?: "legacy-key-tab" | "items-csv";
+  sheetName?: string;
+  availableSheets?: string[];
 }
 
 interface ImportResult {
@@ -29,6 +31,8 @@ interface ImportResult {
   errors: number;
   errorDetails: { name: string; error: string }[];
   format?: "legacy-key-tab" | "items-csv";
+  sheetName?: string;
+  availableSheets?: string[];
 }
 
 interface Props {
@@ -61,6 +65,10 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     rowsRead?: number;
     skippedRows?: { row: number; name: string; reason: string }[];
   }>(null);
+  // Sheet override — when the workbook has multiple sheets, the user can
+  // explicitly pick which one to read instead of relying on auto-detection.
+  // Cleared on every new file pick so the previous choice doesn't leak.
+  const [sheetOverride, setSheetOverride] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetImport() {
@@ -69,6 +77,7 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     setResult(null);
     setError(null);
     setDiag(null);
+    setSheetOverride(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -82,6 +91,14 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     }
   }, []);
 
+  // Build the URL with the active sheet override (if any) tacked on.
+  // Centralized so preview + import use the exact same selection logic.
+  function buildImportUrl(preview: boolean): string {
+    const params = new URLSearchParams({ preview: String(preview) });
+    if (sheetOverride) params.set("sheet", sheetOverride);
+    return `/api/import/items-csv?${params.toString()}`;
+  }
+
   async function runPreview() {
     if (!file) return;
     setLoading(true);
@@ -92,12 +109,12 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/import/items-csv?preview=true", { method: "POST", body: form });
+      const res = await fetch(buildImportUrl(true), { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) {
         setError(json.error ?? "Preview failed");
         // Capture diagnostic fields when the server rejects with structural issues
-        if (json.detectedHeaders || json.hint) {
+        if (json.detectedHeaders || json.hint || json.availableSheets) {
           setDiag({
             detectedHeaders: json.detectedHeaders,
             hint: json.hint,
@@ -126,11 +143,11 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/import/items-csv?preview=false", { method: "POST", body: form });
+      const res = await fetch(buildImportUrl(false), { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) {
         setError(json.error ?? "Import failed");
-        if (json.detectedHeaders || json.hint) {
+        if (json.detectedHeaders || json.hint || json.availableSheets) {
           setDiag({
             detectedHeaders: json.detectedHeaders,
             hint: json.hint,
@@ -329,6 +346,57 @@ export function DataClient({ activeCount, archivedCount }: Props) {
               </button>
             </div>
           )}
+
+          {/* Sheet picker — visible whenever the file is a workbook with
+              multiple sheets, regardless of whether the parse succeeded
+              or failed. Lets the user steer the importer at a specific
+              tab when auto-detection guessed wrong (e.g. a workbook
+              where the catalog isn't on the first sheet and isn't named
+              one of the priority names). */}
+          {file && !result && (() => {
+            const sheets =
+              diag?.availableSheets ?? preview?.availableSheets ?? null;
+            if (!sheets || sheets.length < 2) return null;
+            const currentSheet =
+              sheetOverride ?? diag?.sheetName ?? preview?.sheetName ?? sheets[0];
+            return (
+              <div className="bg-white rounded-2xl border border-farm-dark/10 p-4 shadow-sm">
+                <label className="block text-xs font-semibold text-farm-dark mb-2">
+                  Import from sheet
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {sheets.map((s) => {
+                    const isActive = s === currentSheet;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          setSheetOverride(s);
+                          // Wipe any previous diagnostic/preview so the
+                          // user re-runs against the new sheet selection
+                          setDiag(null);
+                          setPreview(null);
+                          setError(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          isActive
+                            ? "bg-farm-green text-white border-farm-green"
+                            : "bg-white text-farm-dark border-farm-dark/15 hover:border-farm-green/50"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-farm-muted mt-2">
+                  Auto-detection picked <strong>{diag?.sheetName ?? preview?.sheetName ?? sheets[0]}</strong>.
+                  Switch tabs and re-run if your catalog data is on a different one.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Action buttons */}
           {file && !preview && !result && (
