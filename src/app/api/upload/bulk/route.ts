@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUCKET = "item-photos";
 const FOLDER = "items";
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB per file
+const MAX_FILE_BYTES = 15 * 1024 * 1024; // mirror /api/upload/sign so policies stay consistent
 const MAX_FILES_PER_REQUEST = 50;       // safety cap so a runaway upload can't DoS storage
 
 /**
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         return { name: file.name, ok: false, error: "Not an image" };
       }
       if (file.size > MAX_FILE_BYTES) {
-        return { name: file.name, ok: false, error: "File too large (max 5MB)" };
+        return { name: file.name, ok: false, error: "File too large (max 15MB)" };
       }
 
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";

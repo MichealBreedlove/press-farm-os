@@ -4,7 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const BUCKET = "item-photos";
 const FOLDER = "items";
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB per file
+// 15MB final cap. Client-side autoresize compresses anything over ~5MB
+// down to fit within 2400x2400 JPEG, so this is a safety net for files
+// the resizer can't handle (HEIC the browser refused to decode, etc.).
+const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_FILES_PER_REQUEST = 50;
 
 /**
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
         return;
       }
       if (typeof f.size !== "number" || f.size > MAX_FILE_BYTES) {
-        errors.push({ name: f.name, error: "File too large (max 5MB)" });
+        errors.push({ name: f.name, error: "File too large (max 15MB)" });
         return;
       }
 

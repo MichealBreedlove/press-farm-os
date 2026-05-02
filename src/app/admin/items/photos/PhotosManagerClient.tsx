@@ -1,11 +1,64 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { Upload, Trash2, X, Search, Check, Loader2 } from "lucide-react";
+import { Upload, Trash2, X, Search, Check, Loader2, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const BUCKET = "item-photos";
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // mirrors server-side cap; we pre-validate so users see fast feedback
+const MAX_FILE_BYTES = 15 * 1024 * 1024; // server cap — we pre-validate to fail fast on truly oversized files
+const RESIZE_THRESHOLD_BYTES = 5 * 1024 * 1024; // anything larger gets auto-resized client-side
+const RESIZE_MAX_DIM = 2400; // longest-edge cap; product photos don't need more
+const RESIZE_QUALITY = 0.85; // JPEG quality after resize — visually lossless for catalog use
+
+/**
+ * Downscale + re-encode a photo if it's bulky. Files under the threshold
+ * are returned as-is so we don't quietly re-encode the user's originals.
+ *
+ * Why client-side? Phone cameras emit 8-25MB photos, but our catalog
+ * thumbnails never need more than ~2400px on the long edge. Resizing
+ * before upload (a) lets us accept any input size without raising the
+ * server cap further, (b) saves bandwidth + storage, (c) gives the user
+ * fast feedback if their browser can't decode the image (HEIC, etc.).
+ *
+ * Falls back to the original file on any failure — better to attempt the
+ * upload (and let the server reject with a clear "too large" message)
+ * than to silently drop the file.
+ */
+async function maybeResize(file: File): Promise<File> {
+  if (file.size <= RESIZE_THRESHOLD_BYTES) return file;
+  if (typeof createImageBitmap !== "function") return file; // very old browsers
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const scale = longest > RESIZE_MAX_DIM ? RESIZE_MAX_DIM / longest : 1;
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", RESIZE_QUALITY),
+    );
+    if (!blob) return file;
+    // If "compression" actually made the file bigger (rare with JPEG-in,
+    // possible with already-tiny PNGs), keep the original.
+    if (blob.size >= file.size) return file;
+
+    // Force .jpg extension since we re-encoded as JPEG. Filename stays
+    // recognizable for the user's "I uploaded foo.png" mental model.
+    const newName = file.name.replace(/\.[^.]+$/, ".jpg");
+    return new File([blob], newName, { type: "image/jpeg", lastModified: Date.now() });
+  } catch {
+    return file;
+  }
+}
 
 interface Photo {
   name: string;
@@ -117,17 +170,22 @@ export function PhotosManagerClient() {
 
     // Pre-filter on the client so we surface obvious problems immediately
     // and don't waste round-trips minting signed URLs for files we'd
-    // reject anyway. The server enforces the same rules.
+    // reject anyway. We also auto-resize anything over 5MB here — that
+    // way the user can drop in raw 12-25MB phone/DSLR photos without
+    // hitting either the Vercel API body cap or our 15MB server limit.
     const validFiles: File[] = [];
     const preErrors: UploadResult[] = [];
     for (const f of all) {
       if (!f.type.startsWith("image/")) {
         preErrors.push({ name: f.name, ok: false, error: "Not an image" });
-      } else if (f.size > MAX_FILE_BYTES) {
-        preErrors.push({ name: f.name, ok: false, error: "File too large (max 5MB)" });
-      } else {
-        validFiles.push(f);
+        continue;
       }
+      const sized = await maybeResize(f);
+      if (sized.size > MAX_FILE_BYTES) {
+        preErrors.push({ name: f.name, ok: false, error: "File too large (max 15MB even after resize)" });
+        continue;
+      }
+      validFiles.push(sized);
     }
 
     setUploadProgress({ done: 0, total: validFiles.length });
@@ -277,6 +335,67 @@ export function PhotosManagerClient() {
     await deletePaths([path]);
   }
 
+  // ── Rename flow ──────────────────────────────────────────────────
+  // Inline editing per-tile. Click the filename to start editing, Enter
+  // commits / Escape cancels. We strip the extension on display so users
+  // edit the meaningful part and the server reattaches the original ext.
+  const [renamingPath, setRenamingPath] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
+
+  function startRename(path: string, currentName: string) {
+    const baseName = currentName.replace(/\.[^.]+$/, "");
+    setRenamingPath(path);
+    setRenameDraft(baseName);
+    setError(null);
+  }
+
+  function cancelRename() {
+    setRenamingPath(null);
+    setRenameDraft("");
+  }
+
+  async function commitRename(path: string) {
+    const draft = renameDraft.trim();
+    if (!draft) {
+      cancelRename();
+      return;
+    }
+    setRenameBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/photos/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, newName: draft }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Rename failed");
+      // Patch the local list in-place so the renamed photo doesn't jump
+      // to the top of the grid (refresh() resorts by updated_at desc).
+      setPhotos((prev) =>
+        prev.map((p) =>
+          p.path === path
+            ? { ...p, path: json.path, name: json.name, url: json.url }
+            : p,
+        ),
+      );
+      // Update selection set if this photo was selected
+      setSelected((prev) => {
+        if (!prev.has(path)) return prev;
+        const next = new Set(prev);
+        next.delete(path);
+        next.add(json.path);
+        return next;
+      });
+      cancelRename();
+    } catch (err: any) {
+      setError(err?.message ?? "Rename failed");
+    } finally {
+      setRenameBusy(false);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────
   const succeeded = uploadResults?.filter((r) => r.ok).length ?? 0;
   const failed = (uploadResults?.length ?? 0) - succeeded;
@@ -312,7 +431,7 @@ export function PhotosManagerClient() {
             : "Choose Photos"}
         </button>
         <p className="text-xs text-farm-muted mt-2">
-          JPG / PNG / WebP · up to 5 MB each · drop hundreds at once
+          JPG / PNG / WebP · oversized photos auto-resized · drop hundreds at once
         </p>
         <input
           ref={fileInputRef}
@@ -432,50 +551,96 @@ export function PhotosManagerClient() {
           {filtered.map((photo) => {
             const isSelected = selected.has(photo.path);
             return (
-              <div
-                key={photo.path}
-                className={`relative aspect-square rounded-lg overflow-hidden group border-2 transition-all ${
-                  isSelected
-                    ? "border-farm-green ring-2 ring-farm-green/30"
-                    : "border-transparent hover:border-farm-dark/15"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleSelect(photo.path)}
-                  className="absolute inset-0 w-full h-full"
-                  title={photo.name}
-                >
-                  <img
-                    src={photo.url}
-                    alt={photo.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </button>
-
-                {/* Selection checkbox indicator (top-left) */}
+              <div key={photo.path} className="flex flex-col gap-1">
                 <div
-                  className={`absolute top-1.5 left-1.5 w-6 h-6 rounded-full border-2 flex items-center justify-center pointer-events-none transition-all ${
+                  className={`relative aspect-square rounded-lg overflow-hidden group border-2 transition-all ${
                     isSelected
-                      ? "bg-farm-green border-farm-green"
-                      : "bg-white/80 border-white/80 opacity-0 group-hover:opacity-100"
+                      ? "border-farm-green ring-2 ring-farm-green/30"
+                      : "border-transparent hover:border-farm-dark/15"
                   }`}
                 >
-                  {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(photo.path)}
+                    className="absolute inset-0 w-full h-full"
+                    title={photo.name}
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+
+                  {/* Selection checkbox indicator (top-left) */}
+                  <div
+                    className={`absolute top-1.5 left-1.5 w-6 h-6 rounded-full border-2 flex items-center justify-center pointer-events-none transition-all ${
+                      isSelected
+                        ? "bg-farm-green border-farm-green"
+                        : "bg-white/80 border-white/80 opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+
+                  {/* Action cluster (top-right, hover/touch reveal) — rename + delete */}
+                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); startRename(photo.path, photo.name); }}
+                      disabled={renameBusy}
+                      className="w-7 h-7 rounded-full bg-white/90 text-farm-dark hover:bg-farm-green hover:text-white flex items-center justify-center shadow disabled:opacity-30"
+                      aria-label={`Rename ${photo.name}`}
+                      title="Rename"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); deleteOne(photo.path, photo.name); }}
+                      disabled={deleting}
+                      className="w-7 h-7 rounded-full bg-white/90 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center shadow disabled:opacity-30"
+                      aria-label={`Delete ${photo.name}`}
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Single-photo delete (top-right, hover/touch reveal) */}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); deleteOne(photo.path, photo.name); }}
-                  disabled={deleting}
-                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow disabled:opacity-30"
-                  aria-label={`Delete ${photo.name}`}
-                  title="Delete this photo"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {/* Filename row — click to rename inline. Extension is
+                    preserved server-side so users only edit the meaningful
+                    part. Truncates with title= for full-name hover tooltip. */}
+                {renamingPath === photo.path ? (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); commitRename(photo.path); }}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      value={renameDraft}
+                      onChange={(e) => setRenameDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Escape") cancelRename(); }}
+                      onBlur={() => commitRename(photo.path)}
+                      disabled={renameBusy}
+                      className="min-w-0 flex-1 px-1.5 py-1 text-xs border border-farm-green rounded focus:outline-none focus:ring-1 focus:ring-farm-green disabled:opacity-50"
+                      maxLength={60}
+                      placeholder="filename"
+                    />
+                    {renameBusy && <Loader2 className="w-3 h-3 animate-spin text-farm-muted flex-shrink-0" />}
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => startRename(photo.path, photo.name)}
+                    title={`${photo.name} — click to rename`}
+                    className="text-xs text-farm-dark/80 hover:text-farm-green hover:underline truncate text-left px-0.5 min-h-0"
+                  >
+                    {photo.name.replace(/\.[^.]+$/, "")}
+                  </button>
+                )}
               </div>
             );
           })}

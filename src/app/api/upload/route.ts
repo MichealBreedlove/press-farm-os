@@ -29,9 +29,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Only image files allowed" }, { status: 400 });
     }
 
-    // Validate size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+    // Validate size (max 15MB) — note this single-file route still hits the
+    // Vercel API body cap (~4.5MB) so practically the limit is lower for
+    // anything coming through here. The bulk photo manager uses signed
+    // URLs that bypass that cap.
+    if (file.size > 15 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large (max 15MB)" }, { status: 400 });
     }
 
     // Generate a clean filename
