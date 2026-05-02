@@ -30,6 +30,7 @@ interface Item {
   color?: string | null;
   unit_prices?: Record<string, number> | null;
   is_event_item?: boolean;
+  is_press_bar_item?: boolean;
 }
 
 interface Props {
@@ -62,6 +63,7 @@ export function ItemForm({ item }: Props) {
     variety: item?.variety ?? "",
     color: item?.color ?? "",
     is_event_item: item?.is_event_item ?? false,
+    is_press_bar_item: item?.is_press_bar_item ?? false,
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -86,8 +88,22 @@ export function ItemForm({ item }: Props) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  function setEventItem(value: boolean) {
-    setForm((f) => ({ ...f, is_event_item: value }));
+  // Three-way mutually exclusive menu placement. The flags are stored as
+  // separate booleans on the items table (mirrors how is_event_item was
+  // shipped in migration 023), but the UI guarantees only one is true at
+  // a time so the chef order form can render exactly one section per item.
+  type Placement = "regular" | "events" | "press_bar";
+  function currentPlacement(): Placement {
+    if (form.is_press_bar_item) return "press_bar";
+    if (form.is_event_item) return "events";
+    return "regular";
+  }
+  function setPlacement(p: Placement) {
+    setForm((f) => ({
+      ...f,
+      is_event_item: p === "events",
+      is_press_bar_item: p === "press_bar",
+    }));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -113,6 +129,7 @@ export function ItemForm({ item }: Props) {
         default_price: form.default_price ? parseFloat(form.default_price) : null,
         unit_prices: unitPricesPayload,
         is_event_item: Boolean(form.is_event_item),
+        is_press_bar_item: Boolean(form.is_press_bar_item),
         chef_notes: form.chef_notes || null,
         internal_notes: form.internal_notes || null,
         source: form.source || null,
@@ -220,64 +237,68 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Menu placement — replaces the old pill toggle whose state was hard
-          to read at a glance. Two-card segmented control: both options
-          visible, the selected one highlighted in its menu's brand color
-          (farm-green for Regular, pf-master-violet for Events). */}
-      <div>
-        <p className="text-sm font-medium text-farm-dark mb-2">Menu</p>
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Menu placement">
-          <button
-            type="button"
-            role="radio"
-            aria-checked={!form.is_event_item}
-            onClick={() => setEventItem(false)}
-            className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
-              !form.is_event_item
-                ? "border-farm-green bg-farm-green/5"
-                : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-block w-2 h-2 rounded-full ${
-                  !form.is_event_item ? "bg-farm-green" : "bg-farm-dark/15"
-                }`}
-                aria-hidden="true"
-              />
-              <p className="text-sm font-semibold text-farm-dark">Regular Menu</p>
+      {/* Menu placement — three-way segmented control. Mutually exclusive:
+          picking one auto-clears the other two flags via setPlacement().
+          Each option's selected color matches its brand accent so the
+          chef order form's section headers + admin list badges read in
+          the same palette. Three-column on sm+, stacked on mobile to
+          keep the helper text legible. */}
+      {(() => {
+        const placement = currentPlacement();
+        const opts: { value: Placement; label: string; helper: string; tone: { border: string; bg: string; dot: string } }[] = [
+          {
+            value: "regular",
+            label: "Regular Menu",
+            helper: "Shown on the everyday chef order form.",
+            tone: { border: "border-farm-green", bg: "bg-farm-green/5", dot: "bg-farm-green" },
+          },
+          {
+            value: "events",
+            label: "Events Menu",
+            helper: "Special-occasion items only.",
+            tone: { border: "border-pf-master-violet", bg: "bg-pf-master-violet/[0.06]", dot: "bg-pf-master-violet" },
+          },
+          {
+            value: "press_bar",
+            label: "Press Bar",
+            helper: "Cocktail program · drink garnishes & bar service.",
+            tone: { border: "border-pf-master-blue", bg: "bg-pf-master-blue/[0.06]", dot: "bg-pf-master-blue" },
+          },
+        ];
+        return (
+          <div>
+            <p className="text-sm font-medium text-farm-dark mb-2">Menu</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Menu placement">
+              {opts.map((o) => {
+                const active = placement === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setPlacement(o.value)}
+                    className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
+                      active
+                        ? `${o.tone.border} ${o.tone.bg}`
+                        : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full ${active ? o.tone.dot : "bg-farm-dark/15"}`}
+                        aria-hidden="true"
+                      />
+                      <p className="text-sm font-semibold text-farm-dark">{o.label}</p>
+                    </div>
+                    <p className="text-xs text-farm-muted mt-1 leading-snug">{o.helper}</p>
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-xs text-farm-muted mt-1 leading-snug">
-              Shown on the everyday chef order form.
-            </p>
-          </button>
-
-          <button
-            type="button"
-            role="radio"
-            aria-checked={form.is_event_item}
-            onClick={() => setEventItem(true)}
-            className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
-              form.is_event_item
-                ? "border-pf-master-violet bg-pf-master-violet/[0.06]"
-                : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-block w-2 h-2 rounded-full ${
-                  form.is_event_item ? "bg-pf-master-violet" : "bg-farm-dark/15"
-                }`}
-                aria-hidden="true"
-              />
-              <p className="text-sm font-semibold text-farm-dark">Events Menu</p>
-            </div>
-            <p className="text-xs text-farm-muted mt-1 leading-snug">
-              Special-occasion items only.
-            </p>
-          </button>
-        </div>
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Unit (multi-select with per-unit pricing).
           Each selected container chip reveals its own price input. */}

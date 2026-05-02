@@ -24,6 +24,7 @@ interface ParsedRow {
   season_status: string;
   is_archived: boolean;
   is_event_item: boolean;
+  is_press_bar_item: boolean;
 }
 
 /**
@@ -217,6 +218,7 @@ export async function POST(request: Request) {
         season_status: "available",
         is_archived: false,
         is_event_item: false,
+        is_press_bar_item: false,
       });
       return;
     }
@@ -259,6 +261,13 @@ export async function POST(request: Request) {
     const eventRaw = pick(raw, "Event Item", "EventItem", "Event").toLowerCase();
     const is_event_item = eventRaw === "true" || eventRaw === "yes" || eventRaw === "1";
 
+    // Press Bar flag — accepts "true"/"yes"/"1" under any of these headers.
+    // Mutually exclusive with is_event_item at the UI layer; the importer
+    // doesn't enforce it, so a CSV row with both flags true comes through
+    // as both — Press Bar wins on the order form (filter logic prefers it).
+    const pressBarRaw = pick(raw, "Press Bar", "PressBar", "Press Bar Item", "PressBarItem", "Bar").toLowerCase();
+    const is_press_bar_item = pressBarRaw === "true" || pressBarRaw === "yes" || pressBarRaw === "1";
+
     parsed.push({
       name,
       category,
@@ -274,6 +283,7 @@ export async function POST(request: Request) {
       season_status,
       is_archived,
       is_event_item,
+      is_press_bar_item,
     });
   });
 
@@ -351,6 +361,7 @@ export async function POST(request: Request) {
       season_status: row.season_status,
       is_archived: row.is_archived,
       is_event_item: row.is_event_item,
+      is_press_bar_item: row.is_press_bar_item,
       size: row.size,
       variety: row.variety,
       color: row.color,

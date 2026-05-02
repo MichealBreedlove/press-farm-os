@@ -16,6 +16,7 @@ interface Item {
   unit_prices?: Record<string, number> | null;
   is_archived: boolean;
   is_event_item?: boolean;
+  is_press_bar_item?: boolean;
   chef_notes: string | null;
   image_url: string | null;
 }
@@ -324,9 +325,14 @@ export function ItemsClient({ items, addItemHref }: Props) {
                     <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
-                        {item.is_event_item && (
+                        {item.is_event_item && !item.is_press_bar_item && (
                           <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
                             Event
+                          </span>
+                        )}
+                        {item.is_press_bar_item && (
+                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-blue/10 text-pf-master-blue px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Press Bar
                           </span>
                         )}
                       </div>

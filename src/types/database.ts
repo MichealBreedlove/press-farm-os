@@ -122,6 +122,7 @@ export interface Database {
           source: string | null;
           is_archived: boolean;
           is_event_item: boolean;
+          is_press_bar_item: boolean;
           sort_order: number | null;
           created_at: string;
           updated_at: string;
@@ -139,6 +140,7 @@ export interface Database {
           source?: string | null;
           is_archived?: boolean;
           is_event_item?: boolean;
+          is_press_bar_item?: boolean;
           sort_order?: number | null;
           created_at?: string;
           updated_at?: string;
@@ -155,6 +157,7 @@ export interface Database {
           source?: string | null;
           is_archived?: boolean;
           is_event_item?: boolean;
+          is_press_bar_item?: boolean;
           sort_order?: number | null;
           updated_at?: string;
         };

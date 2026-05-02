@@ -77,10 +77,17 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
-  // Split visible items into Regular Menu vs Events Menu, then group each by category.
-  // Items with item.is_event_item = true land in Events; everything else is Regular.
-  const regularItems = visibleItems.filter((ai) => !(ai.item as any).is_event_item);
-  const eventItems = visibleItems.filter((ai) => (ai.item as any).is_event_item);
+  // Split visible items into three menu placements + group each by category.
+  // Press Bar takes priority over Events if both flags happen to be true,
+  // mirroring the order the segmented control sets them in (and giving
+  // bar-tagged items a sensible home if a row gets out of sync).
+  const pressBarItems = visibleItems.filter((ai) => (ai.item as any).is_press_bar_item);
+  const eventItems = visibleItems.filter(
+    (ai) => (ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
+  );
+  const regularItems = visibleItems.filter(
+    (ai) => !(ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
+  );
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
@@ -94,6 +101,7 @@ export function OrderForm({
 
   const regularByCategory = groupByCategory(regularItems);
   const eventsByCategory = groupByCategory(eventItems);
+  const pressBarByCategory = groupByCategory(pressBarItems);
 
   const isSearching = search.trim().length > 0;
 
@@ -247,7 +255,7 @@ export function OrderForm({
             {/* ── REGULAR MENU ──────────────────────────────────────── */}
             {regularItems.length > 0 && (
               <>
-                {eventItems.length > 0 && (
+                {(eventItems.length > 0 || pressBarItems.length > 0) && (
                   <div className="flex items-baseline justify-between mt-1 mb-3 px-1">
                     <p className="font-display text-lg text-farm-dark">Regular Menu</p>
                     <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
@@ -298,6 +306,43 @@ export function OrderForm({
                   return (
                     <CategorySection
                       key={`evt-${cat}`}
+                      category={cat}
+                      items={catItems}
+                      quantities={quantities}
+                      itemNotes={itemNotes}
+                      itemColors={itemColors}
+                      onQuantityChange={handleQuantityChange}
+                      onNoteChange={handleNoteChange}
+                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                    />
+                  );
+                })}
+              </>
+            )}
+
+            {/* ── PRESS BAR MENU ────────────────────────────────────── */}
+            {pressBarItems.length > 0 && (
+              <>
+                <div className="mt-8 mb-3 pt-5 border-t border-pf-master-blue/20">
+                  <div className="flex items-baseline justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-pf-master-blue" aria-hidden="true" />
+                      <p className="font-display text-lg text-farm-dark">Press Bar</p>
+                    </div>
+                    <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
+                      {pressBarItems.length} item{pressBarItems.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-farm-muted mt-1.5 px-1 leading-relaxed">
+                    Cocktail program — drink garnishes, edible flowers for the bar, finishing herbs.
+                  </p>
+                </div>
+                {CATEGORY_ORDER.map((cat) => {
+                  const catItems = pressBarByCategory[cat];
+                  if (catItems.length === 0) return null;
+                  return (
+                    <CategorySection
+                      key={`bar-${cat}`}
                       category={cat}
                       items={catItems}
                       quantities={quantities}

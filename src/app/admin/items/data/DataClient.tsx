@@ -626,6 +626,7 @@ export function DataClient({ activeCount, archivedCount }: Props) {
                 <li><strong>Category:</strong> flowers, micros_leaves, herbs_leaves, fruit_veg, kits, family_meal</li>
                 <li><strong>Containers:</strong> ea, sm, lg, gb, bu, qt, pt, lbs, bx, cs, kit (comma-separated)</li>
                 <li><strong>Prices:</strong> e.g. <code className="bg-farm-cream/60 px-1 rounded">sm:15.00, lg:30.00</code></li>
+                <li><strong>Event Item / Press Bar:</strong> true/yes/1 to tag a row. Mutually exclusive — set at most one</li>
                 <li><strong>Match by Name:</strong> existing items get updated, new ones inserted</li>
                 <li><strong>Season Status:</strong> available, ending_soon, coming_soon, out_of_season</li>
                 <li><strong>Legacy KEY-tab XLSX:</strong> auto-detected — uses Item Name + Unit + Price Per Unit and infers category by keyword</li>
