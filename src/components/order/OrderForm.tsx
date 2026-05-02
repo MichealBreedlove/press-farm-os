@@ -77,17 +77,31 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
-  // Split visible items into three menu placements + group each by category.
-  // Press Bar takes priority over Events if both flags happen to be true,
-  // mirroring the order the segmented control sets them in (and giving
-  // bar-tagged items a sensible home if a row gets out of sync).
-  const pressBarItems = visibleItems.filter((ai) => (ai.item as any).is_press_bar_item);
-  const eventItems = visibleItems.filter(
-    (ai) => (ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
-  );
-  const regularItems = visibleItems.filter(
-    (ai) => !(ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
-  );
+  // Press Bar isolation: Press Bar items live in their own world, only
+  // visible to chefs ordering as the Press Bar restaurant. Press and
+  // Under-Study chefs never see Press Bar items even if they end up in
+  // their availability (admin mistake / shared catalog accident);
+  // Press Bar chef sees ONLY Press Bar items, no Regular or Events
+  // bleed-through (dedicated bar order view, not a mixed list).
+  // Normalize the same way RestaurantWordmark does — survives "Press Bar",
+  // "press-bar", "PRESSBAR", any future case/hyphen drift in the
+  // restaurants.name column.
+  const isBarRestaurant =
+    (restaurantName ?? "").toLowerCase().replace(/[-\s]/g, "") === "pressbar";
+
+  const pressBarItems = isBarRestaurant
+    ? visibleItems.filter((ai) => (ai.item as any).is_press_bar_item)
+    : [];
+  const eventItems = isBarRestaurant
+    ? []
+    : visibleItems.filter(
+        (ai) => (ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
+      );
+  const regularItems = isBarRestaurant
+    ? []
+    : visibleItems.filter(
+        (ai) => !(ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
+      );
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
