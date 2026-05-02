@@ -26,10 +26,24 @@ interface ParsedRow {
   is_event_item: boolean;
 }
 
-/** Normalize header keys: trim, lowercase, collapse whitespace. */
+/**
+ * Look up a value from a row by trying multiple header names — case-insensitive,
+ * whitespace/punctuation-insensitive. So "Item Name", "item-name", "ITEM_NAME",
+ * and "itemname" all match the same column. Caller passes friendly variants
+ * and we normalize each side before comparing.
+ */
+function normalizeKey(k: string): string {
+  return String(k ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 function pick(row: Record<string, unknown>, ...keys: string[]): string {
+  // Build a normalized lookup map once per call — cheap, but keeps the
+  // loop below simple instead of doing N*M comparisons.
+  const norm: Record<string, unknown> = {};
+  for (const [rawKey, val] of Object.entries(row)) {
+    norm[normalizeKey(rawKey)] = val;
+  }
   for (const k of keys) {
-    const v = row[k] ?? row[k.toLowerCase()] ?? row[k.toUpperCase()];
+    const v = norm[normalizeKey(k)];
     if (v != null && String(v).trim() !== "") return String(v).trim();
   }
   return "";
@@ -140,7 +154,18 @@ export async function POST(request: Request) {
   rows.forEach((raw, idx) => {
     const rowNum = idx + 2; // +1 for 1-indexed, +1 for header row
 
-    const name = pick(raw, "Name", "Item Name", "Item");
+    // Accept many synonyms for the Name column — different farm CMSes,
+    // CSAware exports, and homemade spreadsheets all use different
+    // headers. pick() is now normalize-insensitive (case + punctuation)
+    // so "Crop Name", "CropName", "crop_name" all match the same.
+    const name = pick(
+      raw,
+      "Name", "Item Name", "Item",
+      "Product", "Product Name",
+      "Crop", "Crop Name",
+      "Plant", "Plant Name",
+      "Title", "Description", "Variety Name",
+    );
     if (!name) {
       skipped.push({ row: rowNum, name: "(blank)", reason: "missing Name" });
       return;
@@ -250,7 +275,32 @@ export async function POST(request: Request) {
   }
 
   if (parsed.length === 0) {
-    return NextResponse.json({ error: "No valid rows to import", skipped: skipped.length, skippedRows: skipped }, { status: 422 });
+    // Surface the columns we DID find so the user can see immediately
+    // why nothing matched — a common cause is the Name column being
+    // called something we don't recognize. Pull headers from the first
+    // non-empty row (sheet_to_json with defval:"" keeps every header
+    // even if the column is empty in row 1).
+    const sampleRow = rows.find((r) => Object.keys(r).length > 0) ?? rows[0] ?? {};
+    const detectedHeaders = Object.keys(sampleRow);
+
+    return NextResponse.json(
+      {
+        error: "No valid rows to import",
+        rowsRead: rows.length,
+        skipped: skipped.length,
+        skippedRows: skipped.slice(0, 10),
+        detectedHeaders,
+        sheetName: isLegacyKeyTab ? keySheetName : workbook.SheetNames[0],
+        availableSheets: workbook.SheetNames,
+        hint:
+          rows.length === 0
+            ? "The sheet appears to be empty. Make sure the column headers are in the first row."
+            : skipped.every((s) => s.reason === "missing Name")
+              ? `Couldn't find a name column. We accept: Name, Item Name, Item, Product, Product Name, Crop, Crop Name, Plant, Plant Name, Title, Description, Variety Name. Your file's headers were: ${detectedHeaders.join(", ") || "(none)"}.`
+              : "All rows were skipped — check the skippedRows list for reasons.",
+      },
+      { status: 422 },
+    );
   }
 
   const admin = createAdminClient();

@@ -49,6 +49,18 @@ export function DataClient({ activeCount, archivedCount }: Props) {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // When the importer rejects a file with structural problems (missing
+  // Name column, empty sheet, wrong tab) it returns a diagnostic block
+  // we surface here so the user can see exactly which columns the file
+  // had and why we couldn't parse it.
+  const [diag, setDiag] = useState<null | {
+    detectedHeaders?: string[];
+    hint?: string;
+    availableSheets?: string[];
+    sheetName?: string;
+    rowsRead?: number;
+    skippedRows?: { row: number; name: string; reason: string }[];
+  }>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function resetImport() {
@@ -56,6 +68,7 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     setPreview(null);
     setResult(null);
     setError(null);
+    setDiag(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -73,6 +86,7 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     if (!file) return;
     setLoading(true);
     setError(null);
+    setDiag(null);
     setPreview(null);
     setResult(null);
     try {
@@ -80,7 +94,21 @@ export function DataClient({ activeCount, archivedCount }: Props) {
       form.append("file", file);
       const res = await fetch("/api/import/items-csv?preview=true", { method: "POST", body: form });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Preview failed");
+      if (!res.ok) {
+        setError(json.error ?? "Preview failed");
+        // Capture diagnostic fields when the server rejects with structural issues
+        if (json.detectedHeaders || json.hint) {
+          setDiag({
+            detectedHeaders: json.detectedHeaders,
+            hint: json.hint,
+            availableSheets: json.availableSheets,
+            sheetName: json.sheetName,
+            rowsRead: json.rowsRead,
+            skippedRows: json.skippedRows,
+          });
+        }
+        return;
+      }
       setPreview(json);
     } catch (e: any) {
       setError(e.message);
@@ -93,13 +121,27 @@ export function DataClient({ activeCount, archivedCount }: Props) {
     if (!file) return;
     setLoading(true);
     setError(null);
+    setDiag(null);
     setResult(null);
     try {
       const form = new FormData();
       form.append("file", file);
       const res = await fetch("/api/import/items-csv?preview=false", { method: "POST", body: form });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Import failed");
+      if (!res.ok) {
+        setError(json.error ?? "Import failed");
+        if (json.detectedHeaders || json.hint) {
+          setDiag({
+            detectedHeaders: json.detectedHeaders,
+            hint: json.hint,
+            availableSheets: json.availableSheets,
+            sheetName: json.sheetName,
+            rowsRead: json.rowsRead,
+            skippedRows: json.skippedRows,
+          });
+        }
+        return;
+      }
       setResult(json);
       setPreview(null);
     } catch (e: any) {
@@ -308,11 +350,66 @@ export function DataClient({ activeCount, archivedCount }: Props) {
             </div>
           )}
 
-          {/* Error */}
+          {/* Error + diagnostics — when the importer can't parse a file
+              we surface what columns we DID find so the user can compare
+              against what we expect. The single most common cause of
+              "no valid rows" is the Name column being called something
+              we don't recognize. */}
           {error && (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
-              <p className="text-sm font-semibold text-red-800">Couldn&apos;t process file</p>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
+            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-red-800">Couldn&apos;t process file</p>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+
+              {diag?.hint && (
+                <p className="text-xs text-red-700 bg-white/60 border border-red-200 rounded-lg px-3 py-2 leading-relaxed">
+                  {diag.hint}
+                </p>
+              )}
+
+              {diag?.detectedHeaders && diag.detectedHeaders.length > 0 && (
+                <div>
+                  <p className="text-[10px] tracking-[0.18em] uppercase text-red-700/80 font-semibold mb-1.5">
+                    Columns we found in your file
+                    {diag.sheetName && <span className="ml-2 text-red-700/60 normal-case tracking-normal">(sheet: {diag.sheetName})</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {diag.detectedHeaders.map((h) => (
+                      <span
+                        key={h}
+                        className="text-xs px-2 py-0.5 bg-white border border-red-200 rounded-full text-red-800 font-mono"
+                      >
+                        {h || "(blank)"}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {diag?.availableSheets && diag.availableSheets.length > 1 && (
+                <p className="text-xs text-red-700">
+                  This workbook has multiple sheets: <strong>{diag.availableSheets.join(", ")}</strong>.
+                  We read <strong>{diag.sheetName}</strong>. If your data is on a different sheet, move it
+                  to the first one (or rename a sheet to <code className="bg-white px-1 rounded">KEY</code>{" "}
+                  to use the legacy importer path).
+                </p>
+              )}
+
+              {diag?.skippedRows && diag.skippedRows.length > 0 && (
+                <details className="text-xs text-red-700">
+                  <summary className="cursor-pointer font-medium">
+                    {diag.rowsRead ?? diag.skippedRows.length} rows read · why each was skipped
+                  </summary>
+                  <ul className="mt-2 space-y-0.5 max-h-40 overflow-y-auto pl-3">
+                    {diag.skippedRows.map((s, i) => (
+                      <li key={i}>
+                        Row {s.row}: {s.name} — {s.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
 
@@ -452,16 +549,18 @@ export function DataClient({ activeCount, archivedCount }: Props) {
               </svg>
             </summary>
             <div className="px-4 pb-4 text-xs text-farm-muted space-y-2 leading-relaxed">
-              <p>Headers (case-sensitive, comma-separated CSV):</p>
+              <p>Headers (case + punctuation insensitive — &ldquo;Item Name&rdquo;, &ldquo;item-name&rdquo;, &ldquo;ITEMNAME&rdquo; all match):</p>
               <code className="block bg-farm-cream/60 p-2.5 rounded text-[11px] font-pf-mono text-farm-dark overflow-x-auto whitespace-nowrap">
                 Name, Category, Variety, Color, Sizes, Containers, Prices, Default Price, Chef Notes, Internal Notes, Source, Season Status, Archived
               </code>
               <ul className="space-y-1 ml-4 list-disc">
+                <li><strong>Name (required):</strong> we accept Name, Item Name, Item, Product, Product Name, Crop, Crop Name, Plant, Plant Name, Title, Description, Variety Name</li>
                 <li><strong>Category:</strong> flowers, micros_leaves, herbs_leaves, fruit_veg, kits, family_meal</li>
                 <li><strong>Containers:</strong> ea, sm, lg, gb, bu, qt, pt, lbs, bx, cs, kit (comma-separated)</li>
                 <li><strong>Prices:</strong> e.g. <code className="bg-farm-cream/60 px-1 rounded">sm:15.00, lg:30.00</code></li>
                 <li><strong>Match by Name:</strong> existing items get updated, new ones inserted</li>
                 <li><strong>Season Status:</strong> available, ending_soon, coming_soon, out_of_season</li>
+                <li><strong>Legacy KEY-tab XLSX:</strong> auto-detected — uses Item Name + Unit + Price Per Unit and infers category by keyword</li>
               </ul>
             </div>
           </details>
