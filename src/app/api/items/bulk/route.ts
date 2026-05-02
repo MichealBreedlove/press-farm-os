@@ -2,13 +2,23 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const BULK_ACTIONS = ["archive", "unarchive"] as const;
+const BULK_ACTIONS = ["archive", "unarchive", "delete"] as const;
 type BulkAction = (typeof BULK_ACTIONS)[number];
 
 /**
  * POST /api/items/bulk
- * Body: { ids: string[], action: "archive" | "unarchive" }
- * Admin only. Returns { updated: number }.
+ * Body: { ids: string[], action: "archive" | "unarchive" | "delete" }
+ * Admin only.
+ *
+ * archive/unarchive: bulk UPDATE items.is_archived. Returns { updated }.
+ *
+ * delete: hard DELETE per row. Postgres FK constraints reject deletes
+ * for items referenced by order_items (via availability_items) or
+ * price_catalog — those are returned in `failed` so the client can
+ * offer to archive them instead. Items with only delivery_items /
+ * availability_items / price_history references DO delete (their
+ * dependent rows cascade), which is destructive — the UI guards this
+ * behind an explicit confirmation. Returns { deleted, failed }.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -38,12 +48,74 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
-    .from("items")
-    .update({ is_archived: action === "archive" })
-    .in("id", ids)
-    .select("id");
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ updated: (data ?? []).length });
+  if (action === "archive" || action === "unarchive") {
+    const { data, error } = await (admin as any)
+      .from("items")
+      .update({ is_archived: action === "archive" })
+      .in("id", ids)
+      .select("id");
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ updated: (data ?? []).length });
+  }
+
+  // ── action === "delete" ──────────────────────────────────────────
+  // Look up names up-front so the per-item failure list is human-readable.
+  const { data: nameRows } = await (admin as any)
+    .from("items")
+    .select("id, name")
+    .in("id", ids);
+  const nameById = new Map<string, string>(
+    (nameRows ?? []).map((r: any) => [r.id, r.name]),
+  );
+
+  // Per-item DELETE — bulk .in() would roll back the whole batch on the
+  // first FK violation, so we issue one statement per id and capture
+  // each result. Concurrency-capped at 8 to be a polite Supabase
+  // citizen for very large batches.
+  const CONCURRENCY = 8;
+  const deletedIds: string[] = [];
+  const failed: Array<{ id: string; name: string; reason: string }> = [];
+
+  let cursor = 0;
+  async function worker() {
+    while (cursor < ids.length) {
+      const my = cursor++;
+      const id = ids[my];
+      try {
+        const { error } = await (admin as any).from("items").delete().eq("id", id);
+        if (error) {
+          // Translate the foreign-key error into something user-readable.
+          const msg = String(error.message ?? "").toLowerCase();
+          let reason = error.message ?? "Delete failed";
+          if (msg.includes("foreign key")) {
+            if (msg.includes("order_items")) {
+              reason = "referenced by past orders";
+            } else if (msg.includes("price_catalog")) {
+              reason = "referenced by saved prices";
+            } else if (msg.includes("availability_items")) {
+              reason = "referenced by availability";
+            } else {
+              reason = "referenced by other records";
+            }
+          }
+          failed.push({ id, name: nameById.get(id) ?? "(unknown)", reason });
+        } else {
+          deletedIds.push(id);
+        }
+      } catch (err: any) {
+        failed.push({
+          id,
+          name: nameById.get(id) ?? "(unknown)",
+          reason: err?.message ?? "Delete exception",
+        });
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(CONCURRENCY, ids.length) }, () => worker());
+  await Promise.all(workers);
+
+  return NextResponse.json({ deleted: deletedIds.length, failed });
 }

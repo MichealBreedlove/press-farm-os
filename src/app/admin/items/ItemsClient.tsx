@@ -35,7 +35,15 @@ export function ItemsClient({ items, addItemHref }: Props) {
   const [savingNote, setSavingNote] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkBusy, setBulkBusy] = useState<null | "archive" | "unarchive">(null);
+  const [bulkBusy, setBulkBusy] = useState<null | "archive" | "unarchive" | "delete">(null);
+  // Confirmation gate for the destructive Delete action
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  // Result panel after a delete attempt — shows what couldn't be deleted
+  // and offers a one-click "archive those instead" fallback.
+  const [deleteResult, setDeleteResult] = useState<null | {
+    deleted: number;
+    failed: { id: string; name: string; reason: string }[];
+  }>(null);
 
   function startEditNote(item: Item) {
     setEditingNote(item.id);
@@ -107,25 +115,57 @@ export function ItemsClient({ items, addItemHref }: Props) {
     setSelected(new Set(filtered.map((i) => i.id)));
   }
 
-  async function runBulk(action: "archive" | "unarchive") {
+  async function runBulk(action: "archive" | "unarchive" | "delete") {
     if (selected.size === 0) return;
     setBulkBusy(action);
     try {
+      const idsBeingActedOn = Array.from(selected);
       const res = await fetch("/api/items/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected), action }),
+        body: JSON.stringify({ ids: idsBeingActedOn, action }),
       });
       if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: "Bulk update failed" }));
-        alert(error || "Bulk update failed");
+        const { error } = await res.json().catch(() => ({ error: "Bulk action failed" }));
+        alert(error || "Bulk action failed");
         return;
       }
+
+      // Delete returns per-item failures; show the result so admin can
+      // archive the ones that couldn't be hard-deleted.
+      if (action === "delete") {
+        const json = await res.json().catch(() => ({}));
+        setDeleteResult({
+          deleted: json.deleted ?? 0,
+          failed: Array.isArray(json.failed) ? json.failed : [],
+        });
+        // Keep selection on the failed ones so the "archive instead"
+        // button can act on them directly without re-selecting
+        const failedIds = new Set<string>(
+          (json.failed ?? []).map((f: any) => f.id),
+        );
+        setSelected(failedIds);
+        if (failedIds.size === 0) exitSelectionMode();
+        router.refresh();
+        return;
+      }
+
       exitSelectionMode();
       router.refresh();
     } finally {
       setBulkBusy(null);
+      setConfirmDelete(false);
     }
+  }
+
+  // Convert any current "failed delete" items to archived in one click.
+  // Reuses runBulk() so the same loading state + refresh logic applies.
+  async function archiveFailedDeletes() {
+    if (!deleteResult || deleteResult.failed.length === 0) return;
+    const ids = deleteResult.failed.map((f) => f.id);
+    setSelected(new Set(ids));
+    setDeleteResult(null);
+    await runBulk("archive");
   }
 
   // Counts of currently-visible items in each archive state — drives which bulk
@@ -395,6 +435,155 @@ export function ItemsClient({ items, addItemHref }: Props) {
             </p>
           </div>
         )
+      )}
+
+      {/* Sticky bulk-action bar — sits above the admin bottom nav and only
+          appears when at least one item is selected. Archive is the safe
+          default; Delete is destructive and gated by a typed confirmation. */}
+      {selectionMode && selected.size > 0 && (
+        <div
+          className="fixed inset-x-0 bottom-nav-safe bg-white border-t border-farm-dark/10 px-4 py-3 z-40"
+          style={{ boxShadow: "0 -8px 16px -8px rgba(0, 0, 0, 0.08)" }}
+        >
+          <div className="max-w-3xl mx-auto flex items-center gap-2 flex-wrap">
+            <p className="text-xs text-farm-muted flex-shrink-0">
+              {selected.size} selected
+            </p>
+            <div className="flex-1" />
+            {selectedActiveCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("archive")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-dark bg-white hover:bg-farm-cream/40 disabled:opacity-50"
+              >
+                {bulkBusy === "archive" ? "Archiving…" : `Archive ${selectedActiveCount}`}
+              </button>
+            )}
+            {selectedArchivedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("unarchive")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-dark bg-white hover:bg-farm-cream/40 disabled:opacity-50"
+              >
+                {bulkBusy === "unarchive" ? "Unarchiving…" : `Unarchive ${selectedArchivedCount}`}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              disabled={bulkBusy !== null}
+              className="px-3 min-h-[40px] rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+            >
+              {bulkBusy === "delete" ? "Deleting…" : `Delete ${selected.size}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal — explains the cascade risk before
+          we attempt the destructive action. Items referenced by past
+          orders or saved prices will fail; items referenced only by
+          delivery history will succeed and take that history with them. */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[60] bg-farm-dark/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-5 sm:p-6">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-red-600 font-semibold">
+              Permanent delete
+            </p>
+            <h2 className="font-display text-xl text-farm-dark mt-1">
+              Delete {selected.size} item{selected.size === 1 ? "" : "s"}?
+            </h2>
+            <div className="mt-3 space-y-2 text-sm text-farm-dark/85 leading-relaxed">
+              <p>
+                Items <strong>not referenced</strong> by any past orders or saved prices will be removed from the database, along with their availability rows, price history, and{" "}
+                <strong className="text-red-700">delivery history</strong>.
+              </p>
+              <p>
+                Items referenced by past orders or saved prices <strong>cannot</strong> be hard-deleted — you&apos;ll see a list of those after, with a one-click option to archive them instead.
+              </p>
+              <p className="text-farm-muted text-xs">
+                Tip: archive is the safer default. It hides the item from chef order forms while preserving every record.
+              </p>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={bulkBusy === "delete"}
+                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => runBulk("delete")}
+                disabled={bulkBusy === "delete"}
+                className="px-4 min-h-[40px] rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkBusy === "delete" ? "Deleting…" : `Delete ${selected.size}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post-delete result modal — shows what couldn't be deleted and
+          offers the archive fallback for those rows in one click. */}
+      {deleteResult && (
+        <div className="fixed inset-0 z-[60] bg-farm-dark/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-5 sm:px-6 py-5 border-b border-farm-dark/5 flex-shrink-0">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green font-semibold">
+                Delete results
+              </p>
+              <h2 className="font-display text-xl text-farm-dark mt-1">
+                {deleteResult.deleted} deleted
+                {deleteResult.failed.length > 0 && ` · ${deleteResult.failed.length} kept`}
+              </h2>
+            </div>
+            {deleteResult.failed.length > 0 && (
+              <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4">
+                <p className="text-sm text-farm-dark/85 leading-relaxed mb-3">
+                  These items couldn&apos;t be hard-deleted because they&apos;re tied to existing records:
+                </p>
+                <ul className="space-y-1 text-xs">
+                  {deleteResult.failed.slice(0, 30).map((f) => (
+                    <li key={f.id} className="flex items-center justify-between gap-3 px-2 py-1.5 rounded bg-farm-cream/40">
+                      <span className="font-medium text-farm-dark truncate">{f.name}</span>
+                      <span className="text-farm-muted flex-shrink-0">{f.reason}</span>
+                    </li>
+                  ))}
+                  {deleteResult.failed.length > 30 && (
+                    <li className="text-farm-muted px-2 pt-1">
+                      + {deleteResult.failed.length - 30} more
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+            <div className="px-5 sm:px-6 py-3 border-t border-farm-dark/5 flex-shrink-0 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setDeleteResult(null); exitSelectionMode(); }}
+                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
+              >
+                Done
+              </button>
+              {deleteResult.failed.length > 0 && (
+                <button
+                  type="button"
+                  onClick={archiveFailedDeletes}
+                  disabled={bulkBusy !== null}
+                  className="px-4 min-h-[40px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-dark disabled:opacity-50"
+                >
+                  Archive {deleteResult.failed.length} instead
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
