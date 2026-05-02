@@ -51,6 +51,21 @@ export function RestaurantWordmark({ name, size = "md" }: RestaurantWordmarkProp
     );
   }
 
+  if (normalized === "pressbar") {
+    // Same Bank Gothic treatment as the Events fallback wordmark — keeps
+    // the four restaurant cards visually consistent until/unless a real
+    // Press Bar logo asset gets added at /public/logo-press-bar.png.
+    const px = size === "sm" ? 17 : size === "lg" ? 28 : 22;
+    return (
+      <span
+        className="font-normal text-farm-dark tracking-[0.25em] uppercase"
+        style={{ fontFamily: "'BankGothic Lt BT', 'Bank Gothic', Arial, sans-serif", fontSize: `${px}px`, lineHeight: 1 }}
+      >
+        PRESS BAR
+      </span>
+    );
+  }
+
   return (
     <span className="font-sans font-semibold text-farm-dark">{name}</span>
   );
