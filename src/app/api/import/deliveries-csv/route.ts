@@ -214,11 +214,25 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // Catalog for item name → id matching
+  // Catalog for item name → id matching. We index TWO ways: the simple
+  // lowercase-trim form (existing behavior) AND a normalized form that
+  // collapses punctuation and whitespace. That second form lets
+  // "Tri Point Leek", "Tri-Point Leek", "TRI-POINT LEEK", and
+  // "tripointleek" all match the same catalog row — common drift in
+  // hand-maintained spreadsheets where the same crop gets typed
+  // differently across years.
   const { data: allItems } = await (admin as any).from("items").select("id, name");
   const itemByName: Record<string, string> = {};
+  const itemByNorm: Record<string, string> = {};
   for (const item of (allItems ?? []) as Array<{ id: string; name: string }>) {
     itemByName[item.name.toLowerCase().trim()] = item.id;
+    const norm = item.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (norm) itemByNorm[norm] = item.id;
+  }
+  /** Try exact lowercase first, then fall back to punct/space-stripped form. */
+  function lookupItemId(rawName: string): string | undefined {
+    const cleaned = rawName.toLowerCase().trim();
+    return itemByName[cleaned] ?? itemByNorm[cleaned.replace(/[^a-z0-9]/g, "")];
   }
 
   // Restaurants for name → id matching (with first-word fuzzy fallback)
@@ -290,7 +304,7 @@ export async function POST(request: Request) {
     // Insert line items; track items that don't exist in catalog
     const insertRows: Array<{ delivery_id: string; item_id: string; quantity: number; unit: string; unit_price: number }> = [];
     for (const li of lineItems) {
-      const itemId = itemByName[li.itemName.toLowerCase().trim()];
+      const itemId = lookupItemId(li.itemName);
       if (!itemId) {
         unknownItems.add(li.itemName);
         lineErrors++;
