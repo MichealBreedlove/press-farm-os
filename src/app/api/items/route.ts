@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     internal_notes?: string;
     source?: string;
     is_event_item?: boolean;
+    is_press_bar_item?: boolean;
+    show_in_regular_menu?: boolean;
   };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -105,6 +107,10 @@ export async function POST(request: Request) {
       internal_notes: internal_notes?.trim() ?? null,
       source: source?.trim() ?? null,
       is_event_item: Boolean(body.is_event_item),
+      is_press_bar_item: Boolean(body.is_press_bar_item),
+      // Default new items to Regular Menu visible — matches the DB
+      // column default and the form's checkbox initial state.
+      show_in_regular_menu: body.show_in_regular_menu === undefined ? true : Boolean(body.show_in_regular_menu),
     })
     .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
     .single();

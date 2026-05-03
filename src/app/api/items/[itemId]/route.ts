@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Params }) {
 
   const { data: item, error } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, sort_order")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu, sort_order")
     .eq("id", itemId)
     .single();
 
@@ -88,6 +88,11 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.source !== undefined) updates.source = body.source || null;
   if (body.is_archived !== undefined) updates.is_archived = Boolean(body.is_archived);
   if (body.is_event_item !== undefined) updates.is_event_item = Boolean(body.is_event_item);
+  // Independent menu flags from migration 028 + 030. Without these
+  // whitelisted, the form silently dropped them and the new
+  // checkbox UI looked broken because saves were no-ops.
+  if (body.is_press_bar_item !== undefined) updates.is_press_bar_item = Boolean(body.is_press_bar_item);
+  if (body.show_in_regular_menu !== undefined) updates.show_in_regular_menu = Boolean(body.show_in_regular_menu);
   if (body.image_url !== undefined) updates.image_url = body.image_url || null;
   if (body.season_status !== undefined) updates.season_status = body.season_status || "available";
   if (body.season_note !== undefined) updates.season_note = body.season_note || null;
@@ -111,7 +116,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     .from("items")
     .update(updates)
     .eq("id", itemId)
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
