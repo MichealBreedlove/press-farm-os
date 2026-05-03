@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
 import type { UnitType } from "@/types/database";
 import { UNIT_LABELS } from "@/lib/constants";
-import { cn, priceForUnit } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 
 /** Resolve which units this availability row exposes to the chef.
@@ -195,10 +195,6 @@ export function ItemRow({
                 ? `${units.length} containers`
                 : `${UNIT_LABELS[units[0]] ?? (units[0] ?? "").toUpperCase()} container`}
             </span>
-            {!hasMultiUnits && !hasSizes && (() => {
-              const p = priceForUnit(item, units[0]);
-              return p != null ? <span className="text-xs text-farm-muted flex-shrink-0">· ${p.toFixed(2)}</span> : null;
-            })()}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
@@ -282,7 +278,6 @@ export function ItemRow({
               const key = qtyKey(unit);
               const unitQty = quantities[key] ?? 0;
               const unitColors = itemColors[key] ?? [];
-              const price = priceForUnit(item, unit);
               return (
                 <div key={unit} className="bg-blue-50/40 border border-blue-100 rounded-lg px-3 py-2 space-y-2">
                   <div className="flex items-center justify-between">
@@ -290,9 +285,6 @@ export function ItemRow({
                       <span className={cn("text-sm", unitQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>
                         {unitLabel}
                       </span>
-                      {price != null && (
-                        <span className="text-[11px] text-farm-muted">${price.toFixed(2)} each</span>
-                      )}
                     </div>
                     <QuantityStepper
                       value={unitQty}
@@ -309,14 +301,10 @@ export function ItemRow({
               );
             }
             // Multi-unit + sizes → nested grid (sizes within each unit)
-            const unitPrice = priceForUnit(item, unit);
             return (
               <div key={unit} className="bg-blue-50/40 border border-blue-100 rounded-lg px-3 py-2 space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{unitLabel}</p>
-                  {unitPrice != null && (
-                    <span className="text-[11px] text-farm-muted">${unitPrice.toFixed(2)} each</span>
-                  )}
                 </div>
                 {sizes.map((size: string) => {
                   const key = qtyKey(unit, size);

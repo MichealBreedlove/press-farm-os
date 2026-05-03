@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate, formatCurrency } from "@/lib/utils";
+import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
 import { StatusPill } from "@/components/shared/StatusPill";
 import type { OrderStatus, UnitType } from "@/types";
@@ -115,15 +115,6 @@ export default async function OrderDetailPage({
 
   const hasShortages = orderItems.some((oi: any) => oi.is_shorted);
 
-  const totalOrdered = orderItems.reduce((sum: number, oi: any) => {
-    if (oi.unit_price_at_order != null) {
-      return sum + oi.unit_price_at_order * oi.quantity_requested;
-    }
-    return sum;
-  }, 0);
-
-  const hasPrices = orderItems.some((oi: any) => oi.unit_price_at_order != null);
-
   return (
     <main className="min-h-screen bg-farm-cream pb-20">
       <header className="page-header no-wordmark flex items-center gap-3">
@@ -227,11 +218,6 @@ export default async function OrderDetailPage({
                       </div>
                       <p className="text-xs text-farm-muted mt-0.5">
                         {UNIT_LABELS[unit] ?? unit}
-                        {oi.unit_price_at_order != null && (
-                          <span className="ml-1">
-                            · {formatCurrency(oi.unit_price_at_order)} each
-                          </span>
-                        )}
                       </p>
                       {isShorted && oi.shortage_reason && (
                         <p className="text-xs text-pf-master-orange mt-1 italic">
@@ -254,11 +240,6 @@ export default async function OrderDetailPage({
                           &times; {ordered}
                         </p>
                       )}
-                      {oi.unit_price_at_order != null && (
-                        <p className="text-xs text-farm-muted">
-                          {formatCurrency(oi.unit_price_at_order * ordered)}
-                        </p>
-                      )}
                     </div>
                   </div>
                 </li>
@@ -266,15 +247,6 @@ export default async function OrderDetailPage({
             })}
           </ul>
 
-          {/* Total row */}
-          {hasPrices && (
-            <div className="px-4 py-3 border-t border-gray-100 flex justify-between items-center">
-              <span className="text-sm font-semibold text-gray-700">Estimated Total</span>
-              <span className="text-base font-bold text-gray-900">
-                {formatCurrency(totalOrdered)}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Extras — produce Press Farm threw in beyond the order. Uses the

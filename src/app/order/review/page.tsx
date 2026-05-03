@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@/lib/utils";
 import { UNIT_LABELS } from "@/lib/constants";
 import { flowerImageForName } from "@/lib/flower-images";
 import type { OrderFormData } from "@/components/order/OrderForm";
@@ -43,15 +42,6 @@ export default function OrderReviewPage() {
 
   const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId } = orderData;
   const isEditing = !!editingOrderId;
-
-  const total = items.reduce((sum, item) => {
-    if (item.unitPrice !== null) {
-      return sum + item.unitPrice * item.quantity;
-    }
-    return sum;
-  }, 0);
-
-  const hasPrices = items.some((item) => item.unitPrice !== null);
 
   async function handleSubmit() {
     if (!orderData) return;
