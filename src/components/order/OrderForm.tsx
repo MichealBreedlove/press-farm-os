@@ -77,24 +77,15 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
-  // Asymmetric Press Bar visibility: the bar is a full restaurant view —
-  // sees flowers, micros, tiny veg, anything in its availability — split
-  // into the same Regular / Events / Press Bar sections as everyone else.
-  // Press and Under-Study still hide is_press_bar_item items so admin
-  // can flag bar-only specials without them leaking into the kitchen
-  // menus. Per-role visibility:
-  //   Press Bar chef     : Regular + Events + Press Bar (everything)
-  //   Press / Understudy : Regular + Events            (Press Bar hidden)
+  // Section split based purely on item tags — same items can be
+  // available to every restaurant, the Regular / Events / Press Bar
+  // headers just organize them visually. No per-restaurant access
+  // restriction; admin controls who sees what by curating the
+  // availability_items rows per restaurant + delivery_date.
   //
-  // Restaurant-name normalization mirrors RestaurantWordmark's so we
-  // survive "Press Bar", "press-bar", "PRESSBAR" — any case/hyphen
-  // drift in the restaurants.name column.
-  const isBarRestaurant =
-    (restaurantName ?? "").toLowerCase().replace(/[-\s]/g, "") === "pressbar";
-
-  const pressBarItems = isBarRestaurant
-    ? visibleItems.filter((ai) => (ai.item as any).is_press_bar_item)
-    : []; // Press / Under-Study never see the Press Bar Menu section
+  // Press Bar takes priority over Events when both flags are set,
+  // mirroring how the segmented picker stores them.
+  const pressBarItems = visibleItems.filter((ai) => (ai.item as any).is_press_bar_item);
   const eventItems = visibleItems.filter(
     (ai) => (ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
   );
