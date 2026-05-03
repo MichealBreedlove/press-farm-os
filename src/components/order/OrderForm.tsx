@@ -77,6 +77,14 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
+  // Restaurant-scoped section visibility:
+  //   • Press Bar login → only the Press Bar section (no Regular, no Events).
+  //   • Press / Under-Study → Regular + Events, Press Bar hidden (those
+  //     items go to the bartender, not the kitchen).
+  // Match by lowercased name so "Press Bar" / "press bar" / a future
+  // capitalization tweak still all route to the same gate.
+  const isPressBarChef = restaurantName.trim().toLowerCase() === "press bar";
+
   // Independent menu visibility — each section asks "is the item flagged
   // for this menu?" with no cross-menu exclusion. An item with all three
   // flags appears in all three sections; an item with only Events flagged
@@ -86,11 +94,15 @@ export function OrderForm({
   //
   // The DB column may not exist on rows fetched before migration 030 has
   // run; treat undefined/null as true to keep those items in Regular.
-  const pressBarItems = visibleItems.filter((ai) => (ai.item as any).is_press_bar_item);
-  const eventItems = visibleItems.filter((ai) => (ai.item as any).is_event_item);
-  const regularItems = visibleItems.filter(
-    (ai) => (ai.item as any).show_in_regular_menu !== false,
-  );
+  const pressBarItems = isPressBarChef
+    ? visibleItems.filter((ai) => (ai.item as any).is_press_bar_item)
+    : [];
+  const eventItems = isPressBarChef
+    ? []
+    : visibleItems.filter((ai) => (ai.item as any).is_event_item);
+  const regularItems = isPressBarChef
+    ? []
+    : visibleItems.filter((ai) => (ai.item as any).show_in_regular_menu !== false);
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
