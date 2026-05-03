@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
 import { OrderForm } from "@/components/order/OrderForm";
+import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import { fetchAvailabilityWithRollover } from "@/lib/availability";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -177,6 +178,13 @@ export default async function OrderPage({
         <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
+
+      <div className="px-4 pt-4">
+        <DeliveryWeatherBanner
+          deliveryDate={deliveryDate.date}
+          deliveryDateFormatted={deliveryDateFormatted}
+        />
+      </div>
 
       <OrderForm
         availabilityItems={availabilityItems}

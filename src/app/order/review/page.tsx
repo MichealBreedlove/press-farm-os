@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UNIT_LABELS } from "@/lib/constants";
 import { flowerImageForName } from "@/lib/flower-images";
+import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import type { OrderFormData } from "@/components/order/OrderForm";
 import type { UnitType } from "@/types";
 
@@ -102,6 +103,11 @@ export default function OrderReviewPage() {
       </header>
 
       <div className="px-4 py-5 space-y-4">
+        <DeliveryWeatherBanner
+          deliveryDate={deliveryDate}
+          deliveryDateFormatted={deliveryDateFormatted}
+        />
+
         {/* Order items */}
         <div className="card overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-50">
