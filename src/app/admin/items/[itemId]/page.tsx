@@ -21,7 +21,7 @@ export default async function AdminItemEditPage({
     const admin = createAdminClient();
     const { data } = await (admin as any)
       .from("items")
-      .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, image_url, season_status, season_note, days_to_maturity, sow_depth, plant_spacing, sun_requirement, sow_method, indoor_start_weeks, growing_notes, size, variety, color")
+      .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu, image_url, season_status, season_note, days_to_maturity, sow_depth, plant_spacing, sun_requirement, sow_method, indoor_start_weeks, growing_notes, size, variety, color")
       .eq("id", itemId)
       .single();
     if (!data) redirect("/admin/items");

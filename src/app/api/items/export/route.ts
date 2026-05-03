@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     .from("items")
     .select(`
       id, name, category, unit_type, default_price, unit_prices,
-      chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, season_status,
+      chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu, season_status,
       size, variety, color
     `)
     .order("category")
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   const headers = [
     "Name", "Category", "Variety", "Color", "Sizes", "Containers",
     "Prices", "Default Price", "Chef Notes", "Internal Notes",
-    "Source", "Season Status", "Archived", "Event Item", "Press Bar",
+    "Source", "Season Status", "Archived", "Regular Menu", "Event Item", "Press Bar",
   ];
 
   const lines: string[] = [headers.join(",")];
@@ -87,6 +87,10 @@ export async function GET(request: Request) {
       csvEscape(item.source ?? ""),
       csvEscape(item.season_status ?? "available"),
       csvEscape(item.is_archived ? "true" : "false"),
+      // show_in_regular_menu defaults to true on the DB, but a row from a
+      // pre-migration backup might have null — coerce to true so the
+      // round-trip CSV is consistent with the column's NOT NULL semantic.
+      csvEscape(item.show_in_regular_menu === false ? "false" : "true"),
       csvEscape(item.is_event_item ? "true" : "false"),
       csvEscape(item.is_press_bar_item ? "true" : "false"),
     ].join(","));

@@ -77,20 +77,19 @@ export function OrderForm({
     ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
     : allAvailable;
 
-  // Section split based purely on item tags — same items can be
-  // available to every restaurant, the Regular / Events / Press Bar
-  // headers just organize them visually. No per-restaurant access
-  // restriction; admin controls who sees what by curating the
-  // availability_items rows per restaurant + delivery_date.
+  // Independent menu visibility — each section asks "is the item flagged
+  // for this menu?" with no cross-menu exclusion. An item with all three
+  // flags appears in all three sections; an item with only Events flagged
+  // shows only in the Events Menu section. The implicit-Regular default
+  // is now driven by show_in_regular_menu (column added in migration 030
+  // with default true, so existing items behave as before).
   //
-  // Press Bar takes priority over Events when both flags are set,
-  // mirroring how the segmented picker stores them.
+  // The DB column may not exist on rows fetched before migration 030 has
+  // run; treat undefined/null as true to keep those items in Regular.
   const pressBarItems = visibleItems.filter((ai) => (ai.item as any).is_press_bar_item);
-  const eventItems = visibleItems.filter(
-    (ai) => (ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
-  );
+  const eventItems = visibleItems.filter((ai) => (ai.item as any).is_event_item);
   const regularItems = visibleItems.filter(
-    (ai) => !(ai.item as any).is_event_item && !(ai.item as any).is_press_bar_item,
+    (ai) => (ai.item as any).show_in_regular_menu !== false,
   );
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {

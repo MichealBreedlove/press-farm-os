@@ -31,6 +31,7 @@ interface Item {
   unit_prices?: Record<string, number> | null;
   is_event_item?: boolean;
   is_press_bar_item?: boolean;
+  show_in_regular_menu?: boolean;
 }
 
 interface Props {
@@ -64,6 +65,10 @@ export function ItemForm({ item }: Props) {
     color: item?.color ?? "",
     is_event_item: item?.is_event_item ?? false,
     is_press_bar_item: item?.is_press_bar_item ?? false,
+    // Default new items to Regular Menu visible (matches the DB column
+    // default). Existing items that haven't seen the new flag get true
+    // so they keep showing in Regular like they always did.
+    show_in_regular_menu: item?.show_in_regular_menu ?? true,
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -88,21 +93,16 @@ export function ItemForm({ item }: Props) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  // Three-way mutually exclusive menu placement. The flags are stored as
-  // separate booleans on the items table (mirrors how is_event_item was
-  // shipped in migration 023), but the UI guarantees only one is true at
-  // a time so the chef order form can render exactly one section per item.
-  type Placement = "regular" | "events" | "press_bar";
-  function currentPlacement(): Placement {
-    if (form.is_press_bar_item) return "press_bar";
-    if (form.is_event_item) return "events";
-    return "regular";
-  }
-  function setPlacement(p: Placement) {
+  // Independent menu visibility — an item can appear in any combination
+  // of Regular / Events / Press Bar. Each checkbox is wired to its own
+  // boolean column on the items table; the chef order form OR-includes
+  // each section based on the item's own flag.
+  function toggleMenu(menu: "regular" | "events" | "press_bar") {
     setForm((f) => ({
       ...f,
-      is_event_item: p === "events",
-      is_press_bar_item: p === "press_bar",
+      show_in_regular_menu: menu === "regular" ? !f.show_in_regular_menu : f.show_in_regular_menu,
+      is_event_item: menu === "events" ? !f.is_event_item : f.is_event_item,
+      is_press_bar_item: menu === "press_bar" ? !f.is_press_bar_item : f.is_press_bar_item,
     }));
   }
 
@@ -130,6 +130,7 @@ export function ItemForm({ item }: Props) {
         unit_prices: unitPricesPayload,
         is_event_item: Boolean(form.is_event_item),
         is_press_bar_item: Boolean(form.is_press_bar_item),
+        show_in_regular_menu: Boolean(form.show_in_regular_menu),
         chef_notes: form.chef_notes || null,
         internal_notes: form.internal_notes || null,
         source: form.source || null,
@@ -237,64 +238,77 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* Menu placement — three-way segmented control. Mutually exclusive:
-          picking one auto-clears the other two flags via setPlacement().
-          Each option's selected color matches its brand accent so the
-          chef order form's section headers + admin list badges read in
-          the same palette. Three-column on sm+, stacked on mobile to
-          keep the helper text legible. */}
+      {/* Menu visibility — three independent checkbox cards. Each menu has
+          its own boolean column on items, so an item can appear in any
+          combination (or none — uncheck all to hide it from chef order
+          forms entirely without archiving). Tone matches each menu's
+          brand accent so the cards read consistently with the
+          corresponding section headers on the chef order form. */}
       {(() => {
-        const placement = currentPlacement();
-        const opts: { value: Placement; label: string; helper: string; tone: { border: string; bg: string; dot: string } }[] = [
+        const opts: { menu: "regular" | "events" | "press_bar"; checked: boolean; label: string; helper: string; tone: { border: string; bg: string; check: string } }[] = [
           {
-            value: "regular",
+            menu: "regular",
+            checked: Boolean(form.show_in_regular_menu),
             label: "Regular Menu",
             helper: "Shown on the everyday chef order form.",
-            tone: { border: "border-farm-green", bg: "bg-farm-green/5", dot: "bg-farm-green" },
+            tone: { border: "border-farm-green", bg: "bg-farm-green/5", check: "bg-farm-green border-farm-green" },
           },
           {
-            value: "events",
+            menu: "events",
+            checked: Boolean(form.is_event_item),
             label: "Events Menu",
-            helper: "Special-occasion items only.",
-            tone: { border: "border-pf-master-violet", bg: "bg-pf-master-violet/[0.06]", dot: "bg-pf-master-violet" },
+            helper: "Special-occasion items.",
+            tone: { border: "border-pf-master-violet", bg: "bg-pf-master-violet/[0.06]", check: "bg-pf-master-violet border-pf-master-violet" },
           },
           {
-            value: "press_bar",
+            menu: "press_bar",
+            checked: Boolean(form.is_press_bar_item),
             label: "Press Bar",
             helper: "Cocktail program · drink garnishes & bar service.",
-            tone: { border: "border-pf-master-blue", bg: "bg-pf-master-blue/[0.06]", dot: "bg-pf-master-blue" },
+            tone: { border: "border-pf-master-blue", bg: "bg-pf-master-blue/[0.06]", check: "bg-pf-master-blue border-pf-master-blue" },
           },
         ];
+        const checkedCount = opts.filter((o) => o.checked).length;
         return (
           <div>
-            <p className="text-sm font-medium text-farm-dark mb-2">Menu</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Menu placement">
-              {opts.map((o) => {
-                const active = placement === o.value;
-                return (
-                  <button
-                    key={o.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => setPlacement(o.value)}
-                    className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
-                      active
-                        ? `${o.tone.border} ${o.tone.bg}`
-                        : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-block w-2 h-2 rounded-full ${active ? o.tone.dot : "bg-farm-dark/15"}`}
-                        aria-hidden="true"
-                      />
-                      <p className="text-sm font-semibold text-farm-dark">{o.label}</p>
-                    </div>
-                    <p className="text-xs text-farm-muted mt-1 leading-snug">{o.helper}</p>
-                  </button>
-                );
-              })}
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="text-sm font-medium text-farm-dark">Menus</p>
+              <p className="text-[10px] tracking-wider uppercase text-farm-muted">
+                Shows in {checkedCount} {checkedCount === 1 ? "menu" : "menus"}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" aria-label="Menu visibility">
+              {opts.map((o) => (
+                <button
+                  key={o.menu}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={o.checked}
+                  onClick={() => toggleMenu(o.menu)}
+                  className={`text-left p-3 rounded-xl border-2 transition-colors min-h-[64px] ${
+                    o.checked
+                      ? `${o.tone.border} ${o.tone.bg}`
+                      : "border-farm-dark/10 bg-white hover:bg-farm-cream/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${
+                        o.checked ? o.tone.check : "border-farm-dark/20 bg-white"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {o.checked && (
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    <p className="text-sm font-semibold text-farm-dark">{o.label}</p>
+                  </div>
+                  <p className="text-xs text-farm-muted mt-1 leading-snug">{o.helper}</p>
+                </button>
+              ))}
             </div>
           </div>
         );

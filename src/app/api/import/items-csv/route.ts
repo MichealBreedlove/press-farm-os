@@ -25,6 +25,7 @@ interface ParsedRow {
   is_archived: boolean;
   is_event_item: boolean;
   is_press_bar_item: boolean;
+  show_in_regular_menu: boolean;
 }
 
 /**
@@ -219,6 +220,7 @@ export async function POST(request: Request) {
         is_archived: false,
         is_event_item: false,
         is_press_bar_item: false,
+        show_in_regular_menu: true,
       });
       return;
     }
@@ -262,11 +264,18 @@ export async function POST(request: Request) {
     const is_event_item = eventRaw === "true" || eventRaw === "yes" || eventRaw === "1";
 
     // Press Bar flag — accepts "true"/"yes"/"1" under any of these headers.
-    // Mutually exclusive with is_event_item at the UI layer; the importer
-    // doesn't enforce it, so a CSV row with both flags true comes through
-    // as both — Press Bar wins on the order form (filter logic prefers it).
+    // Independent from is_event_item — an item can carry both, both, or
+    // neither, and the chef order form will surface it in whichever
+    // sections it's flagged for.
     const pressBarRaw = pick(raw, "Press Bar", "PressBar", "Press Bar Item", "PressBarItem", "Bar").toLowerCase();
     const is_press_bar_item = pressBarRaw === "true" || pressBarRaw === "yes" || pressBarRaw === "1";
+
+    // Regular Menu flag — defaults to true when omitted so existing CSVs
+    // (that pre-date this column) and exports from older versions keep
+    // showing the item in Regular as they always did. Explicit
+    // "false"/"no"/"0" hides it from the Regular section.
+    const regularRaw = pick(raw, "Regular Menu", "RegularMenu", "Show In Regular", "ShowInRegular").toLowerCase();
+    const show_in_regular_menu = regularRaw === "" || regularRaw === "true" || regularRaw === "yes" || regularRaw === "1";
 
     parsed.push({
       name,
@@ -284,6 +293,7 @@ export async function POST(request: Request) {
       is_archived,
       is_event_item,
       is_press_bar_item,
+      show_in_regular_menu,
     });
   });
 
@@ -362,6 +372,7 @@ export async function POST(request: Request) {
       is_archived: row.is_archived,
       is_event_item: row.is_event_item,
       is_press_bar_item: row.is_press_bar_item,
+      show_in_regular_menu: row.show_in_regular_menu,
       size: row.size,
       variety: row.variety,
       color: row.color,
