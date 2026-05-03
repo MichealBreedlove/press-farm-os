@@ -32,24 +32,42 @@ interface Item {
   is_event_item?: boolean;
   is_press_bar_item?: boolean;
   show_in_regular_menu?: boolean;
+  parent_item_id?: string | null;
+}
+
+interface ParentCandidate {
+  id: string;
+  name: string;
+  category: string;
+}
+
+interface PrefillFromParent {
+  parent_item_id: string;
+  category?: string;
+  unit_type?: string;
+  source?: string | null;
+  growing_notes?: string | null;
 }
 
 interface Props {
   item?: Item;
+  parentCandidates: ParentCandidate[];
+  hasChildren: boolean;
+  prefillFromParent?: PrefillFromParent;
 }
 
-export function ItemForm({ item }: Props) {
+export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParent }: Props) {
   const router = useRouter();
   const isNew = !item;
 
   const [form, setForm] = useState({
     name: item?.name ?? "",
-    category: item?.category ?? ITEM_CATEGORIES[0].value,
-    unit_type: item?.unit_type ?? UNIT_TYPES[0].value,
+    category: item?.category ?? prefillFromParent?.category ?? ITEM_CATEGORIES[0].value,
+    unit_type: item?.unit_type ?? prefillFromParent?.unit_type ?? UNIT_TYPES[0].value,
     default_price: item?.default_price != null ? String(item.default_price) : "",
     chef_notes: item?.chef_notes ?? "",
     internal_notes: item?.internal_notes ?? "",
-    source: item?.source ?? "",
+    source: item?.source ?? prefillFromParent?.source ?? "",
     image_url: item?.image_url ?? "",
     season_status: item?.season_status ?? "available",
     season_note: item?.season_note ?? "",
@@ -59,7 +77,7 @@ export function ItemForm({ item }: Props) {
     sun_requirement: item?.sun_requirement ?? "",
     sow_method: item?.sow_method ?? "",
     indoor_start_weeks: item?.indoor_start_weeks != null ? String(item.indoor_start_weeks) : "",
-    growing_notes: item?.growing_notes ?? "",
+    growing_notes: item?.growing_notes ?? prefillFromParent?.growing_notes ?? "",
     size: item?.size ?? "",
     variety: item?.variety ?? "",
     color: item?.color ?? "",
@@ -69,6 +87,7 @@ export function ItemForm({ item }: Props) {
     // default). Existing items that haven't seen the new flag get true
     // so they keep showing in Regular like they always did.
     show_in_regular_menu: item?.show_in_regular_menu ?? true,
+    parent_item_id: item?.parent_item_id ?? prefillFromParent?.parent_item_id ?? "",
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -147,6 +166,7 @@ export function ItemForm({ item }: Props) {
         size: form.size || null,
         variety: form.variety || null,
         color: form.color || null,
+        parent_item_id: form.parent_item_id || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -236,6 +256,39 @@ export function ItemForm({ item }: Props) {
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
+      </div>
+
+      {/* Parent item — optional grouping. When set, this item shows under
+          the parent in the admin catalog. Chefs see no difference: each
+          subitem still renders as its own line in its own category on
+          the order form. Single level only — items with their own
+          subitems can't themselves become a subitem. */}
+      <div>
+        <label className="form-label">
+          Parent item
+          <span className="text-farm-muted/70 font-normal ml-1">— optional</span>
+        </label>
+        {hasChildren ? (
+          <div className="border border-farm-dark/10 rounded-xl px-3 py-3 text-sm bg-farm-cream/30 text-farm-muted">
+            This item has subitems, so it can&apos;t itself become a subitem.
+          </div>
+        ) : (
+          <>
+            <select
+              value={form.parent_item_id}
+              onChange={(e) => set("parent_item_id", e.target.value)}
+              className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+            >
+              <option value="">None (standalone item)</option>
+              {parentCandidates.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-farm-muted/70 mt-1.5 leading-relaxed">
+              Group sub-parts of one crop (e.g. Squash → Blossoms / Tendrils / Leaves / Fruit). Admin organization only — chefs see this as a normal item.
+            </p>
+          </>
+        )}
       </div>
 
       {/* Menu visibility — three independent checkbox cards. Each menu has

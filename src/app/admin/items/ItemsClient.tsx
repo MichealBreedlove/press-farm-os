@@ -19,14 +19,17 @@ interface Item {
   is_press_bar_item?: boolean;
   chef_notes: string | null;
   image_url: string | null;
+  parent_item_id?: string | null;
 }
 
 interface Props {
   items: Item[];
+  /** Map of item id → name so children can render a "↳ part of <Parent>" label. */
+  parentNames?: Record<string, string>;
   addItemHref?: string;
 }
 
-export function ItemsClient({ items, addItemHref }: Props) {
+export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -371,6 +374,15 @@ export function ItemsClient({ items, addItemHref }: Props) {
                         })()}
                         {item.is_archived && " · Archived"}
                       </p>
+                      {/* Parent label — shown for child items so admins can
+                          see the grouping without having to open the edit
+                          page. Chefs never see this; the order form treats
+                          children as standalone items. */}
+                      {item.parent_item_id && parentNames?.[item.parent_item_id] && (
+                        <p className="text-[10px] text-farm-muted/70 mt-0.5 italic">
+                          ↳ part of {parentNames[item.parent_item_id]}
+                        </p>
+                      )}
                     </Link>
                     <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
                       <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

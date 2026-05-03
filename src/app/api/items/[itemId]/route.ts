@@ -107,11 +107,44 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.variety !== undefined) updates.variety = body.variety || null;
   if (body.color !== undefined) updates.color = body.color || null;
 
+  const admin = createAdminClient();
+
+  // Single-level parent/child rules (admin organization only). Reject:
+  //   • parent === self
+  //   • parent already has a parent (would create grandchildren)
+  //   • this item already has children (it can't itself become a child)
+  if (body.parent_item_id !== undefined) {
+    if (body.parent_item_id === null || body.parent_item_id === "") {
+      updates.parent_item_id = null;
+    } else {
+      const proposed = String(body.parent_item_id);
+      if (proposed === itemId) {
+        return NextResponse.json({ error: "Item cannot be its own parent" }, { status: 400 });
+      }
+      const { data: parent } = await (admin as any)
+        .from("items")
+        .select("id, parent_item_id")
+        .eq("id", proposed)
+        .single();
+      if (!parent) return NextResponse.json({ error: "Parent item not found" }, { status: 400 });
+      if (parent.parent_item_id) {
+        return NextResponse.json({ error: "Parent item is itself a subitem — only one level of nesting is supported" }, { status: 400 });
+      }
+      const { count: childCount } = await (admin as any)
+        .from("items")
+        .select("id", { count: "exact", head: true })
+        .eq("parent_item_id", itemId);
+      if ((childCount ?? 0) > 0) {
+        return NextResponse.json({ error: "This item has subitems and cannot itself become a subitem" }, { status: 400 });
+      }
+      updates.parent_item_id = proposed;
+    }
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data: item, error } = await (admin as any)
     .from("items")
     .update(updates)

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     is_event_item?: boolean;
     is_press_bar_item?: boolean;
     show_in_regular_menu?: boolean;
+    parent_item_id?: string | null;
   };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -94,6 +95,22 @@ export async function POST(request: Request) {
   const { data: farm } = await (admin as any).from("farms").select("id").single();
   if (!farm) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
+  // Validate parent_item_id (single-level only): the proposed parent must
+  // exist and must not itself be a child of another item.
+  let parent_item_id: string | null = null;
+  if (body.parent_item_id) {
+    const { data: parent } = await (admin as any)
+      .from("items")
+      .select("id, parent_item_id")
+      .eq("id", body.parent_item_id)
+      .single();
+    if (!parent) return NextResponse.json({ error: "Parent item not found" }, { status: 400 });
+    if (parent.parent_item_id) {
+      return NextResponse.json({ error: "Parent item is itself a subitem — only one level of nesting is supported" }, { status: 400 });
+    }
+    parent_item_id = parent.id;
+  }
+
   const { data: item, error } = await (admin as any)
     .from("items")
     .insert({
@@ -111,8 +128,9 @@ export async function POST(request: Request) {
       // Default new items to Regular Menu visible — matches the DB
       // column default and the form's checkbox initial state.
       show_in_regular_menu: body.show_in_regular_menu === undefined ? true : Boolean(body.show_in_regular_menu),
+      parent_item_id,
     })
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, parent_item_id")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
