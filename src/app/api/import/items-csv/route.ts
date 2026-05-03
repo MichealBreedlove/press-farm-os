@@ -354,9 +354,11 @@ export async function POST(request: Request) {
   const errors: { name: string; error: string }[] = [];
 
   for (const row of parsed) {
-    // Check existence to count imports vs updates accurately
+    // Check existence to count imports vs updates accurately. Match by
+    // (farm_id, name, category) per the new unique constraint added in
+    // migration 032 — same name is allowed across different categories.
     const { data: existing } = await (admin as any)
-      .from("items").select("id").eq("farm_id", farm.id).eq("name", row.name).maybeSingle();
+      .from("items").select("id").eq("farm_id", farm.id).eq("name", row.name).eq("category", row.category).maybeSingle();
 
     const payload = {
       farm_id: farm.id,
@@ -380,7 +382,7 @@ export async function POST(request: Request) {
 
     const { error } = await (admin as any)
       .from("items")
-      .upsert(payload, { onConflict: "farm_id,name", ignoreDuplicates: false });
+      .upsert(payload, { onConflict: "farm_id,name,category", ignoreDuplicates: false });
 
     if (error) {
       errors.push({ name: row.name, error: error.message });
