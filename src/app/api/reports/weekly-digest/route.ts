@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
+import { getAnthropicClient } from "@/lib/anthropic/client";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -102,11 +103,31 @@ async function sendDigest() {
     return `  ${w}: ${hrs}h`;
   }).join("\n");
 
+  // AI-generated intro paragraph. Falls back to empty string on any
+  // failure (missing key, API error, malformed response) so the digest
+  // never breaks because of AI. Skipped when there's no activity at all
+  // — nothing to summarize.
+  let aiIntro = "";
+  if (deliveryCount > 0 || (expenses ?? []).length > 0 || (labor ?? []).length > 0) {
+    aiIntro = await draftDigestIntro({
+      start,
+      end,
+      totalRevenue,
+      totalExpenses,
+      totalLaborHours,
+      totalLaborCost,
+      deliveryCount,
+      deliveries: deliveries ?? [],
+      expenses: expenses ?? [],
+    });
+  }
+
   const subject = `Press Farm Weekly — ${formatDate(start)} to ${formatDate(end)}`;
   const body = [
     `PRESS FARM — WEEKLY DIGEST`,
     `${formatDate(start)} — ${formatDate(end)}`,
     ``,
+    ...(aiIntro ? [aiIntro, ``] : []),
     `=== SUMMARY ===`,
     `Revenue: ${formatCurrency(totalRevenue)} (${deliveryCount} deliveries)`,
     `Expenses: ${formatCurrency(totalExpenses)}`,
@@ -149,5 +170,75 @@ async function sendDigest() {
     console.error("[DIGEST] Failed to send:", err);
     // Return the digest content even if email fails
     return NextResponse.json({ success: false, subject, body, error: String(err) });
+  }
+}
+
+/**
+ * Generate a 2-4 sentence intro paragraph for the weekly digest using
+ * Claude Haiku 4.5. Returns "" on any failure — missing API key, network
+ * error, malformed response — so the digest is never blocked by AI. Cron
+ * runs weekly so cost is negligible (~$0.005/week).
+ */
+async function draftDigestIntro(input: {
+  start: string;
+  end: string;
+  totalRevenue: number;
+  totalExpenses: number;
+  totalLaborHours: number;
+  totalLaborCost: number;
+  deliveryCount: number;
+  deliveries: Array<{ delivery_date: string; total_value: number; restaurants?: { name: string } | null }>;
+  expenses: Array<{ amount: number; category: string; description?: string | null }>;
+}): Promise<string> {
+  const client = getAnthropicClient();
+  if (!client) return "";
+
+  // Compact summary — Haiku doesn't need much context for a 2-4 sentence intro
+  const deliverySummary = input.deliveries.map((d) => ({
+    date: d.delivery_date,
+    restaurant: d.restaurants?.name ?? "?",
+    value: Math.round(Number(d.total_value ?? 0)),
+  }));
+  const expensesByCategory: Record<string, number> = {};
+  for (const e of input.expenses) {
+    const cat = (e.category || "Uncategorized").trim();
+    expensesByCategory[cat] = (expensesByCategory[cat] ?? 0) + Number(e.amount ?? 0);
+  }
+  const summary = {
+    week: { start: input.start, end: input.end },
+    totals: {
+      revenue: Math.round(input.totalRevenue),
+      expenses: Math.round(input.totalExpenses),
+      net: Math.round(input.totalRevenue - input.totalExpenses - input.totalLaborCost),
+      delivery_count: input.deliveryCount,
+      labor_hours: Math.round(input.totalLaborHours * 10) / 10,
+      labor_cost: Math.round(input.totalLaborCost),
+    },
+    deliveries: deliverySummary,
+    expenses_by_category: expensesByCategory,
+  };
+
+  const SYSTEM = `You are an editorial assistant for Press Farm, a small organic farm in Yountville, California supplying high-end Napa restaurants. You write the lead paragraph for the farm's weekly internal digest email — read by the farmer, not customers.
+
+Write a single paragraph, 2 to 4 sentences. Restrained, factual, editorial tone — no superlatives, no "delightful", no marketing language. Mention specifics that stand out from the data (a strong day, an unusual expense category, a quiet stretch). If the week was unremarkable, say so plainly in one sentence. Do not include a greeting, signature, or "this week we..." preamble. Output only the paragraph text — nothing else.`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 400,
+      system: SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content: `Week's data:\n\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``,
+        },
+      ],
+    });
+    const textBlock = response.content.find((b) => b.type === "text");
+    if (!textBlock || textBlock.type !== "text") return "";
+    return textBlock.text.trim();
+  } catch (err) {
+    console.error("[DIGEST] AI intro failed:", err);
+    return "";
   }
 }
