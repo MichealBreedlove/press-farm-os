@@ -107,9 +107,67 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   function set(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  /**
+   * Ask Claude to draft chef notes / growing notes / season + growing
+   * conditions, then overlay the result onto only the empty fields of
+   * the form so the admin's existing edits are never overwritten. Empty
+   * strings + 0 days_to_maturity are treated as "model had nothing to
+   * say" and ignored. Requires a name to be filled in.
+   */
+  async function handleDraftWithAI() {
+    if (!form.name.trim()) {
+      setDraftError("Add an item name first.");
+      return;
+    }
+    setDrafting(true);
+    setDraftError(null);
+    try {
+      const res = await fetch("/api/ai/draft-item-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          variety: form.variety,
+          color: form.color,
+          category: form.category,
+          source: form.source,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "AI draft failed");
+      const d = json.draft as Record<string, unknown>;
+
+      setForm((f) => ({
+        ...f,
+        chef_notes: f.chef_notes || (typeof d.chef_notes === "string" ? d.chef_notes : ""),
+        growing_notes: f.growing_notes || (typeof d.growing_notes === "string" ? d.growing_notes : ""),
+        season_note: f.season_note || (typeof d.season_note === "string" ? d.season_note : ""),
+        days_to_maturity:
+          f.days_to_maturity ||
+          (typeof d.days_to_maturity === "number" && d.days_to_maturity > 0
+            ? String(d.days_to_maturity)
+            : ""),
+        sun_requirement:
+          f.sun_requirement ||
+          (typeof d.sun_requirement === "string" ? d.sun_requirement : ""),
+        sow_method:
+          f.sow_method || (typeof d.sow_method === "string" ? d.sow_method : ""),
+        sow_depth: f.sow_depth || (typeof d.sow_depth === "string" ? d.sow_depth : ""),
+        plant_spacing:
+          f.plant_spacing || (typeof d.plant_spacing === "string" ? d.plant_spacing : ""),
+      }));
+    } catch (err: any) {
+      setDraftError(err.message ?? "AI draft failed");
+    } finally {
+      setDrafting(false);
+    }
   }
 
   // Independent menu visibility — an item can appear in any combination
@@ -209,6 +267,32 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
+      {/* AI suggest — drafts chef notes, growing notes, season note, and
+          growing-condition fields from the name/variety/color/category.
+          Only fills empty fields, so existing admin edits are never
+          overwritten. Powered by Claude Haiku 4.5; gracefully no-ops if
+          ANTHROPIC_API_KEY isn't set on the server. */}
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-pf-master-violet/[0.05] border border-pf-master-violet/15">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-pf-master-violet">Auto-fill with AI</p>
+          <p className="text-[11px] text-farm-muted/90 mt-0.5 leading-snug">
+            Drafts chef notes + growing details from the name. Only fills empty fields.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleDraftWithAI}
+          disabled={drafting || !form.name.trim()}
+          className="text-xs font-medium px-3 py-2 rounded-lg bg-pf-master-violet text-white hover:bg-pf-master-violet/90 disabled:opacity-40 disabled:cursor-not-allowed min-h-0 flex-shrink-0 inline-flex items-center gap-1.5"
+        >
+          <span aria-hidden="true">✨</span>
+          <span>{drafting ? "Drafting…" : "Suggest"}</span>
+        </button>
+      </div>
+      {draftError && (
+        <p className="text-xs text-red-700 -mt-2">{draftError}</p>
+      )}
+
       {/* Type + Variety + Color */}
       <div className="grid grid-cols-3 gap-3">
         <div>
