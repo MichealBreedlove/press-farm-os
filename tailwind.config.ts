@@ -23,6 +23,21 @@ const config: Config = {
         },
         // PressFarm OS design tokens
         pf: {
+          // Master brand palette — mirrors the --pf-master-* CSS vars in
+          // src/app/pressfarm-tokens.css. Hex values (not var()) so the
+          // Tailwind opacity modifier works (e.g. bg-pf-master-violet/[0.06]).
+          master: {
+            "dark-green": "#1E2B20",
+            olive: "#556B2F",
+            sage: "#7A8B52",
+            "mustard-yellow": "#D4A017",
+            paper: "#F7F5F0",
+            orange: "#EB6C32",
+            yellow: "#F4C430",
+            "bottle-green": "#4B6B38",
+            violet: "#5E2B7A",
+            blue: "#2E5FA1",
+          },
           cream: {
             50: "#fffdf8",
             100: "#fbf8f1",
