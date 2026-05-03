@@ -238,20 +238,6 @@ export function ItemForm({ item }: Props) {
         </select>
       </div>
 
-      {/* TEMP DEBUG — surfaces the live values flowing into the menu
-          checkboxes so we can see whether the page query is returning
-          the new columns. Remove once the menu-flag issue is
-          confirmed-fixed. */}
-      <div className="rounded-lg bg-amber-50 border border-amber-300 px-3 py-2 text-xs font-mono text-amber-900">
-        <p className="font-semibold mb-1">DEBUG · raw item data</p>
-        <p>item.is_event_item        = {String((item as any)?.is_event_item)}</p>
-        <p>item.is_press_bar_item    = {String((item as any)?.is_press_bar_item)}</p>
-        <p>item.show_in_regular_menu = {String((item as any)?.show_in_regular_menu)}</p>
-        <p className="mt-1">form.is_event_item        = {String(form.is_event_item)}</p>
-        <p>form.is_press_bar_item    = {String(form.is_press_bar_item)}</p>
-        <p>form.show_in_regular_menu = {String(form.show_in_regular_menu)}</p>
-      </div>
-
       {/* Menu visibility — three independent checkbox cards. Each menu has
           its own boolean column on items, so an item can appear in any
           combination (or none — uncheck all to hide it from chef order

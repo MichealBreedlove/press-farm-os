@@ -52,7 +52,11 @@ export default async function AdminItemEditPage({
       </header>
 
       <div className="px-4 py-6">
-        <ItemForm item={item ?? undefined} />
+        {/* key forces a fresh mount per item so useState initializers
+            always reflect the freshly fetched row — without it, navigating
+            between item edit pages keeps stale form state from the
+            previous item (which is how the menu-flag mismatch slipped in). */}
+        <ItemForm key={item?.id ?? "new"} item={item ?? undefined} />
       </div>
     </main>
   );
