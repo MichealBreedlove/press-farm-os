@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ItemForm } from "./ItemForm";
 
+// Defeat Next.js's static rendering cache for this page — data here changes
+// constantly during admin edits and we never want a stale flag set leaking
+// through after a save.
+export const dynamic = "force-dynamic";
+
 export default async function AdminItemEditPage({
   params,
 }: {

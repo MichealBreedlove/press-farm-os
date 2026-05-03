@@ -7,10 +7,14 @@
  */
 
 // Bump on every deploy that ships a behavioral change so the activate
-// handler purges old caches. v2 → forces all clients to drop the
-// pre-PwaInstallPrompt-fix bundle that kept the install banner visible
-// on /order despite the SKIP_PATHS guard.
-const CACHE_NAME = "press-farm-v2";
+// handler purges old caches.
+//   v2 → drop the pre-PwaInstallPrompt-fix bundle
+//   v3 → drop the pre-independent-menu-flags bundle (the form was
+//        sending is_press_bar_item / show_in_regular_menu but the
+//        cached items API endpoint wasn't whitelisting them, so saves
+//        looked like no-ops; v3 forces clients to fetch the new
+//        whitelist code)
+const CACHE_NAME = "press-farm-v3";
 
 const PRECACHE_URLS = [
   "/",
