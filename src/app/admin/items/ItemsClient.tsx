@@ -335,7 +335,11 @@ export function ItemsClient({ items, addItemHref }: Props) {
                             {CATEGORY_LABELS[item.category] ?? item.category}
                           </span>
                         )}
-                        {item.is_event_item && !item.is_press_bar_item && (
+                        {/* Menu badges — independent flags now, so an item
+                            can carry multiple. Show every flag that's true.
+                            Regular Menu doesn't need a badge (it's the default
+                            and most items have it set). */}
+                        {item.is_event_item && (
                           <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
                             Event
                           </span>
