@@ -150,16 +150,16 @@ export function DeliveryWeatherBanner({ deliveryDate, deliveryDateFormatted }: D
       </div>
 
       {warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+        <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-red-800 flex items-center gap-1.5">
             <span aria-hidden="true">⚠</span>
             Weather may affect availability
           </p>
           <ul className="space-y-1.5">
             {warnings.map((warning, idx) => (
-              <li key={idx} className="text-xs text-amber-900 leading-snug">
+              <li key={idx} className="text-xs text-red-900 leading-snug">
                 <span className="font-semibold">{warning.headline}.</span>{" "}
-                <span className="text-amber-800/90">{warning.detail}</span>
+                <span className="text-red-800/90">{warning.detail}</span>
               </li>
             ))}
           </ul>
