@@ -80,12 +80,37 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
 
   const grouped = useMemo(() => {
     const map: Record<string, Item[]> = {};
+    // Top-level item ids that ARE visible — used to decide whether a
+    // child should render nested (parent visible) or fall back to its
+    // own category section (parent filtered out).
+    const visibleParentIds = new Set(
+      filtered.filter((i) => !i.parent_item_id).map((i) => i.id),
+    );
     for (const item of filtered) {
+      // When searching, treat every match as a top-level entry — chefs
+      // looking for "blossom" want a flat results list, not nested
+      // matches buried under their parent.
+      if (!search.trim() && item.parent_item_id && visibleParentIds.has(item.parent_item_id)) {
+        continue;
+      }
       if (!map[item.category]) map[item.category] = [];
       map[item.category].push(item);
     }
     return map;
-  }, [filtered]);
+  }, [filtered, search]);
+
+  // Children grouped by their visible parent — used to render the
+  // nested rows directly under each parent in the category sections.
+  const childrenByParent = useMemo(() => {
+    if (search.trim()) return {} as Record<string, Item[]>;
+    const map: Record<string, Item[]> = {};
+    for (const item of filtered) {
+      if (!item.parent_item_id) continue;
+      if (!map[item.parent_item_id]) map[item.parent_item_id] = [];
+      map[item.parent_item_id].push(item);
+    }
+    return map;
+  }, [filtered, search]);
 
   async function toggleArchive(item: Item) {
     setArchiving(item.id);
@@ -276,182 +301,198 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
         </div>
       )}
       {/* When searching, show flat list. Otherwise, group by category. */}
-      {(search.trim()
-        ? [{ key: "search", items: filtered, label: `Search Results (${filtered.length})` }]
-        : CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => ({
-            key: cat as string,
-            items: grouped[cat],
-            label: `${CATEGORY_LABELS[cat]} (${grouped[cat].length})`,
-          }))
-      ).map(({ key, items: catItems, label }) => (
-        <div key={key}>
-          <p className="section-eyebrow with-flower text-farm-muted mb-2">{label}</p>
-          <div className="space-y-1">
-            {catItems.map((item) => (
-              <div
-                key={item.id}
-                className={`bg-white rounded-xl border flex items-center gap-3 pr-2 transition-colors ${
-                  item.is_archived ? "border-farm-dark/5 opacity-50" : "border-farm-dark/5"
-                }`}
-              >
-                <div className="flex-1 px-3 py-3 min-h-[48px]">
-                  <div className="flex items-center gap-3">
-                    {/* Photo thumbnail — admin photo, then flower fallback, then placeholder */}
-                    <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
-                      {(() => {
-                        const imgUrl = getItemImageUrl(item);
-                        const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
-                        if (imgUrl) {
-                          return (
-                            <div className={`w-20 h-20 rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-farm-cream/60"}`}>
-                              <img
-                                src={imgUrl}
-                                alt={item.name}
-                                className={`w-full h-full ${isFlower ? "object-contain p-1" : "object-cover"}`}
-                                loading="lazy"
-                              />
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="w-20 h-20 rounded-lg bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
-                            <img
-                              src="/assets/logo/png/logo-floral-only-transparent.png"
-                              alt=""
-                              aria-hidden="true"
-                              className="w-12 h-12 object-contain opacity-25"
-                            />
-                          </div>
-                        );
-                      })()}
-                    </Link>
-                    <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
-                        {/* Category pill — only shown while searching, since
-                            normally the items list is already grouped by
-                            category headers. During search the rows render
-                            in one flat list so the user loses that signal
-                            unless we surface it inline. */}
-                        {search.trim() && (
-                          <span className="text-[9px] tracking-wider uppercase bg-farm-cream/80 text-farm-muted px-1.5 py-0.5 rounded font-semibold flex-shrink-0 border border-farm-dark/5">
-                            {CATEGORY_LABELS[item.category] ?? item.category}
-                          </span>
-                        )}
-                        {/* Menu badges — independent flags now, so an item
-                            can carry multiple. Show every flag that's true.
-                            Regular Menu doesn't need a badge (it's the default
-                            and most items have it set). */}
-                        {item.is_event_item && (
-                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
-                            Event
-                          </span>
-                        )}
-                        {item.is_press_bar_item && (
-                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-blue/10 text-pf-master-blue px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
-                            Press Bar
-                          </span>
-                        )}
+      {(() => {
+        // Render one item card. Used for both top-level rows and the
+        // nested children rendered under their parent. Pulled out to
+        // avoid duplicating the 100+ lines of card markup.
+        const renderItemCard = (item: Item, isNested: boolean) => (
+          <div
+            key={item.id}
+            className={`bg-white rounded-xl border flex items-center gap-3 pr-2 transition-colors ${
+              item.is_archived ? "border-farm-dark/5 opacity-50" : "border-farm-dark/5"
+            }`}
+          >
+            <div className="flex-1 px-3 py-3 min-h-[48px]">
+              <div className="flex items-center gap-3">
+                <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
+                  {(() => {
+                    const imgUrl = getItemImageUrl(item);
+                    const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
+                    // Children render at a slightly smaller thumbnail so
+                    // the visual hierarchy reads at a glance.
+                    const sizeClass = isNested ? "w-14 h-14" : "w-20 h-20";
+                    const innerSize = isNested ? "w-9 h-9" : "w-12 h-12";
+                    if (imgUrl) {
+                      return (
+                        <div className={`${sizeClass} rounded-lg overflow-hidden ${isFlower ? "bg-farm-cream" : "bg-farm-cream/60"}`}>
+                          <img
+                            src={imgUrl}
+                            alt={item.name}
+                            className={`w-full h-full ${isFlower ? "object-contain p-1" : "object-cover"}`}
+                            loading="lazy"
+                          />
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className={`${sizeClass} rounded-lg bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center`}>
+                        <img
+                          src="/assets/logo/png/logo-floral-only-transparent.png"
+                          alt=""
+                          aria-hidden="true"
+                          className={`${innerSize} object-contain opacity-25`}
+                        />
                       </div>
-                      <p className="text-xs text-farm-muted mt-0.5">
-                        {(() => {
-                          const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
-                          const map = item.unit_prices ?? {};
-                          // If any per-unit price exists, render "SM $15 · LG $30"
-                          const hasPerUnit = units.some((u) => typeof map[u] === "number");
-                          if (hasPerUnit) {
-                            const parts = units.map((u) => {
-                              const p = typeof map[u] === "number" ? map[u] : item.default_price;
-                              return p != null ? `${u.toUpperCase()} $${p.toFixed(2)}` : u.toUpperCase();
-                            });
-                            return parts.join(" · ");
-                          }
-                          // Fallback: just unit codes + default_price (legacy)
-                          const unitsStr = units.map((u) => u.toUpperCase()).join(" · ");
-                          return item.default_price != null
-                            ? `${unitsStr} · $${item.default_price.toFixed(2)}`
-                            : unitsStr;
-                        })()}
-                        {item.is_archived && " · Archived"}
-                      </p>
-                      {/* Parent label — shown for child items so admins can
-                          see the grouping without having to open the edit
-                          page. Chefs never see this; the order form treats
-                          children as standalone items. */}
-                      {item.parent_item_id && parentNames?.[item.parent_item_id] && (
-                        <p className="text-[10px] text-farm-muted/70 mt-0.5 italic">
-                          ↳ part of {parentNames[item.parent_item_id]}
-                        </p>
-                      )}
-                    </Link>
-                    <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
-                      <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
+                    );
+                  })()}
+                </Link>
+                <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                    {/* Category pill — shown when searching (flat list
+                        loses category context) AND when nested (the
+                        child is sitting in the parent's category section,
+                        so its real category is otherwise invisible). */}
+                    {(search.trim() || isNested) && (
+                      <span className="text-[9px] tracking-wider uppercase bg-farm-cream/80 text-farm-muted px-1.5 py-0.5 rounded font-semibold flex-shrink-0 border border-farm-dark/5">
+                        {CATEGORY_LABELS[item.category] ?? item.category}
+                      </span>
+                    )}
+                    {item.is_event_item && (
+                      <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                        Event
+                      </span>
+                    )}
+                    {item.is_press_bar_item && (
+                      <span className="text-[9px] tracking-wider uppercase bg-pf-master-blue/10 text-pf-master-blue px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                        Press Bar
+                      </span>
+                    )}
                   </div>
-                  {/* Inline chef notes */}
-                  {editingNote === item.id ? (
-                    <div className="mt-1.5 flex gap-1.5">
-                      <input
-                        type="text"
-                        value={noteValue}
-                        onChange={(e) => setNoteValue(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") saveNote(item.id); if (e.key === "Escape") setEditingNote(null); }}
-                        placeholder="Chef note..."
-                        autoFocus
-                        className="flex-1 text-xs border border-farm-green rounded-lg px-2 py-1.5 min-h-0 focus:outline-none focus:ring-1 focus:ring-farm-green"
-                      />
-                      <button
-                        onClick={() => saveNote(item.id)}
-                        disabled={savingNote === item.id}
-                        className="text-xs text-white bg-farm-green rounded-lg px-2.5 py-1.5 min-h-0 min-w-0 font-medium disabled:opacity-50"
-                      >
-                        {savingNote === item.id ? "…" : "Save"}
-                      </button>
-                      <button
-                        onClick={() => setEditingNote(null)}
-                        className="text-xs text-farm-muted min-h-0 min-w-0 px-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => startEditNote(item)}
-                      className="mt-1 text-xs min-h-0 min-w-0 text-left w-full truncate transition-colors"
-                    >
-                      {item.chef_notes ? (
-                        <span className="text-farm-green italic">{item.chef_notes}</span>
-                      ) : (
-                        <span className="text-farm-muted/60 hover:text-farm-muted">+ Add chef note</span>
-                      )}
-                    </button>
+                  <p className="text-xs text-farm-muted mt-0.5">
+                    {(() => {
+                      const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
+                      const map = item.unit_prices ?? {};
+                      const hasPerUnit = units.some((u) => typeof map[u] === "number");
+                      if (hasPerUnit) {
+                        const parts = units.map((u) => {
+                          const p = typeof map[u] === "number" ? map[u] : item.default_price;
+                          return p != null ? `${u.toUpperCase()} $${p.toFixed(2)}` : u.toUpperCase();
+                        });
+                        return parts.join(" · ");
+                      }
+                      const unitsStr = units.map((u) => u.toUpperCase()).join(" · ");
+                      return item.default_price != null
+                        ? `${unitsStr} · $${item.default_price.toFixed(2)}`
+                        : unitsStr;
+                    })()}
+                    {item.is_archived && " · Archived"}
+                  </p>
+                  {/* "↳ part of …" label — only shown when the child is
+                      rendering at top level (its parent was filtered out
+                      or this is search). When nested directly under the
+                      parent the indent + guide line make the relationship
+                      obvious so the label would just be noise. */}
+                  {!isNested && item.parent_item_id && parentNames?.[item.parent_item_id] && (
+                    <p className="text-[10px] text-farm-muted/70 mt-0.5 italic">
+                      ↳ part of {parentNames[item.parent_item_id]}
+                    </p>
                   )}
+                </Link>
+                <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
+                  <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+              {/* Inline chef notes */}
+              {editingNote === item.id ? (
+                <div className="mt-1.5 flex gap-1.5">
+                  <input
+                    type="text"
+                    value={noteValue}
+                    onChange={(e) => setNoteValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveNote(item.id); if (e.key === "Escape") setEditingNote(null); }}
+                    placeholder="Chef note..."
+                    autoFocus
+                    className="flex-1 text-xs border border-farm-green rounded-lg px-2 py-1.5 min-h-0 focus:outline-none focus:ring-1 focus:ring-farm-green"
+                  />
+                  <button
+                    onClick={() => saveNote(item.id)}
+                    disabled={savingNote === item.id}
+                    className="text-xs text-white bg-farm-green rounded-lg px-2.5 py-1.5 min-h-0 min-w-0 font-medium disabled:opacity-50"
+                  >
+                    {savingNote === item.id ? "…" : "Save"}
+                  </button>
+                  <button
+                    onClick={() => setEditingNote(null)}
+                    className="text-xs text-farm-muted min-h-0 min-w-0 px-1"
+                  >
+                    ✕
+                  </button>
                 </div>
+              ) : (
                 <button
-                  onClick={() => toggleArchive(item)}
-                  disabled={archiving === item.id}
-                  className="min-w-[40px] min-h-[40px] flex items-center justify-center text-farm-muted/60 hover:text-farm-muted/90 disabled:opacity-50 transition-colors"
-                  title={item.is_archived ? "Unarchive" : "Archive"}
+                  onClick={() => startEditNote(item)}
+                  className="mt-1 text-xs min-h-0 min-w-0 text-left w-full truncate transition-colors"
                 >
-                  {archiving === item.id ? (
-                    <span className="text-xs">…</span>
-                  ) : item.is_archived ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
+                  {item.chef_notes ? (
+                    <span className="text-farm-green italic">{item.chef_notes}</span>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
+                    <span className="text-farm-muted/60 hover:text-farm-muted">+ Add chef note</span>
                   )}
                 </button>
-              </div>
-            ))}
+              )}
+            </div>
+            <button
+              onClick={() => toggleArchive(item)}
+              disabled={archiving === item.id}
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-farm-muted/60 hover:text-farm-muted/90 disabled:opacity-50 transition-colors"
+              title={item.is_archived ? "Unarchive" : "Archive"}
+            >
+              {archiving === item.id ? (
+                <span className="text-xs">…</span>
+              ) : item.is_archived ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+              )}
+            </button>
           </div>
-        </div>
-      ))}
+        );
+
+        const sections = search.trim()
+          ? [{ key: "search", items: filtered, label: `Search Results (${filtered.length})` }]
+          : CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => ({
+              key: cat as string,
+              items: grouped[cat],
+              label: `${CATEGORY_LABELS[cat]} (${grouped[cat].length})`,
+            }));
+
+        return sections.map(({ key, items: catItems, label }) => (
+          <div key={key}>
+            <p className="section-eyebrow with-flower text-farm-muted mb-2">{label}</p>
+            <div className="space-y-1">
+              {catItems.map((item) => {
+                const kids = childrenByParent[item.id] ?? [];
+                if (kids.length === 0) return renderItemCard(item, false);
+                return (
+                  <div key={item.id} className="space-y-1">
+                    {renderItemCard(item, false)}
+                    <div className="ml-6 space-y-1 border-l-2 border-farm-green/20 pl-3">
+                      {kids.map((child) => renderItemCard(child, true))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ));
+      })()}
 
       {filtered.length === 0 && (
         search ? (
