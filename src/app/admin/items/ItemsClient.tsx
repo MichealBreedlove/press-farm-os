@@ -278,6 +278,14 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
           </p>
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link
+              href="/admin/items/audit"
+              className="text-xs text-pf-master-violet font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+              title="AI catalog audit — duplicates + parent/child suggestions"
+            >
+              <span aria-hidden="true">✨</span>
+              Audit
+            </Link>
+            <Link
               href="/admin/items/photos"
               className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
               title="Bulk upload / delete catalog photos"
