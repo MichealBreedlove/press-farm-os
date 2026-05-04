@@ -203,7 +203,7 @@ function resolveAppUrl(): string {
 
 export const APP_URL = resolveAppUrl();
 
-export const ADMIN_EMAIL = "micheal@pressfarm.io";
+export const ADMIN_EMAIL = "pressfarm@pressnapavalley.com";
 
 /**
  * Per-purpose sender addresses. Each can be overridden by an env var.
