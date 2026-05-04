@@ -120,7 +120,13 @@ Generate the audit report as instructed.`;
   try {
     const stream = client.messages.stream({
       model: "claude-opus-4-7",
-      max_tokens: 8192,
+      // Adaptive thinking on Opus 4.7 can burn 10-25K tokens reasoning
+      // through 269 catalog items before it produces any text output.
+      // The previous 8K cap left no room for the report itself —
+      // request finished max_tokens with thinking only, no text block,
+      // surfacing as "Empty response from model" on the page. 32K
+      // gives thinking + a full multi-section report plenty of room.
+      max_tokens: 32768,
       thinking: { type: "adaptive" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
@@ -129,7 +135,16 @@ Generate the audit report as instructed.`;
 
     const textBlock = message.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json({ error: "Empty response from model" }, { status: 502 });
+      // Surface what actually came back so the failure mode is debuggable
+      // from the UI instead of the server logs — most likely cause is
+      // hitting max_tokens during thinking.
+      const blockTypes = message.content.map((b) => b.type).join(", ") || "none";
+      return NextResponse.json(
+        {
+          error: `No text in response. stop_reason=${message.stop_reason}, blocks=[${blockTypes}]. Try regenerating; if this persists, raise max_tokens further.`,
+        },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json({

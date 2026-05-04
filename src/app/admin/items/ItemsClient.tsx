@@ -286,6 +286,14 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
               Audit
             </Link>
             <Link
+              href="/admin/items/bulk-fill"
+              className="text-xs text-pf-master-violet font-medium hover:underline inline-flex items-center gap-1 min-h-0"
+              title="AI bulk fill — runs the suggester on every item with empty fields"
+            >
+              <span aria-hidden="true">✨</span>
+              Bulk Fill
+            </Link>
+            <Link
               href="/admin/items/photos"
               className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-0"
               title="Bulk upload / delete catalog photos"
