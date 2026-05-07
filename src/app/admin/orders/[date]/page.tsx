@@ -7,6 +7,8 @@ import { InlineShortageRow } from "./InlineShortageRow";
 import { NotifyReceiverButton } from "./NotifyReceiverButton";
 import { AddExtraRow } from "./AddExtraRow";
 import { ExtrasList } from "./ExtrasList";
+import { HarvestTotalsPanel } from "./HarvestTotalsPanel";
+import { SendToReceiverBar } from "./SendToReceiverBar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
@@ -107,6 +109,74 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     extrasByRestaurant[order.id] = extras;
   }
 
+  // ── Harvest aggregate + pick progress ──
+  // Roll up every order_item across every restaurant into (item, unit)
+  // buckets so the admin can see what to grab from the field before the
+  // per-restaurant pack split. Also count resolved lines (picked OR
+  // shorted) so the sticky bottom bar shows real progress.
+  type AggKey = string;
+  const aggMap = new Map<
+    AggKey,
+    { itemName: string; unit: string; total: number; byRestaurant: Map<string, number> }
+  >();
+  let totalLines = 0;
+  let resolvedLines = 0;
+  let submittedOrderCount = 0;
+  for (const order of orders) {
+    if (order.status === "submitted") submittedOrderCount += 1;
+    for (const oi of order.order_items ?? []) {
+      const item = oi.availability_item?.item;
+      if (!item) continue;
+      totalLines += 1;
+      // A line is "resolved" if the admin has either checked it off as
+      // picked OR marked it as shorted. Both close the loop on that
+      // line for receiver hand-off.
+      if (oi.picked_at || oi.is_shorted) resolvedLines += 1;
+
+      const lineUnit = (oi.unit_type ?? "").trim().toLowerCase() ||
+        (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea");
+      const qty = oi.is_shorted ? Number(oi.quantity_fulfilled ?? 0) : Number(oi.quantity_requested ?? 0);
+      if (qty <= 0) continue;
+
+      const key = `${item.id}|${lineUnit}`;
+      const restaurantName = order.restaurant?.name ?? "?";
+      const existing = aggMap.get(key);
+      if (existing) {
+        existing.total += qty;
+        existing.byRestaurant.set(
+          restaurantName,
+          (existing.byRestaurant.get(restaurantName) ?? 0) + qty,
+        );
+      } else {
+        aggMap.set(key, {
+          itemName: item.name,
+          unit: lineUnit,
+          total: qty,
+          byRestaurant: new Map([[restaurantName, qty]]),
+        });
+      }
+    }
+  }
+  const harvestRows = [...aggMap.values()]
+    .map((r) => ({
+      itemName: r.itemName,
+      unit: r.unit,
+      total: r.total,
+      byRestaurant: [...r.byRestaurant.entries()].map(([name, qty]) => ({ name, qty })),
+    }))
+    .sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+  // Per-order picked counts for the restaurant-card header badges
+  const orderProgress = new Map<string, { picked: number; total: number; shorted: number }>();
+  for (const order of orders) {
+    const items = order.order_items ?? [];
+    orderProgress.set(order.id, {
+      total: items.length,
+      picked: items.filter((oi: any) => oi.picked_at).length,
+      shorted: items.filter((oi: any) => oi.is_shorted).length,
+    });
+  }
+
   return (
     <main>
       <header className="page-header sticky top-0 z-30">
@@ -129,7 +199,17 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         backHref="/admin/orders"
       />
 
-      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6 pb-32">
+        {/* Combined harvest totals — collapsible card at the very top.
+            Shows what to grab from the field before the per-restaurant
+            pack split. Print link opens the dedicated harvest-list page
+            for the paper-friendly version. */}
+        {harvestRows.length > 0 && (
+          <HarvestTotalsPanel
+            rows={harvestRows}
+            printHref={`/admin/orders/harvest?date=${date}`}
+          />
+        )}
         {/* Empty-receiver banner — shown only when there are orders to pick
             (otherwise it'd be noise on a "no orders yet" date). Surfaces
             the gap BEFORE pick-and-pack starts so admin can invite a
@@ -178,12 +258,14 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
           const totalItems = order.order_items?.length ?? 0;
           const shortedItems = order.order_items?.filter((i: any) => i.is_shorted) ?? [];
+          const progress = orderProgress.get(order.id) ?? { picked: 0, total: 0, shorted: 0 };
+          const resolved = progress.picked + progress.shorted;
 
           return (
             <section key={order.id} className="card overflow-hidden">
               {/* Restaurant header */}
               <div className="px-4 py-3 border-b border-farm-dark/5 flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-semibold text-farm-dark">
                     {order.restaurant?.name ?? "Restaurant"}
                   </h2>
@@ -199,6 +281,24 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Picked-progress badge — primary signal during the
+                      harvest run. Includes shortages because they're
+                      "resolved" lines too (admin doesn't pick them but
+                      they don't block hand-off). */}
+                  {progress.total > 0 && (
+                    <span
+                      className={`text-[11px] font-semibold tabular-nums px-2 py-1 rounded-full ${
+                        resolved === progress.total
+                          ? "bg-farm-green/15 text-farm-green"
+                          : resolved > 0
+                            ? "bg-pf-master-violet/10 text-pf-master-violet"
+                            : "bg-farm-cream text-farm-muted"
+                      }`}
+                      title={`${progress.picked} picked · ${progress.shorted} shorted · ${progress.total - resolved} remaining`}
+                    >
+                      {resolved}/{progress.total}
+                    </span>
+                  )}
                   <StatusPill status={order.status as OrderStatus} />
                 </div>
               </div>
@@ -330,6 +430,16 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           </>
         )}
       </div>
+
+      {/* Sticky hand-off bar — only renders when there are orders to
+          process. Tracks pick + shortage progress and fires the
+          send-to-receiver flow (status bump + email). */}
+      <SendToReceiverBar
+        date={date}
+        totalLines={totalLines}
+        resolvedLines={resolvedLines}
+        submittedOrderCount={submittedOrderCount}
+      />
     </main>
   );
 }
