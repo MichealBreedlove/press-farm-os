@@ -17,6 +17,8 @@ interface OrderItemForRow {
   quantityFulfilled: number | null;
   isShorted: boolean;
   shortageReason: string | null;
+  /** ISO timestamp when admin marked the line picked; null = not yet. */
+  pickedAt?: string | null;
 }
 
 interface Props {
@@ -36,8 +38,38 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
     String(orderItem.isShorted ? (orderItem.quantityFulfilled ?? 0) : orderItem.quantityRequested)
   );
   const [reason, setReason] = useState(orderItem.shortageReason ?? "");
+  // Optimistic local state for the pick checkbox so the tap feels
+  // instant while the API round-trip happens. Reverts on error.
+  const [pickedLocal, setPickedLocal] = useState<boolean>(Boolean(orderItem.pickedAt));
+  const [pickToggling, setPickToggling] = useState(false);
 
   const isShorted = orderItem.isShorted;
+  const isPicked = pickedLocal;
+
+  /**
+   * Toggle the picked_at timestamp. Stops event bubbling so tapping the
+   * checkbox doesn't also expand the shortage editor.
+   */
+  async function togglePicked(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!canEdit || pickToggling) return;
+    const next = !isPicked;
+    setPickedLocal(next);
+    setPickToggling(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/picked`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_item_id: orderItem.id, picked: next }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      router.refresh();
+    } catch {
+      setPickedLocal(!next);
+    } finally {
+      setPickToggling(false);
+    }
+  }
 
   async function saveShortage(opts: { fulfilled: number; reason: string }) {
     setSaving(true);
@@ -119,9 +151,11 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
 
   return (
     <div
-      className={`border-b border-gray-50 last:border-0 ${isShorted ? "bg-pf-master-orange/8" : ""}`}
+      className={`border-b border-gray-50 last:border-0 ${isShorted ? "bg-pf-master-orange/8" : ""} ${
+        isPicked ? "bg-farm-green/5" : ""
+      } transition-colors`}
     >
-      {/* Main row — tap anywhere to toggle if editable */}
+      {/* Main row — tap anywhere to toggle the shortage editor if editable */}
       <button
         type="button"
         onClick={() => canEdit && setExpanded((v) => !v)}
@@ -130,10 +164,50 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
           canEdit ? "hover:bg-farm-cream/40" : ""
         } transition-colors disabled:cursor-default`}
       >
+        {/* Pick checkbox — large 44×44 tap target so it's harvest-glove
+            friendly. Stops propagation so it doesn't also open the
+            shortage editor. Disabled rendering when canEdit=false. */}
+        <span
+          role="checkbox"
+          aria-checked={isPicked}
+          aria-label={isPicked ? "Mark as not picked" : "Mark as picked"}
+          tabIndex={canEdit ? 0 : -1}
+          onClick={canEdit ? togglePicked : undefined}
+          onKeyDown={(e) => {
+            if (canEdit && (e.key === " " || e.key === "Enter")) {
+              e.preventDefault();
+              togglePicked(e as unknown as React.MouseEvent);
+            }
+          }}
+          className={`flex-shrink-0 w-7 h-7 rounded-md border-2 flex items-center justify-center transition-colors ${
+            isPicked
+              ? "bg-farm-green border-farm-green"
+              : canEdit
+                ? "bg-white border-farm-dark/25 hover:border-farm-green"
+                : "bg-farm-cream/40 border-farm-dark/15"
+          } ${pickToggling ? "opacity-60" : ""} ${canEdit ? "cursor-pointer" : "cursor-default"}`}
+        >
+          {isPicked && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3.5}
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </span>
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm font-medium truncate ${
-              isShorted ? "text-orange-800" : "text-farm-dark"
+              isShorted
+                ? "text-orange-800"
+                : isPicked
+                  ? "text-farm-muted line-through"
+                  : "text-farm-dark"
             }`}
           >
             {orderItem.itemName}

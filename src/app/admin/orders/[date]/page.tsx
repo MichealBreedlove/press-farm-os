@@ -34,7 +34,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
       order_items(
-        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label,
+        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, picked_at,
         availability_item:availability_items(
           id,
           item:items(id, name, category, unit_type)
@@ -271,6 +271,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                               quantityFulfilled: oi.quantity_fulfilled,
                               isShorted: oi.is_shorted,
                               shortageReason: oi.shortage_reason,
+                              pickedAt: oi.picked_at ?? null,
                             }}
                           />
                         );
