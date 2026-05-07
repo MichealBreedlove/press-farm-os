@@ -74,7 +74,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
       id, restaurant_id, delivery_date, status, freeform_notes,
       order_items (
         id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
-        unit_type, size_label, color_key,
+        unit_type, size_label, color_key, received_at,
         availability_item_id,
         availability_items (
           id, item_id,
@@ -88,9 +88,9 @@ export default async function ReceiverPage({ searchParams }: Props) {
   const { data: deliveries } = await (admin as any)
     .from("deliveries")
     .select(`
-      id, restaurant_id, delivery_date, status, total_value,
+      id, restaurant_id, delivery_date, status, total_value, closed_at, closed_by_name,
       delivery_items (
-        id, item_id, quantity, unit, unit_price, line_total,
+        id, item_id, quantity, unit, unit_price, line_total, received_at,
         items ( id, name, category, unit_type, image_url, is_event_item )
       )
     `)

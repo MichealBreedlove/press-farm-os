@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getItemImageUrl } from "@/lib/flower-images";
 
 type Status = "ready" | "short" | "pending" | "extra";
+/** Which DB table backs a line — drives the check-line API call. */
+type LineKind = "order_item" | "delivery_item";
 
 interface Line {
   /** Composite map key: itemId__unit__size__color. Differentiates rows when a chef
@@ -24,6 +26,12 @@ interface Line {
   delivered: number;
   status: Status;
   shortageReason: string | null;
+  /** Underlying DB row's primary id — the API target for the receiver check. */
+  dbId: string;
+  /** Which table dbId points at. */
+  kind: LineKind;
+  /** ISO timestamp when receiver checked this line, or null. */
+  receivedAt: string | null;
 }
 
 interface RestaurantBlock {
@@ -32,6 +40,12 @@ interface RestaurantBlock {
   freeformNotes: string | null;
   lines: Line[];
   hasDelivery: boolean;
+  /** delivery_id for the close-out call. null when there's no delivery row yet. */
+  deliveryId: string | null;
+  /** ISO timestamp when receiver closed out this delivery, null while still open. */
+  closedAt: string | null;
+  /** Free-text "marked by" name from the close-out signoff. */
+  closedByName: string | null;
 }
 
 interface DateOption {
@@ -113,6 +127,9 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
           delivered: fulfilled ?? 0,
           status: isShortedFlag ? "short" : "pending",
           shortageReason: oi.shortage_reason ?? null,
+          dbId: oi.id,
+          kind: "order_item",
+          receivedAt: oi.received_at ?? null,
         });
       }
 
@@ -136,7 +153,8 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         }
 
         if (!existing) {
-          // Delivered but never ordered → extra
+          // Delivered but never ordered → extra. Stored on delivery_item
+          // since there's no order_item to attach the receiver check to.
           lines.set(exactKey, {
             lineKey: exactKey,
             itemId: item.id,
@@ -151,6 +169,9 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
             delivered,
             status: "extra",
             shortageReason: null,
+            dbId: di.id,
+            kind: "delivery_item",
+            receivedAt: di.received_at ?? null,
           });
         } else {
           // Sum if multiple delivery lines for the same item
@@ -179,6 +200,9 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         freeformNotes: order?.freeform_notes ?? null,
         lines: allLines,
         hasDelivery: Boolean(delivery),
+        deliveryId: delivery?.id ?? null,
+        closedAt: delivery?.closed_at ?? null,
+        closedByName: delivery?.closed_by_name ?? null,
       });
     }
 
@@ -276,6 +300,48 @@ function activeColor(status: Status): string {
 }
 
 function RestaurantSection({ block }: { block: RestaurantBlock }) {
+  const router = useRouter();
+  const isClosed = Boolean(block.closedAt);
+  const [markedBy, setMarkedBy] = useState(block.closedByName ?? "");
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
+
+  const checkedCount = block.lines.filter((l) => l.receivedAt).length;
+  const totalCount = block.lines.length;
+
+  async function closeOut() {
+    if (!block.deliveryId) {
+      setCloseError("No delivery row exists yet — can't close out until pickup is logged.");
+      return;
+    }
+    if (!markedBy.trim()) {
+      setCloseError("Type your name first.");
+      return;
+    }
+    setClosing(true);
+    setCloseError(null);
+    try {
+      const res = await fetch("/api/receiver/close-delivery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          delivery_id: block.deliveryId,
+          closed_by_name: markedBy.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setCloseError(json.error ?? "Close failed");
+        return;
+      }
+      router.refresh();
+    } catch (err: any) {
+      setCloseError(err?.message ?? "Network error");
+    } finally {
+      setClosing(false);
+    }
+  }
+
   if (block.lines.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm">
@@ -297,7 +363,7 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
         <div className="flex items-baseline justify-between">
           <p className="font-display text-lg text-farm-dark">{block.name}</p>
           <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
-            {block.lines.length} item{block.lines.length === 1 ? "" : "s"}
+            {checkedCount}/{totalCount} verified
             {block.hasDelivery ? "" : " · awaiting delivery"}
           </p>
         </div>
@@ -310,7 +376,9 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
 
       {regularLines.length > 0 && (
         <ul className="divide-y divide-farm-dark/5">
-          {regularLines.map((line) => <LineRow key={line.lineKey} line={line} />)}
+          {regularLines.map((line) => (
+            <LineRow key={line.lineKey} line={line} disabled={isClosed} />
+          ))}
         </ul>
       )}
 
@@ -322,18 +390,124 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
             </p>
           </div>
           <ul className="divide-y divide-farm-dark/5">
-            {eventLines.map((line) => <LineRow key={line.lineKey} line={line} />)}
+            {eventLines.map((line) => (
+              <LineRow key={line.lineKey} line={line} disabled={isClosed} />
+            ))}
           </ul>
         </>
       )}
+
+      {/* Close-out footer — captures who's signing for the delivery so a
+          shared restaurant account still has personal attribution on the
+          row. Once closed, the form locks and the signoff is shown
+          read-only (re-opening would need a separate admin action). */}
+      <div className="px-5 py-4 bg-farm-cream/40 border-t border-farm-dark/5">
+        {isClosed ? (
+          <div className="text-sm text-farm-green flex items-center gap-2">
+            <span aria-hidden="true">✓</span>
+            <span>
+              <span className="font-semibold">Closed out</span> by {block.closedByName ?? "—"} ·{" "}
+              {block.closedAt
+                ? new Date(block.closedAt).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })
+                : ""}
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+              <div className="flex-1">
+                <label className="form-label text-[10px] tracking-wider uppercase text-farm-muted">
+                  Marked by
+                </label>
+                <input
+                  type="text"
+                  value={markedBy}
+                  onChange={(e) => setMarkedBy(e.target.value)}
+                  placeholder="Your name"
+                  maxLength={100}
+                  className="w-full border border-farm-dark/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={closeOut}
+                disabled={closing || !block.deliveryId}
+                className="px-4 min-h-[44px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-green-dark disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                {closing ? "Closing…" : "Close out"}
+              </button>
+            </div>
+            {!block.deliveryId && (
+              <p className="text-[11px] text-farm-muted">
+                Awaiting delivery — close-out will unlock once the farm logs the drop-off.
+              </p>
+            )}
+            {closeError && (
+              <p className="text-xs text-red-700">{closeError}</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function LineRow({ line }: { line: Line }) {
+function LineRow({ line, disabled = false }: { line: Line; disabled?: boolean }) {
   const meta = STATUS_META[line.status];
+  const router = useRouter();
+  const [checkedLocal, setCheckedLocal] = useState<boolean>(Boolean(line.receivedAt));
+  const [toggling, setToggling] = useState(false);
+
+  async function toggleCheck() {
+    if (disabled || toggling) return;
+    const next = !checkedLocal;
+    setCheckedLocal(next);
+    setToggling(true);
+    try {
+      const res = await fetch("/api/receiver/check-line", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: line.kind, id: line.dbId, received: next }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      router.refresh();
+    } catch {
+      setCheckedLocal(!next);
+    } finally {
+      setToggling(false);
+    }
+  }
+
   return (
-    <li className="px-5 py-3 flex items-center gap-3">
+    <li className={`px-5 py-3 flex items-center gap-3 ${checkedLocal ? "bg-farm-green/[0.04]" : ""} transition-colors`}>
+      {/* Pick checkmark — receiver verification. Disabled once the
+          delivery is closed out so the audit trail is locked. */}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checkedLocal}
+        aria-label={checkedLocal ? "Mark as not received" : "Mark as received"}
+        onClick={toggleCheck}
+        disabled={disabled}
+        className={`flex-shrink-0 w-7 h-7 rounded-md border-2 flex items-center justify-center transition-colors ${
+          checkedLocal
+            ? "bg-farm-green border-farm-green"
+            : disabled
+              ? "bg-farm-cream/40 border-farm-dark/15 cursor-not-allowed"
+              : "bg-white border-farm-dark/25 hover:border-farm-green cursor-pointer"
+        } ${toggling ? "opacity-60" : ""}`}
+      >
+        {checkedLocal && (
+          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
       {line.imageUrl ? (
         <div className="w-12 h-12 rounded-lg bg-farm-cream/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
           <img src={line.imageUrl} alt="" aria-hidden="true" className="w-10 h-10 object-contain" />

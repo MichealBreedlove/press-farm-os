@@ -1,0 +1,66 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+/**
+ * POST /api/receiver/close-delivery
+ *
+ * Close out a delivery for accountability — sets closed_at + closed_by_name
+ * on the delivery row, flips status to 'finalized', locking edits. Body
+ * { delivery_id, closed_by_name }. Receivers + admins.
+ *
+ * Idempotent — re-closing updates the timestamp + name (e.g. if a typo).
+ */
+export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profile || (profile.role !== "receiver" && profile.role !== "admin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  let body: { delivery_id?: string; closed_by_name?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const deliveryId = (body.delivery_id ?? "").trim();
+  const closedByName = (body.closed_by_name ?? "").trim();
+
+  if (!deliveryId) {
+    return NextResponse.json({ error: "delivery_id required" }, { status: 400 });
+  }
+  if (!closedByName) {
+    return NextResponse.json(
+      { error: "closed_by_name required — type your name to close out" },
+      { status: 400 },
+    );
+  }
+  if (closedByName.length > 100) {
+    return NextResponse.json({ error: "closed_by_name too long (max 100)" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const { error } = await (admin as any)
+    .from("deliveries")
+    .update({
+      closed_at: new Date().toISOString(),
+      closed_by_name: closedByName,
+      status: "finalized",
+    })
+    .eq("id", deliveryId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, closed_by_name: closedByName });
+}
