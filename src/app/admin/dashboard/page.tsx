@@ -97,7 +97,6 @@ export default async function AdminDashboardPage() {
         { href: "/admin/labor", title: "Labor", description: "Track hours", flower: "lavender" },
         { href: "/admin/expenses", title: "Expenses", description: "Track costs", flower: "chive-blossom" },
         { href: "/admin/notes", title: "Notes", description: "Field observations", flower: "pansy" },
-        { href: "/admin/packs", title: "Pack Manager", description: "Container inventory", flower: "hairy-vetch" },
         { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", flower: "bachelor-button" },
       ],
     },
