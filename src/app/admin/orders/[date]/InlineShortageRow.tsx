@@ -11,6 +11,8 @@ interface OrderItemForRow {
   itemName: string;
   category: string;
   unitType: string;
+  /** Per-line size label (e.g. "Tiny", "Bronze") if the chef picked one. */
+  sizeLabel?: string | null;
   quantityRequested: number;
   quantityFulfilled: number | null;
   isShorted: boolean;
@@ -141,9 +143,19 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <span className="text-xs text-farm-muted mr-1">
-            {UNIT_LABELS[orderItem.unitType as keyof typeof UNIT_LABELS] ?? orderItem.unitType}
+          {/* Container chip — distinct visual so the harvester can scan
+              for "what vessel does this go in" at a glance. Different
+              container per item is the norm here, not the exception. */}
+          <span className="inline-block px-1.5 py-0.5 mr-2 rounded text-[10px] font-bold uppercase tracking-wider bg-farm-green/15 text-farm-green tabular-nums align-middle">
+            {(UNIT_LABELS[orderItem.unitType as keyof typeof UNIT_LABELS] ?? orderItem.unitType ?? "—")
+              .toString()
+              .toUpperCase()}
           </span>
+          {orderItem.sizeLabel && (
+            <span className="inline-block px-1.5 py-0.5 mr-2 rounded text-[10px] font-medium bg-farm-cream text-farm-muted align-middle">
+              {orderItem.sizeLabel}
+            </span>
+          )}
           {isShorted ? (
             <span className="text-sm text-pf-master-orange font-semibold">
               {formatQty(orderItem.quantityFulfilled ?? 0)}{" "}

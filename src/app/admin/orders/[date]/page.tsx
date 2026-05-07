@@ -34,7 +34,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
       order_items(
-        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
+        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label,
         availability_item:availability_items(
           id,
           item:items(id, name, category, unit_type)
@@ -255,7 +255,18 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                               id: oi.id,
                               itemName: item?.name ?? "Unknown item",
                               category: item?.category ?? "other",
-                              unitType: item?.unit_type ?? "",
+                              // Per-line unit (added in migration 027) wins over
+                              // the catalog's multi-unit string. Falls back to the
+                              // catalog item's first declared unit for older lines
+                              // that haven't been backfilled.
+                              unitType:
+                                (oi.unit_type ?? "").trim() ||
+                                String(item?.unit_type ?? "")
+                                  .split(",")
+                                  .map((u: string) => u.trim())
+                                  .filter(Boolean)[0] ||
+                                "",
+                              sizeLabel: oi.size_label ?? null,
                               quantityRequested: oi.quantity_requested,
                               quantityFulfilled: oi.quantity_fulfilled,
                               isShorted: oi.is_shorted,
