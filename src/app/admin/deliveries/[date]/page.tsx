@@ -25,11 +25,13 @@ export default async function AdminDeliveryLogPage({
     .select("id, name")
     .order("name");
 
-  // Load all items for the form
+  // Load all items for the form — including archived ones, so existing
+  // delivery rows that reference archived items can still resolve their
+  // names. The DeliveryLogForm filters archived items out of the picker
+  // so admins don't see them when adding new lines.
   const { data: items } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price")
-    .eq("is_archived", false)
+    .select("id, name, category, unit_type, default_price, is_archived")
     .order("category")
     .order("name");
 

@@ -204,7 +204,9 @@ export function ItemRow({
           </div>
           {cycle_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{cycle_notes}</p>}
           {!cycle_notes && item.chef_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{item.chef_notes}</p>}
-          {(item as any).season_note && <p className="text-xs text-pf-master-orange mt-0.5 truncate">{(item as any).season_note}</p>}
+          {/* season_note intentionally hidden on chef-facing rows — it's
+              admin/farm-facing growing-cycle info (e.g. "Cool-season crop")
+              that clutters the order experience. */}
 
           {/* Whole-item color picker — only when item has NO sizes.
               For items WITH sizes, the color picker lives under each size row. */}

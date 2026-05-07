@@ -51,7 +51,7 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden print:hidden"
       style={{ filter: "saturate(0.9)" }}
     >
       {corners.map((corner, i) => {

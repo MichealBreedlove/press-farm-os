@@ -11,6 +11,7 @@ type Item = {
   category: string;
   unit_type: string;
   default_price: number | null;
+  is_archived?: boolean;
 };
 type DeliveryItem = {
   item_id: string;
@@ -230,8 +231,12 @@ export default function DeliveryLogForm({
     grouped[line.category].push(line);
   }
 
+  // Picker excludes archived items — itemMap above still includes them
+  // so old delivery rows that reference an archived item can still
+  // resolve their display name instead of falling back to the UUID.
   const filteredItems = items.filter(
     (i) =>
+      !i.is_archived &&
       !lines.some((l) => l.item_id === i.id) &&
       (searchTerm === "" ||
         i.name.toLowerCase().includes(searchTerm.toLowerCase()))

@@ -131,17 +131,17 @@ export function DeliveryWeatherBanner({ deliveryDate, deliveryDateFormatted }: D
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-xl border border-farm-dark/5 shadow-sm px-4 py-3 flex items-center gap-3">
-        <span className="text-3xl leading-none" aria-hidden="true">{icon}</span>
+        <span className="text-4xl leading-none" aria-hidden="true">{icon}</span>
         <div className="flex-1 min-w-0">
-          <p
-            className="text-[10px] tracking-[0.22em] uppercase text-farm-muted"
-            style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
-          >
-            Yountville · {deliveryDateFormatted}
+          <p className="text-sm font-semibold text-farm-dark leading-tight">
+            Yountville
           </p>
-          <p className="text-sm font-medium text-farm-dark mt-0.5">{label}</p>
+          <p className="text-xs text-farm-muted leading-tight mt-0.5">
+            {deliveryDateFormatted}
+          </p>
+          <p className="text-sm text-farm-dark/90 mt-1">{label}</p>
         </div>
-        <div className="text-right text-[11px] text-farm-muted leading-tight">
+        <div className="text-right text-xs text-farm-muted leading-snug">
           <p>
             <span className="text-farm-dark font-semibold">{w.high}°</span> / {w.low}°
           </p>
