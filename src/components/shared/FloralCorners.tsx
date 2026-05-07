@@ -51,7 +51,13 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden print:hidden"
+      // Negative z-index (-z-10) so the corner decorations sit BEHIND
+      // every page card in the normal flow. CSS stacking rules promote
+      // a positioned element with z-index: 0 above static-positioned
+      // descendants in the normal flow — which is what was causing the
+      // top-right squash blossom to bleed into the Reports cards on
+      // narrow viewports. Negative z-index pushes it firmly below.
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden print:hidden"
       style={{ filter: "saturate(0.9)" }}
     >
       {corners.map((corner, i) => {
