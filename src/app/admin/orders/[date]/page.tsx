@@ -4,7 +4,6 @@ import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
-import { NotifyReceiverButton } from "./NotifyReceiverButton";
 import { AddExtraRow } from "./AddExtraRow";
 import { ExtrasList } from "./ExtrasList";
 import { HarvestTotalsPanel } from "./HarvestTotalsPanel";
@@ -70,17 +69,6 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       )
     `)
     .eq("delivery_date", date);
-
-  // Most recent notify event for this date — drives the idle-state "last sent"
-  // line on the NotifyReceiverButton without an extra round-trip.
-  const { data: lastNotifyRaw } = await (admin as any)
-    .from("receiver_notify_log")
-    .select("sent_at, succeeded_count, failed_count")
-    .eq("delivery_date", date)
-    .order("sent_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const lastNotify = lastNotifyRaw as { sent_at: string; succeeded_count: number; failed_count: number } | null;
 
   // Active-receiver count — for the empty-state banner that surfaces the
   // gap BEFORE pick-and-pack (so admin can invite a receiver before
@@ -408,27 +396,6 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           );
         })}
 
-        {orders.length > 0 && (
-          <>
-            <Link
-              href={`/admin/orders/harvest?date=${date}`}
-              className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
-            >
-              View Harvest List
-            </Link>
-
-            {/* End-of-pick-and-pack: notify the receiver. Lives below the
-                harvest list link so it's the last action in the flow. */}
-            <NotifyReceiverButton
-              deliveryDate={date}
-              initialLastNotify={lastNotify ? {
-                sentAt: lastNotify.sent_at,
-                succeeded: lastNotify.succeeded_count,
-                failed: lastNotify.failed_count,
-              } : null}
-            />
-          </>
-        )}
       </div>
 
       {/* Sticky hand-off bar — only renders when there are orders to
