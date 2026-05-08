@@ -102,3 +102,49 @@ export async function fetchAvailabilityWithRollover(
     isInherited: true,
   };
 }
+
+/**
+ * Materialize rolled-over availability into real DB rows for the target
+ * date. Required before chefs can submit orders against rolled-over
+ * availability — the submit endpoint validates each line by ID against
+ * the exact delivery_date, and rolled-over rows still belong to the
+ * prior date until materialized here.
+ *
+ * Idempotent — uses the (item_id, restaurant_id, delivery_date) unique
+ * constraint to ignore duplicates if another concurrent request already
+ * created the rows. Caller should re-fetch availability after this so
+ * the IDs reflect the new rows.
+ *
+ * Must be called with an admin client (bypasses RLS — chef sessions
+ * can't write availability_items).
+ */
+export async function materializeRollover(
+  adminClient: any,
+  sourceRows: any[],
+  targetDeliveryDate: string,
+): Promise<void> {
+  if (sourceRows.length === 0) return;
+
+  const rowsToInsert = sourceRows.map((r) => ({
+    item_id: r.item_id,
+    restaurant_id: r.restaurant_id,
+    delivery_date: targetDeliveryDate,
+    status: r.status ?? "available",
+    limited_qty: r.limited_qty ?? null,
+    cycle_notes: r.cycle_notes ?? null,
+    available_sizes: r.available_sizes ?? null,
+    available_colors: r.available_colors ?? null,
+    available_units: r.available_units ?? null,
+  }));
+
+  const { error } = await adminClient
+    .from("availability_items")
+    .upsert(rowsToInsert, {
+      onConflict: "item_id,restaurant_id,delivery_date",
+      ignoreDuplicates: true,
+    });
+
+  if (error) {
+    console.error("[availability] materializeRollover failed:", error);
+  }
+}

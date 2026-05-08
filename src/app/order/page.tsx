@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate } from "@/lib/utils";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
-import { fetchAvailabilityWithRollover } from "@/lib/availability";
+import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import type { AvailabilityItemWithItem } from "@/types";
 
 /**
@@ -158,12 +159,30 @@ export default async function OrderPage({
   // Fetch availability items for this date + restaurant (auto-rollover to prior date if empty).
   // Events items are now tagged on the item itself (item.is_event_item) and live in the same
   // per-restaurant availability table — no separate Events-restaurant fetch / merge.
-  const { data: rawItems } = await fetchAvailabilityWithRollover(supabase, {
+  let { data: rawItems, isInherited } = await fetchAvailabilityWithRollover(supabase, {
     deliveryDate: deliveryDate.date,
     restaurantId: restaurant.id,
     withItem: true,
     hideUnavailable: true,
   });
+
+  // Materialize rolled-over rows into real DB rows for THIS date so the
+  // submit endpoint's per-line validation (which queries by exact
+  // delivery_date) accepts them. Otherwise the chef sees the items in
+  // the form but Submit fails with "One or more items are not available
+  // for this restaurant/date" — the IDs were for the prior date.
+  if (isInherited && (rawItems ?? []).length > 0) {
+    const adminForMaterialize = createAdminClient();
+    await materializeRollover(adminForMaterialize, rawItems!, deliveryDate.date);
+    // Re-fetch — should now hit the direct path with target-date IDs.
+    const refetched = await fetchAvailabilityWithRollover(supabase, {
+      deliveryDate: deliveryDate.date,
+      restaurantId: restaurant.id,
+      withItem: true,
+      hideUnavailable: true,
+    });
+    rawItems = refetched.data;
+  }
 
   const availabilityItems: AvailabilityItemWithItem[] = (rawItems ?? []).filter(
     (ai: any) => ai.item && !ai.item.is_archived,
