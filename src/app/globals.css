@@ -112,9 +112,14 @@
   /* --- Page headers --- */
   .page-header {
     @apply bg-farm-green px-4 py-3 z-10 text-white relative;
-    padding-right: 245px;
+    /* Mobile: only the squash icon is visible (≈64px reserved). Tablet+
+       brings back the PRESS FARM wordmark text — see media query below. */
+    padding-right: 80px;
   }
-  /* "PRESS FARM" wordmark — REAL Bank Gothic LT Bold rendered as CSS text */
+  /* "PRESS FARM" wordmark — REAL Bank Gothic LT Bold rendered as CSS text.
+     Hidden on narrow screens because it competes with long page titles
+     (e.g. "Order for Saturday, May 9") and the wrapped title bleeds
+     under the wordmark. Brought back at sm+ where there's room. */
   .page-header::before {
     content: "PRESS FARM";
     position: absolute;
@@ -129,16 +134,17 @@
     color: #ffffff;
     white-space: nowrap;
     line-height: 1;
+    display: none; /* hidden by default on mobile */
   }
-  /* Squash blossom icon — bigger brand bookend on the right */
+  /* Squash blossom icon — smaller on mobile so the title gets more room. */
   .page-header::after {
     content: "";
     position: absolute;
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    width: 88px;
-    height: 88px;
+    width: 56px;
+    height: 56px;
     background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom-2.png");
     background-size: contain;
     background-repeat: no-repeat;
@@ -152,6 +158,7 @@
     .page-header::before {
       right: 124px;
       font-size: 26px;
+      display: block; /* wordmark visible on tablet+ */
     }
     .page-header::after {
       width: 108px;
