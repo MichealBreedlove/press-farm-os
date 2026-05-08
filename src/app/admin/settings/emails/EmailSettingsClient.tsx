@@ -24,6 +24,12 @@ const EMAIL_FIELDS = [
     placeholder: "orders@pressfarm.app",
   },
   {
+    key: "email_receiver",
+    label: "Receiver Email",
+    description: "Override for the receiver-daily handoff email. Leave blank to send to whatever address the receiver account uses.",
+    placeholder: "receiver@pressnapavalley.com",
+  },
+  {
     key: "email_admin",
     label: "Admin Email",
     description: "Primary admin email for the farm",

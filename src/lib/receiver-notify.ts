@@ -209,14 +209,34 @@ export async function sendToReceivers(
 ): Promise<SendResult[]> {
   const admin = createAdminClient();
 
-  const { data: receiverProfiles } = await (admin as any)
-    .from("profiles")
-    .select("id, full_name")
-    .eq("role", "receiver")
-    .eq("is_active", true);
+  // Settings override — if email_receiver is set in farm_settings, that's
+  // the canonical recipient list (comma-separated supported). Otherwise
+  // fall back to whatever email is on the active receiver profile(s).
+  const { data: overrideSetting } = await (admin as any)
+    .from("farm_settings")
+    .select("value")
+    .eq("key", "email_receiver")
+    .maybeSingle();
+  const overrideRaw = (overrideSetting?.value ?? "").trim();
+  const overrideEmails = overrideRaw
+    ? overrideRaw.split(",").map((s: string) => s.trim()).filter(Boolean)
+    : [];
 
-  const profiles = (receiverProfiles ?? []) as Array<{ id: string; full_name: string | null }>;
-  if (profiles.length === 0) return [];
+  let profiles: Array<{ id: string; full_name: string | null; email?: string }> = [];
+
+  if (overrideEmails.length > 0) {
+    // Synthetic profiles — one per override email so the loop below
+    // iterates over them like real receivers.
+    profiles = overrideEmails.map((email: string) => ({ id: email, full_name: "Receiver", email }));
+  } else {
+    const { data: receiverProfiles } = await (admin as any)
+      .from("profiles")
+      .select("id, full_name")
+      .eq("role", "receiver")
+      .eq("is_active", true);
+    profiles = (receiverProfiles ?? []) as Array<{ id: string; full_name: string | null }>;
+    if (profiles.length === 0) return [];
+  }
 
   const { data: authUsers } = await admin.auth.admin.listUsers();
   const emailMap = new Map<string, string>();
@@ -228,7 +248,9 @@ export async function sendToReceivers(
   const results: SendResult[] = [];
 
   for (const recv of profiles) {
-    const email = emailMap.get(recv.id);
+    // Synthetic override-mode profiles already carry their own email;
+    // real profiles look up by id from the auth.users map.
+    const email = (recv as any).email ?? emailMap.get(recv.id);
     if (!email) continue;
 
     try {

@@ -11,23 +11,72 @@ interface LaborEntry {
   hours: number;
   hourly_rate: number | null;
   notes: string | null;
+  time_in?: string | null;
+  lunch_out?: string | null;
+  lunch_in?: string | null;
+  time_out?: string | null;
+}
+
+/**
+ * Parse "HH:MM" or "HH:MM:SS" → minutes since midnight, or null on
+ * empty/malformed input. Used for the live computed-hours preview while
+ * the admin types times into the form.
+ */
+function parseTimeToMinutes(value: string): number | null {
+  const m = value.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/** Format "13:30:00" or "13:30" → "1:30" (12-hour, no AM/PM, matches the example email). */
+function fmtTime(value: string | null | undefined): string {
+  if (!value) return "";
+  const m = value.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return value;
+  const h24 = parseInt(m[1], 10);
+  const mm = m[2];
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${mm}`;
 }
 
 export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId: string }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   const [workerName, setWorkerName] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [hours, setHours] = useState("8");
+  const [timeIn, setTimeIn] = useState("");
+  const [lunchOut, setLunchOut] = useState("");
+  const [lunchIn, setLunchIn] = useState("");
+  const [timeOut, setTimeOut] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Live computed hours preview — same math as the server
+  const computedHours = (() => {
+    const tIn = parseTimeToMinutes(timeIn);
+    const tOut = parseTimeToMinutes(timeOut);
+    if (tIn == null || tOut == null || tOut <= tIn) return null;
+    let lunchMins = 0;
+    if (lunchOut && lunchIn) {
+      const lOut = parseTimeToMinutes(lunchOut);
+      const lIn = parseTimeToMinutes(lunchIn);
+      if (lOut == null || lIn == null || lIn <= lOut) return null;
+      lunchMins = lIn - lOut;
+    }
+    return Math.round(((tOut - tIn - lunchMins) / 60) * 100) / 100;
+  })();
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFormError(null);
     setSaving(true);
     const res = await fetch("/api/labor", {
       method: "POST",
@@ -36,18 +85,27 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
         farm_id: farmId,
         worker_name: workerName,
         date,
-        hours: parseFloat(hours),
+        time_in: timeIn || null,
+        lunch_out: lunchOut || null,
+        lunch_in: lunchIn || null,
+        time_out: timeOut || null,
         hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
         notes: notes || null,
       }),
     });
     if (res.ok) {
       setWorkerName("");
-      setHours("8");
+      setTimeIn("");
+      setLunchOut("");
+      setLunchIn("");
+      setTimeOut("");
       setHourlyRate("");
       setNotes("");
       setShowForm(false);
       router.refresh();
+    } else {
+      const json = await res.json().catch(() => ({}));
+      setFormError(json.error ?? "Failed to save");
     }
     setSaving(false);
   }
@@ -197,19 +255,55 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
               />
             </div>
           </div>
+          {/* Clock times — 2x2 grid of time-of-day inputs. Hours
+              computed live from the values; lunch is optional but the
+              two lunch fields must be set together. */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="form-label">Hours</label>
+              <label className="form-label">Time In</label>
               <input
-                type="number"
+                type="time"
                 required
-                step="0.5"
-                min="0.5"
-                max="24"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
+                value={timeIn}
+                onChange={(e) => setTimeIn(e.target.value)}
                 className="input-field"
               />
+            </div>
+            <div>
+              <label className="form-label">Lunch Out</label>
+              <input
+                type="time"
+                value={lunchOut}
+                onChange={(e) => setLunchOut(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="form-label">Lunch In</label>
+              <input
+                type="time"
+                value={lunchIn}
+                onChange={(e) => setLunchIn(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="form-label">Time Out</label>
+              <input
+                type="time"
+                required
+                value={timeOut}
+                onChange={(e) => setTimeOut(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-farm-cream/40 rounded-xl px-3 py-2.5 flex items-baseline justify-between">
+              <span className="text-xs text-farm-muted">Hours</span>
+              <span className="text-base font-semibold text-farm-green">
+                {computedHours != null ? `${computedHours}h` : "—"}
+              </span>
             </div>
             <div>
               <label className="form-label">Rate ($/hr)</label>
@@ -233,6 +327,11 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
               className="input-field"
             />
           </div>
+          {formError && (
+            <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-2 border border-red-100">
+              {formError}
+            </p>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={saving} className="btn-primary flex-1">
               {saving ? "Saving..." : "Save"}
@@ -261,27 +360,43 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
             <span className="text-right">Hours</span>
             <span />
           </div>
-          {entries.map((entry) => (
-            <div
-              key={entry.id}
-              className="px-4 py-3 border-b border-gray-50 last:border-0 grid grid-cols-[1fr_60px_44px_44px] items-center"
-            >
-              <div>
-                <p className="text-sm font-medium text-farm-dark">{entry.worker_name}</p>
-                {entry.notes && <p className="text-xs text-farm-muted truncate">{entry.notes}</p>}
-              </div>
-              <span className="text-xs text-farm-muted">
-                {new Date(entry.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-              </span>
-              <span className="text-sm font-semibold text-farm-green text-right">{entry.hours}h</span>
-              <button
-                onClick={() => handleDelete(entry.id)}
-                className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-0 min-w-0 flex items-center justify-center"
+          {entries.map((entry) => {
+            // Build the time range — same shape as the timesheet email so
+            // what the admin sees in the list reads as a preview of what
+            // the supervisor will see.
+            const hasTimes = entry.time_in && entry.time_out;
+            const range = hasTimes
+              ? entry.lunch_out && entry.lunch_in
+                ? `${fmtTime(entry.time_in)} - ${fmtTime(entry.lunch_out)}, ${fmtTime(entry.lunch_in)} - ${fmtTime(entry.time_out)}`
+                : `${fmtTime(entry.time_in)} - ${fmtTime(entry.time_out)}`
+              : null;
+            return (
+              <div
+                key={entry.id}
+                className="px-4 py-3 border-b border-gray-50 last:border-0 grid grid-cols-[1fr_60px_56px_44px] items-center gap-2"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-farm-dark">{entry.worker_name}</p>
+                  {range && (
+                    <p className="text-xs text-farm-muted tabular-nums truncate">{range}</p>
+                  )}
+                  {!range && entry.notes && (
+                    <p className="text-xs text-farm-muted truncate">{entry.notes}</p>
+                  )}
+                </div>
+                <span className="text-xs text-farm-muted">
+                  {new Date(entry.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+                <span className="text-sm font-semibold text-farm-green text-right tabular-nums">{entry.hours}h</span>
+                <button
+                  onClick={() => handleDelete(entry.id)}
+                  className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-0 min-w-0 flex items-center justify-center"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
