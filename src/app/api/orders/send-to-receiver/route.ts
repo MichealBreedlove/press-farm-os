@@ -3,17 +3,28 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReceiverBlocks, sendToReceivers } from "@/lib/receiver-notify";
 
+const VALID_UNITS = new Set(["ea", "sm", "lg", "lbs", "bu", "qt", "bx", "cs", "pt", "kit", "gb"]);
+
 /**
  * POST /api/orders/send-to-receiver
  *
  * One-shot "I'm done picking" action from the unified pick page. For
  * the given delivery date, this:
- *   1. Bumps every 'submitted' or 'in_progress' order to 'in_progress'
- *      so the receiver dashboard shows them as the day's queue
- *      (idempotent — safe to call multiple times).
- *   2. Builds the receiver blocks (orders + shortages overlay) and
- *      emails the active receiver(s) the same daily handoff template
- *      the cron uses.
+ *   1. Bumps every 'submitted' order to 'in_progress' so the receiver
+ *      dashboard shows them as the day's queue.
+ *   2. Auto-creates the financial paper trail — for each picked or
+ *      shorted order_item that doesn't already have a matching
+ *      delivery_items row, materialize one. The deliveries row is
+ *      upserted on (date, restaurant). The deliveries.total_value
+ *      trigger then auto-rolls up to the financial reports.
+ *   3. Sends the receiver-daily email with the same template the cron
+ *      uses.
+ *
+ * Idempotent — safe to call multiple times. Existing delivery_items
+ * are not duplicated; existing rows aren't overwritten so the receiver
+ * can correct quantities mid-day. Once the receiver closes out the
+ * delivery (status = 'finalized'), this endpoint will skip the
+ * auto-create for that delivery to preserve the audit trail.
  *
  * Admin-only. Body: { date: "YYYY-MM-DD" }.
  */
@@ -57,6 +68,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Status update failed: ${statusErr.message}` }, { status: 500 });
   }
 
+  // Auto-create delivery_items so the financial reports light up
+  // without anyone visiting the legacy /admin/deliveries log page.
+  const created = await materializeDeliveryItems(admin, date);
+
   // Build + send the receiver email. Falls back gracefully if no
   // active receivers exist — admin sees a clear message rather than
   // a silent no-op.
@@ -66,6 +81,7 @@ export async function POST(request: Request) {
       ok: true,
       bumped: bumpedCount ?? 0,
       sent: 0,
+      delivery_items_created: created,
       message: "No orders for this date — nothing to send.",
     });
   }
@@ -79,7 +95,138 @@ export async function POST(request: Request) {
     bumped: bumpedCount ?? 0,
     sent: successes,
     failed: failures.length,
+    delivery_items_created: created,
     failures: failures.map((f) => ({ to: f.receiver, error: String(f.error ?? f.status) })),
     receivers_count: sendResults.length,
   });
+}
+
+/**
+ * For every picked/shorted order_item on this delivery_date, ensure a
+ * matching delivery_items row exists so financial reports pick up
+ * revenue automatically. Returns the count of rows created.
+ *
+ * Skips:
+ *   • order_items that are neither picked nor shorted (admin hasn't
+ *     resolved them yet — sending without resolving would silently
+ *     under-report)
+ *   • deliveries already in 'finalized' status (receiver locked them)
+ *   • (delivery_id, item_id, unit) combos already in delivery_items
+ */
+async function materializeDeliveryItems(admin: any, date: string): Promise<number> {
+  // Pull all order_items for the date that are resolved (picked OR shorted)
+  // along with their item + order context. Items missing a price fall
+  // back to items.default_price; null prices ultimately get stored as 0
+  // and the admin can correct via the receiver edit flow before close-out.
+  const { data: orders } = await admin
+    .from("orders")
+    .select(`
+      id, restaurant_id, delivery_date,
+      order_items(
+        id, quantity_requested, quantity_fulfilled, is_shorted,
+        unit_type, unit_price_at_order, picked_at,
+        availability_item:availability_items(
+          item:items(id, name, unit_type, default_price)
+        )
+      )
+    `)
+    .eq("delivery_date", date);
+
+  if (!orders || orders.length === 0) return 0;
+
+  // Get existing deliveries for this date (id keyed by restaurant_id)
+  // and track which are finalized so we don't touch them.
+  const { data: existingDeliveries } = await admin
+    .from("deliveries")
+    .select("id, restaurant_id, status")
+    .eq("delivery_date", date);
+  const deliveryByRestaurant = new Map<string, { id: string; status: string }>();
+  for (const d of (existingDeliveries ?? []) as Array<{ id: string; restaurant_id: string; status: string }>) {
+    deliveryByRestaurant.set(d.restaurant_id, { id: d.id, status: d.status });
+  }
+
+  let createdCount = 0;
+
+  for (const order of orders as any[]) {
+    const restaurantId = order.restaurant_id as string;
+    const resolvedLines = (order.order_items ?? []).filter(
+      (oi: any) => oi.picked_at || oi.is_shorted,
+    );
+    if (resolvedLines.length === 0) continue;
+
+    // Get-or-create the deliveries row for this restaurant on this date
+    let delivery = deliveryByRestaurant.get(restaurantId);
+    if (!delivery) {
+      const { data: newDelivery, error: delErr } = await admin
+        .from("deliveries")
+        .insert({
+          delivery_date: date,
+          restaurant_id: restaurantId,
+          status: "logged",
+        })
+        .select("id, status")
+        .single();
+      if (delErr || !newDelivery) {
+        console.error("[send-to-receiver] failed to create delivery row:", delErr);
+        continue;
+      }
+      delivery = { id: newDelivery.id, status: newDelivery.status };
+      deliveryByRestaurant.set(restaurantId, delivery);
+    }
+    if (delivery.status === "finalized") continue;
+
+    // Pull existing delivery_items for this delivery to dedupe
+    const { data: existingLines } = await admin
+      .from("delivery_items")
+      .select("item_id, unit")
+      .eq("delivery_id", delivery.id);
+    const existingKeys = new Set<string>(
+      (existingLines ?? []).map((l: any) => `${l.item_id}|${(l.unit ?? "").toLowerCase()}`),
+    );
+
+    // Build the rows to insert, deduped against (item_id, unit)
+    const rowsToInsert: any[] = [];
+    for (const oi of resolvedLines) {
+      const item = oi.availability_item?.item;
+      if (!item) continue;
+
+      const lineUnit = (oi.unit_type ?? "").trim().toLowerCase() ||
+        (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea");
+      if (!VALID_UNITS.has(lineUnit)) continue;
+
+      const key = `${item.id}|${lineUnit}`;
+      if (existingKeys.has(key)) continue;
+
+      const qty = oi.is_shorted
+        ? Number(oi.quantity_fulfilled ?? 0)
+        : Number(oi.quantity_requested ?? 0);
+      if (qty <= 0) continue;
+
+      const unitPrice = oi.unit_price_at_order != null
+        ? Number(oi.unit_price_at_order)
+        : Number(item.default_price ?? 0);
+
+      rowsToInsert.push({
+        delivery_id: delivery.id,
+        item_id: item.id,
+        quantity: qty,
+        unit: lineUnit,
+        unit_price: unitPrice,
+      });
+      existingKeys.add(key); // prevent intra-loop duplicates from multi-unit items
+    }
+
+    if (rowsToInsert.length === 0) continue;
+
+    const { error: insertErr } = await admin
+      .from("delivery_items")
+      .insert(rowsToInsert);
+    if (insertErr) {
+      console.error("[send-to-receiver] delivery_items insert failed:", insertErr);
+      continue;
+    }
+    createdCount += rowsToInsert.length;
+  }
+
+  return createdCount;
 }
