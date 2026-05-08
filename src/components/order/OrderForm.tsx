@@ -107,7 +107,14 @@ export function OrderForm({
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
       (acc, cat) => {
-        acc[cat] = items.filter((ai) => ai.item.category === cat);
+        // Items within each category section sorted alphabetically by
+        // name so chefs can scan a long list quickly. Case-insensitive
+        // localeCompare so "Sage" and "sage" sort consistently.
+        acc[cat] = items
+          .filter((ai) => ai.item.category === cat)
+          .sort((a, b) =>
+            a.item.name.localeCompare(b.item.name, undefined, { sensitivity: "base" }),
+          );
         return acc;
       },
       {} as Record<ItemCategory, AvailabilityItemWithItem[]>,
