@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate } from "@/lib/utils";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
+import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -16,9 +17,9 @@ import type { AvailabilityItemWithItem } from "@/types";
 export default async function OrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string }>;
+  searchParams: Promise<{ edit?: string; date?: string }>;
 }) {
-  const { edit: editOrderId } = await searchParams;
+  const { edit: editOrderId, date: dateOverride } = await searchParams;
   const supabase = await createClient();
 
   // Auth check
@@ -109,10 +110,21 @@ export default async function OrderPage({
     }
   }
 
-  // Find the delivery date to show: the edited order's date (if still open) OR the next open date
+  // Find the delivery date to show: explicit ?date= override (off-schedule
+  // ordering) → the edited order's date → next open date.
   let deliveryDate: any = null;
 
-  if (targetDate) {
+  if (dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride)) {
+    const { data: explicit } = await supabase
+      .from("delivery_dates")
+      .select("id, date, day_of_week, ordering_open")
+      .eq("date", dateOverride)
+      .eq("ordering_open", true)
+      .single() as any;
+    deliveryDate = explicit;
+  }
+
+  if (!deliveryDate && targetDate) {
     const { data: editDate } = await supabase
       .from("delivery_dates")
       .select("id, date, day_of_week, ordering_open")
@@ -197,6 +209,12 @@ export default async function OrderPage({
         <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
         <p className="text-sm text-gray-500">{restaurant.name}</p>
       </header>
+
+      {/* Off-schedule order affordance — sits just below the header so
+          it's visible without crowding. Only shown when not editing. */}
+      {!isEditing && (
+        <PickCustomDateLink currentDate={deliveryDate.date} />
+      )}
 
       <div className="px-4 pt-4">
         <DeliveryWeatherBanner
