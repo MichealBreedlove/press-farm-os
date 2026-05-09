@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { priceForUnit } from "@/lib/utils";
@@ -70,6 +70,70 @@ export function OrderForm({
   const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
+
+  // Rehydrate from sessionStorage on first mount when not editing — this
+  // is what makes "Review Order → Back" preserve quantities. The review
+  // page wrote press_farm_order before navigating; if the chef clicks
+  // Back, OrderForm remounts fresh from server props and would otherwise
+  // wipe the order. Restore it once if the saved snapshot matches this
+  // restaurant + delivery date so we don't accidentally cross-contaminate
+  // a different in-flight session.
+  useEffect(() => {
+    if (editingOrderId) return; // edit mode hydrates from order_items via props
+    try {
+      const raw = typeof window !== "undefined"
+        ? sessionStorage.getItem("press_farm_order")
+        : null;
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (
+        saved?.restaurantId !== restaurantId ||
+        saved?.deliveryDate !== deliveryDate
+      ) {
+        return; // not the same draft — don't restore
+      }
+      // The saved payload is the format the review page reads — a
+      // flattened items[] array. Rebuild the quantity / color maps
+      // using the same composite keys the form computes from
+      // (availabilityItemId, unit, size).
+      const restoredQuantities: Record<string, number> = {};
+      const restoredColors: Record<string, string[]> = {};
+      for (const it of saved.items ?? []) {
+        const aiId = it.availabilityItemId as string;
+        const unit = it.unitType as string | undefined;
+        const size = it.sizeLabel as string | null | undefined;
+        const ai = availabilityItems.find((a) => a.id === aiId);
+        const itemUnits = String(ai?.item?.unit_type ?? "")
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean);
+        const hasMulti = itemUnits.length > 1;
+        let key: string;
+        if (hasMulti && size && unit) key = `${aiId}__unit:${unit}__${size}`;
+        else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
+        else if (size) key = `${aiId}__${size}`;
+        else key = aiId;
+        restoredQuantities[key] = (restoredQuantities[key] ?? 0) + Number(it.quantity ?? 0);
+        if (it.colorKey) {
+          restoredColors[key] = String(it.colorKey).split(",").filter(Boolean);
+        }
+      }
+      if (Object.keys(restoredQuantities).length > 0) {
+        setQuantities(restoredQuantities);
+      }
+      if (Object.keys(restoredColors).length > 0) {
+        setItemColors(restoredColors);
+      }
+      if (typeof saved.freeformNotes === "string") {
+        setFreeformNotes(saved.freeformNotes);
+      }
+    } catch {
+      // Malformed payload — ignore. Worst case the chef re-enters quantities.
+    }
+    // Run once on mount; deps left intentionally empty so re-renders don't
+    // wipe in-progress edits the chef has made since the restore.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Filter to only available/limited items, then by search query
   const allAvailable = availabilityItems.filter((ai) => ai.status !== "unavailable");
@@ -274,7 +338,7 @@ export function OrderForm({
           </div>
         ) : (
           <>
-            {/* ── REGULAR MENU ──────────────────────────────────────── */}
+            {/* ── REGULAR MENU ──────────────────────────────────── */}
             {regularItems.length > 0 && (
               <>
                 {(eventItems.length > 0 || pressBarItems.length > 0) && (
@@ -305,7 +369,7 @@ export function OrderForm({
               </>
             )}
 
-            {/* ── EVENTS MENU ───────────────────────────────────────── */}
+            {/* ── EVENTS MENU ───────────────────────────────────── */}
             {eventItems.length > 0 && (
               <>
                 <div className="mt-8 mb-3 pt-5 border-t border-pf-master-violet/20">
@@ -342,7 +406,7 @@ export function OrderForm({
               </>
             )}
 
-            {/* ── PRESS BAR MENU ────────────────────────────────────── */}
+            {/* ── PRESS BAR MENU ────────────────────────────────── */}
             {pressBarItems.length > 0 && (
               <>
                 <div className="mt-8 mb-3 pt-5 border-t border-pf-master-blue/20">
