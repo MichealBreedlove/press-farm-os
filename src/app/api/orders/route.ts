@@ -85,6 +85,11 @@ export async function POST(request: Request) {
       color_key?: string | null;
     }[];
     freeform_notes?: string;
+    /** When set, this is an explicit edit — replace existing items.
+     *  When omitted, a second submission for the same date MERGES new items
+     *  into the existing order (matching availId+unit+size+color sums qty;
+     *  unmatched lines are appended). */
+    editing_order_id?: string | null;
   };
 
   try {
@@ -93,7 +98,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { restaurant_id, delivery_date, items, freeform_notes } = body;
+  const { restaurant_id, delivery_date, items, freeform_notes, editing_order_id } = body;
 
   if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
     return NextResponse.json(
@@ -144,7 +149,7 @@ export async function POST(request: Request) {
   // admin already started picking, fulfilled, or cancelled — including
   // racing with a "Finish & Send" that just emailed the receiver.
   const { data: existingOrder } = await (supabase.from("orders") as any)
-    .select("status")
+    .select("id, status")
     .eq("restaurant_id", restaurant_id)
     .eq("delivery_date", delivery_date)
     .maybeSingle();
@@ -157,7 +162,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Upsert order (one per restaurant per delivery date — unique constraint handles conflict)
+  // Merge mode = chef submits a fresh order for a date that already has one,
+  // and they're NOT in the explicit edit flow. Append new lines (summing qty
+  // when availId+unit+size+color match) instead of wiping the existing items.
+  const isMerge = !!existingOrder && !editing_order_id;
+
+  // Upsert order (one per restaurant per delivery date — unique constraint handles conflict).
+  // Merge mode preserves existing freeform_notes and appends the new note (if any),
+  // so a chef who adds a follow-up order doesn't wipe the original instructions.
+  let mergedNotes: string | null = freeform_notes ?? null;
+  if (isMerge) {
+    const { data: cur } = await (supabase.from("orders") as any)
+      .select("freeform_notes")
+      .eq("id", existingOrder!.id)
+      .single();
+    const prior = (cur?.freeform_notes ?? "").trim();
+    const next = (freeform_notes ?? "").trim();
+    if (prior && next) {
+      mergedNotes = `${prior}\n\n— Added later —\n${next}`;
+    } else {
+      mergedNotes = prior || next || null;
+    }
+  }
+
   const { data: order, error: orderError } = await (supabase
     .from("orders") as any)
     .upsert(
@@ -166,7 +193,7 @@ export async function POST(request: Request) {
         chef_id: user.id,
         delivery_date,
         status: "submitted",
-        freeform_notes: freeform_notes ?? null,
+        freeform_notes: mergedNotes,
         submitted_at: new Date().toISOString(),
       },
       {
@@ -217,14 +244,11 @@ export async function POST(request: Request) {
     ]),
   );
 
-  // Delete existing order items then reinsert (simplest approach for re-orders)
-  await supabase.from("order_items").delete().eq("order_id", order.id);
-
-  // Insert new order items (skip zero-qty items)
-  // Persist the (unit, size, color) discriminators so chefs can order
-  // multiple sizes/colors of the same item and have them round-trip through
-  // the receiver dashboard, email, and edit-order hydration.
-  const orderItems = items
+  // Build the canonical line shape for incoming items. Persist the
+  // (unit, size, color) discriminators so chefs can order multiple
+  // sizes/colors of the same item and have them round-trip through the
+  // receiver dashboard, email, and edit-order hydration.
+  const incomingLines = items
     .filter((item) => item.quantity > 0)
     .map((item) => ({
       order_id: order.id,
@@ -239,12 +263,65 @@ export async function POST(request: Request) {
       color_key: item.color_key ?? null,
     }));
 
-  if (orderItems.length > 0) {
-    const { error: itemsError } = await (supabase.from("order_items") as any).insert(orderItems);
+  // Track items used for the email summary. In merge mode this is just the
+  // new lines (the chef only needs to see what they just submitted).
+  let orderItems = incomingLines;
 
-    if (itemsError) {
-      console.error("Order items insert error:", itemsError);
-      return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
+  if (isMerge) {
+    // Merge: sum qty into matching existing lines (same availId+unit+size+color);
+    // anything unmatched is appended. Existing untouched lines stay put.
+    const lineKey = (l: any) =>
+      `${l.availability_item_id}|${l.unit_type ?? ""}|${l.size_label ?? ""}|${l.color_key ?? ""}`;
+
+    const { data: existingItems } = await (supabase.from("order_items") as any)
+      .select("id, availability_item_id, unit_type, size_label, color_key, quantity_requested")
+      .eq("order_id", order.id);
+
+    const existingByKey = new Map<string, any>();
+    for (const ei of existingItems ?? []) {
+      existingByKey.set(lineKey(ei), ei);
+    }
+
+    const toInsert: any[] = [];
+    const toUpdate: { id: string; quantity_requested: number }[] = [];
+    for (const line of incomingLines) {
+      const match = existingByKey.get(lineKey(line));
+      if (match) {
+        toUpdate.push({
+          id: match.id,
+          quantity_requested:
+            Number(match.quantity_requested ?? 0) + Number(line.quantity_requested),
+        });
+      } else {
+        toInsert.push(line);
+      }
+    }
+
+    for (const upd of toUpdate) {
+      const { error: updErr } = await (supabase.from("order_items") as any)
+        .update({ quantity_requested: upd.quantity_requested })
+        .eq("id", upd.id);
+      if (updErr) {
+        console.error("Order items merge-update error:", updErr);
+        return NextResponse.json({ error: "Failed to merge order items" }, { status: 500 });
+      }
+    }
+    if (toInsert.length > 0) {
+      const { error: insErr } = await (supabase.from("order_items") as any).insert(toInsert);
+      if (insErr) {
+        console.error("Order items merge-insert error:", insErr);
+        return NextResponse.json({ error: "Failed to merge order items" }, { status: 500 });
+      }
+    }
+  } else {
+    // Replace: explicit edit flow OR brand-new order. Wipe + reinsert.
+    await supabase.from("order_items").delete().eq("order_id", order.id);
+    if (incomingLines.length > 0) {
+      const { error: itemsError } = await (supabase.from("order_items") as any).insert(incomingLines);
+      if (itemsError) {
+        console.error("Order items insert error:", itemsError);
+        return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
+      }
     }
   }
 

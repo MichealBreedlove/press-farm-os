@@ -65,6 +65,11 @@ export default function OrderReviewPage() {
             color_key: item.colorKey,
           })),
           freeform_notes: freeformNotes || undefined,
+          // Tells the API "this is an explicit edit — replace items".
+          // Without it, a second submission for an existing date MERGES
+          // (sums qty for matching lines, appends new ones) instead of
+          // wiping the prior order.
+          editing_order_id: editingOrderId ?? null,
         }),
       });
 

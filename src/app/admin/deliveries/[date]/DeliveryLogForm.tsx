@@ -410,10 +410,11 @@ export default function DeliveryLogForm({
         </button>
       )}
 
-      {/* Item picker modal */}
+      {/* Item picker modal — z-[60] sits above the admin BottomNav (z-50)
+          so the search results aren't clipped behind the nav on mobile. */}
       {showItemPicker && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-white rounded-t-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-end">
+          <div className="bg-white rounded-t-2xl w-full max-h-[85vh] flex flex-col">
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
               <h3 className="font-semibold text-farm-dark">Add Item</h3>
               <button
@@ -528,4 +529,3 @@ export default function DeliveryLogForm({
     </div>
   );
 }
-
