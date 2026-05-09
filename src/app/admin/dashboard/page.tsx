@@ -57,12 +57,24 @@ export default async function AdminDashboardPage() {
     { data: monthDeliveries },
     { data: monthExpenses },
     { data: weekLabor },
+    { data: offScheduleOrders },
   ] = await Promise.all([
     (admin as any).from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     (admin as any).from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
     (admin as any).from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
     (admin as any).from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
     (admin as any).from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
+    // Off-schedule orders: any active order whose linked delivery_date
+    // has day_of_week='custom' (anything not Thu/Sat/Mon, or an ad-hoc
+    // date the chef opened from the order page). Limited to 20 most
+    // recent — banner shows them all but caps the query for safety.
+    (admin as any)
+      .from("orders")
+      .select("id, delivery_date, status, restaurant:restaurants(name), delivery_dates!inner(day_of_week)")
+      .in("status", ["submitted", "in_progress", "fulfilled"])
+      .eq("delivery_dates.day_of_week", "custom")
+      .order("delivery_date", { ascending: true })
+      .limit(20),
   ]);
 
   const nextDeliveryDate = nextDate?.date;
@@ -168,6 +180,50 @@ export default async function AdminDashboardPage() {
       </section>
 
       <div className="px-4 py-6 space-y-8 max-w-3xl mx-auto">
+
+        {/* Off-schedule orders banner — flagged when a chef ordered for
+            a date outside the standard Thu/Sat/Mon schedule. Stays
+            visible until those orders are fulfilled and the date
+            falls out of the active set. */}
+        {offScheduleOrders && offScheduleOrders.length > 0 && (
+          <section className="bg-red-50 border-2 border-red-300 rounded-2xl px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span aria-hidden="true" className="text-2xl leading-none flex-shrink-0">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-red-800">
+                  Off-schedule order{offScheduleOrders.length === 1 ? "" : "s"}
+                </p>
+                <p className="text-sm text-red-900 mt-1 leading-snug">
+                  {offScheduleOrders.length} order{offScheduleOrders.length === 1 ? " was" : "s were"} placed outside the normal Thu / Sat / Mon delivery schedule.
+                </p>
+                <ul className="mt-3 space-y-1">
+                  {offScheduleOrders.map((o: any) => {
+                    const formatted = new Date(o.delivery_date + "T12:00:00").toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    });
+                    return (
+                      <li key={o.id}>
+                        <a
+                          href={`/admin/orders/${o.delivery_date}`}
+                          className="inline-flex items-center gap-2 text-sm text-red-900 hover:underline"
+                        >
+                          <span className="font-semibold">{formatted}</span>
+                          <span className="text-red-800/80">·</span>
+                          <span>{(o.restaurant as any)?.name ?? "Restaurant"}</span>
+                          <span className="text-[10px] tracking-wider uppercase text-red-800/70 px-1.5 py-0.5 rounded bg-red-100">
+                            {o.status}
+                          </span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* AT A GLANCE — KPI tiles */}
         <section>
