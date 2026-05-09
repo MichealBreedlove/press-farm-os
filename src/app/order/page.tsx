@@ -155,7 +155,7 @@ export default async function OrderPage({
       <main className="min-h-screen bg-farm-cream">
         <header className="page-header">
           <h1 className="page-title">Order</h1>
-          <p className="text-sm text-gray-500">{restaurant.name}</p>
+          <p className="text-base sm:text-sm font-semibold sm:font-medium text-white/90">{restaurant.name}</p>
         </header>
         <div className="flex items-center justify-center h-64 px-4">
           <p className="text-center text-gray-500 text-sm">
@@ -207,7 +207,7 @@ export default async function OrderPage({
     <main className="min-h-screen bg-farm-cream">
       <header className="page-header">
         <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
-        <p className="text-sm text-gray-500">{restaurant.name}</p>
+        <p className="text-base sm:text-sm font-semibold sm:font-medium text-white/90">{restaurant.name}</p>
       </header>
 
       {/* Off-schedule order affordance — sits just below the header so
