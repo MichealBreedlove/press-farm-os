@@ -44,6 +44,7 @@ export interface EventRequest {
   responded_at: string | null;
   responded_by: string | null;
   order_item_id: string | null;
+  event_group_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -232,28 +232,27 @@ export interface EventRequestAcceptedEmailParams {
   chefName: string;
   restaurantName: string;
   deliveryDate: string;
-  itemName: string;
-  quantity: number;
-  unit: string;
+  items: { itemName: string; quantity: number; unit: string }[];
   eventName: string | null;
   adminResponse: string | null;
 }
 
 /**
- * Sent to a chef when their advance event request is accepted and a
- * matching order line is auto-created.
+ * Sent to a chef when their advance event request is accepted and the
+ * matching order line(s) are auto-created. Used for both single-item
+ * accepts and batch group accepts.
  */
 export async function sendEventRequestAcceptedEmail(
   params: EventRequestAcceptedEmailParams,
 ): Promise<void> {
-  const { toEmail, chefName, restaurantName, deliveryDate, itemName, quantity, unit, eventName, adminResponse } = params;
+  const { toEmail, chefName, restaurantName, deliveryDate, items, eventName, adminResponse } = params;
   const subject = `Event request confirmed — ${deliveryDate}`;
 
   const fallbackText = [
     `Hi ${chefName},`,
     `Your event request${eventName ? ` for ${eventName}` : ""} has been accepted.`,
     `Added to your ${restaurantName} order for ${deliveryDate}:`,
-    `  ${itemName} — ${quantity} ${unit}`,
+    ...items.map((i) => `  ${i.itemName} — ${i.quantity} ${i.unit}`),
     adminResponse ? `\nNote: ${adminResponse}` : "",
   ]
     .filter(Boolean)
@@ -266,9 +265,7 @@ export async function sendEventRequestAcceptedEmail(
       chefName,
       restaurantName,
       deliveryDate,
-      itemName,
-      quantity,
-      unit,
+      items,
       eventName,
       adminResponse,
     }) as React.ReactElement,

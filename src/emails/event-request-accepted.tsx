@@ -14,29 +14,27 @@ interface EventRequestAcceptedProps {
   chefName: string;
   restaurantName: string;
   deliveryDate: string;
-  itemName: string;
-  quantity: number;
-  unit: string;
+  items: { itemName: string; quantity: number; unit: string }[];
   eventName: string | null;
   adminResponse: string | null;
 }
 
 /**
  * event-request-accepted.tsx — Sent to a chef when their advance event
- * request is accepted. Confirms the line we auto-added to their order
- * for the requested delivery date.
+ * request is accepted. Confirms the lines we auto-added to their order
+ * for the requested delivery date. Used for both single-item accepts
+ * and batched group accepts (multiple items under one event).
  */
 export default function EventRequestAccepted({
   chefName,
   restaurantName,
   deliveryDate,
-  itemName,
-  quantity,
-  unit,
+  items,
   eventName,
   adminResponse,
 }: EventRequestAcceptedProps) {
   const restLogo = restaurantLogoUrl(restaurantName);
+  const lineLabel = items.length === 1 ? "item" : `${items.length} items`;
   return (
     <Html>
       <Head />
@@ -65,15 +63,17 @@ export default function EventRequestAccepted({
               <Text style={styles.h1}>{deliveryDate}</Text>
 
               <Text style={styles.paragraph}>
-                Hi {chefName}, we&rsquo;ve confirmed your advance request{eventName ? ` for ${eventName}` : ""}. The
-                item has been added to your order for {deliveryDate}.
+                Hi {chefName}, we&rsquo;ve confirmed your advance request{eventName ? ` for ${eventName}` : ""}. The {lineLabel} {items.length === 1 ? "has" : "have"} been
+                added to your order for {deliveryDate}.
               </Text>
 
               <div style={styles.highlightBox}>
                 <Text style={styles.highlightLabel}>Confirmed</Text>
-                <Text style={styles.highlightValue}>
-                  {quantity} {unit?.toUpperCase()} {itemName}
-                </Text>
+                {items.map((line, idx) => (
+                  <Text key={idx} style={styles.highlightValue}>
+                    {line.quantity} {line.unit?.toUpperCase()} {line.itemName}
+                  </Text>
+                ))}
               </div>
 
               {adminResponse && (
@@ -86,8 +86,8 @@ export default function EventRequestAccepted({
               )}
 
               <Text style={{ ...styles.paragraphMuted, marginTop: "24px" }}>
-                You&rsquo;ll see this line in your order history. We&rsquo;ll harvest the morning
-                of delivery and bring it with your usual drop.
+                You&rsquo;ll see {items.length === 1 ? "this line" : "these lines"} in your order history. We&rsquo;ll harvest the morning
+                of delivery and bring {items.length === 1 ? "it" : "them"} with your usual drop.
               </Text>
             </Section>
           </div>
