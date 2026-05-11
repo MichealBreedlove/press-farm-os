@@ -53,6 +53,7 @@ export default async function AdminDashboardPage() {
   // Parallel data fetches for stats
   const [
     { count: pendingOrders },
+    { count: pendingEventRequests },
     { data: nextDate },
     { data: monthDeliveries },
     { data: monthExpenses },
@@ -60,6 +61,7 @@ export default async function AdminDashboardPage() {
     { data: offScheduleOrders },
   ] = await Promise.all([
     (admin as any).from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    (admin as any).from("event_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
     (admin as any).from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
     (admin as any).from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
     (admin as any).from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
@@ -98,6 +100,14 @@ export default async function AdminDashboardPage() {
         { href: "/admin/availability", title: "Availability", description: "What's ready to harvest", flower: "calendula" },
         { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", flower: "marigold" },
         { href: "/admin/calendar", title: "Calendar", description: "Month-at-a-glance", flower: "anise-hyssop" },
+        {
+          href: "/admin/event-requests",
+          title: "Event Requests",
+          description: (pendingEventRequests ?? 0) > 0
+            ? `${pendingEventRequests} pending review`
+            : "Advance order requests",
+          flower: "borage",
+        },
       ],
     },
     {

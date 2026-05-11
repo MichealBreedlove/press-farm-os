@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ClipboardList, Clock, LogOut } from "lucide-react";
+import { CalendarHeart, ClipboardList, Clock, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function ChefNav() {
 
   const tabs = [
     { label: "Order", Icon: ClipboardList, href: "/order" },
+    { label: "Events", Icon: CalendarHeart, href: "/events" },
     { label: "History", Icon: Clock, href: "/history" },
   ];
 
