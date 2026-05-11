@@ -2,15 +2,25 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const BULK_ACTIONS = ["archive", "unarchive", "delete"] as const;
+const BULK_ACTIONS = [
+  "archive",
+  "unarchive",
+  "delete",
+  "flag-event",
+  "unflag-event",
+] as const;
 type BulkAction = (typeof BULK_ACTIONS)[number];
 
 /**
  * POST /api/items/bulk
- * Body: { ids: string[], action: "archive" | "unarchive" | "delete" }
+ * Body: { ids: string[], action: "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event" }
  * Admin only.
  *
  * archive/unarchive: bulk UPDATE items.is_archived. Returns { updated }.
+ *
+ * flag-event/unflag-event: bulk UPDATE items.is_event_item. The flag
+ * drives the receiver dashboard's "For Events" section grouping — when
+ * cleared, the item shows in the regular section again. Returns { updated }.
  *
  * delete: hard DELETE per row. Postgres FK constraints reject deletes
  * for items referenced by order_items (via availability_items) or
@@ -53,6 +63,17 @@ export async function POST(request: Request) {
     const { data, error } = await (admin as any)
       .from("items")
       .update({ is_archived: action === "archive" })
+      .in("id", ids)
+      .select("id");
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ updated: (data ?? []).length });
+  }
+
+  if (action === "flag-event" || action === "unflag-event") {
+    const { data, error } = await (admin as any)
+      .from("items")
+      .update({ is_event_item: action === "flag-event" })
       .in("id", ids)
       .select("id");
 
