@@ -5,13 +5,27 @@ import { createClient } from "@/lib/supabase/client";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
 /**
- * /login — Single email + password sign-in for restaurant accounts +
- * the receiver + admin. Magic-link was removed once we moved to shared
- * per-restaurant accounts: kitchens don't share an inbox to click email
- * links, so password is the practical option.
+ * /login — Username + password sign-in for restaurant accounts +
+ * receiver + admin. Restaurant accounts are shared usernames (press,
+ * understudy, pressbar, events, receiver). The admin keeps an email-
+ * based login. We accept either: if the input contains an "@" we send
+ * it to Supabase as-is (admin email); otherwise we transparently map
+ * username → "<username>@accounts.pressfarm.app" so Supabase Auth,
+ * which requires an email under the hood, still works.
  */
+const SYNTHETIC_EMAIL_DOMAIN = "accounts.pressfarm.app";
+
+function toAuthEmail(input: string): string {
+  const v = input.trim();
+  if (v.includes("@")) return v.toLowerCase();
+  // Username path: strip whitespace + non-alphanumeric so "Press Bar" /
+  // "press-bar" / "Press_Bar" all resolve to the same canonical account.
+  const username = v.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `${username}@${SYNTHETIC_EMAIL_DOMAIN}`;
+}
+
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +35,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
+    const email = toAuthEmail(identifier);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(error.message);
@@ -40,16 +55,19 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="login-label">Email</label>
+              <label htmlFor="identifier" className="login-label">Username</label>
               <input
-                id="email"
-                type="email"
+                id="identifier"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="press@pressnapavalley.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="press"
                 className="login-input"
-                autoComplete="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </div>
 
