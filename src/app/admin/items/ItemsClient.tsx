@@ -33,13 +33,16 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [eventsOnly, setEventsOnly] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
   const [savingNote, setSavingNote] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkBusy, setBulkBusy] = useState<null | "archive" | "unarchive" | "delete">(null);
+  const [bulkBusy, setBulkBusy] = useState<
+    null | "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event"
+  >(null);
   // Confirmation gate for the destructive Delete action
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Result panel after a delete attempt — shows what couldn't be deleted
@@ -73,10 +76,11 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
     const q = search.toLowerCase();
     return items.filter((item) => {
       if (!showArchived && item.is_archived) return false;
+      if (eventsOnly && !item.is_event_item) return false;
       if (q && !item.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [items, search, showArchived]);
+  }, [items, search, showArchived, eventsOnly]);
 
   const grouped = useMemo(() => {
     const map: Record<string, Item[]> = {};
@@ -144,7 +148,9 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
     setSelected(new Set(filtered.map((i) => i.id)));
   }
 
-  async function runBulk(action: "archive" | "unarchive" | "delete") {
+  async function runBulk(
+    action: "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event",
+  ) {
     if (selected.size === 0) return;
     setBulkBusy(action);
     try {
@@ -205,6 +211,8 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   );
   const selectedActiveCount = selectedItems.filter((i) => !i.is_archived).length;
   const selectedArchivedCount = selectedItems.length - selectedActiveCount;
+  const selectedEventCount = selectedItems.filter((i) => i.is_event_item).length;
+  const selectedNonEventCount = selectedItems.length - selectedEventCount;
 
   return (
     <div className="space-y-4 pb-20">
@@ -217,6 +225,17 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 border border-farm-dark/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green/30 focus:border-farm-green"
         />
+        <button
+          onClick={() => setEventsOnly((v) => !v)}
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
+            eventsOnly
+              ? "bg-pf-master-violet text-white border-pf-master-violet"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
+          }`}
+          title="Show only items flagged as event items"
+        >
+          Events
+        </button>
         <button
           onClick={() => setShowArchived((v) => !v)}
           className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
@@ -557,6 +576,28 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                 className="px-3 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-dark bg-white hover:bg-farm-cream/40 disabled:opacity-50"
               >
                 {bulkBusy === "unarchive" ? "Unarchiving…" : `Unarchive ${selectedArchivedCount}`}
+              </button>
+            )}
+            {selectedEventCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("unflag-event")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-pf-master-violet/30 text-sm font-medium text-pf-master-violet bg-white hover:bg-pf-master-violet/5 disabled:opacity-50"
+                title="Clear the events flag — items move back to the regular section on the receiver dashboard"
+              >
+                {bulkBusy === "unflag-event" ? "Unflagging…" : `Unflag event ${selectedEventCount}`}
+              </button>
+            )}
+            {selectedNonEventCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("flag-event")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-pf-master-violet/30 text-sm font-medium text-pf-master-violet bg-white hover:bg-pf-master-violet/5 disabled:opacity-50"
+                title="Mark as event-only — items appear in the receiver dashboard's For Events section"
+              >
+                {bulkBusy === "flag-event" ? "Flagging…" : `Flag event ${selectedNonEventCount}`}
               </button>
             )}
             <button
