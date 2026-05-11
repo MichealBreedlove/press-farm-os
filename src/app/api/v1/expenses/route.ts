@@ -37,16 +37,26 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
+
+  const date = typeof body.date === "string" ? body.date.trim() : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
+  }
+  const amount = Number(body.amount);
+  if (!Number.isFinite(amount) || amount < 0) {
+    return NextResponse.json({ error: "amount must be a non-negative finite number" }, { status: 400 });
+  }
+
   const admin = createAdminClient();
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
 
   const { data, error } = await (admin as any).from("farm_expenses").insert({
     farm_id: farms?.[0]?.id,
-    date: body.date,
-    category: body.category ?? "Other",
-    description: body.description ?? null,
-    amount: body.amount,
-    vendor: body.vendor ?? null,
+    date,
+    category: typeof body.category === "string" && body.category.trim() ? body.category.trim() : "Other",
+    description: typeof body.description === "string" ? body.description : null,
+    amount,
+    vendor: typeof body.vendor === "string" ? body.vendor : null,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

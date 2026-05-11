@@ -217,7 +217,7 @@ export async function POST(request: Request) {
   // backfill the per-line unit when the client omits it (legacy callers).
   const submittedIds = items.map((i: any) => i.availability_item_id);
   const { data: availItems } = await (supabase.from("availability_items") as any)
-    .select("id, item:items(default_price, unit_type)")
+    .select("id, item:items(default_price, unit_prices, unit_type)")
     .eq("restaurant_id", restaurant_id)
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable")
@@ -232,17 +232,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const priceMap = new Map(
-    (availItems ?? []).map((a: any) => [a.id, a.item?.default_price ?? null]),
-  );
-  // first declared unit per item — fallback when the client didn't tell us
-  // which unit was chosen
-  const firstUnitMap = new Map(
+  // Per-availability info we need for line construction: per-unit price map,
+  // catalog fallback price, and the canonical first unit. Per-unit pricing was
+  // added in migration 022; before this fix only `default_price` was read, so
+  // multi-unit items with `unit_prices[unit]` overrides locked in the wrong
+  // price.
+  const availInfoMap = new Map<
+    string,
+    { unitPrices: Record<string, number>; defaultPrice: number | null; firstUnit: string | null }
+  >(
     (availItems ?? []).map((a: any) => [
       a.id,
-      String(a.item?.unit_type ?? "").split(",")[0]?.trim() || null,
+      {
+        unitPrices: (a.item?.unit_prices ?? {}) as Record<string, number>,
+        defaultPrice:
+          typeof a.item?.default_price === "number" ? a.item.default_price : null,
+        firstUnit: String(a.item?.unit_type ?? "").split(",")[0]?.trim() || null,
+      },
     ]),
   );
+
+  // Resolve the price for a given availability+unit. Precedence:
+  // unit_prices[unit] → default_price → 0. Defaulting to 0 (instead of null)
+  // keeps the line in the COALESCE(SUM(line_total)) revenue rollup; a NULL
+  // line_total would silently disappear from totals.
+  function resolvePrice(availId: string, unit: string | null): number {
+    const info = availInfoMap.get(availId);
+    if (!info) return 0;
+    if (unit && typeof info.unitPrices[unit] === "number") return info.unitPrices[unit];
+    return info.defaultPrice ?? 0;
+  }
 
   // Build the canonical line shape for incoming items. Persist the
   // (unit, size, color) discriminators so chefs can order multiple
@@ -250,18 +269,20 @@ export async function POST(request: Request) {
   // receiver dashboard, email, and edit-order hydration.
   const incomingLines = items
     .filter((item) => item.quantity > 0)
-    .map((item) => ({
-      order_id: order.id,
-      availability_item_id: item.availability_item_id,
-      quantity_requested: item.quantity,
-      unit_price_at_order: priceMap.get(item.availability_item_id) ?? null,
-      unit_type:
-        (item.unit_type ?? null) ||
-        firstUnitMap.get(item.availability_item_id) ||
-        null,
-      size_label: item.size_label ?? null,
-      color_key: item.color_key ?? null,
-    }));
+    .map((item) => {
+      const info = availInfoMap.get(item.availability_item_id);
+      const chosenUnit =
+        (item.unit_type ?? null) || info?.firstUnit || null;
+      return {
+        order_id: order.id,
+        availability_item_id: item.availability_item_id,
+        quantity_requested: item.quantity,
+        unit_price_at_order: resolvePrice(item.availability_item_id, chosenUnit),
+        unit_type: chosenUnit,
+        size_label: item.size_label ?? null,
+        color_key: item.color_key ?? null,
+      };
+    });
 
   // Track items used for the email summary. In merge mode this is just the
   // new lines (the chef only needs to see what they just submitted).
