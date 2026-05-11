@@ -63,12 +63,12 @@ export default async function EventsPage() {
   const { data: historyRaw } = await (admin as any)
     .from("event_requests")
     .select(
-      "id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, created_at, item:items(id, name)",
+      "id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, event_group_id, created_at, item:items(id, name)",
     )
     .eq("restaurant_id", restaurant.id)
     .order("needed_by_date", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   const history = (historyRaw ?? []).map((r: any) => ({
     id: r.id,
@@ -81,6 +81,7 @@ export default async function EventsPage() {
     status: r.status,
     admin_response: r.admin_response,
     responded_at: r.responded_at,
+    event_group_id: r.event_group_id ?? null,
     created_at: r.created_at,
   }));
 

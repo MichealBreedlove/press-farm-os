@@ -25,7 +25,7 @@ export default async function AdminEventRequestsPage() {
   const { data: rowsRaw } = await (admin as any)
     .from("event_requests")
     .select(
-      "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, created_at, restaurant:restaurants(id, name), chef:profiles!event_requests_chef_id_fkey(id, full_name), item:items(id, name, category, unit_type)",
+      "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, event_group_id, created_at, restaurant:restaurants(id, name), chef:profiles!event_requests_chef_id_fkey(id, full_name), item:items(id, name, category, unit_type)",
     )
     .order("needed_by_date", { ascending: true })
     .order("created_at", { ascending: false });
@@ -43,11 +43,12 @@ export default async function AdminEventRequestsPage() {
     status: r.status as "pending" | "accepted" | "declined" | "fulfilled",
     admin_response: r.admin_response,
     responded_at: r.responded_at,
+    event_group_id: r.event_group_id ?? null,
     created_at: r.created_at,
   }));
 
-  const pending = rows.filter((r) => r.status === "pending");
-  const responded = rows.filter((r) => r.status !== "pending");
+  const pending = rows.filter((r: typeof rows[number]) => r.status === "pending");
+  const responded = rows.filter((r: typeof rows[number]) => r.status !== "pending");
 
   return (
     <main className="pb-24">
