@@ -27,6 +27,33 @@ export type DeliveryItem = Database["public"]["Tables"]["delivery_items"]["Row"]
 export type FarmExpense = Database["public"]["Tables"]["farm_expenses"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
+// EventRequest is post-bootstrap (migration 041); typed by hand rather than
+// regenerated. Mirror the SQL row exactly.
+export interface EventRequest {
+  id: string;
+  restaurant_id: string;
+  chef_id: string;
+  item_id: string;
+  quantity: number;
+  unit: string;
+  needed_by_date: string;
+  event_name: string | null;
+  notes: string | null;
+  status: "pending" | "accepted" | "declined" | "fulfilled";
+  admin_response: string | null;
+  responded_at: string | null;
+  responded_by: string | null;
+  order_item_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EventRequestWithDetails = EventRequest & {
+  restaurant: Pick<Restaurant, "id" | "name">;
+  chef: Pick<Profile, "id" | "full_name">;
+  item: Pick<Item, "id" | "name" | "category" | "unit_type">;
+};
+
 // ============================================
 // Enriched types (joins)
 // ============================================

@@ -12,6 +12,7 @@ import OrderReceived from "@/emails/order-received";
 import OrderConfirmation from "@/emails/order-confirmation";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
+import EventRequestAccepted from "@/emails/event-request-accepted";
 
 // ---- Types ----
 
@@ -221,6 +222,56 @@ export async function sendShortageEmail(params: ShortageEmailParams): Promise<vo
     to: toEmail,
     subject,
     react: ShortageNotice({ chefName, restaurantName, deliveryDate, shortages }) as React.ReactElement,
+    fallbackText,
+    from: FROM_ADDRESSES.orders,
+  });
+}
+
+export interface EventRequestAcceptedEmailParams {
+  toEmail: string;
+  chefName: string;
+  restaurantName: string;
+  deliveryDate: string;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  eventName: string | null;
+  adminResponse: string | null;
+}
+
+/**
+ * Sent to a chef when their advance event request is accepted and a
+ * matching order line is auto-created.
+ */
+export async function sendEventRequestAcceptedEmail(
+  params: EventRequestAcceptedEmailParams,
+): Promise<void> {
+  const { toEmail, chefName, restaurantName, deliveryDate, itemName, quantity, unit, eventName, adminResponse } = params;
+  const subject = `Event request confirmed — ${deliveryDate}`;
+
+  const fallbackText = [
+    `Hi ${chefName},`,
+    `Your event request${eventName ? ` for ${eventName}` : ""} has been accepted.`,
+    `Added to your ${restaurantName} order for ${deliveryDate}:`,
+    `  ${itemName} — ${quantity} ${unit}`,
+    adminResponse ? `\nNote: ${adminResponse}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await sendOrLog({
+    to: toEmail,
+    subject,
+    react: EventRequestAccepted({
+      chefName,
+      restaurantName,
+      deliveryDate,
+      itemName,
+      quantity,
+      unit,
+      eventName,
+      adminResponse,
+    }) as React.ReactElement,
     fallbackText,
     from: FROM_ADDRESSES.orders,
   });
