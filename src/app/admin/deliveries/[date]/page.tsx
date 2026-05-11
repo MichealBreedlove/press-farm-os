@@ -31,7 +31,7 @@ export default async function AdminDeliveryLogPage({
   // so admins don't see them when adding new lines.
   const { data: items } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, is_archived")
     .order("category")
     .order("name");
 
@@ -53,9 +53,9 @@ export default async function AdminDeliveryLogPage({
     .select(`
       id, restaurant_id, status,
       order_items (
-        quantity_requested, quantity_fulfilled, unit_price_at_order,
+        quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type,
         availability_items (
-          item:items (id, name, unit_type, default_price)
+          item:items (id, name, unit_type, default_price, unit_prices)
         )
       )
     `)
@@ -70,17 +70,28 @@ export default async function AdminDeliveryLogPage({
     order_items: (o.order_items ?? []).map((oi: any) => {
       const item = oi.availability_items?.item;
       // unit_type may be comma-separated ("sm,lg") for multi-unit items.
-      // delivery_items.unit has a CHECK constraint on a single code, so
-      // we pick the first declared unit. Once order lines persist the
-      // chosen unit, this should read from oi.unit instead.
+      // Prefer the unit the chef actually chose (oi.unit_type, persisted
+      // since the multi-unit order form shipped); fall back to the item's
+      // first declared unit for legacy rows. delivery_items.unit has a
+      // CHECK constraint on a single code, so we never pass a list here.
       const firstUnit = String(item?.unit_type ?? "")
         .split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
+      const chosenUnit = (oi.unit_type ?? "").trim() || firstUnit;
+      // Resolve the pre-fill price: prefer the price stamped on the order
+      // line (locks the price as of order time, even if the catalog
+      // changes later), then the item's per-unit override for the chosen
+      // unit, then the catalog default, then 0.
+      const unitPricesMap = (item?.unit_prices ?? {}) as Record<string, number>;
+      const fallbackPrice =
+        (chosenUnit && typeof unitPricesMap[chosenUnit] === "number"
+          ? unitPricesMap[chosenUnit]
+          : null) ?? item?.default_price ?? 0;
       return {
         item_id: item?.id,
         quantity_ordered: oi.quantity_requested,
         quantity_fulfilled: oi.quantity_fulfilled,
-        unit: firstUnit,
-        unit_price: oi.unit_price_at_order ?? item?.default_price ?? 0,
+        unit: chosenUnit,
+        unit_price: oi.unit_price_at_order ?? fallbackPrice,
       };
     }).filter((oi: any) => oi.item_id),
   }));
