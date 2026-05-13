@@ -111,14 +111,18 @@ export async function POST(request: Request) {
   // tier limits and keeps per-batch wall time around 4-8 seconds.
   const results: ResultEntry[] = [];
   let cursor = 0;
-  async function worker(): Promise<void> {
+  // Pass `client` in explicitly so TS's null-narrowing from the guard
+  // above survives the async closure boundary.
+  async function worker(c: NonNullable<ReturnType<typeof getAnthropicClient>>): Promise<void> {
     while (cursor < items.length) {
       const myIndex = cursor++;
       const item = items[myIndex];
-      results[myIndex] = await processOne(client, admin, item);
+      results[myIndex] = await processOne(c, admin, item);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, items.length) }, () => worker()));
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, items.length) }, () => worker(client)),
+  );
 
   // Items requested but not found (deleted / archived between batches)
   const foundIds = new Set(items.map((i) => i.id));
@@ -140,7 +144,7 @@ export async function POST(request: Request) {
 }
 
 async function processOne(
-  client: ReturnType<typeof getAnthropicClient> & object,
+  client: NonNullable<ReturnType<typeof getAnthropicClient>>,
   admin: ReturnType<typeof createAdminClient>,
   item: ItemRow,
 ): Promise<ResultEntry> {
