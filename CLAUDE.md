@@ -69,9 +69,9 @@ src/
       delivery-dates/, settings/, upload/, test-email/
     auth/callback/               # Supabase auth redirect handler
   components/
-    shared/                      # EditorialHero, FloralCorners, BottomNav, StatusBadge, DeliveryDatePicker
+    shared/                      # EditorialHero, FloralCorners, ChefNav, TopBar, WeatherWidget, etc.
     order/                       # Multi-unit + multi-size + multi-color order form
-    admin/                       # OrderCard, AvailabilityEditor, HarvestList, etc.
+    admin/                       # AvailabilityEditor (real PascalCase impl), BottomNav, PhotoPicker
   emails/                        # React Email templates
   lib/
     supabase/                    # client.ts (browser), server.ts, admin.ts (service role), middleware.ts
@@ -215,9 +215,10 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 
 ## Open Follow-ups (Prioritized)
 
-1. **Phase 2 features** in `project_feature_roadmap.md`: calendar, offer sheets, finish pack manager, finish labor tracker, photos, forecasting, financial fixes.
-2. **Email-trigger audit** — Resend templates exist; all 8 have at least one sender. Route-walk to confirm each is invoked at the right point in the user flow not yet done.
-3. **Reports & financial dashboard** — `/admin/reports` covers month/YTD/YoY/top-items/forecast. Specific missing reports (e.g. crop margin, labor cost per delivery, P&L PDF export) TBD.
+1. **Phase 2 features** in `project_feature_roadmap.md`: calendar, offer sheets, finish labor tracker, photos, forecasting, financial fixes. (Pack manager intentionally removed — containers are reusable + free.)
+2. **Reports & financial dashboard** — `/admin/reports` covers month/YTD/YoY/top-items/forecast. Specific missing reports (e.g. crop margin, labor cost per delivery, P&L PDF export) TBD.
+
+Email-trigger audit is **complete** as of commit a926618 — all 8 React Email templates are wired to live senders through `lib/email.ts` / `sendOrLog`.
 
 ## How to Operate
 
