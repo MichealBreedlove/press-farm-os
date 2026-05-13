@@ -11,11 +11,21 @@ import {
 import { APP_URL } from "@/lib/constants";
 import { styles, MANDALA_URL, WORDMARK_URL, restaurantLogoUrl, restaurantBadgeStyles } from "./_shared";
 
+interface SeasonalItem {
+  name: string;
+  season_note?: string | null;
+}
+
 interface AvailabilityPublishedProps {
   chefName: string;
   restaurantName: string;
   deliveryDate: string;
   itemCount: number;
+  /** Optional seasonal items to call out. Omit or pass empty arrays to hide the section. */
+  seasonal?: {
+    endingSoon?: SeasonalItem[];
+    comingSoon?: SeasonalItem[];
+  };
 }
 
 /**
@@ -27,7 +37,11 @@ export default function AvailabilityPublished({
   restaurantName,
   deliveryDate,
   itemCount,
+  seasonal,
 }: AvailabilityPublishedProps) {
+  const endingSoon = seasonal?.endingSoon ?? [];
+  const comingSoon = seasonal?.comingSoon ?? [];
+  const hasSeasonal = endingSoon.length > 0 || comingSoon.length > 0;
   const restLogo = restaurantLogoUrl(restaurantName);
   return (
     <Html>
@@ -73,6 +87,33 @@ export default function AvailabilityPublished({
                   Place Your Order
                 </a>
               </Section>
+
+              {hasSeasonal && (
+                <Section>
+                  {endingSoon.length > 0 && (
+                    <>
+                      <Text style={styles.eyebrow}>Ending Soon</Text>
+                      {endingSoon.map((it, idx) => (
+                        <Text key={`es-${idx}`} style={styles.paragraph}>
+                          {it.name}
+                          {it.season_note ? ` — ${it.season_note}` : ""}
+                        </Text>
+                      ))}
+                    </>
+                  )}
+                  {comingSoon.length > 0 && (
+                    <>
+                      <Text style={styles.eyebrow}>Coming Soon</Text>
+                      {comingSoon.map((it, idx) => (
+                        <Text key={`cs-${idx}`} style={styles.paragraph}>
+                          {it.name}
+                          {it.season_note ? ` — ${it.season_note}` : ""}
+                        </Text>
+                      ))}
+                    </>
+                  )}
+                </Section>
+              )}
 
               <Text style={styles.paragraphMuted}>
                 Order by the night before delivery. We harvest the morning of, so the

@@ -13,6 +13,7 @@ import OrderConfirmation from "@/emails/order-confirmation";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 import EventRequestAccepted from "@/emails/event-request-accepted";
+import AvailabilityPublished from "@/emails/availability-published";
 
 // ---- Types ----
 
@@ -271,5 +272,64 @@ export async function sendEventRequestAcceptedEmail(
     }) as React.ReactElement,
     fallbackText,
     from: FROM_ADDRESSES.orders,
+  });
+}
+
+export interface AvailabilityPublishedEmailParams {
+  toEmail: string;
+  chefName: string;
+  restaurantName: string;
+  /** Already-formatted human-readable delivery date (e.g. "Thursday, May 15"). */
+  deliveryDate: string;
+  itemCount: number;
+  seasonal?: {
+    endingSoon?: { name: string; season_note?: string | null }[];
+    comingSoon?: { name: string; season_note?: string | null }[];
+  };
+}
+
+/**
+ * Sent to each chef when admin publishes availability for a delivery date.
+ * Uses the AvailabilityPublished React Email template (mandala + restaurant
+ * co-brand + CTA). Seasonal "Ending Soon" / "Coming Soon" callouts render
+ * only when items are supplied.
+ */
+export async function sendAvailabilityPublishedEmail(
+  params: AvailabilityPublishedEmailParams,
+): Promise<void> {
+  const { toEmail, chefName, restaurantName, deliveryDate, itemCount, seasonal } = params;
+  const subject = `New Availability — ${deliveryDate}`;
+
+  const fallbackLines = [
+    `Hi ${chefName},`,
+    `Availability has been posted for ${restaurantName} on ${deliveryDate}.`,
+    `${itemCount} item${itemCount === 1 ? "" : "s"} available.`,
+  ];
+  if (seasonal?.endingSoon?.length) {
+    fallbackLines.push("", "Ending Soon:");
+    for (const it of seasonal.endingSoon) {
+      fallbackLines.push(`  - ${it.name}${it.season_note ? ` (${it.season_note})` : ""}`);
+    }
+  }
+  if (seasonal?.comingSoon?.length) {
+    fallbackLines.push("", "Coming Soon:");
+    for (const it of seasonal.comingSoon) {
+      fallbackLines.push(`  - ${it.name}${it.season_note ? ` (${it.season_note})` : ""}`);
+    }
+  }
+  const fallbackText = fallbackLines.join("\n");
+
+  await sendOrLog({
+    to: toEmail,
+    subject,
+    react: AvailabilityPublished({
+      chefName,
+      restaurantName,
+      deliveryDate,
+      itemCount,
+      seasonal,
+    }) as React.ReactElement,
+    fallbackText,
+    from: FROM_ADDRESSES.availability,
   });
 }
