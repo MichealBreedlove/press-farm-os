@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
-const STORAGE_KEY = "pressfarm_onboarding_seen";
+// Bump TOUR_VERSION whenever STEPS change in a way that returning chefs should
+// see again. Increment the integer — STORAGE_KEY derives from it, so every
+// chef's "seen" flag is namespaced and the new tour pops up exactly once.
+const TOUR_VERSION = 1;
+const STORAGE_KEY = `pressfarm_onboarding_seen_v${TOUR_VERSION}`;
 
 const STEPS = [
   {
@@ -34,7 +38,13 @@ export function OnboardingTour() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    // Legacy unversioned key — treat as "seen v1" so the refactor doesn't
+    // re-trigger the tour for chefs who already dismissed it. Drop this
+    // fallback once we bump to TOUR_VERSION 2+.
+    const seen =
+      localStorage.getItem(STORAGE_KEY) ||
+      (TOUR_VERSION === 1 && localStorage.getItem("pressfarm_onboarding_seen"));
+    if (!seen) {
       // Brief delay so the page renders first
       const t = setTimeout(() => setShow(true), 600);
       return () => clearTimeout(t);
