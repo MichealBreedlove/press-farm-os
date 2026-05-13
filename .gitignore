@@ -42,3 +42,6 @@ supabase/.temp
 .claude/worktrees/
 .claude/scheduled_tasks.lock
 .claire/
+
+# Script run logs
+*-run.log
