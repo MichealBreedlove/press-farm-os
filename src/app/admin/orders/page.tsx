@@ -174,11 +174,15 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
         {/* Actions */}
         <div className="pt-2 space-y-3">
+          {/* Single entry point for the harvest workflow — lands on the
+              unified per-date page which leads with Containers Needed
+              and Harvest Totals (the old separate /harvest list is
+              now reachable only as the paper-print view from there). */}
           <Link
-            href={`/admin/orders/harvest?date=${activeDate}`}
+            href={`/admin/orders/${activeDate}`}
             className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
           >
-            View Harvest List
+            Open Harvest
           </Link>
           {activeDateRecord && (
             <OrderingToggle

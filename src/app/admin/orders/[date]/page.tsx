@@ -197,6 +197,32 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     }))
     .sort((a, b) => a.itemName.localeCompare(b.itemName));
 
+  // ── Containers Needed ──
+  // Sum total qty per container unit (skipping per-piece "ea") so the
+  // harvester sees how many of each vessel to grab before walking the
+  // beds. Mirrors the print-page version so the unified workflow shows
+  // the same field summary up front. Order: highest count first.
+  const CONTAINER_LABELS: Record<string, { label: string; icon: string }> = {
+    lg: { label: "Large To-Go", icon: "📦" },
+    sm: { label: "Small To-Go", icon: "📦" },
+    lbs: { label: "Green Bin", icon: "🟩" },
+    bx: { label: "Box", icon: "📦" },
+    bu: { label: "Bunch", icon: "🌿" },
+    qt: { label: "Quart", icon: "🥤" },
+    pt: { label: "Pint", icon: "🥤" },
+    cs: { label: "Case", icon: "📦" },
+    kit: { label: "Kit", icon: "🧰" },
+  };
+  const containerCountsMap = new Map<string, number>();
+  for (const row of harvestRows) {
+    if (row.unit === "ea" || !CONTAINER_LABELS[row.unit]) continue;
+    containerCountsMap.set(row.unit, (containerCountsMap.get(row.unit) ?? 0) + row.total);
+  }
+  const containersNeeded = [...containerCountsMap.entries()]
+    .map(([unit, count]) => ({ unit, count, ...CONTAINER_LABELS[unit] }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+
   // Per-order picked counts for the restaurant-card header badges
   const orderProgress = new Map<string, { picked: number; total: number; shorted: number }>();
   for (const order of orders) {
@@ -224,21 +250,51 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       </header>
       <EditorialHero
         eyebrow={formatDeliveryDate(date)}
-        title="Order Detail"
-        subtitle={`${orders.length} restaurant${orders.length !== 1 ? "s" : ""} ordering for this date`}
+        title="Harvest"
+        subtitle={`${harvestRows.length} item${harvestRows.length === 1 ? "" : "s"} across ${orders.length} restaurant${orders.length !== 1 ? "s" : ""}`}
         flower="squash-blossom"
         backHref="/admin/orders"
       />
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-6 pb-32">
-        {/* Combined harvest totals — collapsible card at the very top.
-            Shows what to grab from the field before the per-restaurant
-            pack split. Print link opens the dedicated harvest-list page
-            for the paper-friendly version. */}
+        {/* Containers Needed — what vessels to grab before walking the
+            beds. Sized to match the in-page card aesthetic; the print
+            view (linked from Harvest Totals below) has its own version. */}
+        {containersNeeded.length > 0 && (
+          <section className="card p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted mb-3">
+              Containers Needed
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {containersNeeded.map((c) => (
+                <div
+                  key={c.unit}
+                  className="flex items-center gap-2 bg-farm-green-light rounded-lg px-3 py-2"
+                >
+                  <span className="text-lg" aria-hidden="true">{c.icon}</span>
+                  <div>
+                    <p className="text-lg font-bold text-farm-green leading-tight tabular-nums">
+                      {c.count}
+                    </p>
+                    <p className="text-[10px] text-farm-green/70 uppercase tracking-wide">
+                      {c.label}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Combined harvest totals — what to grab from the field before
+            the per-restaurant pack split. Default-open here because this
+            is the unified harvest workflow; the per-restaurant cards
+            below are the pack split. Print link opens the paper version. */}
         {harvestRows.length > 0 && (
           <HarvestTotalsPanel
             rows={harvestRows}
             printHref={`/admin/orders/harvest?date=${date}`}
+            defaultOpen
           />
         )}
         {/* Empty-receiver banner — shown only when there are orders to pick

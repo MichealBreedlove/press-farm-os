@@ -11,21 +11,23 @@ interface HarvestRow {
 }
 
 /**
- * Collapsible aggregate-harvest panel at the top of the unified pick
- * page. Shows total qty per (item, container) across every restaurant
- * for the date — what to grab from the field before the per-restaurant
- * pack split. Default collapsed because the per-restaurant cards below
- * are usually the active workspace; tap to expand when planning the
- * harvest run.
+ * Aggregate-harvest panel at the top of the unified pick page. Shows
+ * total qty per (item, container) across every restaurant for the date
+ * — what to grab from the field before the per-restaurant pack split.
+ * Defaults open when this is the harvest workflow's primary view;
+ * caller passes defaultOpen={false} for any context where the panel
+ * is a secondary glance.
  */
 export function HarvestTotalsPanel({
   rows,
   printHref,
+  defaultOpen = false,
 }: {
   rows: HarvestRow[];
   printHref: string;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   if (rows.length === 0) return null;
 

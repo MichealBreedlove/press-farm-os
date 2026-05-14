@@ -251,14 +251,14 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
       <header className="page-header no-wordmark print:hidden">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/orders"
+            href={`/admin/orders/${activeDate}`}
             className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
-            aria-label="Back to orders"
+            aria-label="Back to harvest workflow"
           >
             ←
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="page-title">Harvest List</h1>
+            <h1 className="page-title">Harvest List · Print</h1>
             <p className="text-sm text-white/60">{formatDeliveryDate(activeDate)} · {totalItems} items</p>
           </div>
           <PrintButton />
