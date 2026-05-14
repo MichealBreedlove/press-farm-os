@@ -11,8 +11,11 @@ import type { UnitType } from "@/types";
 /**
  * /order/review — Order review before submit (Client Component)
  *
- * Reads order data from sessionStorage, shows summary,
- * and submits to POST /api/orders on confirm.
+ * Reads order data from localStorage (written + continuously auto-saved
+ * by OrderForm), shows summary, and submits to POST /api/orders on
+ * confirm. localStorage rather than sessionStorage because iOS PWAs in
+ * standalone mode clear sessionStorage between navigations — see
+ * OrderForm.tsx for the full note.
  */
 export default function OrderReviewPage() {
   const router = useRouter();
@@ -21,7 +24,7 @@ export default function OrderReviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("press_farm_order");
+    const raw = localStorage.getItem("press_farm_order");
     if (!raw) {
       router.replace("/order");
       return;
@@ -81,9 +84,11 @@ export default function OrderReviewPage() {
         return;
       }
 
-      // Store the delivery date for the confirmation page, then clear order
+      // Store the delivery date for the confirmation page, then clear
+      // the draft. The confirmation flash uses sessionStorage (short-lived
+      // hand-off); the draft itself lives in localStorage.
       sessionStorage.setItem("press_farm_order_confirmed_date", deliveryDateFormatted);
-      sessionStorage.removeItem("press_farm_order");
+      localStorage.removeItem("press_farm_order");
       router.push("/order/confirmed");
     } catch {
       setError("Network error. Please check your connection and try again.");

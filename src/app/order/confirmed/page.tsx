@@ -13,14 +13,17 @@ export default function OrderConfirmedPage() {
   const [deliveryDateFormatted, setDeliveryDateFormatted] = useState<string>("");
 
   useEffect(() => {
-    // Try to read delivery date for the confirmation message
+    // Try to read delivery date for the confirmation flash message
     // (sessionStorage was cleared after submit, but attempt anyway)
     const raw = sessionStorage.getItem("press_farm_order_confirmed_date");
     if (raw) {
       setDeliveryDateFormatted(raw);
       sessionStorage.removeItem("press_farm_order_confirmed_date");
     }
-    // Clean up any stray session data
+    // Clean up any stray draft data. The draft lives in localStorage now
+    // (see OrderForm.tsx); the legacy sessionStorage key is removed too
+    // in case a chef has an in-flight tab from before the migration.
+    localStorage.removeItem("press_farm_order");
     sessionStorage.removeItem("press_farm_order");
   }, []);
 

@@ -10,6 +10,14 @@ import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import type { UnitType } from "@/types/database";
 
+// Draft persistence lives in localStorage (not sessionStorage). iOS PWAs
+// in standalone home-screen mode have historically cleared sessionStorage
+// between navigations, which broke "Review → Back → keep my order" for
+// chefs running the app from the home screen. localStorage survives those
+// transitions. The draft is auto-cleared when its delivery_date is in the
+// past, on successful submit, or when the chef empties the order.
+const DRAFT_KEY = "press_farm_order";
+
 /** Resolve which units this availability row exposes to the chef. */
 function resolveUnits(item: { unit_type: string }, availableUnits: string | null | undefined): UnitType[] {
   const itemUnits = String(item.unit_type ?? "")
@@ -70,27 +78,46 @@ export function OrderForm({
   const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
+  // Gates the auto-save effect so the empty initial render doesn't stomp
+  // the saved draft before the rehydrate effect has had a chance to read
+  // it. Flipped true after the first-mount rehydrate runs (whether or not
+  // it restored anything).
+  const [hydrated, setHydrated] = useState(false);
 
-  // Rehydrate from sessionStorage on first mount when not editing — this
-  // is what makes "Review Order → Back" preserve quantities. The review
-  // page wrote press_farm_order before navigating; if the chef clicks
-  // Back, OrderForm remounts fresh from server props and would otherwise
-  // wipe the order. Restore it once if the saved snapshot matches this
-  // restaurant + delivery date so we don't accidentally cross-contaminate
-  // a different in-flight session.
+  // Rehydrate from localStorage on first mount when not editing — this
+  // is what makes "Review Order → Back" preserve quantities. The form
+  // continuously auto-saves the draft (see effect below) so any back-nav
+  // — UI Back button, browser back, iOS swipe-back — restores. We use
+  // localStorage rather than sessionStorage because iOS PWAs in standalone
+  // mode have been observed to clear sessionStorage between navigations,
+  // which is what broke this for chefs running the app from the home
+  // screen. We restore only when the saved snapshot matches this
+  // restaurant + delivery date so we don't cross-contaminate sessions.
   useEffect(() => {
-    if (editingOrderId) return; // edit mode hydrates from order_items via props
+    if (editingOrderId) {
+      // Edit mode hydrates from order_items via props; mark hydrated so
+      // the auto-save below kicks in for any further chef edits.
+      setHydrated(true);
+      return;
+    }
     try {
       const raw = typeof window !== "undefined"
-        ? sessionStorage.getItem("press_farm_order")
+        ? localStorage.getItem(DRAFT_KEY)
         : null;
       if (!raw) return;
       const saved = JSON.parse(raw);
+      // Drop drafts whose delivery date has already passed — they're
+      // stale and would confuse the chef if they came back days later.
+      const today = new Date().toISOString().slice(0, 10);
+      if (typeof saved?.deliveryDate === "string" && saved.deliveryDate < today) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
       if (
         saved?.restaurantId !== restaurantId ||
         saved?.deliveryDate !== deliveryDate
       ) {
-        return; // not the same draft — don't restore
+        return; // not the same draft — don't restore (don't delete either; chef may navigate back to that date)
       }
       // The saved payload is the format the review page reads — a
       // flattened items[] array. Rebuild the quantity / color maps
@@ -129,6 +156,8 @@ export function OrderForm({
       }
     } catch {
       // Malformed payload — ignore. Worst case the chef re-enters quantities.
+    } finally {
+      setHydrated(true);
     }
     // Run once on mount; deps left intentionally empty so re-renders don't
     // wipe in-progress edits the chef has made since the restore.
@@ -229,7 +258,11 @@ export function OrderForm({
     return count + n;
   }, 0);
 
-  function handleReview() {
+  // Build the OrderFormData snapshot used both by the auto-save effect
+  // and by handleReview. Extracting it keeps the two writers in sync —
+  // a mismatch would mean the review page sees a different shape than
+  // the rehydrate logic expects.
+  function buildFormData(): OrderFormData {
     const orderedItems: OrderFormData["items"] = [];
 
     // Use allAvailable so search doesn't hide ordered items
@@ -274,7 +307,7 @@ export function OrderForm({
       }
     }
 
-    const formData: OrderFormData = {
+    return {
       restaurantId,
       restaurantName,
       deliveryDate,
@@ -283,8 +316,41 @@ export function OrderForm({
       freeformNotes,
       editingOrderId,
     };
+  }
 
-    sessionStorage.setItem("press_farm_order", JSON.stringify(formData));
+  // Auto-save the draft on every quantity / color / note change. Without
+  // this, the draft was only written when the chef tapped Review — so
+  // any back-nav before reaching review would lose the in-progress order.
+  // Gated on `hydrated` so the empty initial render doesn't stomp the
+  // saved draft before the rehydrate effect above runs. Skipped in edit
+  // mode (edits live against an existing DB row, not a draft).
+  useEffect(() => {
+    if (!hydrated) return;
+    if (editingOrderId) return;
+    try {
+      const formData = buildFormData();
+      // If the chef has emptied the order, drop the draft instead of
+      // writing an items: [] payload. Keeps storage clean and avoids a
+      // future "Review → Back" restoring an empty form.
+      if (formData.items.length === 0 && formData.freeformNotes.trim() === "") {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    } catch {
+      // localStorage write can throw (quota, private browsing). Failing
+      // silently is fine — the chef will still see their order on screen.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, quantities, itemColors, itemNotes, freeformNotes]);
+
+  function handleReview() {
+    const formData = buildFormData();
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    } catch {
+      // Same fallback as auto-save — proceed to review either way.
+    }
     router.push("/order/review");
   }
 
