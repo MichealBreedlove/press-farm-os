@@ -56,6 +56,21 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
 
   const orders: any[] = ordersRaw ?? [];
 
+  // Fetch delivery_items so admin-added "extras" (logged via /admin/orders/[date])
+  // make it onto the harvest list too. Without this they'd surface only on the
+  // receiver hand-off — vanishing from the pick/print view the harvester uses
+  // in the field.
+  const { data: deliveriesRaw } = await (supabase as any)
+    .from("deliveries")
+    .select(`
+      id, restaurant_id, delivery_date,
+      delivery_items (
+        id, item_id, quantity, unit,
+        items ( id, name, category, unit_type )
+      )
+    `)
+    .eq("delivery_date", activeDate);
+
   // Determine which restaurant is "Press" and which is "Understudy"
   // We match by name (case-insensitive contains)
   const pressOrder = orders.find((o) =>
@@ -121,6 +136,71 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
     if (order !== pressOrder && order !== understudyOrder) {
       addItems(order, true);
     }
+  }
+
+  // Fold in admin-added "extras" (delivery_items whose item is NOT on the
+  // chef's order for that restaurant). Same Press/Understudy routing as
+  // chef orders, keyed on restaurant_id.
+  function addExtras(delivery: any, order: any, isPress: boolean) {
+    if (!delivery) return;
+    const orderedItemIds = new Set(
+      (order?.order_items ?? [])
+        .map((oi: any) => oi.availability_item?.item?.id)
+        .filter(Boolean),
+    );
+    for (const di of delivery.delivery_items ?? []) {
+      const itemRow = di.items;
+      if (!itemRow) continue;
+      if (orderedItemIds.has(itemRow.id)) continue;
+      const qty = Number(di.quantity ?? 0);
+      if (qty <= 0) continue;
+      const lineUnit =
+        String(di.unit ?? "").trim().toLowerCase() ||
+        (String(itemRow.unit_type ?? "")
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean)[0] ?? "ea");
+      const unit = lineUnit as UnitType;
+      const groupKey = `${itemRow.id}|${unit}`;
+      const existing = itemMap.get(groupKey);
+      if (existing) {
+        if (isPress) {
+          existing.pressQty = (existing.pressQty ?? 0) + qty;
+        } else {
+          existing.understudyQty = (existing.understudyQty ?? 0) + qty;
+        }
+        existing.total += qty;
+      } else {
+        itemMap.set(groupKey, {
+          itemId: itemRow.id,
+          name: itemRow.name,
+          category: itemRow.category as ItemCategory,
+          unit,
+          pressQty: isPress ? qty : null,
+          understudyQty: isPress ? null : qty,
+          total: qty,
+        });
+      }
+    }
+  }
+
+  const pressDelivery = (deliveriesRaw ?? []).find(
+    (d: any) => d.restaurant_id === pressOrder?.restaurant?.id,
+  );
+  const understudyDelivery = (deliveriesRaw ?? []).find(
+    (d: any) => d.restaurant_id === understudyOrder?.restaurant?.id,
+  );
+  addExtras(pressDelivery, pressOrder, true);
+  addExtras(understudyDelivery, understudyOrder, false);
+
+  // Any restaurant outside Press/Understudy — route extras the same way
+  // chef orders are: into the Press column.
+  for (const order of orders) {
+    if (order === pressOrder || order === understudyOrder) continue;
+    const otherDelivery = (deliveriesRaw ?? []).find(
+      (d: any) => d.restaurant_id === order.restaurant?.id,
+    );
+    addExtras(otherDelivery, order, true);
   }
 
   // Group by category, sort within each

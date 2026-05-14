@@ -59,13 +59,15 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
   // Fetch delivery_items for this date so we can surface "extras" admin has
   // already added during pick-and-pack. An extra is a delivery_item whose
   // item_id has no matching order_item on the same restaurant's order.
+  // `category` is selected so the harvest aggregate below can show extras
+  // alongside chef-ordered items in the same totals panel.
   const { data: deliveriesRaw } = await (admin as any)
     .from("deliveries")
     .select(`
       id, restaurant_id, delivery_date,
       delivery_items (
         id, item_id, quantity, unit, unit_price,
-        items ( id, name, unit_type )
+        items ( id, name, category, unit_type )
       )
     `)
     .eq("delivery_date", date);
@@ -112,6 +114,8 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
   let submittedOrderCount = 0;
   for (const order of orders) {
     if (order.status === "submitted") submittedOrderCount += 1;
+    const restaurantName = order.restaurant?.name ?? "?";
+
     for (const oi of order.order_items ?? []) {
       const item = oi.availability_item?.item;
       if (!item) continue;
@@ -127,7 +131,6 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       if (qty <= 0) continue;
 
       const key = `${item.id}|${lineUnit}`;
-      const restaurantName = order.restaurant?.name ?? "?";
       const existing = aggMap.get(key);
       if (existing) {
         existing.total += qty;
@@ -139,6 +142,46 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         aggMap.set(key, {
           itemName: item.name,
           unit: lineUnit,
+          total: qty,
+          byRestaurant: new Map([[restaurantName, qty]]),
+        });
+      }
+    }
+
+    // Fold this restaurant's "extras" (admin-added delivery_items not on
+    // the chef's order) into the harvest aggregate so the harvester sees
+    // everything they need to pick — not just what the chef requested.
+    // Without this, an extra logged to the receiver vanishes from the
+    // pick/print views and the harvester misses it in the field.
+    const orderedItemIdsForAgg = new Set(
+      (order.order_items ?? []).map((oi: any) => oi.availability_item?.item?.id).filter(Boolean),
+    );
+    const deliveryForAgg = (deliveriesRaw ?? []).find(
+      (d: any) => d.restaurant_id === order.restaurant?.id,
+    );
+    for (const di of deliveryForAgg?.delivery_items ?? []) {
+      const itemRow = di.items;
+      if (!itemRow || orderedItemIdsForAgg.has(itemRow.id)) continue;
+      const qty = Number(di.quantity ?? 0);
+      if (qty <= 0) continue;
+      const extraUnit =
+        String(di.unit ?? "").trim().toLowerCase() ||
+        (String(itemRow.unit_type ?? "")
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean)[0] ?? "ea");
+      const key = `${itemRow.id}|${extraUnit}`;
+      const existing = aggMap.get(key);
+      if (existing) {
+        existing.total += qty;
+        existing.byRestaurant.set(
+          restaurantName,
+          (existing.byRestaurant.get(restaurantName) ?? 0) + qty,
+        );
+      } else {
+        aggMap.set(key, {
+          itemName: itemRow.name,
+          unit: extraUnit,
           total: qty,
           byRestaurant: new Map([[restaurantName, qty]]),
         });
