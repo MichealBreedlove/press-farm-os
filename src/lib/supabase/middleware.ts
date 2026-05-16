@@ -38,8 +38,12 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Public routes that don't require auth
-  const publicPaths = ["/login", "/about", "/auth/callback", "/auth/confirm"];
+  // Public routes that don't require auth.
+  // /api/v1/* is the documented external read-only API; each route self-gates
+  // via validateApiKey (src/lib/api-auth.ts). It must bypass this redirect or
+  // external clients with a valid PRESSFARM_API_KEY can never reach the
+  // handler.
+  const publicPaths = ["/login", "/about", "/auth/callback", "/auth/confirm", "/api/v1"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {

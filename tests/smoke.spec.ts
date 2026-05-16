@@ -19,13 +19,12 @@ test.describe("Press Farm OS — smoke", () => {
     await expect(page.getByText(/press farm/i).first()).toBeVisible();
   });
 
-  test("/api/v1/items is gated when unauthenticated", async ({ request }) => {
-    // Currently the auth middleware redirects /api/v1/* → /login (the public
-    // paths list in src/lib/supabase/middleware.ts only includes /login,
-    // /about, /auth/callback, /auth/confirm). If /api/v1/* is later added to
-    // that whitelist so the API-key check can run, this status will become
-    // 401/403 instead — update the assertion then.
+  test("/api/v1/items rejects requests without an API key", async ({ request }) => {
+    // /api/v1/* is whitelisted in middleware so each route's validateApiKey
+    // gate can run. Expected statuses:
+    //   401 — missing/invalid API key (normal case)
+    //   503 — PRESSFARM_API_KEY env var not set in this environment
     const res = await request.get("/api/v1/items", { maxRedirects: 0 });
-    expect([307, 401, 403]).toContain(res.status());
+    expect([401, 503]).toContain(res.status());
   });
 });
