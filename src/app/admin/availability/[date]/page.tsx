@@ -62,7 +62,9 @@ export default async function AdminAvailabilityEditorPage({
     console.error("Error fetching items:", itemsError);
   }
 
-  // Fetch restaurants (both Press + Understudy) for the farm
+  // Fetch every customer restaurant on the farm (Press, Understudy,
+  // Press Bar, Events). The editor renders a per-restaurant chip per
+  // item, so this list drives column count downstream.
   const { data: rawRestaurants, error: restaurantsError } = await supabase
     .from("restaurants")
     .select("id, name, slug, farm_id, created_at, updated_at")

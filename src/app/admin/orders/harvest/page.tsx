@@ -14,32 +14,62 @@ interface HarvestRow {
   name: string;
   category: ItemCategory;
   unit: UnitType;
-  pressQty: number | null;
-  understudyQty: number | null;
+  /** restaurantId → qty (for the restaurants that placed orders this date) */
+  qtyByRestaurant: Record<string, number>;
   total: number;
 }
 
 /**
- * /admin/orders/harvest — Combined harvest list for both restaurants (server component)
+ * Short, harvester-friendly column code for a restaurant.
+ * Two letters keep the table readable on iPhone during pick.
+ */
+function shortCode(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes("under")) return "US";
+  if (lower.includes("bar")) return "PB";
+  if (lower.includes("event")) return "EV";
+  if (lower.includes("press")) return "PR";
+  return name.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Stable display order for restaurants on the harvest list.
+ * Press first, then Understudy, then anyone else by name.
+ */
+function harvestOrder(name: string): number {
+  const lower = name.toLowerCase();
+  if (lower === "press") return 0;
+  if (lower.includes("under")) return 1;
+  if (lower.includes("bar")) return 2;
+  if (lower.includes("event")) return 3;
+  return 100;
+}
+
+/**
+ * /admin/orders/harvest — Combined harvest list for every restaurant
+ * that placed an order on this date (server component).
  *
  * URL param: ?date=YYYY-MM-DD
- * Groups by (item, container), sorted alphabetically within each category.
- * If Press orders 2 LG mint and Understudy orders 1 SM mint, they appear as
- * two separate rows so the harvester knows which container goes where.
- * Print-friendly layout.
+ *
+ * Each row is keyed by (item, container) so different units of the same
+ * crop (LG vs SM mint, etc.) become separate harvest rows — that's what
+ * the harvester needs while picking. Per-restaurant quantities render as
+ * dynamic columns so all 4 customer restaurants (Press / Understudy /
+ * Press Bar / Events) show side-by-side instead of two of them being
+ * silently bucketed into "Press" as in the old 2-restaurant layout.
+ *
+ * Print-friendly: column count adapts to how many restaurants ordered.
  */
 export default async function HarvestListPage({ searchParams }: HarvestPageProps) {
   const { date } = await searchParams;
   const supabase = await createClient();
 
-  // Default to today if no date provided
   const today = new Date().toISOString().split("T")[0];
   const activeDate = date ?? today;
 
-  // Fetch all orders for this date with item details. Pull unit_type
-  // from order_items itself (added in migration 027) so multi-unit
-  // items keep separate rows per container instead of getting merged
-  // under whatever the catalog's first declared unit is.
+  // Fetch every order for this date with item details. Pull unit_type from
+  // order_items (added in migration 027) so multi-unit items keep separate
+  // rows per container instead of merging under the catalog's first unit.
   const { data: ordersRaw } = await (supabase as any)
     .from("orders")
     .select(`
@@ -56,29 +86,39 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
 
   const orders: any[] = ordersRaw ?? [];
 
-  // Determine which restaurant is "Press" and which is "Understudy"
-  // We match by name (case-insensitive contains)
-  const pressOrder = orders.find((o) =>
-    o.restaurant?.name?.toLowerCase().includes("press")
-  );
-  const understudyOrder = orders.find((o) =>
-    o.restaurant?.name?.toLowerCase().includes("understudy")
-  );
+  // Build the per-restaurant display list (just those that placed an order)
+  // in a stable, harvester-friendly order.
+  const restaurantsInPlay: { id: string; name: string }[] = [];
+  const seenRestaurantIds = new Set<string>();
+  for (const o of orders) {
+    const r = o.restaurant;
+    if (!r?.id || seenRestaurantIds.has(r.id)) continue;
+    seenRestaurantIds.add(r.id);
+    restaurantsInPlay.push({ id: r.id, name: r.name });
+  }
+  restaurantsInPlay.sort((a, b) => {
+    const oa = harvestOrder(a.name);
+    const ob = harvestOrder(b.name);
+    if (oa !== ob) return oa - ob;
+    return a.name.localeCompare(b.name);
+  });
 
-  // Aggregate items across both restaurants. Group key is (item_id, unit)
-  // so different containers of the same crop become separate harvest rows
-  // — which is what the harvester needs while picking.
+  // Aggregate items across every restaurant. Group key is (item_id, unit)
+  // so different containers of the same crop become separate harvest rows.
   const itemMap = new Map<string, HarvestRow>();
 
-  function addItems(order: any, isPress: boolean) {
+  for (const order of orders) {
+    const restaurantId = order.restaurant?.id;
+    if (!restaurantId) continue;
+
     for (const oi of order?.order_items ?? []) {
       const item = oi.availability_item?.item;
       if (!item) continue;
 
-      // Use fulfilled qty if shorted, otherwise requested
+      // Use fulfilled qty if shorted, otherwise requested.
       const qty = oi.is_shorted
-        ? (oi.quantity_fulfilled ?? 0)
-        : (oi.quantity_requested ?? 0);
+        ? Number(oi.quantity_fulfilled ?? 0)
+        : Number(oi.quantity_requested ?? 0);
       if (qty <= 0) continue;
 
       // Per-line unit_type (stored on order_items since migration 027).
@@ -86,44 +126,32 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
       // rows that haven't been backfilled. Lower-case so display + key
       // are consistent regardless of how it was stored.
       const lineUnit = (oi.unit_type ?? "").trim().toLowerCase();
-      const fallbackUnit = String(item.unit_type ?? "")
-        .split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
+      const fallbackUnit =
+        String(item.unit_type ?? "")
+          .split(",")
+          .map((u: string) => u.trim())
+          .filter(Boolean)[0] ?? "ea";
       const unit = (lineUnit || fallbackUnit) as UnitType;
 
       const groupKey = `${item.id}|${unit}`;
-      const existing = itemMap.get(groupKey);
-      if (existing) {
-        if (isPress) {
-          existing.pressQty = (existing.pressQty ?? 0) + qty;
-        } else {
-          existing.understudyQty = (existing.understudyQty ?? 0) + qty;
-        }
-        existing.total += qty;
-      } else {
-        itemMap.set(groupKey, {
+      let row = itemMap.get(groupKey);
+      if (!row) {
+        row = {
           itemId: item.id,
           name: item.name,
           category: item.category as ItemCategory,
           unit,
-          pressQty: isPress ? qty : null,
-          understudyQty: isPress ? null : qty,
-          total: qty,
-        });
+          qtyByRestaurant: {},
+          total: 0,
+        };
+        itemMap.set(groupKey, row);
       }
+      row.qtyByRestaurant[restaurantId] = (row.qtyByRestaurant[restaurantId] ?? 0) + qty;
+      row.total += qty;
     }
   }
 
-  addItems(pressOrder, true);
-  addItems(understudyOrder, false);
-
-  // For any order that isn't press or understudy specifically, add as press
-  for (const order of orders) {
-    if (order !== pressOrder && order !== understudyOrder) {
-      addItems(order, true);
-    }
-  }
-
-  // Group by category, sort within each
+  // Group rows by category, sort alphabetically within each.
   const byCategory: Record<string, HarvestRow[]> = {};
   for (const row of Array.from(itemMap.values())) {
     if (!byCategory[row.category]) byCategory[row.category] = [];
@@ -137,7 +165,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
   const totalItems = itemMap.size;
 
   // ── Container calculator ──
-  // Count how many of each container type are needed based on unit_type totals
+  // Count how many of each container type are needed based on unit_type totals.
   const containerCounts: Record<string, { label: string; count: number; icon: string }> = {};
   const CONTAINER_MAP: Record<string, { label: string; icon: string }> = {
     lg: { label: "Large To-Go", icon: "📦" },
@@ -153,7 +181,7 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
 
   for (const row of Array.from(itemMap.values())) {
     const unit = row.unit;
-    if (unit === "ea") continue; // Individual items don't need containers
+    if (unit === "ea") continue;
     const container = CONTAINER_MAP[unit];
     if (!container) continue;
     if (!containerCounts[unit]) {
@@ -165,6 +193,10 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
   const containerList = Object.entries(containerCounts)
     .filter(([, v]) => v.count > 0)
     .sort((a, b) => b[1].count - a[1].count);
+
+  // Dynamic grid template: Item | Container | (per-restaurant cols) | Total
+  const restaurantCount = restaurantsInPlay.length;
+  const gridTemplate = `1fr auto ${"auto ".repeat(restaurantCount)}auto`.trim();
 
   return (
     <main>
@@ -179,7 +211,15 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
           </Link>
           <div className="flex-1 min-w-0">
             <h1 className="page-title">Harvest List</h1>
-            <p className="text-sm text-white/60">{formatDeliveryDate(activeDate)} · {totalItems} items</p>
+            <p className="text-sm text-white/60">
+              {formatDeliveryDate(activeDate)} · {totalItems} items
+              {restaurantsInPlay.length > 0 && (
+                <>
+                  {" · "}
+                  {restaurantsInPlay.map((r) => shortCode(r.name)).join(" / ")}
+                </>
+              )}
+            </p>
           </div>
           <PrintButton />
         </div>
@@ -188,7 +228,12 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
       {/* Print-only header */}
       <div className="hidden print:block px-4 py-4">
         <h1 className="text-xl font-bold">HARVEST LIST — {formatDeliveryDate(activeDate)}</h1>
-        <p className="text-sm text-farm-muted/90">{totalItems} items</p>
+        <p className="text-sm text-farm-muted/90">
+          {totalItems} items
+          {restaurantsInPlay.length > 0 && (
+            <> · {restaurantsInPlay.map((r) => r.name).join(" / ")}</>
+          )}
+        </p>
       </div>
 
       {/* Container summary */}
@@ -229,14 +274,20 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
               </h2>
 
               {/* Column headers — Container column is critical during
-                  harvest because chefs often order different sizes per
-                  item (LG sunflowers, SM mint, etc.) and the harvester
-                  needs to grab the right vessel before counting. */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-1 sm:gap-2 text-xs text-farm-muted font-medium mb-1 px-1">
+                  harvest because chefs order different sizes per item
+                  (LG sunflowers, SM mint, etc.) and the harvester needs
+                  to grab the right vessel before counting. */}
+              <div
+                className="grid gap-1 sm:gap-2 text-xs text-farm-muted font-medium mb-1 px-1"
+                style={{ gridTemplateColumns: gridTemplate }}
+              >
                 <span>Item</span>
                 <span className="w-12 sm:w-16 text-center">Cont.</span>
-                <span className="w-10 sm:w-14 text-right">P</span>
-                <span className="w-10 sm:w-14 text-right">U</span>
+                {restaurantsInPlay.map((r) => (
+                  <span key={r.id} className="w-9 sm:w-12 text-right" title={r.name}>
+                    {shortCode(r.name)}
+                  </span>
+                ))}
                 <span className="w-10 sm:w-14 text-right font-semibold">Tot</span>
               </div>
 
@@ -244,7 +295,8 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
                 {rows.map((row) => (
                   <div
                     key={`${row.itemId}-${row.unit}`}
-                    className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
+                    className="grid gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
+                    style={{ gridTemplateColumns: gridTemplate }}
                   >
                     <span className="text-sm text-farm-dark truncate">{row.name}</span>
                     <span className="w-12 sm:w-16 text-center">
@@ -252,12 +304,17 @@ export default async function HarvestListPage({ searchParams }: HarvestPageProps
                         {(UNIT_LABELS[row.unit] ?? row.unit).toString().toUpperCase()}
                       </span>
                     </span>
-                    <span className="text-sm text-farm-muted/90 w-10 sm:w-14 text-right tabular-nums">
-                      {row.pressQty != null ? formatQty(row.pressQty) : "—"}
-                    </span>
-                    <span className="text-sm text-farm-muted/90 w-10 sm:w-14 text-right tabular-nums">
-                      {row.understudyQty != null ? formatQty(row.understudyQty) : "—"}
-                    </span>
+                    {restaurantsInPlay.map((r) => {
+                      const q = row.qtyByRestaurant[r.id];
+                      return (
+                        <span
+                          key={r.id}
+                          className="text-sm text-farm-muted/90 w-9 sm:w-12 text-right tabular-nums"
+                        >
+                          {q != null && q > 0 ? formatQty(q) : "—"}
+                        </span>
+                      );
+                    })}
                     <span className="text-sm font-bold text-farm-dark w-10 sm:w-14 text-right tabular-nums">
                       {formatQty(row.total)}
                     </span>

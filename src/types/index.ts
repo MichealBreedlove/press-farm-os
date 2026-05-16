@@ -87,15 +87,6 @@ export type DeliveryWithItems = Delivery & {
 /** Chef view: items grouped by category for ordering */
 export type ItemsByCategory = Record<ItemCategory, AvailabilityItemWithItem[]>;
 
-/** Admin harvest list: combined quantities from both restaurants */
-export type HarvestListItem = {
-  item: Item;
-  press_qty: number | null;
-  understudy_qty: number | null;
-  total_qty: number;
-  unit: UnitType;
-};
-
 // ============================================
 // API response types
 // ============================================
