@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import LaborTimesheet from "@/emails/labor-timesheet";
 
 /**
  * POST /api/labor/send-timesheet — Send weekly timesheet to supervisor
@@ -41,27 +42,37 @@ export async function POST(request: Request) {
   const weekDate = new Date(week_start + "T12:00:00");
   const weekLabel = `${weekDate.getMonth() + 1}/${weekDate.getDate()}`;
 
-  let body = `Hello Chef ,\n\nHere's the timesheet for week of ${weekLabel}\n\n`;
-
-  // Group entries by date
+  // Group entries by date (sorted ascending) so the email lists 5/12 before 5/13.
   const byDate: Record<string, any[]> = {};
   for (const e of entries) {
     if (!byDate[e.date]) byDate[e.date] = [];
     byDate[e.date].push(e);
   }
 
-  for (const [date, workers] of Object.entries(byDate).sort()) {
-    const d = new Date(date + "T12:00:00");
-    const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
-    for (const w of workers) {
-      const range = formatTimeRange(w);
-      const tail = range ?? `${w.hours}h`;
+  const days = Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, workers]) => {
+      const d = new Date(date + "T12:00:00");
+      const dateLabel = `${d.getMonth() + 1}/${d.getDate()}`;
+      return {
+        dateLabel,
+        workers: workers.map((w: any) => {
+          const range = formatTimeRange(w);
+          const tail = range ?? `${w.hours}h`;
+          return { name: w.worker_name, tail, notes: w.notes ?? null };
+        }),
+      };
+    });
+
+  // Plain-text fallback for clients that strip styling.
+  let fallbackText = `Hello Chef ,\n\nHere's the timesheet for week of ${weekLabel}\n\n`;
+  for (const day of days) {
+    for (const w of day.workers) {
       const noteSuffix = w.notes ? ` - ${w.notes}` : "";
-      body += `${dateLabel} ${w.worker_name} ${tail}${noteSuffix}\n`;
+      fallbackText += `${day.dateLabel} ${w.name} ${w.tail}${noteSuffix}\n`;
     }
   }
-
-  body += `\nBest Regards\nMicheal Breedlove`;
+  fallbackText += `\nBest Regards\nMicheal Breedlove`;
 
   // Send via Resend
   try {
@@ -69,11 +80,18 @@ export async function POST(request: Request) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { FROM_ADDRESSES } = await import("@/lib/constants");
+    const reactEl = LaborTimesheet({
+      weekLabel,
+      days,
+      signOff: "Micheal Breedlove",
+    }) as React.ReactElement;
+
     await resend.emails.send({
       from: FROM_ADDRESSES.timesheet,
       to: toEmail,
       subject: `Timesheet for week of ${weekLabel}`,
-      text: body,
+      text: fallbackText,
+      react: reactEl,
     });
 
     return NextResponse.json({ success: true });

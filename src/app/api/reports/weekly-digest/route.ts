@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
 import { getAnthropicClient } from "@/lib/anthropic/client";
+import WeeklyDigest from "@/emails/weekly-digest";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -123,7 +124,10 @@ async function sendDigest() {
   }
 
   const subject = `Press Farm Weekly — ${formatDate(start)} to ${formatDate(end)}`;
-  const body = [
+
+  // Plain-text fallback (Resend renders this alongside the React Email HTML so
+  // clients that strip styling still get a readable email).
+  const fallbackText = [
     `PRESS FARM — WEEKLY DIGEST`,
     `${formatDate(start)} — ${formatDate(end)}`,
     ``,
@@ -158,18 +162,47 @@ async function sendDigest() {
     const toEmail = settings?.value || ADMIN_EMAIL;
 
     const { FROM_ADDRESSES } = await import("@/lib/constants");
+    const reactEl = WeeklyDigest({
+      startLabel: formatDate(start),
+      endLabel: formatDate(end),
+      aiIntro: aiIntro || undefined,
+      totalRevenue: formatCurrency(totalRevenue),
+      totalExpenses: formatCurrency(totalExpenses),
+      totalLaborHours: `${totalLaborHours.toFixed(1)}h`,
+      totalLaborCost: formatCurrency(totalLaborCost),
+      netLabel: formatCurrency(totalRevenue - totalExpenses - totalLaborCost),
+      deliveryCount,
+      deliveries: (deliveries ?? []).map((d: any) => ({
+        dateLabel: formatDate(d.delivery_date),
+        restaurantName: d.restaurants?.name ?? "?",
+        value: formatCurrency(d.total_value ?? 0),
+      })),
+      expenses: (expenses ?? []).map((e: any) => ({
+        category: e.category ?? "Uncategorized",
+        amount: formatCurrency(e.amount ?? 0),
+        description: e.description ?? null,
+      })),
+      workers: workers.map((w: string) => {
+        const hrs = (labor ?? [])
+          .filter((l: any) => l.worker_name === w)
+          .reduce((s: number, l: any) => s + (l.hours ?? 0), 0);
+        return { name: w, hours: `${hrs}h` };
+      }),
+    }) as React.ReactElement;
+
     await resend.emails.send({
       from: FROM_ADDRESSES.digest,
       to: toEmail,
       subject,
-      text: body,
+      text: fallbackText,
+      react: reactEl,
     });
 
     return NextResponse.json({ success: true, subject, to: toEmail });
   } catch (err) {
     console.error("[DIGEST] Failed to send:", err);
     // Return the digest content even if email fails
-    return NextResponse.json({ success: false, subject, body, error: String(err) });
+    return NextResponse.json({ success: false, subject, body: fallbackText, error: String(err) });
   }
 }
 
