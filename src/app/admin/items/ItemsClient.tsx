@@ -17,6 +17,7 @@ interface Item {
   is_archived: boolean;
   is_event_item?: boolean;
   is_press_bar_item?: boolean;
+  show_in_regular_menu?: boolean;
   chef_notes: string | null;
   image_url: string | null;
   parent_item_id?: string | null;
@@ -127,6 +128,54 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
       router.refresh();
     } finally {
       setArchiving(null);
+    }
+  }
+
+  // Inline visibility-flag toggles (Event / Press Bar / Regular Menu) so
+  // an admin can re-tag an item from the list without opening detail.
+  // Holds the optimistic override until router.refresh() returns fresh
+  // server data; reverts on PATCH failure.
+  type FlagKey = "is_event_item" | "is_press_bar_item" | "show_in_regular_menu";
+  const [flagOverrides, setFlagOverrides] = useState<Record<string, Partial<Record<FlagKey, boolean>>>>({});
+  const [pendingFlag, setPendingFlag] = useState<Set<string>>(new Set());
+  const flagPendingKey = (id: string, flag: FlagKey) => `${id}:${flag}`;
+
+  function effectiveFlag(item: Item, flag: FlagKey): boolean {
+    const override = flagOverrides[item.id]?.[flag];
+    if (override !== undefined) return override;
+    return Boolean(item[flag]);
+  }
+
+  async function toggleFlag(item: Item, flag: FlagKey) {
+    const next = !effectiveFlag(item, flag);
+    const pendingKey = flagPendingKey(item.id, flag);
+    setFlagOverrides((prev) => ({ ...prev, [item.id]: { ...(prev[item.id] ?? {}), [flag]: next } }));
+    setPendingFlag((prev) => new Set(prev).add(pendingKey));
+    try {
+      const res = await fetch(`/api/items/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [flag]: next }),
+      });
+      if (!res.ok) throw new Error("Toggle failed");
+      router.refresh();
+    } catch {
+      // Revert the optimistic override so the badge snaps back.
+      setFlagOverrides((prev) => {
+        const next = { ...prev };
+        const itemOverrides = { ...(next[item.id] ?? {}) };
+        delete itemOverrides[flag];
+        if (Object.keys(itemOverrides).length === 0) delete next[item.id];
+        else next[item.id] = itemOverrides;
+        return next;
+      });
+      alert(`Couldn't update ${item.name}. Try again.`);
+    } finally {
+      setPendingFlag((prev) => {
+        const next = new Set(prev);
+        next.delete(pendingKey);
+        return next;
+      });
     }
   }
 
@@ -381,59 +430,81 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                     );
                   })()}
                 </Link>
-                <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
-                    {/* Category pill — shown when searching (flat list
-                        loses category context) AND when nested (the
-                        child is sitting in the parent's category section,
-                        so its real category is otherwise invisible). */}
-                    {(search.trim() || isNested) && (
-                      <span className="text-[9px] tracking-wider uppercase bg-farm-cream/80 text-farm-muted px-1.5 py-0.5 rounded font-semibold flex-shrink-0 border border-farm-dark/5">
-                        {CATEGORY_LABELS[item.category] ?? item.category}
-                      </span>
-                    )}
-                    {item.is_event_item && (
-                      <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
-                        Event
-                      </span>
-                    )}
-                    {item.is_press_bar_item && (
-                      <span className="text-[9px] tracking-wider uppercase bg-pf-master-blue/10 text-pf-master-blue px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
-                        Press Bar
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-farm-muted mt-0.5">
-                    {(() => {
-                      const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
-                      const map = item.unit_prices ?? {};
-                      const hasPerUnit = units.some((u) => typeof map[u] === "number");
-                      if (hasPerUnit) {
-                        const parts = units.map((u) => {
-                          const p = typeof map[u] === "number" ? map[u] : item.default_price;
-                          return p != null ? `${u.toUpperCase()} $${p.toFixed(2)}` : u.toUpperCase();
-                        });
-                        return parts.join(" · ");
-                      }
-                      const unitsStr = units.map((u) => u.toUpperCase()).join(" · ");
-                      return item.default_price != null
-                        ? `${unitsStr} · $${item.default_price.toFixed(2)}`
-                        : unitsStr;
-                    })()}
-                    {item.is_archived && " · Archived"}
-                  </p>
-                  {/* "↳ part of …" label — only shown when the child is
-                      rendering at top level (its parent was filtered out
-                      or this is search). When nested directly under the
-                      parent the indent + guide line make the relationship
-                      obvious so the label would just be noise. */}
-                  {!isNested && item.parent_item_id && parentNames?.[item.parent_item_id] && (
-                    <p className="text-[10px] text-farm-muted/70 mt-0.5 italic">
-                      ↳ part of {parentNames[item.parent_item_id]}
+                <div className="flex-1 min-w-0 min-h-0">
+                  <Link href={`/admin/items/${item.id}`} className="block min-h-0 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
+                      {/* Category pill — shown when searching (flat list
+                          loses category context) AND when nested (the
+                          child is sitting in the parent's category section,
+                          so its real category is otherwise invisible). */}
+                      {(search.trim() || isNested) && (
+                        <span className="text-[9px] tracking-wider uppercase bg-farm-cream/80 text-farm-muted px-1.5 py-0.5 rounded font-semibold flex-shrink-0 border border-farm-dark/5">
+                          {CATEGORY_LABELS[item.category] ?? item.category}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-farm-muted mt-0.5">
+                      {(() => {
+                        const units = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean);
+                        const map = item.unit_prices ?? {};
+                        const hasPerUnit = units.some((u) => typeof map[u] === "number");
+                        if (hasPerUnit) {
+                          const parts = units.map((u) => {
+                            const p = typeof map[u] === "number" ? map[u] : item.default_price;
+                            return p != null ? `${u.toUpperCase()} $${p.toFixed(2)}` : u.toUpperCase();
+                          });
+                          return parts.join(" · ");
+                        }
+                        const unitsStr = units.map((u) => u.toUpperCase()).join(" · ");
+                        return item.default_price != null
+                          ? `${unitsStr} · $${item.default_price.toFixed(2)}`
+                          : unitsStr;
+                      })()}
+                      {item.is_archived && " · Archived"}
                     </p>
-                  )}
-                </Link>
+                    {/* "↳ part of …" label — only shown when the child is
+                        rendering at top level (its parent was filtered out
+                        or this is search). When nested directly under the
+                        parent the indent + guide line make the relationship
+                        obvious so the label would just be noise. */}
+                    {!isNested && item.parent_item_id && parentNames?.[item.parent_item_id] && (
+                      <p className="text-[10px] text-farm-muted/70 mt-0.5 italic">
+                        ↳ part of {parentNames[item.parent_item_id]}
+                      </p>
+                    )}
+                  </Link>
+                  {/* Visibility-flag toggles — tap to flip each flag
+                      without opening the detail page. All three render
+                      always; inactive = outlined+muted, active = solid. */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {(["is_event_item", "is_press_bar_item", "show_in_regular_menu"] as const).map((flag) => {
+                      const active = effectiveFlag(item, flag);
+                      const pending = pendingFlag.has(flagPendingKey(item.id, flag));
+                      const label =
+                        flag === "is_event_item" ? "Event" :
+                        flag === "is_press_bar_item" ? "Press Bar" : "Regular";
+                      const activeClass =
+                        flag === "is_event_item" ? "bg-pf-master-violet text-white border-pf-master-violet" :
+                        flag === "is_press_bar_item" ? "bg-pf-master-blue text-white border-pf-master-blue" :
+                        "bg-farm-green text-white border-farm-green";
+                      const inactiveClass = "bg-white text-farm-muted/70 border-farm-dark/15 hover:text-farm-dark hover:border-farm-dark/30";
+                      return (
+                        <button
+                          key={flag}
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFlag(item, flag); }}
+                          disabled={pending}
+                          aria-pressed={active}
+                          className={`text-[10px] tracking-wider uppercase font-semibold px-2 py-1 rounded border min-h-[28px] min-w-[44px] transition-colors disabled:opacity-50 ${active ? activeClass : inactiveClass}`}
+                          title={`${active ? "Hide from" : "Show on"} ${label === "Regular" ? "regular menu" : label === "Event" ? "events menu" : "Press Bar menu"}`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
                   <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
