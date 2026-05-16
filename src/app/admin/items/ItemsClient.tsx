@@ -35,6 +35,8 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [eventsOnly, setEventsOnly] = useState(false);
+  const [pressBarOnly, setPressBarOnly] = useState(false);
+  const [regularOnly, setRegularOnly] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
@@ -78,10 +80,13 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
     return items.filter((item) => {
       if (!showArchived && item.is_archived) return false;
       if (eventsOnly && !item.is_event_item) return false;
+      if (pressBarOnly && !item.is_press_bar_item) return false;
+      // show_in_regular_menu defaults to true (migration 030), so undefined counts as "in"
+      if (regularOnly && item.show_in_regular_menu === false) return false;
       if (q && !item.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [items, search, showArchived, eventsOnly]);
+  }, [items, search, showArchived, eventsOnly, pressBarOnly, regularOnly]);
 
   const grouped = useMemo(() => {
     const map: Record<string, Item[]> = {};
@@ -284,6 +289,28 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
           title="Show only items flagged as event items"
         >
           Events
+        </button>
+        <button
+          onClick={() => setPressBarOnly((v) => !v)}
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
+            pressBarOnly
+              ? "bg-pf-master-blue text-white border-pf-master-blue"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
+          }`}
+          title="Show only items flagged for Press Bar"
+        >
+          Press Bar
+        </button>
+        <button
+          onClick={() => setRegularOnly((v) => !v)}
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
+            regularOnly
+              ? "bg-farm-green text-white border-farm-green"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
+          }`}
+          title="Show only items shown on the regular Thu / Sat / Mon order menu"
+        >
+          Regular
         </button>
         <button
           onClick={() => setShowArchived((v) => !v)}
