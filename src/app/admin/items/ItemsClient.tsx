@@ -34,6 +34,7 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [eventsOnly, setEventsOnly] = useState(false);
+  const [pressBarOnly, setPressBarOnly] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
@@ -41,7 +42,14 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState<
-    null | "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event"
+    | null
+    | "archive"
+    | "unarchive"
+    | "delete"
+    | "flag-event"
+    | "unflag-event"
+    | "flag-press-bar"
+    | "unflag-press-bar"
   >(null);
   // Confirmation gate for the destructive Delete action
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -77,10 +85,11 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
     return items.filter((item) => {
       if (!showArchived && item.is_archived) return false;
       if (eventsOnly && !item.is_event_item) return false;
+      if (pressBarOnly && !item.is_press_bar_item) return false;
       if (q && !item.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [items, search, showArchived, eventsOnly]);
+  }, [items, search, showArchived, eventsOnly, pressBarOnly]);
 
   const grouped = useMemo(() => {
     const map: Record<string, Item[]> = {};
@@ -149,7 +158,14 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   }
 
   async function runBulk(
-    action: "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event",
+    action:
+      | "archive"
+      | "unarchive"
+      | "delete"
+      | "flag-event"
+      | "unflag-event"
+      | "flag-press-bar"
+      | "unflag-press-bar",
   ) {
     if (selected.size === 0) return;
     setBulkBusy(action);
@@ -213,6 +229,8 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
   const selectedArchivedCount = selectedItems.length - selectedActiveCount;
   const selectedEventCount = selectedItems.filter((i) => i.is_event_item).length;
   const selectedNonEventCount = selectedItems.length - selectedEventCount;
+  const selectedPressBarCount = selectedItems.filter((i) => i.is_press_bar_item).length;
+  const selectedNonPressBarCount = selectedItems.length - selectedPressBarCount;
 
   return (
     <div className="space-y-4 pb-20">
@@ -235,6 +253,17 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
           title="Show only items flagged as event items"
         >
           Events
+        </button>
+        <button
+          onClick={() => setPressBarOnly((v) => !v)}
+          className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors min-h-0 ${
+            pressBarOnly
+              ? "bg-pf-master-blue text-white border-pf-master-blue"
+              : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/15"
+          }`}
+          title="Show only items flagged for the Press Bar menu"
+        >
+          Bar
         </button>
         <button
           onClick={() => setShowArchived((v) => !v)}
@@ -340,16 +369,52 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
         // Render one item card. Used for both top-level rows and the
         // nested children rendered under their parent. Pulled out to
         // avoid duplicating the 100+ lines of card markup.
-        const renderItemCard = (item: Item, isNested: boolean) => (
+        //
+        // In selection mode every Link inside the card has
+        // onClick={swallowAndSelect(id)} so a tap anywhere on the row
+        // toggles the checkbox instead of navigating to the detail page.
+        // The checkbox indicator at the left edge gives the affordance.
+        const swallowAndSelect = (id: string) => (e: React.MouseEvent) => {
+          if (!selectionMode) return;
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSelect(id);
+        };
+        const renderItemCard = (item: Item, isNested: boolean) => {
+          const isSelected = selected.has(item.id);
+          return (
           <div
             key={item.id}
             className={`bg-white rounded-xl border flex items-center gap-3 pr-2 transition-colors ${
               item.is_archived ? "border-farm-dark/5 opacity-50" : "border-farm-dark/5"
-            }`}
+            } ${isSelected ? "ring-2 ring-farm-green/50 border-farm-green/40" : ""}`}
           >
+            {selectionMode && (
+              <button
+                type="button"
+                onClick={() => toggleSelect(item.id)}
+                aria-pressed={isSelected}
+                aria-label={isSelected ? `Deselect ${item.name}` : `Select ${item.name}`}
+                className="pl-3 min-h-[48px] flex items-center justify-center min-w-0 flex-shrink-0"
+              >
+                <span
+                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                    isSelected
+                      ? "bg-farm-green border-farm-green"
+                      : "bg-white border-farm-dark/25"
+                  }`}
+                >
+                  {isSelected && (
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+              </button>
+            )}
             <div className="flex-1 px-3 py-3 min-h-[48px]">
               <div className="flex items-center gap-3">
-                <Link href={`/admin/items/${item.id}`} className="flex-shrink-0 min-h-0 min-w-0">
+                <Link href={`/admin/items/${item.id}`} onClick={swallowAndSelect(item.id)} className="flex-shrink-0 min-h-0 min-w-0">
                   {(() => {
                     const imgUrl = getItemImageUrl(item);
                     const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
@@ -381,7 +446,7 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                     );
                   })()}
                 </Link>
-                <Link href={`/admin/items/${item.id}`} className="flex-1 min-w-0 min-h-0">
+                <Link href={`/admin/items/${item.id}`} onClick={swallowAndSelect(item.id)} className="flex-1 min-w-0 min-h-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-sm font-medium text-farm-dark truncate">{item.name}</p>
                     {/* Category pill — shown when searching (flat list
@@ -434,14 +499,17 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                     </p>
                   )}
                 </Link>
-                <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
-                  <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                {!selectionMode && (
+                  <Link href={`/admin/items/${item.id}`} className="min-h-0 min-w-0">
+                    <svg className="w-4 h-4 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
               </div>
-              {/* Inline chef notes */}
-              {editingNote === item.id ? (
+              {/* Inline chef notes — hidden in selection mode so taps on the
+                  card stay focused on toggling the checkbox. */}
+              {!selectionMode && (editingNote === item.id ? (
                 <div className="mt-1.5 flex gap-1.5">
                   <input
                     type="text"
@@ -477,8 +545,9 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                     <span className="text-farm-muted/60 hover:text-farm-muted">+ Add chef note</span>
                   )}
                 </button>
-              )}
+              ))}
             </div>
+            {!selectionMode && (
             <button
               onClick={() => toggleArchive(item)}
               disabled={archiving === item.id}
@@ -497,8 +566,10 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                 </svg>
               )}
             </button>
+            )}
           </div>
-        );
+          );
+        };
 
         const sections = search.trim()
           ? [{ key: "search", items: filtered, label: `Search Results (${filtered.length})` }]
@@ -598,6 +669,28 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
                 title="Mark as event-only — items appear in the receiver dashboard's For Events section"
               >
                 {bulkBusy === "flag-event" ? "Flagging…" : `Flag event ${selectedNonEventCount}`}
+              </button>
+            )}
+            {selectedPressBarCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("unflag-press-bar")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-pf-master-blue/30 text-sm font-medium text-pf-master-blue bg-white hover:bg-pf-master-blue/5 disabled:opacity-50"
+                title="Clear the Press Bar flag — items move out of the Press Bar menu placement"
+              >
+                {bulkBusy === "unflag-press-bar" ? "Unflagging…" : `Unflag bar ${selectedPressBarCount}`}
+              </button>
+            )}
+            {selectedNonPressBarCount > 0 && (
+              <button
+                type="button"
+                onClick={() => runBulk("flag-press-bar")}
+                disabled={bulkBusy !== null}
+                className="px-3 min-h-[40px] rounded-lg border border-pf-master-blue/30 text-sm font-medium text-pf-master-blue bg-white hover:bg-pf-master-blue/5 disabled:opacity-50"
+                title="Add to the Press Bar menu — items appear in the Press Bar section of the chef order form"
+              >
+                {bulkBusy === "flag-press-bar" ? "Flagging…" : `Flag bar ${selectedNonPressBarCount}`}
               </button>
             )}
             <button

@@ -8,12 +8,14 @@ const BULK_ACTIONS = [
   "delete",
   "flag-event",
   "unflag-event",
+  "flag-press-bar",
+  "unflag-press-bar",
 ] as const;
 type BulkAction = (typeof BULK_ACTIONS)[number];
 
 /**
  * POST /api/items/bulk
- * Body: { ids: string[], action: "archive" | "unarchive" | "delete" | "flag-event" | "unflag-event" }
+ * Body: { ids: string[], action: BulkAction }
  * Admin only.
  *
  * archive/unarchive: bulk UPDATE items.is_archived. Returns { updated }.
@@ -21,6 +23,10 @@ type BulkAction = (typeof BULK_ACTIONS)[number];
  * flag-event/unflag-event: bulk UPDATE items.is_event_item. The flag
  * drives the receiver dashboard's "For Events" section grouping — when
  * cleared, the item shows in the regular section again. Returns { updated }.
+ *
+ * flag-press-bar/unflag-press-bar: bulk UPDATE items.is_press_bar_item.
+ * Mirrors flag-event for the Press Bar menu placement (migration 028).
+ * Returns { updated }.
  *
  * delete: hard DELETE per row. Postgres FK constraints reject deletes
  * for items referenced by order_items (via availability_items) or
@@ -74,6 +80,17 @@ export async function POST(request: Request) {
     const { data, error } = await (admin as any)
       .from("items")
       .update({ is_event_item: action === "flag-event" })
+      .in("id", ids)
+      .select("id");
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ updated: (data ?? []).length });
+  }
+
+  if (action === "flag-press-bar" || action === "unflag-press-bar") {
+    const { data, error } = await (admin as any)
+      .from("items")
+      .update({ is_press_bar_item: action === "flag-press-bar" })
       .in("id", ids)
       .select("id");
 
