@@ -51,3 +51,8 @@ tmp_*
 *_backup.csv
 *_backup.json
 backup_*/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
