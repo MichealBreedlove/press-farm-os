@@ -1,4 +1,4 @@
--- 042_drop_unused_indexes.sql
+-- 044_drop_unused_indexes.sql
 -- Drop indexes flagged by the perf linter as never-scanned (pg_stat_user_indexes
 -- shows 0 idx_scan since stats were last reset).
 --

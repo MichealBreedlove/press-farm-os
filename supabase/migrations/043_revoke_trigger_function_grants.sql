@@ -1,4 +1,4 @@
--- 041_revoke_trigger_function_grants.sql
+-- 043_revoke_trigger_function_grants.sql
 -- Trigger functions are owner-executed; they don't need to be RPC-callable.
 -- Strip EXECUTE from PUBLIC/anon/authenticated so they're not exposed via PostgREST RPC.
 -- Triggers continue to fire normally because they run as the table owner.
