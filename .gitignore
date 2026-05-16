@@ -45,3 +45,9 @@ supabase/.temp
 
 # Script run logs
 *-run.log
+
+# Temp/backup artifacts — never commit (often contain DB exports or secrets)
+tmp_*
+*_backup.csv
+*_backup.json
+backup_*/

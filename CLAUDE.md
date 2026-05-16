@@ -90,7 +90,7 @@ supabase/migrations/             # 001 → 022 (last applied: 022_per_unit_prici
 
 ## Database Migrations
 
-15 tables + 2 views. Last applied: **022**. Read latest first when scoping work.
+Last applied: **044**. Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -116,6 +116,28 @@ supabase/migrations/             # 001 → 022 (last applied: 022_per_unit_prici
 | 020 | pack_manager | `pack_inventory` table — container on-hand tracking |
 | 021 | multi_unit_items | `unit_type` becomes comma-separated; `available_units` override; `gb` (Green Bin) added |
 | 022 | per_unit_pricing | `items.unit_prices` JSONB map; `default_price` is fallback |
+| 023 | event_items | `is_event_item` flag — Events folded into Press/Under-Study order forms |
+| 024 | receiver_role | Adds `receiver` role for destination-side unpack/check-in |
+| 025 | receiver_notify_log | Logs each "Finish & Send to Receiver" send |
+| 026 | storage_admin_only | Replaces broad storage policies with admin-only writes |
+| 027 | order_item_multi_unit | `order_items.unit` so a single line can be SM+LG of same item |
+| 028 | press_bar_items | `is_press_bar_item` flag on items |
+| 029 | press_bar_restaurant | Adds Press Bar as a restaurant |
+| 030 | show_in_regular_menu | Items can appear on Regular / Events / Press Bar menus simultaneously |
+| 031 | parent_items | `parent_item_id` — group Squash → Blossoms/Tendrils/Leaves |
+| 032 | items_unique_per_category | UNIQUE(farm_id, name, category) replaces UNIQUE(farm_id, name) |
+| 033 | order_item_picked | `order_items.picked_at` for per-restaurant pick list |
+| 034 | receiver_received | `order_items.received_at` + receiver close-out fields |
+| 035 | shared_restaurant_accounts | Wires shared chef accounts after admin creates them in Auth |
+| 036 | labor_clock_times | Time-of-day fields on `labor_entries` (in/lunch/out) |
+| 037 | item_consolidation_and_parents | Manual cleanup from Micheal's 2026-05-11 audit |
+| 038 | backfill_q1_q2_2026_deliveries | Imports 313 historical delivery rows (Mar 7 – May 4, 2026) |
+| 039 | fix_nasturtium_leaves_price | Nasturtium Leaves: $0.40 EA (was $15 LG carry-over bug) |
+| 040 | events_restaurant | Re-creates Events pseudo-restaurant for shared `events` account |
+| 041 | event_requests | `event_requests` table — chef advance-order flow for upcoming events |
+| 042 | event_request_groups | `event_group_id` column — multi-item event submissions |
+| 043 | revoke_trigger_function_grants | Strips EXECUTE from PUBLIC/anon/auth on trigger functions |
+| 044 | drop_unused_indexes | Drops 22 never-scanned indexes (see file for advisor-noise notes) |
 
 ## Auth Model
 

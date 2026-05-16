@@ -1,2 +1,0 @@
-id,restaurant_id,chef_id,delivery_date,status,freeform_notes,submitted_at,fulfilled_at,closed_for_ordering,created_at,updated_at
-77f9d1a9-e741-4694-8fde-e541c05f4ec2,7a5fd02b-2248-4492-bae9-2ab1670894bc,336d6d3a-c33d-4312-a96b-c548b64204b0,2026-04-30,in_progress,TEST,2026-04-29T10:01:57.685+00:00,,False,2026-04-28T06:46:40.564347+00:00,2026-05-01T03:41:39.374637+00:00
