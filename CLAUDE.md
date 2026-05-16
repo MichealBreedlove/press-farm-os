@@ -227,20 +227,25 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Orders dashboard, per-date detail, harvest list, shortage workflow.
 - Delivery log, per-date detail, EOM finalize.
 - Per-resource Import/Export for items, expenses, deliveries (CSV round-trip + auto-detect XLSX).
-- Reports: income, expenses, items, YoY, executive.
-- Labor tracking + weekly timesheet email.
+- Reports: income, expenses, items, YoY, executive, crop revenue ranking, labor cost per delivery.
+- Labor tracking + weekly timesheet email (React Email).
 - Crop plan + plantings, forecast page.
-- Notes, suggestions, photos.
+- Calendar (monthly grid with order/delivery/notify badges).
+- Notes, suggestions, photos manager.
+- Offer sheet (printable/shareable PDF-style view per delivery date).
 - Public About page with partner restaurants + logos.
-- Resend email pipelines (5+ templates).
+- Resend email pipelines (8 React Email templates + 2 raw HTML).
 - Public read-only `/api/v1/*` endpoints.
 - Editorial brand system + UI Kit reference page.
 
 ## Open Follow-ups (Prioritized)
 
-1. **Phase 2 features** in `project_feature_roadmap.md`: calendar, offer sheets, finish labor tracker, photos, forecasting, financial fixes. (Pack manager is descoped — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.)
-2. **Email-trigger audit** — Resend templates exist; all 8 have at least one sender. Route-walk to confirm each is invoked at the right point in the user flow not yet done.
-3. **Reports & financial dashboard** — `/admin/reports` covers month/YTD/YoY/top-items/forecast. Specific missing reports (e.g. crop margin, labor cost per delivery, P&L PDF export) TBD.
+1. **P&L PDF export** — `/admin/reports/executive` renders a full P&L view but there's no "Download PDF" button. Adding one needs a PDF library decision (puppeteer / @react-pdf/renderer / browser print) — ask Micheal before adding a dep.
+2. **"Financial fixes" backlog** — placeholder for any pricing / margin / line-total bugs Micheal surfaces during use. No concrete items currently.
+
+Pack manager is descoped (Micheal 2026-05-15) — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.
+
+Calendar (`/admin/calendar`), offer sheet (`/admin/availability/[date]/offer-sheet`), labor tracker (`/admin/labor`), photos (`/admin/items/photos`), forecast (`/admin/forecast`), crop revenue (`/admin/reports/crops`), and labor efficiency (`/admin/reports/labor-efficiency`) all ship. Email-trigger audit completed 2026-05-15 — all 8 React Email templates + weekly-digest + send-timesheet have senders wired at the right flow point.
 
 ## How to Operate
 
