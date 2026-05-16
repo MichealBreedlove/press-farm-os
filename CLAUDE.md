@@ -230,7 +230,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Reports: income, expenses, items, YoY, executive.
 - Labor tracking + weekly timesheet email.
 - Crop plan + plantings, forecast page.
-- Pack manager (partial scaffold), notes, suggestions, photos.
+- Notes, suggestions, photos.
 - Public About page with partner restaurants + logos.
 - Resend email pipelines (5+ templates).
 - Public read-only `/api/v1/*` endpoints.
@@ -238,7 +238,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 
 ## Open Follow-ups (Prioritized)
 
-1. **Phase 2 features** in `project_feature_roadmap.md`: calendar, offer sheets, finish pack manager, finish labor tracker, photos, forecasting, financial fixes.
+1. **Phase 2 features** in `project_feature_roadmap.md`: calendar, offer sheets, finish labor tracker, photos, forecasting, financial fixes. (Pack manager is descoped — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.)
 2. **Email-trigger audit** — Resend templates exist; all 8 have at least one sender. Route-walk to confirm each is invoked at the right point in the user flow not yet done.
 3. **Reports & financial dashboard** — `/admin/reports` covers month/YTD/YoY/top-items/forecast. Specific missing reports (e.g. crop margin, labor cost per delivery, P&L PDF export) TBD.
 
