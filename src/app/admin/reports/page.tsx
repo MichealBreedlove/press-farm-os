@@ -154,15 +154,41 @@ export default async function AdminReportsPage() {
         accessory={<PrintButton />}
       />
 
-      {/* Executive Summary CTA */}
-      <div className="px-4 pt-4">
+      {/* Drill-down CTAs */}
+      <div className="px-4 pt-4 space-y-2">
         <a
           href="/admin/reports/executive"
-          className="card-interactive flex items-center justify-between px-4 py-4 mb-0"
+          className="card-interactive flex items-center justify-between px-4 py-4"
         >
           <div>
             <p className="text-sm font-semibold text-farm-dark">Executive Summary</p>
             <p className="text-xs text-farm-muted mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
+          </div>
+          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+
+        <a
+          href="/admin/reports/crops"
+          className="card-interactive flex items-center justify-between px-4 py-4"
+        >
+          <div>
+            <p className="text-sm font-semibold text-farm-dark">Crop Revenue</p>
+            <p className="text-xs text-farm-muted mt-0.5">Per-crop ranking · Revenue · Units · $/unit</p>
+          </div>
+          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+
+        <a
+          href="/admin/reports/labor-efficiency"
+          className="card-interactive flex items-center justify-between px-4 py-4"
+        >
+          <div>
+            <p className="text-sm font-semibold text-farm-dark">Labor per Delivery</p>
+            <p className="text-xs text-farm-muted mt-0.5">Weekly labor cost vs. delivery throughput</p>
           </div>
           <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
