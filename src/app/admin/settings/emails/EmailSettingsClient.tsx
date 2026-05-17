@@ -7,8 +7,8 @@ import { Mail, Save, Check } from "lucide-react";
 const EMAIL_FIELDS = [
   {
     key: "email_labor_report",
-    label: "Weekly Timesheet Report",
-    description: "Supervisor who receives the weekly labor timesheet (sent Saturdays)",
+    label: "Labor / Timesheet Email",
+    description: "Recipient of the weekly labor timesheet — sent when you tap 'Send Timesheet' on /admin/labor. Update this if a different supervisor needs the report.",
     placeholder: "supervisor@pressnapavalley.com",
   },
   {
