@@ -118,23 +118,23 @@ ALTER TABLE microgreen_trays    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE microgreen_harvests ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admin full access to microgreen_crops"
-  ON microgreen_crops    FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON microgreen_crops    FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to microgreen_demand"
-  ON microgreen_demand   FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON microgreen_demand   FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to microgreen_batches"
-  ON microgreen_batches  FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON microgreen_batches  FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to microgreen_trays"
-  ON microgreen_trays    FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON microgreen_trays    FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to microgreen_harvests"
-  ON microgreen_harvests FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON microgreen_harvests FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 
 -- updated_at triggers
 CREATE TRIGGER update_microgreen_crops_updated_at
   BEFORE UPDATE ON microgreen_crops
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER update_microgreen_demand_updated_at
   BEFORE UPDATE ON microgreen_demand
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 CREATE TRIGGER update_microgreen_trays_updated_at
   BEFORE UPDATE ON microgreen_trays
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
