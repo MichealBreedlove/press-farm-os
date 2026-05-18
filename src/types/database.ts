@@ -546,3 +546,50 @@ export type NotificationType =
   | "availability_published";
 
 export type NotificationChannel = "email" | "sms";
+
+// ─── Seeds ──────────────────────────────────────────────────────────────
+export interface SeedRow {
+  id: string;
+  farm_id: string;
+  item_id: string;
+  variety: string;
+  initial_quantity: number;
+  quantity_unit: string;
+  packed_for_year: number | null;
+  purchase_date: string | null;
+  supplier: string | null;
+  cost: number | null;
+  status: "active" | "low" | "exhausted" | "discarded";
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SeedSowingRow {
+  id: string;
+  seed_id: string;
+  planting_id: string | null;
+  amount_used: number;
+  sown_on: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface SeedGerminationTestRow {
+  id: string;
+  seed_id: string;
+  tested_on: string;
+  germination_pct: number;
+  seeds_tested: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+// View shape — includes computed columns from seeds_with_on_hand
+export interface SeedWithOnHandRow extends SeedRow {
+  on_hand: number;
+  is_low: boolean;
+  last_sown_on: string | null;
+  latest_germ_pct: number | null;
+  latest_germ_tested_on: string | null;
+}
