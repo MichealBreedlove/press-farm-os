@@ -85,12 +85,12 @@ src/
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 022 (last applied: 022_per_unit_pricing.sql)
+supabase/migrations/             # 001 → 045 (last applied: 045_microgreens_module.sql)
 ```
 
 ## Database Migrations
 
-15 tables + 2 views. Last applied: **022**. Read latest first when scoping work.
+15 base tables + 2 views, plus 5 microgreen tables (045). Last applied: **045**. Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -116,6 +116,10 @@ supabase/migrations/             # 001 → 022 (last applied: 022_per_unit_prici
 | 020 | pack_manager | `pack_inventory` table — container on-hand tracking |
 | 021 | multi_unit_items | `unit_type` becomes comma-separated; `available_units` override; `gb` (Green Bin) added |
 | 022 | per_unit_pricing | `items.unit_prices` JSONB map; `default_price` is fallback |
+| 023–042 | (various) | Items/orders/labor/event-requests evolutions — read SQL for details |
+| 043 | seed_inventory | `seeds`, `seed_sowings`, `seed_germ_tests` (parallel spec) |
+| 044 | repricing_2026_05_18 | item pricing adjustments |
+| 045 | microgreens_module | `microgreen_crops`, `_demand`, `_batches`, `_trays`, `_harvests` + `microgreen_tray_status` enum |
 
 ## Auth Model
 
@@ -212,6 +216,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Resend email pipelines (5+ templates).
 - Public read-only `/api/v1/*` endpoints.
 - Editorial brand system + UI Kit reference page.
+- `/admin/microgreens` — production module: variety library, demand targets, sow plan dashboard, tray ops (soaking→blackout→light→harvesting→terminated), harvest event log, calendar. 53 unit tests covering the algorithm.
 
 ## Open Follow-ups (Prioritized)
 
