@@ -48,7 +48,7 @@ demand (manual weekly targets + 8-wk rolling forecast)
 
 ## Data Model
 
-### Migration 044 — `044_microgreens_module.sql`
+### Migration 045 — `045_microgreens_module.sql`
 
 Five new tables, all admin-only via RLS `is_admin()` (matching the existing `plantings` pattern). All tables get `updated_at` triggers where applicable.
 
@@ -163,7 +163,7 @@ One tray → many harvest rows. Single-cut crops typically get 1 row + terminate
 
 ### Seed data
 
-Migration 044 seeds `microgreen_crops` from the variety spreadsheet pasted by the user (~70 rows: amaranth through wheatgrass). Ambiguous range values (e.g., "5-6 D blackout", "8-12 D harvest") use midpoint as the stored value; original strings preserved in `notes`. Suspected drag-fill / typo rows (Basil 5-7, 6-7, 7-7; Shiso 72-96 D) are output to `tmp_microgreen_seed_review.csv` for human review before migration runs.
+Migration 045 seeds `microgreen_crops` from the variety spreadsheet pasted by the user (~70 rows: amaranth through wheatgrass). Ambiguous range values (e.g., "5-6 D blackout", "8-12 D harvest") use midpoint as the stored value; original strings preserved in `notes`. Suspected drag-fill / typo rows (Basil 5-7, 6-7, 7-7; Shiso 72-96 D) are output to `tmp_microgreen_seed_review.csv` for human review before migration runs.
 
 ## Sow Plan Algorithm
 
@@ -314,7 +314,7 @@ New bottom-nav (mobile) + sidebar (desktop) entry: "Micro" with a flower icon. S
 
 ### Migration
 
-- **Migration 044 — `044_microgreens_module.sql`** — full schema + RLS + indexes + seed data. (043 is taken by the parallel `seeds` inventory spec.)
+- **Migration 045 — `045_microgreens_module.sql`** — full schema + RLS + indexes + seed data. (043 is taken by the parallel `seeds` inventory spec.)
 - Per the project workflow, Micheal runs the migration in the Supabase web SQL editor — no CLI access.
 - Ship migration + code together. Page reads will fail with "column does not exist" until migration runs.
 

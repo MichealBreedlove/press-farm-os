@@ -4,7 +4,7 @@
 
 **Goal:** Build the `/admin/microgreens` production module per [the design spec](../specs/2026-05-17-microgreen-manager-design.md) — variety library, manual demand targets, sow-plan algorithm, tray-level ops, harvest event log, calendar view, and forecast warnings.
 
-**Architecture:** New top-level admin module with five new tables (migration 044), linked to existing `items` via `microgreen_crops.item_id`. Pure-logic modules (sowPlan, stages, forecast, trayLabel) get full Vitest TDD coverage. API routes + UI verified via Vitest with mocked Supabase client.
+**Architecture:** New top-level admin module with five new tables (migration 045), linked to existing `items` via `microgreen_crops.item_id`. Pure-logic modules (sowPlan, stages, forecast, trayLabel) get full Vitest TDD coverage. API routes + UI verified via Vitest with mocked Supabase client.
 
 **Tech Stack:** Next.js 14 App Router · TypeScript strict · Supabase (PostgreSQL 15) · Tailwind · Vitest (new) · existing `EditorialHero`, `FloralCorners`, `farm-*` / `pf-*` tokens.
 
@@ -13,7 +13,7 @@
 ## File Structure
 
 ```
-supabase/migrations/044_microgreens_module.sql          (NEW)
+supabase/migrations/045_microgreens_module.sql          (NEW)
 scripts/microgreen-seed-review.ts                       (NEW — emits review CSV)
 
 src/lib/microgreens/
@@ -265,15 +265,15 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Migration 044 — schema only (no seed yet)
+## Task 2: Migration 045 — schema only (no seed yet)
 
 **Files:**
-- Create: `supabase/migrations/044_microgreens_module.sql`
+- Create: `supabase/migrations/045_microgreens_module.sql`
 
 - [ ] **Step 1: Write the migration SQL**
 
 ```sql
--- Migration 044: Microgreens production module
+-- Migration 045: Microgreens production module
 -- New /admin/microgreens module — variety library, demand, batches, trays, harvest events.
 -- Linked to existing items via microgreen_crops.item_id.
 
@@ -422,8 +422,8 @@ Per CLAUDE.md, present this SQL to Micheal — he runs it in the Supabase web SQ
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/044_microgreens_module.sql
-git commit -m "feat: migration 044 - microgreens production module schema
+git add supabase/migrations/045_microgreens_module.sql
+git commit -m "feat: migration 045 - microgreens production module schema
 
 Five new tables (microgreen_crops, microgreen_demand, microgreen_batches,
 microgreen_trays, microgreen_harvests) plus microgreen_tray_status enum.
@@ -625,7 +625,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 ```ts
 // Inserts SEED_CROPS into microgreen_crops via the admin client.
-// Run once after migration 044 has been applied.
+// Run once after migration 045 has been applied.
 
 import { createClient } from "@supabase/supabase-js";
 import { SEED_CROPS } from "../src/lib/microgreens/seedData";
@@ -875,7 +875,7 @@ git add src/types/database.ts src/lib/microgreens/types.ts src/lib/microgreens/c
 git commit -m "feat: microgreens TS types + constants
 
 Adds MicrogreenCrop / Demand / Batch / Tray / Harvest row types matching
-migration 044. Enriched join shapes and SowPlan output type in
+migration 045. Enriched join shapes and SowPlan output type in
 src/lib/microgreens/types.ts. Constants for status labels, colors, plan
 horizon, forecast lookback.
 
@@ -4186,7 +4186,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ## Task 21: Final integration + acceptance test pass
 
 **Files:**
-- Modify: `CLAUDE.md` — bump last applied migration to 044 and add microgreens to "What's Currently Shipping"
+- Modify: `CLAUDE.md` — bump last applied migration to 045 and add microgreens to "What's Currently Shipping"
 
 - [ ] **Step 1: Full test pass**
 
@@ -4222,15 +4222,15 @@ In dev (`npm run dev`), verify each acceptance criterion from the spec:
 - [ ] **Step 4: Update CLAUDE.md**
 
 Edit `CLAUDE.md`:
-- In the migrations table, append row `| 043 | seed_inventory | (separate spec) |` and `| 044 | microgreens_module | microgreen_crops, _demand, _batches, _trays, _harvests + status enum |`.
-- Replace "Last applied: **022**" with "Last applied: **044**".
+- In the migrations table, append rows for whatever has shipped: `| 043 | seed_inventory | (parallel spec) |`, `| 044 | repricing_2026_05_18 | item pricing adjustments |`, and `| 045 | microgreens_module | microgreen_crops, _demand, _batches, _trays, _harvests + status enum |`.
+- Replace "Last applied: **022**" with "Last applied: **045**".
 - In "What's Currently Shipping" add: `- /admin/microgreens — production module: variety library, demand targets, sow plan dashboard, tray ops, harvest event log, calendar.`
 
 - [ ] **Step 5: Final commit**
 
 ```bash
 git add CLAUDE.md
-git commit -m "docs: update CLAUDE.md for microgreens module (migration 044)
+git commit -m "docs: update CLAUDE.md for microgreens module (migration 045)
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ```
@@ -4257,7 +4257,7 @@ After push, check the Vercel preview URL. Confirm:
 - Tray list + detail + batch detail → Task 19.
 - Stage timeline visual → Task 15.
 - Admin nav entry → Task 15.
-- Migration 044 + RLS + indexes → Task 2.
+- Migration 045 + RLS + indexes → Task 2.
 - Seed data → Tasks 3 + 4.
 - TS types → Task 5.
 - Test setup → Task 1.
