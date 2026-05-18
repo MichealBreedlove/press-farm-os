@@ -90,10 +90,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const client = getAnthropicClient();
-  if (!client) {
+  const maybeClient = getAnthropicClient();
+  if (!maybeClient) {
     return NextResponse.json({ error: ANTHROPIC_KEY_MISSING_ERROR }, { status: 503 });
   }
+  const client = maybeClient; // narrowed type survives closure capture
 
   const admin = createAdminClient();
   const { data: itemRows } = await (admin as any)
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
 }
 
 async function processOne(
-  client: ReturnType<typeof getAnthropicClient> & object,
+  client: NonNullable<ReturnType<typeof getAnthropicClient>>,
   admin: ReturnType<typeof createAdminClient>,
   item: ItemRow,
 ): Promise<ResultEntry> {
