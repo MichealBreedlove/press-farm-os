@@ -103,7 +103,7 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <CompactTopItems items={data.topItemsByRevenue.slice(0, 10)} title="Top 10 by Revenue" sortKey="revenue" />
         <CompactTopItems items={data.topItemsByQty.slice(0, 10)} title="Top 10 by Quantity" sortKey="qty" />
-        <CompactExpenses categories={data.expenseCategories} />
+        <CompactExpenses categories={data.expenseCategories} years={years} />
       </div>
     </div>
   );
@@ -276,21 +276,48 @@ function CompactTopItems({ items, title, sortKey }: {
 }
 
 // ── Compact Expenses ────────────────────────────────
-function CompactExpenses({ categories }: { categories: ExecutiveData["expenseCategories"] }) {
+function CompactExpenses({ categories, years }: { categories: ExecutiveData["expenseCategories"]; years: string[] }) {
   const total = categories.reduce((s, e) => s + e.total, 0);
+  const yearTotals: Record<string, number> = {};
+  for (const y of years) {
+    yearTotals[y] = categories.reduce((s, e) => s + (e.byYear[y] ?? 0), 0);
+  }
+  const cols = `1fr ${years.map(() => "52px").join(" ")}`;
   return (
     <div className="bg-white border border-farm-dark/5 rounded-lg overflow-hidden overflow-x-auto text-[11px] print:text-[8px]">
       <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5 flex justify-between">
         <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Expenses</span>
         <span className="font-semibold text-red-600 text-xs print:text-[8px]">{fmt(total)}</span>
       </div>
+      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: cols }}>
+        <span />
+        {years.map((y) => (
+          <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>
+            FY{y}{y === "2026" ? " YTD" : ""}
+          </span>
+        ))}
+      </div>
       {categories.map((e) => (
-        <div key={e.category} className="grid px-3 py-0.5 border-b border-gray-50 last:border-0" style={{ gridTemplateColumns: "1fr 36px 60px" }}>
+        <div key={e.category} className="grid px-3 py-0.5 border-b border-gray-50 last:border-0" style={{ gridTemplateColumns: cols }}>
           <span className="text-farm-dark/80 truncate">{e.category}</span>
-          <span className="text-right text-farm-muted">{e.pct.toFixed(0)}%</span>
-          <span className="text-right font-medium text-red-600">{fmtK(e.total)}</span>
+          {years.map((y) => {
+            const v = e.byYear[y] ?? 0;
+            return (
+              <span key={y} className={`text-right font-medium ${v > 0 ? "text-red-600" : "text-farm-muted/60"}`}>
+                {v > 0 ? fmtK(v) : "—"}
+              </span>
+            );
+          })}
         </div>
       ))}
+      <div className="grid px-3 py-1 border-t border-farm-dark/10 bg-farm-cream/30 font-semibold" style={{ gridTemplateColumns: cols }}>
+        <span className="text-farm-dark/80">Total</span>
+        {years.map((y) => (
+          <span key={y} className="text-right text-red-600">
+            {yearTotals[y] > 0 ? fmtK(yearTotals[y]) : "—"}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

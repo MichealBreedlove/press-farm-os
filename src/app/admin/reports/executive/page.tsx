@@ -57,6 +57,7 @@ export type ExpenseCategory = {
   category: string;
   total: number;
   pct: number;
+  byYear: Record<string, number>;
 };
 
 export type ExecutiveData = {
@@ -258,10 +259,16 @@ export default async function AdminExecutiveReportsPage() {
       .slice(0, 15)
   );
 
-  // ---- Expense by category ----
+  // ---- Expense by category (with per-year breakdown) ----
   const expCatMap: Record<string, number> = {};
+  const expCatYearMap: Record<string, Record<string, number>> = {};
   for (const e of expenses ?? []) {
-    expCatMap[e.category] = (expCatMap[e.category] ?? 0) + (e.amount ?? 0);
+    const cat = e.category;
+    const y = (e.date ?? "").slice(0, 4);
+    const amt = e.amount ?? 0;
+    expCatMap[cat] = (expCatMap[cat] ?? 0) + amt;
+    if (!expCatYearMap[cat]) expCatYearMap[cat] = {};
+    expCatYearMap[cat][y] = (expCatYearMap[cat][y] ?? 0) + amt;
   }
   const totalExp = Object.values(expCatMap).reduce((s, v) => s + v, 0);
   const expenseCategories: ExpenseCategory[] = Object.entries(expCatMap)
@@ -270,6 +277,7 @@ export default async function AdminExecutiveReportsPage() {
       category,
       total,
       pct: totalExp > 0 ? (total / totalExp) * 100 : 0,
+      byYear: expCatYearMap[category] ?? {},
     }));
 
   // ---- YoY growth 2024→2025 ----
