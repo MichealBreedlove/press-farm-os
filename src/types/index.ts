@@ -5,7 +5,16 @@
  * Used throughout the app for data fetching and component props.
  */
 
-import type { Database, ItemCategory, UnitType, AvailabilityStatus, OrderStatus } from "./database";
+import type {
+  Database,
+  ItemCategory,
+  UnitType,
+  AvailabilityStatus,
+  OrderStatus,
+  SeedWithOnHandRow,
+  SeedSowingRow,
+  SeedGerminationTestRow,
+} from "./database";
 
 // ============================================
 // Row type aliases (shorthand)
@@ -191,6 +200,27 @@ export type QuarterlyIncome = {
   net_margin: number;
   cost_ratio: number;
 };
+
+// Seed enriched with the linked item's name + category for display
+export interface SeedWithItem extends SeedWithOnHandRow {
+  item: {
+    id: string;
+    name: string;
+    category: string;
+  } | null;
+}
+
+// Sowing enriched with the linked planting (if any)
+export interface SeedSowingWithPlanting extends SeedSowingRow {
+  planting: {
+    id: string;
+    crop_name: string;
+    variety: string | null;
+    sow_date: string | null;
+  } | null;
+}
+
+export type { SeedGerminationTestRow };
 
 // Re-export enum types
 export type { ItemCategory, UnitType, AvailabilityStatus, OrderStatus };

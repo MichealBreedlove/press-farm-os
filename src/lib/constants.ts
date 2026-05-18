@@ -231,3 +231,27 @@ export const MAX_NOTES_LENGTH = 1000;
 
 /** Session duration for chefs (30 days in seconds) */
 export const CHEF_SESSION_DURATION = 60 * 60 * 24 * 30;
+
+// ─── Seeds ──────────────────────────────────────────────────────────────
+// Master kill switch for the /admin/seeds feature. Flip to true AFTER
+// migration 043 has been run in production (Supabase SQL editor).
+export const SEEDS_ENABLED = false;
+
+export const SEED_STATUSES = ["active", "low", "exhausted", "discarded"] as const;
+export type SeedStatus = (typeof SEED_STATUSES)[number];
+
+export const SEED_STATUS_LABELS: Record<SeedStatus, string> = {
+  active: "Active",
+  low: "Low",
+  exhausted: "Exhausted",
+  discarded: "Discarded",
+};
+
+// Free-text suggestions for the unit picker — user can type anything.
+export const SEED_QUANTITY_UNIT_SUGGESTIONS = [
+  "packets",
+  "g",
+  "oz",
+  "seeds",
+  "lbs",
+] as const;
