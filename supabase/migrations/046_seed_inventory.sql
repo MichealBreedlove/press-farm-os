@@ -81,15 +81,15 @@ ALTER TABLE seed_sowings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE seed_germination_tests ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admin full access to seeds"
-  ON seeds FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON seeds FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to seed_sowings"
-  ON seed_sowings FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON seed_sowings FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 CREATE POLICY "Admin full access to seed_germination_tests"
-  ON seed_germination_tests FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+  ON seed_germination_tests FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 
 CREATE TRIGGER update_seeds_updated_at
   BEFORE UPDATE ON seeds
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 CREATE INDEX IF NOT EXISTS idx_seeds_item ON seeds (item_id);
 CREATE INDEX IF NOT EXISTS idx_seeds_status ON seeds (status);

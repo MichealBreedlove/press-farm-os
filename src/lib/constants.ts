@@ -233,9 +233,9 @@ export const MAX_NOTES_LENGTH = 1000;
 export const CHEF_SESSION_DURATION = 60 * 60 * 24 * 30;
 
 // ─── Seeds ──────────────────────────────────────────────────────────────
-// Master kill switch for the /admin/seeds feature. Flip to true AFTER
-// migration 046 has been run in production (Supabase SQL editor).
-export const SEEDS_ENABLED = false;
+// Master kill switch for the /admin/seeds feature. Migration 046 was
+// applied to production on 2026-05-19 via Supabase MCP — feature is live.
+export const SEEDS_ENABLED = true;
 
 export const SEED_STATUSES = ["active", "low", "exhausted", "discarded"] as const;
 export type SeedStatus = (typeof SEED_STATUSES)[number];
