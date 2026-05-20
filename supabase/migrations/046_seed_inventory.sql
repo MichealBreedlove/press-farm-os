@@ -1,4 +1,4 @@
--- Migration 043: Seed inventory
+-- Migration 046: Seed inventory
 -- New tables: seeds, seed_sowings, seed_germination_tests
 -- New view: seeds_with_on_hand (computes on_hand and is_low from sowings)
 -- Adds optional plantings.seed_id FK

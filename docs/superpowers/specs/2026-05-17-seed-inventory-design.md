@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-17
 **Status:** Approved for implementation planning
-**Migration:** 043
+**Migration:** 046
 **Author:** Claude (Opus 4.7) with Micheal Breedlove
 
 ## Purpose
@@ -53,12 +53,14 @@ src/app/api/import/seeds-csv/route.ts  # CSV import
 
 Adds "Seeds" entry to the admin bottom-nav.
 
-## Database Schema (migration 043)
+## Database Schema (migration 046)
+<!-- renumbered from 043 → 046 on 2026-05-19 to clear conflict with origin/main (043 = revoke_trigger_function_grants on origin/main after duplicate-migration cleanup) -->
+
 
 Three new tables, admin-only RLS matching the `plantings` pattern.
 
 ```sql
--- 043_seed_inventory.sql
+-- 046_seed_inventory.sql
 
 CREATE TABLE seeds (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -193,7 +195,7 @@ packed_for_year, purchase_date, supplier, cost, status, notes
 
 Two non-breaking additions on the plantings side. Optional usage.
 
-1. **`plantings.seed_id`** (added in migration 043). When creating a planting with `planting_stock='seeds'`, the user can pick from active seeds filtered to matching `item_id`.
+1. **`plantings.seed_id`** (added in migration 046). When creating a planting with `planting_stock='seeds'`, the user can pick from active seeds filtered to matching `item_id`.
 2. **"Log sowing of this seed" shortcut** on the planting detail page when `seed_id` is set. Opens the sowing modal with `seed_id` and `planting_id` prefilled.
 
 ### Non-goals for linkage
@@ -218,7 +220,7 @@ The `status` column is independent and admin-controlled (e.g. set `status='disca
 
 ## Rollout
 
-- **One migration: `043_seed_inventory.sql`.** Per CLAUDE.md, schema-dependent SELECTs fail until the migration runs in the Supabase SQL editor.
+- **One migration: `046_seed_inventory.sql`.** Per CLAUDE.md, schema-dependent SELECTs fail until the migration runs in the Supabase SQL editor.
 - **Feature flag approach:** export a constant `SEEDS_ENABLED` (boolean, hardcoded). Set `false` in initial PRs that contain UI + API; the bottom-nav link and the `/admin/seeds` routes hide/redirect when `false`. Flip to `true` after Micheal confirms the migration ran in production.
 - **Build verification:** `npm run build` must pass before each push (auto-deploy means broken push = broken prod).
 
@@ -226,7 +228,7 @@ The `status` column is independent and admin-controlled (e.g. set `status='disca
 
 **New:**
 
-- `supabase/migrations/043_seed_inventory.sql`
+- `supabase/migrations/046_seed_inventory.sql`
 - `src/app/admin/seeds/page.tsx`
 - `src/app/admin/seeds/[seedId]/page.tsx`
 - `src/app/admin/seeds/data/page.tsx`

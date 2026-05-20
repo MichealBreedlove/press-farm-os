@@ -234,7 +234,7 @@ export const CHEF_SESSION_DURATION = 60 * 60 * 24 * 30;
 
 // ─── Seeds ──────────────────────────────────────────────────────────────
 // Master kill switch for the /admin/seeds feature. Flip to true AFTER
-// migration 043 has been run in production (Supabase SQL editor).
+// migration 046 has been run in production (Supabase SQL editor).
 export const SEEDS_ENABLED = false;
 
 export const SEED_STATUSES = ["active", "low", "exhausted", "discarded"] as const;

@@ -4,7 +4,7 @@
 
 **Goal:** Ship a full on-hand seed inventory feature for Press Farm OS admin — track varieties, log sowings against plantings, record germination tests, and import/export via CSV.
 
-**Architecture:** New top-level admin resource at `/admin/seeds` mirroring the items/expenses/deliveries pattern. Three new tables (`seeds`, `seed_sowings`, `seed_germination_tests`) plus a computed view `seeds_with_on_hand`. Optional `plantings.seed_id` FK for light linkage. Feature-flagged behind `SEEDS_ENABLED` constant until migration 043 is run in production.
+**Architecture:** New top-level admin resource at `/admin/seeds` mirroring the items/expenses/deliveries pattern. Three new tables (`seeds`, `seed_sowings`, `seed_germination_tests`) plus a computed view `seeds_with_on_hand`. Optional `plantings.seed_id` FK for light linkage. Feature-flagged behind `SEEDS_ENABLED` constant until migration 046 is run in production.
 
 **Tech Stack:** Next.js 14 App Router (TypeScript strict), Supabase Postgres + RLS, EditorialHero brand pattern, Tailwind with `farm-*` / `pf-*` token namespaces, SheetJS (xlsx) for CSV.
 
@@ -14,19 +14,19 @@
 
 ---
 
-## Task 1: Migration 043 — schema + view + planting FK
+## Task 1: Migration 046 — schema + view + planting FK
 
 **Files:**
-- Create: `supabase/migrations/043_seed_inventory.sql`
+- Create: `supabase/migrations/046_seed_inventory.sql`
 
 This migration is run manually by Micheal in the Supabase SQL editor at https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new — there is no `supabase` CLI link.
 
 - [ ] **Step 1: Write the migration SQL**
 
-Create `supabase/migrations/043_seed_inventory.sql`:
+Create `supabase/migrations/046_seed_inventory.sql`:
 
 ```sql
--- Migration 043: Seed inventory
+-- Migration 046: Seed inventory
 -- New tables: seeds, seed_sowings, seed_germination_tests
 -- New view: seeds_with_on_hand (computes on_hand and is_low from sowings)
 -- Adds optional plantings.seed_id FK
@@ -130,18 +130,18 @@ CREATE INDEX IF NOT EXISTS idx_seed_germ_tests_seed ON seed_germination_tests (s
 
 Per CLAUDE.md, the user does NOT have the `supabase` CLI linked. Surface the migration to Micheal in your status update with this exact message:
 
-> Migration 043 written. Please run it in the SQL editor: https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new
+> Migration 046 written. Please run it in the SQL editor: https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new
 >
-> File: `supabase/migrations/043_seed_inventory.sql`
+> File: `supabase/migrations/046_seed_inventory.sql`
 
 Do NOT proceed to push code that SELECTs from `seeds_with_on_hand` until Micheal confirms the migration ran. The feature flag `SEEDS_ENABLED=false` (added in Task 2) makes it safe to ship the code first.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/043_seed_inventory.sql
+git add supabase/migrations/046_seed_inventory.sql
 git commit -m "$(cat <<'EOF'
-feat(db): migration 043 — seed inventory schema + planting FK
+feat(db): migration 046 — seed inventory schema + planting FK
 
 Three new tables (seeds, seed_sowings, seed_germination_tests) plus
 seeds_with_on_hand view that computes on_hand and is_low from sowings.
@@ -171,7 +171,7 @@ Append to `src/lib/constants.ts`:
 ```typescript
 // ─── Seeds ──────────────────────────────────────────────────────────────
 // Master kill switch for the /admin/seeds feature. Flip to true AFTER
-// migration 043 has been run in production (Supabase SQL editor).
+// migration 046 has been run in production (Supabase SQL editor).
 export const SEEDS_ENABLED = false;
 
 export const SEED_STATUSES = ["active", "low", "exhausted", "discarded"] as const;
@@ -292,7 +292,7 @@ git add src/lib/constants.ts src/types/database.ts src/types/index.ts
 git commit -m "$(cat <<'EOF'
 feat(seeds): add types, status enum, and SEEDS_ENABLED feature flag
 
-Flag defaults to false. Flip to true after migration 043 runs in prod.
+Flag defaults to false. Flip to true after migration 046 runs in prod.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -2684,9 +2684,9 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 - Modify: `src/lib/constants.ts` (flag flip)
 - Possibly modify: `tests/smoke.spec.ts` (optional smoke check)
 
-- [ ] **Step 1: Confirm migration 043 ran in production**
+- [ ] **Step 1: Confirm migration 046 ran in production**
 
-Before touching the flag, verify with Micheal that `043_seed_inventory.sql` was executed in the Supabase SQL editor. Check by running this SELECT in the dashboard:
+Before touching the flag, verify with Micheal that `046_seed_inventory.sql` was executed in the Supabase SQL editor. Check by running this SELECT in the dashboard:
 
 ```sql
 SELECT count(*) FROM seeds;
@@ -2756,7 +2756,7 @@ git add src/lib/constants.ts
 git commit -m "$(cat <<'EOF'
 feat(seeds): flip SEEDS_ENABLED to true — feature is live
 
-Migration 043 confirmed run in production. All seed inventory routes,
+Migration 046 confirmed run in production. All seed inventory routes,
 pages, and dashboard card are now visible to admin.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
@@ -2785,7 +2785,7 @@ Watch Vercel for a clean deploy. If anything breaks in prod, immediately revert 
 | Spec section | Implemented in task(s) |
 |---|---|
 | Architecture & routes | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 |
-| Migration 043 (schema + view + planting FK) | 1 |
+| Migration 046 (schema + view + planting FK) | 1 |
 | Types + feature flag | 2 |
 | `/admin/seeds` list page | 8 |
 | `/admin/seeds/[id]` detail with edit + history | 9, 10 |
