@@ -1,0 +1,1249 @@
+// Pasted from Micheal's variety spreadsheet 2026-05-17.
+// Ranges normalized to midpoint for planning. Original strings in notes.
+// Rows flagged with _review: true need human sanity-check before live use.
+
+export type SeedCrop = {
+  name: string;
+  variety?: string;
+  seed_density_g_per_tray: number;
+  presoak_hours: number;
+  presprout_hours: number;
+  bury_seed: boolean;
+  weight_during_blackout: boolean;
+  blackout_days: number;
+  keep_in_blackout: boolean;
+  ideal_harvest_day: number;
+  harvest_min_days?: number;
+  harvest_max_days?: number;
+  expected_yield_oz_per_tray: number;
+  is_continuous_harvest: boolean;
+  productive_life_days?: number;
+  growing_medium: string[]; // ['soil'], ['hydroponic'], or both
+  preferred_medium?: string;
+  notes?: string;
+  _review?: boolean; // not persisted — used by review CSV script
+};
+
+const DEFAULT_YIELD_OZ = 8;
+
+export const SEED_CROPS: SeedCrop[] = [
+  // ===== Section 1: Detailed entries (with Medium info) =====
+  {
+    name: "Amaranth",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 6, // midpoint of "5-6 D"
+    keep_in_blackout: false,
+    ideal_harvest_day: 12,
+    harvest_min_days: 12,
+    harvest_max_days: 14,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil", "hydroponic"],
+    preferred_medium: "any",
+    notes:
+      "Blackout 5-6 D, Germination 2-3 D, Harvest 12-14 D, Ideal 12 D. You can harvest this as early as Day 14, however if you wait this crop out, it does get much larger. Some like to wait until Day 28 to harvest!",
+  },
+  {
+    name: "Pea Shoot",
+    seed_density_g_per_tray: 238, // midpoint of 200-275
+    presoak_hours: 9, // midpoint of 6-12 hrs Cold Water
+    presprout_hours: 18, // midpoint of 12-24 hrs presprout
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4, // midpoint of "3-5 D"
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    preferred_medium: "soil",
+    notes:
+      "Seeding 200-275 g; Presoak 6-12 hrs (Cold Water), Presprout 12-24 hrs; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D; Ideal 10 D. Transfer to a colander to presprout before stacking. Rinse 2 to 4 times a day in the colander for another day or two until the roots begin to peek out. Tamp the soil gently to flatten. Spread evenly (they should be quite thick) and tamp very gently to insure contact with the soil. Mist thoroughly twice a day. Keep stacked for 3 to 4 more days before exposing light. Water once a day so the soil is damp but not soggy.",
+  },
+  {
+    name: "Sunflower",
+    seed_density_g_per_tray: 150,
+    presoak_hours: 9, // midpoint of 6-12 hrs Cold Water
+    presprout_hours: 18, // midpoint of 12-24 hrs presprout
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint of "2-3 D"
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    preferred_medium: "soil",
+    notes:
+      "Seeding 150 g; Presoak 6-12 hrs (Cold Water), Presprout 12-24 hrs; Blackout 2-3 D; Germination 2-3 D; Harvest 8-12 D; Ideal 10 D. Sunflower is very prone to mold. When soaking the seed, use a mix of H2O2. We germinate a day longer to allow the weight to assist in knocking off that hull.",
+  },
+  {
+    name: "Wheatgrass",
+    seed_density_g_per_tray: 450,
+    presoak_hours: 6, // midpoint of 4-8 hrs
+    presprout_hours: 18, // midpoint of 12-24 hrs presprout
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 2,
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    harvest_min_days: 8,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: true,
+    productive_life_days: 14,
+    growing_medium: ["soil", "hydroponic"],
+    preferred_medium: "hydroponic, soil",
+    notes:
+      "Seeding 450 g; Presoak 4-8 hrs, Presprout 12-24 hrs; Blackout 2 D; Germination 2-3 D; Harvest 8-10 D; Ideal 10 D. Use as little water as possible to prevent mold. Possible to keep growing after first cut, however noticeable imperfection will exist. Second cut good for juicing.",
+  },
+  {
+    name: "Popcorn",
+    seed_density_g_per_tray: 200,
+    presoak_hours: 12,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 8, // Full Grow → keep_in_blackout, blackout_days = ideal_harvest_day
+    keep_in_blackout: true,
+    ideal_harvest_day: 8,
+    harvest_min_days: 8,
+    harvest_max_days: 8,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil", "hydroponic"],
+    preferred_medium: "soil",
+    notes:
+      "Seeding 200 g; Presoak 12 hrs; Bury seed Y; Blackout N (Full Grow); Germination 3 D; Harvest 8 D; Ideal 8 D. Burry the seed to prevent mold from occurring. Must be kept in the dark for the entirety of the grow to prevent from turning green.",
+  },
+
+  // ===== Section 2: Simpler rows =====
+  {
+    name: "Arugula",
+    seed_density_g_per_tray: 12,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 2, // "2 - D" treated as 2
+    keep_in_blackout: false,
+    ideal_harvest_day: 9, // midpoint of 6-12
+    harvest_min_days: 6,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 12 g; Soak N; Bury N; Weight 2 - D; Blackout 4-6 D; Germination 3 D; Harvest 6-12 D",
+    _review: true, // "2 - D" weight column is ambiguous
+  },
+  {
+    name: "Basil",
+    variety: "Green, Opal, Thai",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5,
+    keep_in_blackout: false,
+    ideal_harvest_day: 23, // midpoint of 20-25
+    harvest_min_days: 20,
+    harvest_max_days: 25,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight 5 D; Blackout 4-7 D; Germination 3-4 D; Harvest 20-25 D",
+  },
+  {
+    name: "Basil",
+    variety: "Genovese",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 6,
+    keep_in_blackout: false,
+    ideal_harvest_day: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight 6 D; Blackout 5-7 D; Germination 4-4 D (suspect drag-fill); Harvest 24 D",
+    _review: true,
+  },
+  {
+    name: "Basil",
+    variety: "Lemon",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 7,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight 7 D; Blackout 6-7 D; Germination 5-4 D (suspect drag-fill); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Basil",
+    variety: "Purple",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 8,
+    keep_in_blackout: false,
+    ideal_harvest_day: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight 8 D; Blackout 7-7 D; Germination 6-4 D (suspect drag-fill); Harvest 24 D",
+    _review: true,
+  },
+  {
+    name: "Beet",
+    seed_density_g_per_tray: 35,
+    presoak_hours: 6, // midpoint 4-8
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 12, // midpoint 10-14
+    harvest_min_days: 10,
+    harvest_max_days: 14,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 35 g; Soak 4-8 hrs; Bury Y; Weight 4-5 D; Blackout N; Germination 3-4 D; Harvest 10-14 D",
+  },
+  {
+    name: "Borage",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 14, // midpoint 12-16
+    harvest_min_days: 12,
+    harvest_max_days: 16,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 15 g; Soak N; Bury blank; Weight 2-3 D; Blackout 2-3 D; Germination 48-72 hrs; Harvest 12-16 D",
+  },
+  {
+    name: "Broccoli",
+    seed_density_g_per_tray: 22,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 22 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 8-12 D",
+  },
+  {
+    name: "Brussel Sprouts",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 9, // midpoint 8-10
+    harvest_min_days: 8,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-10 D",
+  },
+  {
+    name: "Buckwheat",
+    seed_density_g_per_tray: 100,
+    presoak_hours: 6, // midpoint 4-8
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4, // midpoint 3-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 100 g; Soak 4-8 hrs; Bury blank; Weight 3-5 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
+  },
+  {
+    name: "Cabbage",
+    seed_density_g_per_tray: 19,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 19 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
+  },
+  {
+    name: "Cantaloupe",
+    seed_density_g_per_tray: 30,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 30 g; Soak No; (other cols blank); Harvest 10 D",
+    _review: true,
+  },
+  {
+    name: "Carrot",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 25, // midpoint 21-28
+    harvest_min_days: 21,
+    harvest_max_days: 28,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury Y; Weight N; Blackout 5 D; Germination 5 D; Harvest 21-28 D. Covering the seeds with a thin layer of soil on top helps to shed the hull.",
+  },
+  {
+    name: "Cauliflower",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 9, // midpoint 8-10
+    harvest_min_days: 8,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-10 D",
+  },
+  {
+    name: "Celery",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 25, // 2-5 Wk → midpoint ~3.5 wk ~ 25 days
+    harvest_min_days: 14,
+    harvest_max_days: 35,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight N; Blackout 4-5 D; Germination 2 Wk; Harvest 2-5 Wk. Must mist this everyday in germination.",
+    _review: true,
+  },
+  {
+    name: "Chard",
+    seed_density_g_per_tray: 30,
+    presoak_hours: 6, // midpoint 4-8
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 12, // midpoint 10-14
+    harvest_min_days: 10,
+    harvest_max_days: 14,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 30 g; Soak 4-8 hrs; Bury Y; Weight 4-5 D; Blackout N; Germination 3-4 D; Harvest 10-14 D. Burry the seed to keep the hull from being brought up into the canopy.",
+  },
+  {
+    name: "Chard",
+    variety: "Magenta",
+    seed_density_g_per_tray: 35,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 5,
+    keep_in_blackout: false,
+    ideal_harvest_day: 15,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 35 g; Soak No; Bury Y; Weight 5-5 D; Blackout N; Germination 4-4 D (suspect drag-fill); Harvest 15 D",
+    _review: true,
+  },
+  {
+    name: "Chard",
+    variety: "Red",
+    seed_density_g_per_tray: 35,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 6,
+    keep_in_blackout: false,
+    ideal_harvest_day: 15,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 35 g; Soak No; Bury Y; Weight 6-5 D; Blackout N; Germination 5-4 D (suspect drag-fill); Harvest 15 D",
+    _review: true,
+  },
+  {
+    name: "Chard",
+    variety: "Yellow",
+    seed_density_g_per_tray: 30,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 7,
+    keep_in_blackout: false,
+    ideal_harvest_day: 15,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 30 g; Soak No; Bury Y; Weight 7-5 D; Blackout N; Germination 6-4 D (suspect drag-fill); Harvest 15 D",
+    _review: true,
+  },
+  {
+    name: "Chervil",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 20 g; Soak No; (other cols blank); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Chia",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 15 g; Soak N; Bury N; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
+  },
+  {
+    name: "Chive / Green Onion",
+    seed_density_g_per_tray: 50,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4,
+    keep_in_blackout: false,
+    ideal_harvest_day: 21, // 3 Wk
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 50 g; Soak N; Bury N; Weight 4 D; Blackout 2-3 D; Germination 1-2 Wk; Harvest 3 Wk",
+  },
+  {
+    name: "Chrysanthemum",
+    variety: "Shungiku",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // Humidity Dome 3-4 D → midpoint
+    keep_in_blackout: false,
+    ideal_harvest_day: 17, // midpoint 14-20
+    harvest_min_days: 14,
+    harvest_max_days: 20,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 15 g; Soak N; Bury blank; Weight Humitity Dome 3-4 D; Blackout 2-3 D; Germination 48-72 hrs; Harvest 14-20 D",
+  },
+  {
+    name: "Cilantro",
+    seed_density_g_per_tray: 40,
+    presoak_hours: 3, // midpoint 2-4
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 7,
+    keep_in_blackout: false,
+    ideal_harvest_day: 25, // 3-4 Wk midpoint ~3.5 Wk ~ 25 D
+    harvest_min_days: 21,
+    harvest_max_days: 28,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 40 g; Soak 2-4 hrs; Bury Y; Weight 7 D; Blackout N; Germination 1-2 Wk; Harvest 3-4 Wk. Burying the seed and keeping weight on is extremely important.",
+  },
+  {
+    name: "Clover",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
+  },
+  {
+    name: "Collard Greens",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: true,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 8, // midpoint 6-10
+    harvest_min_days: 6,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury Y; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
+  },
+  {
+    name: "Corn",
+    seed_density_g_per_tray: 275,
+    presoak_hours: 4, // "2 - 6 g" appears in soak column — looks like a typo; treat as hours midpoint
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 8, // Full Grow → keep_in_blackout, blackout_days = ideal_harvest_day
+    keep_in_blackout: true,
+    ideal_harvest_day: 8, // midpoint 6-10
+    harvest_min_days: 6,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 275 g; Soak '2 - 6 g' (suspect typo, treated as 2-6 hrs); Bury Y; Weight N; Blackout Full Grow; Germination 1-2 D; Harvest 6-10 D",
+    _review: true,
+  },
+  {
+    name: "Cress",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight N; Blackout 4-5 D; Germination 3-5 D; Harvest 8-12 D",
+  },
+  {
+    name: "Dill",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 20 g; Soak No; (other cols blank); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Endive",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 12, // midpoint 8-15
+    harvest_min_days: 8,
+    harvest_max_days: 15,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury blank; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-15 D",
+  },
+  {
+    name: "Fava Bean",
+    seed_density_g_per_tray: 300,
+    presoak_hours: 5, // midpoint 4-6
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 14, // midpoint 12-16
+    harvest_min_days: 12,
+    harvest_max_days: 16,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 300 g; Soak 4-6 hrs; Bury blank; Weight 4-5 D; Blackout 2-3 D; Germination 24-48 hrs; Harvest 12-16 D",
+  },
+  {
+    name: "Fennel",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4, // midpoint 3-4
+    keep_in_blackout: false,
+    ideal_harvest_day: 18, // midpoint 16-20
+    harvest_min_days: 16,
+    harvest_max_days: 20,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury blank; Weight 3-4 D; Blackout 2-3 D; Germination 3-4 D; Harvest 16-20 D",
+  },
+  {
+    name: "Fenugreek",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4, // midpoint 3-4
+    keep_in_blackout: false,
+    ideal_harvest_day: 13, // midpoint 12-14
+    harvest_min_days: 12,
+    harvest_max_days: 14,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 15 g; Soak blank; Bury blank; Weight 3-4 D; Blackout blank; Germination 48-72 hrs; Harvest 12-14 D",
+  },
+  {
+    name: "Kale",
+    seed_density_g_per_tray: 22,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 8, // midpoint 6-10
+    harvest_min_days: 6,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 22 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
+  },
+  {
+    name: "Kohlrabi",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 8, // midpoint 6-10
+    harvest_min_days: 6,
+    harvest_max_days: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
+  },
+  {
+    name: "Kohlrabi",
+    variety: "alt",
+    seed_density_g_per_tray: 16,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 16 g; Soak No; (other cols blank); Harvest 10 D. Likely duplicate of Kohlrabi with slightly different params.",
+    _review: true,
+  },
+  {
+    name: "Large Leaf Sorrel / Red Vined Sorrel",
+    seed_density_g_per_tray: 3,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 11, // midpoint 10-12
+    harvest_min_days: 10,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 3 g; Soak N; Bury blank; Weight N; Blackout 3-5 D; Germination 1-2 D; Harvest 10-12 D",
+  },
+  {
+    name: "Leek",
+    seed_density_g_per_tray: 6,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 21,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 6 g; Soak N; Bury N; Weight N; Blackout N; Germination 10 D; Harvest 21 D",
+  },
+  {
+    name: "Lettuce",
+    seed_density_g_per_tray: 10,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 11, // midpoint 10-12
+    harvest_min_days: 10,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 10 g; Soak N; Bury blank; Weight 2-3 D; Blackout blank; Germination 2-3 D; Harvest 10-12 D",
+  },
+  {
+    name: "Marigold",
+    variety: "Gem",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 13, // midpoint 10-15
+    harvest_min_days: 10,
+    harvest_max_days: 15,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury Y; Weight 2-3 D; Blackout blank; Germination blank; Harvest 10-15 D",
+  },
+  {
+    name: "Mustard",
+    seed_density_g_per_tray: 10,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 10 g; Soak N; Bury N; Weight 2-3 D; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
+  },
+  {
+    name: "Nasturtium",
+    seed_density_g_per_tray: 100,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: true,
+    weight_during_blackout: true,
+    blackout_days: 0, // "N" in blackout col
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: true,
+    productive_life_days: 30,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 100 g; Soak N; Bury Y; Weight Y; Blackout N; Germination 7 D; Harvest 10 D. Prone to mold on top of the medium. Can continue to be grown after first harvest for a second and third time.",
+  },
+  {
+    name: "Onion",
+    seed_density_g_per_tray: 35,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 35 g; Soak No; (other cols blank); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Orach",
+    seed_density_g_per_tray: 50,
+    presoak_hours: 7, // midpoint 6-8
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4, // midpoint 3-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 14, // midpoint 12-16
+    harvest_min_days: 12,
+    harvest_max_days: 16,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 50 g; Soak 6-8 hrs; Bury blank; Weight 3-5 D; Blackout blank; Germination 36-48 hrs; Harvest 12-16 D",
+  },
+  {
+    name: "Oregano",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 18, // midpoint 16-20
+    harvest_min_days: 16,
+    harvest_max_days: 20,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak blank; Bury blank; Weight blank; Blackout 4-5 D; Germination 36-48 hrs; Harvest 16-20 D",
+  },
+  {
+    name: "Parsley",
+    seed_density_g_per_tray: 12,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 12 g; Soak N; Bury blank; Weight N; Blackout 4-5 D; Germination 6-7 D; Harvest 24 D",
+  },
+  {
+    name: "Radish",
+    seed_density_g_per_tray: 35,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 9, // midpoint 5-12
+    harvest_min_days: 5,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 35 g; Soak N; Bury N; Weight 2-3 D; Blackout blank; Germination 1-2 D; Harvest 5-12 D",
+  },
+  {
+    name: "Radish",
+    variety: "Daikon",
+    seed_density_g_per_tray: 40,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 8,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
+    _review: true,
+  },
+  {
+    name: "Radish",
+    variety: "Rambo",
+    seed_density_g_per_tray: 40,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 8,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
+    _review: true,
+  },
+  {
+    name: "Radish",
+    variety: "Triton",
+    seed_density_g_per_tray: 40,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 8,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
+    _review: true,
+  },
+  {
+    name: "Red Choi",
+    seed_density_g_per_tray: 12,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes: "Seeding 12 g; Soak No; (other cols blank); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Red Komatsuna, Mustard",
+    seed_density_g_per_tray: 15,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 0,
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 15 g; Soak N; Bury N; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
+  },
+  {
+    name: "Rutabaga",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout 2 D; Germination 3 D; Harvest 10 D",
+  },
+  {
+    name: "Sage",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 20, // midpoint 16-24
+    harvest_min_days: 16,
+    harvest_max_days: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout 1-2 D; Germination 48-72 hrs; Harvest 16-24 D",
+  },
+  {
+    name: "Salad Burnet",
+    seed_density_g_per_tray: 40,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: true,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 40 g; Soak N; Bury Y; Weight 2-3 D; Blackout blank; Germination 7-10 D; Harvest 8-12 D",
+  },
+  {
+    name: "Salad Mix",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-4
+    keep_in_blackout: false,
+    ideal_harvest_day: 10, // midpoint 8-12
+    harvest_min_days: 8,
+    harvest_max_days: 12,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight 2-4 D; Blackout 2 D; Germination 2-3 D; Harvest 8-12 D",
+  },
+  {
+    name: "Shiso",
+    seed_density_g_per_tray: 12,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 21, // midpoint 18-24
+    harvest_min_days: 18,
+    harvest_max_days: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 12 g; Soak N; Bury N; Weight 2-3 D; Blackout 4-5 D; Germination 72-96 D (suspect — probably hours, not days); Harvest 18-24 D",
+    _review: true,
+  },
+  {
+    name: "Shiso",
+    variety: "Bicolor",
+    seed_density_g_per_tray: 4,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3,
+    keep_in_blackout: false,
+    ideal_harvest_day: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 4 g; Soak N; Bury N; Weight 3-3 D; Blackout 5-5 D; Germination 73-96 D (suspect drag-fill / probably hours); Harvest 24 D",
+    _review: true,
+  },
+  {
+    name: "Shiso",
+    variety: "Green",
+    seed_density_g_per_tray: 12,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 4,
+    keep_in_blackout: false,
+    ideal_harvest_day: 17,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 12 g; Soak N; Bury N; Weight 4-3 D; Blackout 6-5 D; Germination 74-96 D (suspect drag-fill / probably hours); Harvest 17 D",
+    _review: true,
+  },
+  {
+    name: "Shiso",
+    variety: "Purple",
+    seed_density_g_per_tray: 8,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5,
+    keep_in_blackout: false,
+    ideal_harvest_day: 24,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 8 g; Soak N; Bury N; Weight 5-3 D; Blackout 7-5 D; Germination 75-96 D (suspect drag-fill / probably hours); Harvest 24 D",
+    _review: true,
+  },
+  {
+    name: "Sorrel",
+    variety: "Red Veined",
+    seed_density_g_per_tray: 1,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 6,
+    keep_in_blackout: false,
+    ideal_harvest_day: 31,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 1 g; Soak N; Bury N; Weight 6-3 D; Blackout 8-5 D; Germination 76-96 D (suspect drag-fill / probably hours); Harvest 31 D",
+    _review: true,
+  },
+  {
+    name: "Turnip",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 3, // midpoint 2-3
+    keep_in_blackout: false,
+    ideal_harvest_day: 10,
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout 2 D; Germination 3 D; Harvest 10 D",
+  },
+  {
+    name: "Water Pepper",
+    seed_density_g_per_tray: 20,
+    presoak_hours: 0,
+    presprout_hours: 0,
+    bury_seed: false,
+    weight_during_blackout: false,
+    blackout_days: 5, // midpoint 4-5
+    keep_in_blackout: false,
+    ideal_harvest_day: 14, // conservative guess — spreadsheet row truncated
+    expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
+    is_continuous_harvest: false,
+    growing_medium: ["soil"],
+    notes:
+      "Seeding 20 g; Soak blank; Bury blank; Weight 4-5 D; Blackout Humitity Dome 2-3 D; Harvest data missing — used conservative 14 D guess",
+    _review: true,
+  },
+];
+
+export function reviewCandidates(): SeedCrop[] {
+  return SEED_CROPS.filter((c) => c._review);
+}

@@ -85,12 +85,12 @@ src/
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 022 (last applied: 022_per_unit_pricing.sql)
+supabase/migrations/             # 001 → 046 (last applied: 046_seed_inventory.sql)
 ```
 
 ## Database Migrations
 
-Last applied: **044**. Read latest first when scoping work.
+15 base tables + 2 views, plus 5 microgreen tables (045) and 3 seed inventory tables (046). Last applied: **046**. Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -138,6 +138,9 @@ Last applied: **044**. Read latest first when scoping work.
 | 042 | event_request_groups | `event_group_id` column — multi-item event submissions |
 | 043 | revoke_trigger_function_grants | Strips EXECUTE from PUBLIC/anon/auth on trigger functions |
 | 044 | drop_unused_indexes | Drops 22 never-scanned indexes (see file for advisor-noise notes) |
+| 044 | repricing_2026_05_18 | 37 UPDATE statements on `items.unit_prices` from Micheal's 2026-05-18 list (filename collision with 044_drop_unused_indexes — both shipped) |
+| 045 | microgreens_module | `microgreen_crops`, `_demand`, `_batches`, `_trays`, `_harvests` + `microgreen_tray_status` enum |
+| 046 | seed_inventory | `seeds`, `seed_sowings`, `seed_germination_tests` + `seeds_with_on_hand` view + `plantings.seed_id` FK |
 
 ## Auth Model
 
@@ -237,6 +240,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Resend email pipelines (8 React Email templates + 2 raw HTML).
 - Public read-only `/api/v1/*` endpoints.
 - Editorial brand system + UI Kit reference page.
+- `/admin/microgreens` — production module: variety library, demand targets, sow plan dashboard, tray ops (soaking→blackout→light→harvesting→terminated), harvest event log, calendar. 53 unit tests covering the algorithm.
 
 ## Open Follow-ups (Prioritized)
 

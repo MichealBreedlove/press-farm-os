@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, ClipboardList, PackageOpen, BarChart3, LogOut } from "lucide-react";
+import { Home, ClipboardList, PackageOpen, Sprout, BarChart3, LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
   { label: "Home", Icon: Home, href: "/admin/dashboard" },
   { label: "Orders", Icon: ClipboardList, href: "/admin/orders" },
   { label: "Deliveries", Icon: PackageOpen, href: "/admin/deliveries" },
+  { label: "Micro", Icon: Sprout, href: "/admin/microgreens" },
   { label: "Reports", Icon: BarChart3, href: "/admin/reports" },
 ];
 

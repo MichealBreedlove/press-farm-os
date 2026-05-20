@@ -593,3 +593,91 @@ export interface SeedWithOnHandRow extends SeedRow {
   latest_germ_pct: number | null;
   latest_germ_tested_on: string | null;
 }
+
+// === Microgreens module (migration 045) ===
+
+export type MicrogreenTrayStatus =
+  | "soaking" | "blackout" | "light" | "harvesting" | "terminated" | "lost";
+
+export interface MicrogreenCrop {
+  id: string;
+  farm_id: string;
+  item_id: string | null;
+  name: string;
+  variety: string | null;
+  seed_density_g_per_tray: number;
+  presoak_hours: number;
+  presprout_hours: number;
+  bury_seed: boolean;
+  weight_during_blackout: boolean;
+  blackout_days: number;
+  keep_in_blackout: boolean;
+  ideal_harvest_day: number;
+  harvest_min_days: number | null;
+  harvest_max_days: number | null;
+  expected_yield_oz_per_tray: number;
+  is_continuous_harvest: boolean;
+  productive_life_days: number | null;
+  growing_medium: string[];
+  preferred_medium: string | null;
+  tray_size: string;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MicrogreenDemand {
+  id: string;
+  crop_id: string;
+  restaurant_id: string | null;
+  day_of_week: number; // 0-6, JS convention
+  target_oz: number;
+  effective_from: string | null;
+  effective_to: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MicrogreenBatch {
+  id: string;
+  crop_id: string;
+  sow_date: string;
+  soak_started_at: string | null;
+  planned_blackout_end: string | null;
+  planned_harvest_date: string;
+  tray_count: number;
+  seed_lot: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface MicrogreenTray {
+  id: string;
+  batch_id: string;
+  tray_label: string;
+  status: MicrogreenTrayStatus;
+  sow_date: string;
+  blackout_start: string | null;
+  light_start: string | null;
+  harvesting_start: string | null;
+  terminated_at: string | null;
+  lost_reason: string | null;
+  location: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MicrogreenHarvest {
+  id: string;
+  tray_id: string;
+  harvested_at: string;
+  yield_oz: number;
+  unit: string;
+  delivery_id: string | null;
+  restaurant_id: string | null;
+  notes: string | null;
+  created_at: string;
+}
