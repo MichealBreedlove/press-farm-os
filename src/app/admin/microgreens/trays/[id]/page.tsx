@@ -6,18 +6,19 @@ import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
 
 export const dynamic = "force-dynamic";
 
-export default async function TrayDetailPage({ params }: { params: { id: string } }) {
+export default async function TrayDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const admin = createAdminClient();
   const { data: tray } = await (admin as any)
     .from("microgreen_trays")
     .select("*, batch:microgreen_batches(*, crop:microgreen_crops(*))")
-    .eq("id", params.id).maybeSingle();
+    .eq("id", id).maybeSingle();
   if (!tray) notFound();
 
   const { data: harvests } = await (admin as any)
     .from("microgreen_harvests")
     .select("*, delivery:deliveries(delivery_date, restaurant:restaurants(name))")
-    .eq("tray_id", params.id)
+    .eq("tray_id", id)
     .order("harvested_at", { ascending: false });
 
   const crop = tray.batch?.crop;
