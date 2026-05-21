@@ -15,13 +15,12 @@ export type DemandWithRestaurant = MicrogreenDemand & {
   restaurant?: { id: string; name: string } | null;
 };
 
-export type YieldUnit = "lg" | "sm" | "ea" | "gb";
-export const YIELD_UNITS: YieldUnit[] = ["lg", "sm", "ea", "gb"];
+export type YieldUnit = "lg" | "sm" | "ea";
+export const YIELD_UNITS: YieldUnit[] = ["lg", "sm", "ea"];
 export const YIELD_UNIT_LABELS: Record<YieldUnit, string> = {
   lg: "LG",
   sm: "SM",
   ea: "EA",
-  gb: "GB",
 };
 
 /**

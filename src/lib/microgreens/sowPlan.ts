@@ -17,7 +17,7 @@ export type SowPlanInput = {
 };
 
 const MS_PER_DAY = 24 * 3600 * 1000;
-const VALID_UNITS: ReadonlySet<YieldUnit> = new Set(["lg", "sm", "ea", "gb"]);
+const VALID_UNITS: ReadonlySet<YieldUnit> = new Set(["lg", "sm", "ea"]);
 
 function pad(n: number) { return n.toString().padStart(2, "0"); }
 

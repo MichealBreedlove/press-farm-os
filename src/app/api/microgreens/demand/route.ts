@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     typeof body.target_quantity === "number" &&
     body.target_quantity > 0 &&
     typeof body.target_unit === "string" &&
-    ["lg", "sm", "ea", "gb"].includes(body.target_unit);
+    ["lg", "sm", "ea"].includes(body.target_unit);
 
   if (!hasNewShape) {
     if (!body.target_oz || body.target_oz <= 0) {

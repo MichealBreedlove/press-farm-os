@@ -13,8 +13,9 @@ const broccoli: MicrogreenCrop = {
   blackout_days: 3, keep_in_blackout: false,
   ideal_harvest_day: 10, harvest_min_days: 8, harvest_max_days: 12,
   expected_yield_oz_per_tray: 8,
-  // Migration 047 unit-based yield. 1 tray = 8 LG, or 16 SM, or 64 EA.
-  yield_per_tray: { lg: 8, sm: 16, ea: 64 },
+  // Migration 047 unit-based yield. 1 tray = 8 LG or 16 SM.
+  // EA intentionally omitted so the missing_yield_config test has a unit to trigger on.
+  yield_per_tray: { lg: 8, sm: 16 },
   is_continuous_harvest: false, productive_life_days: null,
   growing_medium: ["soil"], preferred_medium: "soil",
   tray_size: "10x20", notes: null, is_active: true,
@@ -178,8 +179,8 @@ describe("computeSowPlan", () => {
 
   it("flags missing_yield_config when a demand unit isn't in yield_per_tray", () => {
     const delivery = "2026-05-27";
-    // gb (Green Bin) isn't in broccoli's yield_per_tray map
-    const demand = [makeDemand("d1", { target_quantity: 1, target_unit: "gb" })];
+    // ea isn't in broccoli's yield_per_tray map (fixture only has lg + sm)
+    const demand = [makeDemand("d1", { target_quantity: 1, target_unit: "ea" })];
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [], trays: [],
       deliveryDates: [delivery], now: today,

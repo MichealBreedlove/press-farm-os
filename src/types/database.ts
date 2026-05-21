@@ -637,7 +637,7 @@ export interface MicrogreenDemand {
   day_of_week: number; // 0-6, JS convention
   target_oz: number; // deprecated by migration 047 — use target_quantity + target_unit
   target_quantity: number | null;
-  target_unit: "lg" | "sm" | "ea" | "gb" | null;
+  target_unit: "lg" | "sm" | "ea" | null;
   effective_from: string | null;
   effective_to: string | null;
   notes: string | null;
