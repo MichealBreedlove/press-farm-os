@@ -13,36 +13,25 @@ export default async function MicrogreensDashboardPage() {
   const today = now.toISOString().slice(0, 10);
   const horizon = new Date(now.getTime() + PLAN_HORIZON_DAYS * 24 * 3600 * 1000)
     .toISOString().slice(0, 10);
-  const lookback = new Date(now.getTime() - 60 * 24 * 3600 * 1000)
-    .toISOString().slice(0, 10);
 
   const [{ data: crops }, { data: demand }, { data: batches }, { data: trays },
-    { data: deliveryDates }, { data: history }, { data: deliveries }] = await Promise.all([
+    { data: deliveryDates }, { data: deliveries }] = await Promise.all([
     (admin as any).from("microgreen_crops").select("*").eq("is_active", true),
     (admin as any).from("microgreen_demand").select("*"),
     (admin as any).from("microgreen_batches").select("*"),
     (admin as any).from("microgreen_trays").select("*"),
     (admin as any).from("delivery_dates").select("delivery_date")
       .gte("delivery_date", today).lte("delivery_date", horizon),
-    (admin as any).from("delivery_items")
-      .select("item_id, quantity_oz, deliveries!inner(delivery_date)")
-      .gte("deliveries.delivery_date", lookback),
     (admin as any).from("deliveries")
       .select("id, delivery_date, restaurant:restaurants(name)")
       .gte("delivery_date", today).lte("delivery_date", horizon)
       .order("delivery_date"),
   ]);
 
-  const historicalDeliveryItems = (history ?? []).map((r: any) => ({
-    item_id: r.item_id,
-    quantity_oz: Number(r.quantity_oz ?? 0),
-    delivery_date: r.deliveries?.delivery_date,
-  })).filter((r: any) => r.delivery_date);
-
   const plan = computeSowPlan({
     crops: crops ?? [], demand: demand ?? [], batches: batches ?? [], trays: trays ?? [],
     deliveryDates: (deliveryDates ?? []).map((d: any) => d.delivery_date),
-    historicalDeliveryItems, now,
+    now,
   });
 
   const flatDeliveries = (deliveries ?? []).map((d: any) => ({

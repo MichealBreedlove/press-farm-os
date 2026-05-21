@@ -5,7 +5,14 @@ import { TaskCard } from "@/components/admin/microgreens/TaskCard";
 import { SowModal } from "@/components/admin/microgreens/SowModal";
 import { AdHocSowModal } from "@/components/admin/microgreens/AdHocSowModal";
 import { HarvestForm } from "@/components/admin/microgreens/HarvestForm";
-import type { SowPlan, SowTask, HarvestTask, AdvanceTask } from "@/lib/microgreens/types";
+import type { SowPlan, SowTask, HarvestTask, AdvanceTask, DemandLine } from "@/lib/microgreens/types";
+import { YIELD_UNIT_LABELS } from "@/lib/microgreens/types";
+
+function formatDemands(demands: DemandLine[]): string {
+  return demands
+    .map((d) => `${d.quantity} ${YIELD_UNIT_LABELS[d.unit]}`)
+    .join(" + ");
+}
 
 type Delivery = { id: string; delivery_date: string; restaurant_name?: string };
 type AdHocCrop = {
@@ -69,9 +76,9 @@ export function DashboardClient({
               <TaskCard
                 key={i}
                 title={`Sow ${t.trays_to_sow} trays of ${t.crop.name}`}
-                subtitle={`For ${t.delivery_date} delivery · ${t.expected_oz} oz needed · ${t.trays_in_flight} in flight`}
-                warning={t.is_warning ? `History suggests ${t.forecast_oz.toFixed(1)} oz (vs manual ${t.manual_oz} oz)` : undefined}
-                tone={t.is_warning ? "warning" : "default"}
+                subtitle={`For ${t.delivery_date} delivery · ${formatDemands(t.expected_demands)} needed · ${t.trays_in_flight} in flight`}
+                warning={t.missing_yield_config ? `Missing yield_per_tray entry for one of the requested units — set it on the crop page so trays_needed is computed correctly.` : undefined}
+                tone={t.missing_yield_config ? "warning" : "default"}
                 action={<button className="btn-primary" onClick={() => setSowing(t)}>Mark sown</button>}
               />
             ))}

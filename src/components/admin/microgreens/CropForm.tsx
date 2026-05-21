@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { GROWING_MEDIA } from "@/lib/microgreens/constants";
+import { YIELD_UNITS, YIELD_UNIT_LABELS, type YieldUnit } from "@/lib/microgreens/types";
 import type { MicrogreenCrop } from "@/types/database";
 
 type Props = {
@@ -29,6 +30,7 @@ export function CropForm({ initial, items }: Props) {
     harvest_min_days: initial?.harvest_min_days ?? null,
     harvest_max_days: initial?.harvest_max_days ?? null,
     expected_yield_oz_per_tray: initial?.expected_yield_oz_per_tray ?? 8,
+    yield_per_tray: (initial?.yield_per_tray ?? {}) as Record<string, number>,
     is_continuous_harvest: initial?.is_continuous_harvest ?? false,
     productive_life_days: initial?.productive_life_days ?? null,
     growing_medium: initial?.growing_medium ?? ["soil"],
@@ -134,11 +136,41 @@ export function CropForm({ initial, items }: Props) {
 
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold uppercase tracking-wide">Yield</legend>
+        <p className="text-xs text-farm-muted leading-relaxed">
+          Alternatives model: one tray yields the LG count <span className="font-medium">or</span> the SM count <span className="font-medium">or</span> the EA count, depending on packing decision. Leave any unit blank if you don't pack this crop in that size.
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {YIELD_UNITS.map((u) => (
+            <label key={u} className="block">
+              <span className="block text-xs text-farm-muted">{YIELD_UNIT_LABELS[u]} per tray</span>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                className="input w-full"
+                value={form.yield_per_tray[u] ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const next = { ...form.yield_per_tray };
+                  if (raw === "" || Number(raw) <= 0) {
+                    delete next[u];
+                  } else {
+                    next[u] = Number(raw);
+                  }
+                  update("yield_per_tray", next);
+                }}
+                placeholder="—"
+              />
+            </label>
+          ))}
+        </div>
         <label className="block">
-          <span className="block text-sm">Expected yield (oz/tray)</span>
+          <span className="block text-sm text-farm-muted">
+            Legacy: oz per tray (only used by old reports — not the sow planner)
+          </span>
           <input type="number" step="0.1" className="input w-full"
             value={form.expected_yield_oz_per_tray}
-            onChange={(e) => update("expected_yield_oz_per_tray", Number(e.target.value))} required />
+            onChange={(e) => update("expected_yield_oz_per_tray", Number(e.target.value))} />
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.is_continuous_harvest}

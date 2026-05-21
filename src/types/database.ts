@@ -616,6 +616,9 @@ export interface MicrogreenCrop {
   harvest_min_days: number | null;
   harvest_max_days: number | null;
   expected_yield_oz_per_tray: number;
+  // Migration 047: per-unit alternative yields, e.g. {"lg": 4, "sm": 8, "ea": 32}
+  // One tray yields 4 LG OR 8 SM OR 32 EA, depending on packing decision.
+  yield_per_tray: Record<string, number>;
   is_continuous_harvest: boolean;
   productive_life_days: number | null;
   growing_medium: string[];
@@ -632,7 +635,9 @@ export interface MicrogreenDemand {
   crop_id: string;
   restaurant_id: string | null;
   day_of_week: number; // 0-6, JS convention
-  target_oz: number;
+  target_oz: number; // deprecated by migration 047 — use target_quantity + target_unit
+  target_quantity: number | null;
+  target_unit: "lg" | "sm" | "ea" | "gb" | null;
   effective_from: string | null;
   effective_to: string | null;
   notes: string | null;

@@ -15,6 +15,23 @@ export type DemandWithRestaurant = MicrogreenDemand & {
   restaurant?: { id: string; name: string } | null;
 };
 
+export type YieldUnit = "lg" | "sm" | "ea" | "gb";
+export const YIELD_UNITS: YieldUnit[] = ["lg", "sm", "ea", "gb"];
+export const YIELD_UNIT_LABELS: Record<YieldUnit, string> = {
+  lg: "LG",
+  sm: "SM",
+  ea: "EA",
+  gb: "GB",
+};
+
+/**
+ * A single demand line — "8 LG of Pea Shoots needed Monday".
+ */
+export type DemandLine = {
+  quantity: number;
+  unit: YieldUnit;
+};
+
 export type SowTask = {
   crop: MicrogreenCrop;
   delivery_date: string;     // ISO date
@@ -22,10 +39,20 @@ export type SowTask = {
   trays_to_sow: number;
   trays_in_flight: number;
   trays_needed: number;
-  expected_oz: number;
-  manual_oz: number;
-  forecast_oz: number;
-  is_warning: boolean;       // forecast > manual * ratio
+  /**
+   * All demand lines for this crop on this delivery date, grouped by unit.
+   * Example: [{quantity: 4, unit: 'lg'}, {quantity: 8, unit: 'sm'}].
+   * Alternatives model: 1 tray = 4 LG OR 8 SM — they're tray-equivalents,
+   * which sum to the trays_needed total.
+   */
+  expected_demands: DemandLine[];
+  /**
+   * True when one or more demand lines couldn't be converted to trays
+   * because the crop's yield_per_tray map lacks an entry for that unit.
+   * Trays_needed still includes a fallback of 1 tray per unmapped line
+   * so the task stays visible.
+   */
+  missing_yield_config: boolean;
 };
 
 export type AdvanceTask = {
@@ -51,5 +78,5 @@ export type SowPlan = {
     advance: AdvanceTask[];
     harvest: HarvestTask[];
   };
-  warnings: SowTask[]; // forecast > manual * 1.25
+  warnings: SowTask[]; // for now: missing yield config tasks
 };

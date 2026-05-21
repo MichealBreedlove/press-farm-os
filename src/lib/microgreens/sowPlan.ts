@@ -1,16 +1,11 @@
 import type {
   MicrogreenCrop, MicrogreenDemand, MicrogreenBatch, MicrogreenTray,
 } from "@/types/database";
-import type { SowPlan, SowTask, AdvanceTask, HarvestTask } from "./types";
+import type {
+  SowPlan, SowTask, AdvanceTask, HarvestTask, DemandLine, YieldUnit,
+} from "./types";
 import { isReadyToAdvance, isReadyToHarvest, nextStatus } from "./stages";
-import { computeForecast } from "./forecast";
-import { FORECAST_WARNING_RATIO, PLAN_HORIZON_DAYS } from "./constants";
-
-type DeliveryItemRow = {
-  delivery_date: string;
-  quantity_oz: number;
-  item_id: string;
-};
+import { PLAN_HORIZON_DAYS } from "./constants";
 
 export type SowPlanInput = {
   crops: MicrogreenCrop[];
@@ -18,11 +13,11 @@ export type SowPlanInput = {
   batches: MicrogreenBatch[];
   trays: MicrogreenTray[];
   deliveryDates: string[]; // future ISO dates within horizon
-  historicalDeliveryItems: DeliveryItemRow[];
   now: Date;
 };
 
 const MS_PER_DAY = 24 * 3600 * 1000;
+const VALID_UNITS: ReadonlySet<YieldUnit> = new Set(["lg", "sm", "ea", "gb"]);
 
 function pad(n: number) { return n.toString().padStart(2, "0"); }
 
@@ -42,29 +37,58 @@ function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((b - a) / MS_PER_DAY);
 }
 
+/**
+ * Resolve effective demand for a crop on a given delivery date.
+ * Sums quantity per unit across all matching demand rows (restaurants, etc).
+ */
 function effectiveDemandFor(
   crop: MicrogreenCrop,
   deliveryDate: string,
   demand: MicrogreenDemand[],
-  historicalDeliveryItems: DeliveryItemRow[],
-  now: Date,
-): { manual_oz: number; forecast_oz: number; expected_oz: number; is_warning: boolean } {
+): DemandLine[] {
   const dow = new Date(deliveryDate + "T00:00:00Z").getUTCDay();
   const matching = demand.filter((d) => {
     if (d.crop_id !== crop.id) return false;
     if (d.day_of_week !== dow) return false;
     if (d.effective_from && deliveryDate < d.effective_from) return false;
     if (d.effective_to && deliveryDate > d.effective_to) return false;
+    if (d.target_quantity == null || d.target_quantity <= 0) return false;
+    if (!d.target_unit || !VALID_UNITS.has(d.target_unit as YieldUnit)) return false;
     return true;
   });
-  const manual_oz = matching.reduce((sum, d) => sum + Number(d.target_oz), 0);
-  const forecast_oz = computeForecast(historicalDeliveryItems, crop.item_id, dow, now);
 
-  const expected_oz = manual_oz > 0 ? manual_oz : forecast_oz;
-  const is_warning =
-    manual_oz > 0 && forecast_oz > manual_oz * FORECAST_WARNING_RATIO;
+  const sums = new Map<YieldUnit, number>();
+  for (const d of matching) {
+    const u = d.target_unit as YieldUnit;
+    sums.set(u, (sums.get(u) ?? 0) + Number(d.target_quantity ?? 0));
+  }
+  return Array.from(sums.entries()).map(([unit, quantity]) => ({ unit, quantity }));
+}
 
-  return { manual_oz, forecast_oz, expected_oz, is_warning };
+/**
+ * Tray-equivalents math for the alternatives model: 1 tray = 4 LG OR 8 SM.
+ * Each demand line contributes (quantity / yield_per_tray[unit]) tray-units.
+ * Sum across units, ceil, that's trays_needed. Lines whose unit isn't in
+ * yield_per_tray contribute a fallback of 1 tray each (keeps the task visible
+ * with the missing_yield_config flag set).
+ */
+function computeTraysNeeded(
+  crop: MicrogreenCrop,
+  demands: DemandLine[],
+): { trays_needed: number; missing_yield_config: boolean } {
+  let trayEquivalents = 0;
+  let missing = false;
+  const yieldMap = crop.yield_per_tray ?? {};
+  for (const d of demands) {
+    const yieldForUnit = Number(yieldMap[d.unit] ?? 0);
+    if (yieldForUnit > 0) {
+      trayEquivalents += d.quantity / yieldForUnit;
+    } else {
+      trayEquivalents += 1; // fallback
+      missing = true;
+    }
+  }
+  return { trays_needed: Math.ceil(trayEquivalents), missing_yield_config: missing };
 }
 
 function traysInFlightFor(
@@ -100,7 +124,7 @@ function isOverdueAdvance(
 }
 
 export function computeSowPlan(input: SowPlanInput): SowPlan {
-  const { crops, demand, batches, trays, deliveryDates, historicalDeliveryItems, now } = input;
+  const { crops, demand, batches, trays, deliveryDates, now } = input;
   const todayIso = isoDateUtc(now);
 
   const sow_today: SowTask[] = [];
@@ -113,13 +137,11 @@ export function computeSowPlan(input: SowPlanInput): SowPlan {
       const daysOut = daysBetween(todayIso, delivery_date);
       if (daysOut < 0 || daysOut > PLAN_HORIZON_DAYS) continue;
 
-      const { manual_oz, forecast_oz, expected_oz, is_warning } = effectiveDemandFor(
-        crop, delivery_date, demand, historicalDeliveryItems, now,
-      );
-      if (expected_oz <= 0) continue;
+      const expected_demands = effectiveDemandFor(crop, delivery_date, demand);
+      if (expected_demands.length === 0) continue;
 
       const sow_date = addDays(delivery_date, -crop.ideal_harvest_day);
-      const trays_needed = Math.ceil(expected_oz / crop.expected_yield_oz_per_tray);
+      const { trays_needed, missing_yield_config } = computeTraysNeeded(crop, expected_demands);
       const trays_in_flight = traysInFlightFor(crop, delivery_date, batches, trays);
       const trays_to_sow = Math.max(0, trays_needed - trays_in_flight);
 
@@ -128,11 +150,11 @@ export function computeSowPlan(input: SowPlanInput): SowPlan {
       const task: SowTask = {
         crop, delivery_date, sow_date,
         trays_to_sow, trays_in_flight, trays_needed,
-        expected_oz, manual_oz, forecast_oz, is_warning,
+        expected_demands, missing_yield_config,
       };
       if (sow_date === todayIso) sow_today.push(task);
       else if (sow_date < todayIso) overdueSow.push(task);
-      if (is_warning) warnings.push(task);
+      if (missing_yield_config) warnings.push(task);
     }
   }
 

@@ -13,6 +13,8 @@ const broccoli: MicrogreenCrop = {
   blackout_days: 3, keep_in_blackout: false,
   ideal_harvest_day: 10, harvest_min_days: 8, harvest_max_days: 12,
   expected_yield_oz_per_tray: 8,
+  // Migration 047 unit-based yield. 1 tray = 8 LG, or 16 SM, or 64 EA.
+  yield_per_tray: { lg: 8, sm: 16, ea: 64 },
   is_continuous_harvest: false, productive_life_days: null,
   growing_medium: ["soil"], preferred_medium: "soil",
   tray_size: "10x20", notes: null, is_active: true,
@@ -20,6 +22,27 @@ const broccoli: MicrogreenCrop = {
 };
 
 const today = new Date("2026-05-17T00:00:00Z"); // a Sunday
+
+function makeDemand(
+  id: string,
+  overrides: Partial<MicrogreenDemand> = {},
+): MicrogreenDemand {
+  return {
+    id,
+    crop_id: broccoli.id,
+    restaurant_id: null,
+    day_of_week: 3,
+    target_oz: 0,
+    target_quantity: 8,
+    target_unit: "lg",
+    effective_from: null,
+    effective_to: null,
+    notes: null,
+    created_at: "2026-05-01T00:00:00Z",
+    updated_at: "2026-05-01T00:00:00Z",
+    ...overrides,
+  };
+}
 
 describe("computeSowPlan", () => {
   it("returns empty buckets when no demand", () => {
@@ -29,7 +52,6 @@ describe("computeSowPlan", () => {
       batches: [],
       trays: [],
       deliveryDates: ["2026-05-30"],
-      historicalDeliveryItems: [],
       now: today,
     });
     expect(plan.sow_today).toEqual([]);
@@ -38,35 +60,26 @@ describe("computeSowPlan", () => {
 
   it("schedules a sow today when delivery_date - ideal_harvest_day == today", () => {
     const delivery = "2026-05-27"; // 10 days out from today
-    const demand: MicrogreenDemand[] = [{
-      id: "d1", crop_id: broccoli.id, restaurant_id: "rest-press",
-      day_of_week: 3, // Wednesday
-      target_oz: 16,
-      effective_from: null, effective_to: null, notes: null,
-      created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-    }];
+    const demand: MicrogreenDemand[] = [
+      makeDemand("d1", { restaurant_id: "rest-press", target_quantity: 16, target_unit: "lg" }),
+    ];
     const plan = computeSowPlan({
       crops: [broccoli],
       demand,
       batches: [],
       trays: [],
       deliveryDates: [delivery],
-      historicalDeliveryItems: [],
       now: today,
     });
     expect(plan.sow_today).toHaveLength(1);
-    expect(plan.sow_today[0].trays_to_sow).toBe(2); // ceil(16 / 8)
+    expect(plan.sow_today[0].trays_to_sow).toBe(2); // ceil(16 LG / 8 LG-per-tray)
     expect(plan.sow_today[0].delivery_date).toBe(delivery);
+    expect(plan.sow_today[0].expected_demands).toEqual([{ unit: "lg", quantity: 16 }]);
   });
 
   it("subtracts in-flight trays from trays_to_sow", () => {
     const delivery = "2026-05-27";
-    const demand: MicrogreenDemand[] = [{
-      id: "d1", crop_id: broccoli.id, restaurant_id: null,
-      day_of_week: 3, target_oz: 16,
-      effective_from: null, effective_to: null, notes: null,
-      created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-    }];
+    const demand = [makeDemand("d1", { target_quantity: 16, target_unit: "lg" })];
     const batch: MicrogreenBatch = {
       id: "b1", crop_id: broccoli.id, sow_date: "2026-05-17",
       soak_started_at: null, planned_blackout_end: "2026-05-20",
@@ -84,7 +97,7 @@ describe("computeSowPlan", () => {
     };
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [batch], trays: [tray],
-      deliveryDates: [delivery], historicalDeliveryItems: [],
+      deliveryDates: [delivery],
       now: today,
     });
     expect(plan.sow_today[0].trays_to_sow).toBe(1); // needed 2 - inflight 1
@@ -93,12 +106,7 @@ describe("computeSowPlan", () => {
 
   it("excludes terminated/lost trays from in-flight count", () => {
     const delivery = "2026-05-27";
-    const demand: MicrogreenDemand[] = [{
-      id: "d1", crop_id: broccoli.id, restaurant_id: null,
-      day_of_week: 3, target_oz: 16,
-      effective_from: null, effective_to: null, notes: null,
-      created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-    }];
+    const demand = [makeDemand("d1", { target_quantity: 16, target_unit: "lg" })];
     const batch: MicrogreenBatch = {
       id: "b1", crop_id: broccoli.id, sow_date: "2026-05-17",
       soak_started_at: null, planned_blackout_end: "2026-05-20",
@@ -126,94 +134,86 @@ describe("computeSowPlan", () => {
     ];
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [batch], trays, deliveryDates: [delivery],
-      historicalDeliveryItems: [], now: today,
+      now: today,
     });
     expect(plan.sow_today[0].trays_in_flight).toBe(1); // only t2 counts
     expect(plan.sow_today[0].trays_to_sow).toBe(1);    // 2 needed - 1 in flight
   });
 
-  it("aggregates demand across restaurants for same day-of-week", () => {
+  it("aggregates demand across restaurants for same day-of-week + unit", () => {
     const delivery = "2026-05-27";
     const demand: MicrogreenDemand[] = [
-      {
-        id: "d1", crop_id: broccoli.id, restaurant_id: "rest-press",
-        day_of_week: 3, target_oz: 8,
-        effective_from: null, effective_to: null, notes: null,
-        created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-      },
-      {
-        id: "d2", crop_id: broccoli.id, restaurant_id: "rest-under",
-        day_of_week: 3, target_oz: 8,
-        effective_from: null, effective_to: null, notes: null,
-        created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-      },
+      makeDemand("d1", { restaurant_id: "rest-press", target_quantity: 8, target_unit: "lg" }),
+      makeDemand("d2", { restaurant_id: "rest-under", target_quantity: 8, target_unit: "lg" }),
     ];
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [], trays: [],
-      deliveryDates: [delivery], historicalDeliveryItems: [],
+      deliveryDates: [delivery],
       now: today,
     });
-    expect(plan.sow_today[0].expected_oz).toBe(16);
+    expect(plan.sow_today[0].expected_demands).toEqual([{ unit: "lg", quantity: 16 }]);
     expect(plan.sow_today[0].trays_to_sow).toBe(2);
   });
 
-  it("flags a warning when forecast exceeds manual by 25%", () => {
+  it("sums tray-equivalents across mixed units (alternatives model)", () => {
     const delivery = "2026-05-27";
-    const demand: MicrogreenDemand[] = [{
-      id: "d1", crop_id: broccoli.id, restaurant_id: null,
-      day_of_week: 3, target_oz: 8,
-      effective_from: null, effective_to: null, notes: null,
-      created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-    }];
-    const history = [
-      { delivery_date: "2026-05-13", quantity_oz: 12, item_id: "item-broccoli" },
-      { delivery_date: "2026-05-06", quantity_oz: 12, item_id: "item-broccoli" },
-      { delivery_date: "2026-04-29", quantity_oz: 12, item_id: "item-broccoli" },
-      { delivery_date: "2026-04-22", quantity_oz: 12, item_id: "item-broccoli" },
+    // 4 LG + 8 SM. 1 tray = 8 LG = 16 SM.
+    // tray-equivalents = 4/8 + 8/16 = 0.5 + 0.5 = 1.0 → ceil → 1 tray.
+    const demand: MicrogreenDemand[] = [
+      makeDemand("d1", { target_quantity: 4, target_unit: "lg" }),
+      makeDemand("d2", { target_quantity: 8, target_unit: "sm" }),
     ];
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [], trays: [],
-      deliveryDates: [delivery],
-      historicalDeliveryItems: history,
-      now: today,
+      deliveryDates: [delivery], now: today,
     });
-    const task = plan.sow_today[0];
-    expect(task.manual_oz).toBe(8);
-    expect(task.forecast_oz).toBe(12);
-    expect(task.is_warning).toBe(true);
+    expect(plan.sow_today[0].trays_to_sow).toBe(1);
+    expect(plan.sow_today[0].expected_demands).toEqual(
+      expect.arrayContaining([
+        { unit: "lg", quantity: 4 },
+        { unit: "sm", quantity: 8 },
+      ]),
+    );
+  });
+
+  it("flags missing_yield_config when a demand unit isn't in yield_per_tray", () => {
+    const delivery = "2026-05-27";
+    // gb (Green Bin) isn't in broccoli's yield_per_tray map
+    const demand = [makeDemand("d1", { target_quantity: 1, target_unit: "gb" })];
+    const plan = computeSowPlan({
+      crops: [broccoli], demand, batches: [], trays: [],
+      deliveryDates: [delivery], now: today,
+    });
+    expect(plan.sow_today[0].missing_yield_config).toBe(true);
+    // Fallback contributes 1 tray-equivalent to keep task visible.
+    expect(plan.sow_today[0].trays_to_sow).toBe(1);
     expect(plan.warnings).toHaveLength(1);
   });
 
-  it("uses forecast as fallback when no manual demand is set", () => {
+  it("ignores demand rows with no target_quantity or unit (deprecated oz-only rows)", () => {
     const delivery = "2026-05-27";
-    const history = [
-      { delivery_date: "2026-05-13", quantity_oz: 16, item_id: "item-broccoli" },
-      { delivery_date: "2026-05-06", quantity_oz: 16, item_id: "item-broccoli" },
+    const demand: MicrogreenDemand[] = [
+      // Old-style row: target_oz set but no target_quantity/unit.
+      // The new planner ignores these (they can't be converted to trays).
+      makeDemand("d1", { target_oz: 16, target_quantity: null, target_unit: null }),
     ];
     const plan = computeSowPlan({
-      crops: [broccoli], demand: [], batches: [], trays: [],
-      deliveryDates: [delivery],
-      historicalDeliveryItems: history,
-      now: today,
+      crops: [broccoli], demand, batches: [], trays: [],
+      deliveryDates: [delivery], now: today,
     });
-    expect(plan.sow_today).toHaveLength(1);
-    expect(plan.sow_today[0].expected_oz).toBe(16);
-    expect(plan.sow_today[0].is_warning).toBe(false); // no manual to compare against
+    expect(plan.sow_today).toEqual([]);
   });
 
   it("places past-due sow tasks in overdue.sow", () => {
     const delivery = "2026-05-22"; // 5 days out -> sow_date 2026-05-12 (5 days ago)
-    const demand: MicrogreenDemand[] = [{
-      id: "d1", crop_id: broccoli.id, restaurant_id: null,
-      day_of_week: new Date(delivery + "T00:00:00Z").getUTCDay(),
-      target_oz: 8,
-      effective_from: null, effective_to: null, notes: null,
-      created_at: "2026-05-01T00:00:00Z", updated_at: "2026-05-01T00:00:00Z",
-    }];
+    const dow = new Date(delivery + "T00:00:00Z").getUTCDay();
+    const demand = [
+      makeDemand("d1", { day_of_week: dow, target_quantity: 8, target_unit: "lg" }),
+    ];
     const plan = computeSowPlan({
       crops: [broccoli], demand, batches: [], trays: [],
       deliveryDates: [delivery],
-      historicalDeliveryItems: [], now: today,
+      now: today,
     });
     expect(plan.sow_today).toHaveLength(0);
     expect(plan.overdue.sow).toHaveLength(1);
@@ -237,7 +237,8 @@ describe("computeSowPlan", () => {
     };
     const plan = computeSowPlan({
       crops: [broccoli], demand: [], batches: [batch], trays: [tray],
-      deliveryDates: [], historicalDeliveryItems: [], now: today,
+      deliveryDates: [],
+      now: today,
     });
     expect(plan.advance_today).toHaveLength(1);
     expect(plan.advance_today[0].from_status).toBe("blackout");
@@ -263,7 +264,8 @@ describe("computeSowPlan", () => {
     };
     const plan = computeSowPlan({
       crops: [broccoli], demand: [], batches: [batch], trays: [tray],
-      deliveryDates: [], historicalDeliveryItems: [], now: today,
+      deliveryDates: [],
+      now: today,
     });
     expect(plan.harvest_today).toHaveLength(1);
     expect(plan.harvest_today[0].kind).toBe("single-cut");

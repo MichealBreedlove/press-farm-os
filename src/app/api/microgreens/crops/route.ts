@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+// expected_yield_oz_per_tray dropped from required: migration 047 moved yield
+// to per-unit yield_per_tray jsonb. The oz field stays on the row for legacy
+// reports but isn't enforced on create.
 const REQUIRED = [
   "name", "seed_density_g_per_tray", "blackout_days",
-  "ideal_harvest_day", "expected_yield_oz_per_tray",
+  "ideal_harvest_day",
 ];
 
 export async function GET(_req: Request) {
