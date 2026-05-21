@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { render } from "@react-email/render";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getResendClient } from "@/lib/resend/client";
+import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 import ChefWelcome from "@/emails/chef-welcome";
 import React from "react";
@@ -65,7 +65,7 @@ export async function POST(
       loginUrl: `${APP_URL}/login`,
     }) as React.ReactElement;
 
-    const { data: sendData, error: sendErr } = await getResendClient().emails.send({
+    const { data: sendData, error: sendErr } = await safeResendSend({
       from: FROM_ADDRESSES.noreply,
       to: email,
       subject: `Welcome to Press Farm 🌿`,

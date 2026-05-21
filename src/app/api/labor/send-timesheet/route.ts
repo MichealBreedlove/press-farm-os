@@ -76,8 +76,7 @@ export async function POST(request: Request) {
 
   // Send via Resend
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { safeResendSend } = await import("@/lib/resend/client");
 
     const { FROM_ADDRESSES } = await import("@/lib/constants");
     const reactEl = LaborTimesheet({
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
       signOff: "Micheal Breedlove",
     }) as React.ReactElement;
 
-    await resend.emails.send({
+    await safeResendSend({
       from: FROM_ADDRESSES.timesheet,
       to: toEmail,
       subject: `Timesheet for week of ${weekLabel}`,

@@ -9,7 +9,7 @@
 
 import React from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getResendClient } from "@/lib/resend/client";
+import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES } from "@/lib/constants";
 import { formatDeliveryDate } from "@/lib/utils";
 import ReceiverDaily from "@/emails/receiver-daily";
@@ -244,7 +244,6 @@ export async function sendToReceivers(
     if (u.email) emailMap.set(u.id, u.email);
   }
 
-  const resend = getResendClient();
   const results: SendResult[] = [];
 
   for (const recv of profiles) {
@@ -254,7 +253,7 @@ export async function sendToReceivers(
     if (!email) continue;
 
     try {
-      const { data: sendData, error } = await resend.emails.send({
+      const { data: sendData, error } = await safeResendSend({
         from: FROM_ADDRESSES.orders,
         to: email,
         subject: `Today's Receiving — ${formatDeliveryDate(delivery_date)}`,
