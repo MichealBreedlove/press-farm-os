@@ -66,7 +66,17 @@ export default async function MicrogreensDashboardPage() {
           <Link href="/admin/microgreens/calendar" className="badge-blue">Calendar</Link>
           <Link href="/admin/microgreens/harvests" className="badge-blue">Harvests</Link>
         </nav>
-        <DashboardClient plan={plan} deliveries={flatDeliveries} />
+        <DashboardClient
+          plan={plan}
+          deliveries={flatDeliveries}
+          crops={(crops ?? []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            variety: c.variety,
+            blackout_days: c.blackout_days,
+            ideal_harvest_day: c.ideal_harvest_day,
+          }))}
+        />
       </div>
     </main>
   );

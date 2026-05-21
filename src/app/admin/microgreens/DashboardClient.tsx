@@ -3,14 +3,31 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TaskCard } from "@/components/admin/microgreens/TaskCard";
 import { SowModal } from "@/components/admin/microgreens/SowModal";
+import { AdHocSowModal } from "@/components/admin/microgreens/AdHocSowModal";
 import { HarvestForm } from "@/components/admin/microgreens/HarvestForm";
 import type { SowPlan, SowTask, HarvestTask, AdvanceTask } from "@/lib/microgreens/types";
 
 type Delivery = { id: string; delivery_date: string; restaurant_name?: string };
+type AdHocCrop = {
+  id: string;
+  name: string;
+  variety: string | null;
+  blackout_days: number;
+  ideal_harvest_day: number;
+};
 
-export function DashboardClient({ plan, deliveries }: { plan: SowPlan; deliveries: Delivery[] }) {
+export function DashboardClient({
+  plan,
+  deliveries,
+  crops,
+}: {
+  plan: SowPlan;
+  deliveries: Delivery[];
+  crops: AdHocCrop[];
+}) {
   const router = useRouter();
   const [sowing, setSowing] = useState<SowTask | null>(null);
+  const [adHocSowing, setAdHocSowing] = useState(false);
   const [harvesting, setHarvesting] = useState<HarvestTask | null>(null);
   const overdueCount =
     plan.overdue.sow.length + plan.overdue.advance.length + plan.overdue.harvest.length;
@@ -32,9 +49,20 @@ export function DashboardClient({ plan, deliveries }: { plan: SowPlan; deliverie
       )}
 
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide mb-2">Sow today</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide">Sow today</h2>
+          <button
+            type="button"
+            onClick={() => setAdHocSowing(true)}
+            className="text-sm px-3 py-1.5 rounded-lg border border-farm-green text-farm-green font-medium hover:bg-farm-green/5 min-h-[36px]"
+          >
+            + Sow ad-hoc
+          </button>
+        </div>
         {plan.sow_today.length === 0 ? (
-          <p className="text-sm text-farm-muted">Nothing to sow today.</p>
+          <p className="text-sm text-farm-muted">
+            Nothing scheduled to sow today. Use <span className="text-farm-dark">+ Sow ad-hoc</span> to log a tray anyway.
+          </p>
         ) : (
           <div className="space-y-2">
             {plan.sow_today.map((t, i) => (
@@ -88,6 +116,7 @@ export function DashboardClient({ plan, deliveries }: { plan: SowPlan; deliverie
       </section>
 
       {sowing && <SowModal task={sowing} onClose={() => setSowing(null)} />}
+      {adHocSowing && <AdHocSowModal crops={crops} onClose={() => setAdHocSowing(false)} />}
       {harvesting && <HarvestForm task={harvesting} deliveries={deliveries} onClose={() => setHarvesting(null)} />}
     </>
   );
