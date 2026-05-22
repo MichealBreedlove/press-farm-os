@@ -444,7 +444,7 @@ export function ExpensesDataClient({ totalCount, totalAmount, latestDate }: Prop
               <ul className="space-y-1 ml-4 list-disc">
                 <li><strong>ID</strong> (optional): UUID of an existing expense → row will be updated. Leave blank to insert a new row.</li>
                 <li><strong>Date</strong>: YYYY-MM-DD, M/D/YY, or any standard date string.</li>
-                <li><strong>Category</strong>: Seeds, Soil, Amendments, Equipment, Gas, Transport, Supplies, Labor, Software, Other (defaults to Other if blank/unknown).</li>
+                <li><strong>Category</strong>: Seeds, Plants, Soil, Amendments, Equipment, Gas, Transport, Supplies, Labor, Software, Other (defaults to Other if blank/unknown).</li>
                 <li><strong>Amount</strong>: numeric. Currency symbols stripped automatically.</li>
               </ul>
             </div>

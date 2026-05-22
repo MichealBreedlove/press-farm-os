@@ -152,6 +152,7 @@ export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
 
 export const EXPENSE_CATEGORIES = [
   "Seeds",
+  "Plants",
   "Soil",
   "Amendments",
   "Equipment",
