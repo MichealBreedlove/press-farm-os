@@ -51,8 +51,9 @@ BEGIN
     END IF;
 
     -- Both exist: move references then delete the old row.
-    UPDATE delivery_items   SET item_id = new_id WHERE item_id = old_id;
-    UPDATE order_items      SET item_id = new_id WHERE item_id = old_id;
+    -- Note: order_items has no item_id — it references availability_items.id,
+    -- which we update below, so order lines follow the catalog automatically.
+    UPDATE delivery_items     SET item_id = new_id WHERE item_id = old_id;
     UPDATE availability_items SET item_id = new_id WHERE item_id = old_id;
     UPDATE price_history    SET item_id = new_id WHERE item_id = old_id;
     UPDATE price_catalog    SET item_id = new_id WHERE item_id = old_id;
