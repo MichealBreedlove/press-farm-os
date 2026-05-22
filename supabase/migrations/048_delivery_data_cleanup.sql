@@ -10,11 +10,14 @@
 --   - Fix four Nasturtium 1 LG @ $0.40 rows → 400 EA @ $0.40
 --   - Fix Figs $25 LBS rows → $25 LG (1-LG-to-go boxes, not pound prices)
 --   - Rename restaurant "Understudy" → "Under-Study"
---   - Dedupe 2026-02-05 Press (entire 15-line delivery double-imported)
 --   - Strip 'â' mojibake from delivery notes (UTF-8 em-dash artifact)
 --
 -- $0-priced rows and other duplicate candidates are surfaced via
 -- SELECT queries at the bottom for hand-review (commented out).
+--
+-- 2026-02-05 dedupe was REMOVED post-run: those 15 repeated lines were
+-- a real heavy-harvest delivery, not a double-import. Large harvests
+-- legitimately produce repeated lines — never auto-dedupe by pattern.
 -- ============================================
 
 BEGIN;
@@ -175,23 +178,12 @@ WHERE di.item_id    = i.id
   AND di.unit_price = 25.00;
 
 -- ============================================
--- D. Dedupe Press 2026-02-05 (entire 15-line delivery double-imported)
+-- D. (Removed) — Press 2026-02-05 was a real full delivery, not a
+--                double-import. Confirmed with Micheal on the original
+--                run: large harvests legitimately produce repeated lines.
+--                Never auto-dedupe by pattern alone; surface candidates
+--                in the review query at the bottom of this file instead.
 -- ============================================
-
-WITH dups AS (
-  SELECT di.id,
-         ROW_NUMBER() OVER (
-           PARTITION BY di.delivery_id, di.item_id, di.quantity, di.unit, di.unit_price
-           ORDER BY di.created_at, di.id
-         ) AS rn
-  FROM delivery_items di
-  JOIN deliveries  d ON d.id = di.delivery_id
-  JOIN restaurants r ON r.id = d.restaurant_id
-  WHERE d.delivery_date = DATE '2026-02-05'
-    AND r.name          = 'Press'
-)
-DELETE FROM delivery_items
-WHERE id IN (SELECT id FROM dups WHERE rn > 1);
 
 -- ============================================
 -- E. Strip 'â' mojibake from delivery notes
