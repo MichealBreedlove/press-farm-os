@@ -50,13 +50,48 @@ BEGIN
       CONTINUE;
     END IF;
 
-    -- Both exist: move references then delete the old row.
-    -- Note: order_items has no item_id — it references availability_items.id,
-    -- which we update below, so order lines follow the catalog automatically.
-    UPDATE delivery_items     SET item_id = new_id WHERE item_id = old_id;
+    -- availability_items has UNIQUE(item_id, restaurant_id, delivery_date).
+    -- For colliding (restaurant_id, delivery_date) pairs, first move
+    -- order_items to the canonical avail row so they don't get stranded,
+    -- then drop the dup avail rows.
+    WITH collisions AS (
+      SELECT d.id AS dup_avail_id, c.id AS canon_avail_id
+      FROM availability_items d
+      JOIN availability_items c
+        ON c.item_id       = new_id
+       AND c.restaurant_id = d.restaurant_id
+       AND c.delivery_date = d.delivery_date
+      WHERE d.item_id = old_id
+    )
+    UPDATE order_items oi
+    SET availability_item_id = collisions.canon_avail_id
+    FROM collisions
+    WHERE oi.availability_item_id = collisions.dup_avail_id;
+
+    DELETE FROM availability_items
+    WHERE item_id = old_id
+      AND (restaurant_id, delivery_date) IN (
+        SELECT restaurant_id, delivery_date
+        FROM availability_items
+        WHERE item_id = new_id
+      );
+
     UPDATE availability_items SET item_id = new_id WHERE item_id = old_id;
+
+    -- price_catalog has UNIQUE(item_id, unit, effective_date). Same dance.
+    DELETE FROM price_catalog
+    WHERE item_id = old_id
+      AND (unit, effective_date) IN (
+        SELECT unit, effective_date
+        FROM price_catalog
+        WHERE item_id = new_id
+      );
+
+    UPDATE price_catalog SET item_id = new_id WHERE item_id = old_id;
+
+    -- Flat FK reassignment (no unique constraints involved).
+    UPDATE delivery_items   SET item_id = new_id WHERE item_id = old_id;
     UPDATE price_history    SET item_id = new_id WHERE item_id = old_id;
-    UPDATE price_catalog    SET item_id = new_id WHERE item_id = old_id;
     UPDATE event_requests   SET item_id = new_id WHERE item_id = old_id;
     UPDATE plantings        SET item_id = new_id WHERE item_id = old_id;
     UPDATE microgreen_crops SET item_id = new_id WHERE item_id = old_id;
