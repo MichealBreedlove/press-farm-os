@@ -73,9 +73,10 @@ BEGIN
    LIMIT 1;
 
   IF leaf_id IS NULL THEN
-    INSERT INTO items (farm_id, name, category, unit_type, default_price, unit_prices, is_archived)
+    INSERT INTO items (farm_id, name, category, unit_type, default_price, unit_prices, is_archived, image_url)
     VALUES ((SELECT id FROM farms LIMIT 1), 'Nasturtium', 'herbs_leaves', 'ea',
-            0.40, jsonb_build_object('ea', 0.40), false)
+            0.40, jsonb_build_object('ea', 0.40), false,
+            '/assets/pressfarm/flowers/nasturtium-leaf.png')
     RETURNING id INTO leaf_id;
   ELSE
     -- Drop any other dead leaves stubs BEFORE renaming the survivor, so the
@@ -85,12 +86,17 @@ BEGIN
        AND id <> leaf_id
        AND LOWER(TRIM(name)) = 'nasturtium';
 
+    -- image_url is set to the leaf illustration so it doesn't fall through to
+    -- the name-based auto-match, which would show the flower art (the flower
+    -- item shares the name "Nasturtium"). COALESCE preserves a real uploaded
+    -- photo if one is ever added.
     UPDATE items
        SET name          = 'Nasturtium',
            is_archived   = false,
            unit_type     = 'ea',
            default_price = 0.40,
-           unit_prices   = COALESCE(unit_prices, '{}'::jsonb) || jsonb_build_object('ea', 0.40)
+           unit_prices   = COALESCE(unit_prices, '{}'::jsonb) || jsonb_build_object('ea', 0.40),
+           image_url     = COALESCE(image_url, '/assets/pressfarm/flowers/nasturtium-leaf.png')
      WHERE id = leaf_id;
   END IF;
 END $blk$;
