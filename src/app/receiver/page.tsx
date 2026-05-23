@@ -23,8 +23,10 @@ interface Props {
  *   - PENDING: ordered + nothing delivered yet (delivery hasn't been logged)
  *   - EXTRA  : delivered but never ordered
  *
- * Event items (items.is_event_item = true) are flagged separately so the
- * receiver can set them aside for special-occasion use.
+ * Event set-asides are flagged separately so the receiver can hold them for
+ * special-occasion use. A line only counts as "for events" when the item is
+ * event-flagged AND withheld from the regular menu — items shown in both
+ * menus (the order form lists them in each) are ordinary order lines.
  */
 export default async function ReceiverPage({ searchParams }: Props) {
   const supabase = await createClient();
@@ -78,7 +80,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
         availability_item_id,
         availability_items (
           id, item_id,
-          items ( id, name, category, unit_type, image_url, is_event_item )
+          items ( id, name, category, unit_type, image_url, is_event_item, show_in_regular_menu )
         )
       )
     `)

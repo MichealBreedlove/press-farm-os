@@ -63,6 +63,14 @@ interface Props {
   deliveries: any[];
 }
 
+/** A line is "for events" only when the item is event-flagged AND withheld
+ *  from the regular menu. Items shown in both menus (the order form lists
+ *  them in Regular and Events alike) are normal order lines, not set-asides —
+ *  matches OrderForm's `show_in_regular_menu !== false` regular-menu rule. */
+function isEventOnly(item: any): boolean {
+  return Boolean(item?.is_event_item) && item?.show_in_regular_menu === false;
+}
+
 const STATUS_META: Record<Status, { label: string; pill: string; icon: string; sortOrder: number }> = {
   short:   { label: "Short",   pill: "bg-pf-master-orange/[0.12] text-pf-master-orange",   icon: "⚠", sortOrder: 0 },
   pending: { label: "Pending", pill: "bg-amber-50 text-amber-700",                          icon: "•", sortOrder: 1 },
@@ -122,7 +130,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
           sizeLabel,
           colorKey,
           imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
-          isEvent: Boolean(item.is_event_item),
+          isEvent: isEventOnly(item),
           ordered,
           delivered: fulfilled ?? 0,
           status: isShortedFlag ? "short" : "pending",
@@ -164,7 +172,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
             sizeLabel: null,
             colorKey: null,
             imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
-            isEvent: Boolean(item.is_event_item),
+            isEvent: isEventOnly(item),
             ordered: 0,
             delivered,
             status: "extra",
