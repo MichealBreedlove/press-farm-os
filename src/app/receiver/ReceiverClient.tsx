@@ -141,56 +141,83 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         });
       }
 
-      // Pass 2 — overlay delivery_items. Deliveries don't carry size/color
-      // today, so fall back to "any line for this item under the same unit"
-      // when there isn't a (item, unit, null, null) bucket.
+      // Pass 2 — overlay deliveries. Deliveries are sizeless, so one
+      // "Nasturtium 100 EA" line has to cover every size a chef ordered of
+      // that item+unit. Pool the delivered quantity per (item, unit) instead
+      // of greedily binding it to a single size line — otherwise the sizes
+      // that don't win the match get stranded as "pending" even though
+      // product arrived. After pooling, "pending" means strictly "no delivery
+      // logged for this item+unit at all."
+      const deliveredPool = new Map<string, number>(); // `${itemId}__${unit}` -> qty
+
       for (const di of delivery?.delivery_items ?? []) {
         const item = di.items;
         if (!item) continue;
         const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "";
         const delivered = Number(di.quantity ?? 0);
-        const exactKey = buildKey(item.id, unit, null, null);
-        let existing = lines.get(exactKey);
-        if (!existing) {
-          for (const line of lines.values()) {
-            if (line.itemId === item.id && line.unit === unit && line.status === "pending") {
-              existing = line;
-              break;
-            }
-          }
-        }
+        const poolKey = `${item.id}__${unit}`;
 
-        if (!existing) {
-          // Delivered but never ordered → extra. Stored on delivery_item
-          // since there's no order_item to attach the receiver check to.
-          lines.set(exactKey, {
-            lineKey: exactKey,
-            itemId: item.id,
-            itemName: item.name,
-            category: item.category,
-            unit,
-            sizeLabel: null,
-            colorKey: null,
-            imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
-            isEvent: isEventOnly(item),
-            ordered: 0,
-            delivered,
-            status: "extra",
-            shortageReason: null,
-            dbId: di.id,
-            kind: "delivery_item",
-            receivedAt: di.received_at ?? null,
-          });
+        const hasOrderLine = Array.from(lines.values()).some(
+          (l) => l.kind === "order_item" && l.itemId === item.id && l.unit === unit,
+        );
+
+        if (hasOrderLine) {
+          deliveredPool.set(poolKey, (deliveredPool.get(poolKey) ?? 0) + delivered);
         } else {
-          // Sum if multiple delivery lines for the same item
-          existing.delivered += delivered;
-          if (existing.delivered >= existing.ordered) {
-            existing.status = "ready";
-            existing.shortageReason = null;
-          } else if (existing.delivered > 0) {
-            existing.status = "short";
+          // Delivered but never ordered → extra. Stored on the delivery_item
+          // since there's no order_item to attach the receiver check to;
+          // sum repeated delivery lines for the same item+unit.
+          const extraKey = buildKey(item.id, unit, null, null);
+          const extra = lines.get(extraKey);
+          if (extra && extra.kind === "delivery_item") {
+            extra.delivered += delivered;
+          } else {
+            lines.set(extraKey, {
+              lineKey: extraKey,
+              itemId: item.id,
+              itemName: item.name,
+              category: item.category,
+              unit,
+              sizeLabel: null,
+              colorKey: null,
+              imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
+              isEvent: isEventOnly(item),
+              ordered: 0,
+              delivered,
+              status: "extra",
+              shortageReason: null,
+              dbId: di.id,
+              kind: "delivery_item",
+              receivedAt: di.received_at ?? null,
+            });
           }
         }
+      }
+
+      // Distribute each pool across its ordered size lines, largest order
+      // first so the bulk lands on the biggest line; whatever's left over
+      // falls to the remaining sizes (which show "short", not "pending").
+      // The last line absorbs any surplus so over-delivery still reads ready.
+      for (const [poolKey, pooled] of deliveredPool) {
+        const splitAt = poolKey.lastIndexOf("__");
+        const itemId = poolKey.slice(0, splitAt);
+        const unit = poolKey.slice(splitAt + 2);
+        const group = Array.from(lines.values())
+          .filter((l) => l.kind === "order_item" && l.itemId === itemId && l.unit === unit)
+          .sort((a, b) => b.ordered - a.ordered);
+
+        let remaining = pooled;
+        group.forEach((line, idx) => {
+          const give = idx === group.length - 1 ? remaining : Math.min(remaining, line.ordered);
+          line.delivered = give;
+          remaining -= give;
+          if (line.delivered >= line.ordered) {
+            line.status = "ready";
+            line.shortageReason = null;
+          } else {
+            line.status = "short";
+          }
+        });
       }
 
       const allLines = Array.from(lines.values()).sort((a, b) => {
