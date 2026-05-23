@@ -92,8 +92,8 @@ export default async function ReceiverPage({ searchParams }: Props) {
     .select(`
       id, restaurant_id, delivery_date, status, total_value, closed_at, closed_by_name,
       delivery_items (
-        id, item_id, quantity, unit, unit_price, line_total, received_at,
-        items ( id, name, category, unit_type, image_url, is_event_item )
+        id, item_id, quantity, unit, unit_price, line_total, received_at, size_label,
+        items ( id, name, category, unit_type, image_url, is_event_item, show_in_regular_menu )
       )
     `)
     .eq("delivery_date", selected);

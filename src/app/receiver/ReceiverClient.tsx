@@ -141,32 +141,29 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         });
       }
 
-      // Pass 2 — overlay deliveries. Deliveries are sizeless, so one
-      // "Nasturtium 100 EA" line has to cover every size a chef ordered of
-      // that item+unit. Pool the delivered quantity per (item, unit) instead
-      // of greedily binding it to a single size line — otherwise the sizes
-      // that don't win the match get stranded as "pending" even though
-      // product arrived. After pooling, "pending" means strictly "no delivery
-      // logged for this item+unit at all."
-      const deliveredPool = new Map<string, number>(); // `${itemId}__${unit}` -> qty
+      // Pass 2 — overlay deliveries. Deliveries now carry size_label
+      // (migration 050), so a delivery line is credited straight to the
+      // matching (item, unit, size) order line. Legacy / size-less rows have
+      // no size and get pooled across the item+unit's ordered sizes, then
+      // distributed below — historical data keeps reconciling.
+      const deliveredPool = new Map<string, number>(); // `${itemId}__${unit}` -> unmatched qty
+      const norm = (s: string | null | undefined) => (s ?? "").toString().trim().toLowerCase();
 
       for (const di of delivery?.delivery_items ?? []) {
         const item = di.items;
         if (!item) continue;
         const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "";
         const delivered = Number(di.quantity ?? 0);
-        const poolKey = `${item.id}__${unit}`;
+        const size = norm(di.size_label);
+        const groupKey = `${item.id}__${unit}`;
 
-        const hasOrderLine = Array.from(lines.values()).some(
+        const groupLines = Array.from(lines.values()).filter(
           (l) => l.kind === "order_item" && l.itemId === item.id && l.unit === unit,
         );
 
-        if (hasOrderLine) {
-          deliveredPool.set(poolKey, (deliveredPool.get(poolKey) ?? 0) + delivered);
-        } else {
-          // Delivered but never ordered → extra. Stored on the delivery_item
-          // since there's no order_item to attach the receiver check to;
-          // sum repeated delivery lines for the same item+unit.
+        if (groupLines.length === 0) {
+          // Delivered but never ordered → extra. Sum repeated lines for the
+          // same item+unit; there's no order_item to attach the check to.
           const extraKey = buildKey(item.id, unit, null, null);
           const extra = lines.get(extraKey);
           if (extra && extra.kind === "delivery_item") {
@@ -178,7 +175,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
               itemName: item.name,
               category: item.category,
               unit,
-              sizeLabel: null,
+              sizeLabel: di.size_label ?? null,
               colorKey: null,
               imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
               isEvent: isEventOnly(item),
@@ -191,33 +188,54 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
               receivedAt: di.received_at ?? null,
             });
           }
+          continue;
+        }
+
+        // Credit an exact size match when the farm logged one; otherwise pool
+        // the quantity across the item+unit group.
+        const exact = size ? groupLines.find((l) => norm(l.sizeLabel) === size) : undefined;
+        if (exact) {
+          exact.delivered += delivered;
+        } else {
+          deliveredPool.set(groupKey, (deliveredPool.get(groupKey) ?? 0) + delivered);
         }
       }
 
-      // Distribute each pool across its ordered size lines, largest order
-      // first so the bulk lands on the biggest line; whatever's left over
-      // falls to the remaining sizes (which show "short", not "pending").
-      // The last line absorbs any surplus so over-delivery still reads ready.
-      for (const [poolKey, pooled] of deliveredPool) {
-        const splitAt = poolKey.lastIndexOf("__");
-        const itemId = poolKey.slice(0, splitAt);
-        const unit = poolKey.slice(splitAt + 2);
+      // Distribute each size-less pool across its group's unmet need, biggest
+      // shortfall first; the last line absorbs any surplus so over-delivery
+      // still reads ready.
+      for (const [groupKey, pooled] of deliveredPool) {
+        const splitAt = groupKey.lastIndexOf("__");
+        const itemId = groupKey.slice(0, splitAt);
+        const unit = groupKey.slice(splitAt + 2);
         const group = Array.from(lines.values())
           .filter((l) => l.kind === "order_item" && l.itemId === itemId && l.unit === unit)
-          .sort((a, b) => b.ordered - a.ordered);
+          .sort((a, b) => (b.ordered - b.delivered) - (a.ordered - a.delivered));
 
         let remaining = pooled;
         group.forEach((line, idx) => {
-          const give = idx === group.length - 1 ? remaining : Math.min(remaining, line.ordered);
-          line.delivered = give;
+          const need = Math.max(0, line.ordered - line.delivered);
+          const give = idx === group.length - 1 ? remaining : Math.min(remaining, need);
+          line.delivered += give;
           remaining -= give;
-          if (line.delivered >= line.ordered) {
-            line.status = "ready";
-            line.shortageReason = null;
-          } else {
-            line.status = "short";
-          }
         });
+      }
+
+      // Final status. "Pending" means the farm hasn't logged this
+      // restaurant's delivery yet; once a delivery row exists an ordered line
+      // is ready (covered) or short (partial / didn't arrive). An admin-flagged
+      // shortage from pass 1 stays short even with no delivery row.
+      const hasDeliveryRow = Boolean(delivery);
+      for (const line of lines.values()) {
+        if (line.kind !== "order_item") continue;
+        if (line.ordered > 0 && line.delivered >= line.ordered) {
+          line.status = "ready";
+          line.shortageReason = null;
+        } else if (line.delivered > 0 || hasDeliveryRow) {
+          line.status = "short";
+        } else if (line.status !== "short") {
+          line.status = "pending";
+        }
       }
 
       const allLines = Array.from(lines.values()).sort((a, b) => {

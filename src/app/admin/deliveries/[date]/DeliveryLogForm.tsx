@@ -11,6 +11,8 @@ type Item = {
   category: string;
   unit_type: string;
   default_price: number | null;
+  /** Comma-separated size options (", "-joined free text), e.g. "Dime, Palm". */
+  size?: string | null;
   is_archived?: boolean;
 };
 type DeliveryItem = {
@@ -18,6 +20,7 @@ type DeliveryItem = {
   quantity: number;
   unit: string;
   unit_price: number;
+  size_label?: string | null;
 };
 type ExistingDelivery = {
   id: string;
@@ -37,6 +40,7 @@ type Order = {
     quantity_fulfilled: number | null;
     unit: string;
     unit_price: number | null;
+    size_label?: string | null;
   }[];
 };
 
@@ -47,6 +51,7 @@ type LineItem = {
   quantity: string;
   unit: string;
   unit_price: string;
+  size_label: string;
   is_bonus: boolean;
   bonus_note: string;
 };
@@ -101,6 +106,7 @@ export default function DeliveryLogForm({
           quantity: String(di.quantity),
           unit: di.unit,
           unit_price: String(di.unit_price),
+          size_label: di.size_label ?? "",
           is_bonus: di.is_bonus ?? false,
           bonus_note: di.bonus_note ?? "",
         };
@@ -120,6 +126,7 @@ export default function DeliveryLogForm({
             quantity: String(oi.quantity_fulfilled ?? oi.quantity_ordered),
             unit: oi.unit,
             unit_price: String(oi.unit_price ?? item?.default_price ?? 0),
+            size_label: oi.size_label ?? "",
             is_bonus: false,
             bonus_note: "",
           };
@@ -170,6 +177,7 @@ export default function DeliveryLogForm({
         // requires a single valid code).
         unit: String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea",
         unit_price: String(item.default_price ?? 0),
+        size_label: "",
         is_bonus: false,
         bonus_note: "",
       },
@@ -205,6 +213,7 @@ export default function DeliveryLogForm({
             quantity: parseFloat(l.quantity),
             unit: l.unit,
             unit_price: parseFloat(l.unit_price),
+            size_label: l.size_label || null,
             is_bonus: l.is_bonus,
             bonus_note: l.bonus_note || null,
           })),
@@ -293,6 +302,8 @@ export default function DeliveryLogForm({
             {grouped[cat].map((line) => {
               const idx = lines.indexOf(line);
               const lt = lineTotal(line.quantity, line.unit_price);
+              const itemSizes = String(itemMap[line.item_id]?.size ?? "")
+                .split(", ").map((s) => s.trim()).filter(Boolean);
               return (
                 <div
                   key={line.item_id}
@@ -341,6 +352,25 @@ export default function DeliveryLogForm({
                       </button>
                     )}
                   </div>
+                  {itemSizes.length > 0 && (
+                    <div className="mb-2">
+                      <label className="text-xs text-farm-muted">Size</label>
+                      <select
+                        value={line.size_label}
+                        onChange={(e) => updateLine(idx, "size_label", e.target.value)}
+                        disabled={isFinalized}
+                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted"
+                      >
+                        <option value="">No size</option>
+                        {itemSizes.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                        {line.size_label && !itemSizes.includes(line.size_label) && (
+                          <option value={line.size_label}>{line.size_label}</option>
+                        )}
+                      </select>
+                    </div>
+                  )}
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
                       <label className="text-xs text-farm-muted">Qty</label>
