@@ -14,7 +14,12 @@
 //        cached items API endpoint wasn't whitelisting them, so saves
 //        looked like no-ops; v3 forces clients to fetch the new
 //        whitelist code)
-const CACHE_NAME = "press-farm-v3";
+//   v4 → installed PWAs were pinned to a pre-05-09 service worker and
+//        serving a cached app shell with no width=device-width viewport,
+//        so every page rendered desktop-width on iPhone. Bumping the name
+//        makes iOS pick up this (network-first, viewport-correct) worker
+//        on next launch; activate then purges the stale shell.
+const CACHE_NAME = "press-farm-v4";
 
 const PRECACHE_URLS = [
   "/",
