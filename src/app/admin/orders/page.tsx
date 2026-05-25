@@ -174,12 +174,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
         {/* Actions */}
         <div className="pt-2 space-y-3">
-          <Link
-            href={`/admin/orders/harvest?date=${activeDate}`}
-            className="btn-primary flex items-center justify-center min-h-[44px] w-full text-sm font-medium"
-          >
-            View Harvest List
-          </Link>
           {activeDateRecord && (
             <OrderingToggle
               deliveryDateId={activeDateRecord.id}

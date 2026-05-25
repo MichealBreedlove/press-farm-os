@@ -3,8 +3,8 @@
 import { Printer, Share2 } from "lucide-react";
 
 /**
- * PrintButton — triggers window.print() for the harvest list.
- * Also offers native share if available (iOS Safari "Save as PDF").
+ * PrintButton — triggers window.print() for the combined order + harvest
+ * page. Also offers native share if available (iOS Safari "Save as PDF").
  */
 export function PrintButton() {
   async function handleShare() {
@@ -28,7 +28,7 @@ export function PrintButton() {
       <button
         onClick={() => window.print()}
         className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
-        title="Print"
+        title="Print harvest list"
       >
         <Printer className="w-5 h-5" />
       </button>

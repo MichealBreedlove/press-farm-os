@@ -6,13 +6,14 @@ import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
 import { AddExtraRow } from "./AddExtraRow";
 import { ExtrasList } from "./ExtrasList";
-import { HarvestTotalsPanel } from "./HarvestTotalsPanel";
+import { HarvestGrid, type HarvestGridRow, type HarvestGridCategory, type HarvestGridContainer } from "./HarvestGrid";
+import { PrintButton } from "./PrintButton";
 import { SendToReceiverBar } from "./SendToReceiverBar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import Link from "next/link";
-import type { ItemCategory, OrderStatus } from "@/types";
+import type { ItemCategory, OrderStatus, UnitType } from "@/types";
 
 interface AdminOrdersByDatePageProps {
   params: Promise<{ date: string }>;
@@ -97,21 +98,49 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     extrasByRestaurant[order.id] = extras;
   }
 
-  // ── Harvest aggregate + pick progress ──
-  // Roll up every order_item across every restaurant into (item, unit)
-  // buckets so the admin can see what to grab from the field before the
-  // per-restaurant pack split. Also count resolved lines (picked OR
+  // ── Combined harvest grid + pick progress ──
+  // Roll up every order_item across every restaurant into (item, container)
+  // buckets for the harvest grid at the top of the page — what to grab from
+  // the field before the per-restaurant pack split. Per-restaurant
+  // quantities become grid columns. Also count resolved lines (picked OR
   // shorted) so the sticky bottom bar shows real progress.
-  type AggKey = string;
-  const aggMap = new Map<
-    AggKey,
-    { itemName: string; unit: string; total: number; byRestaurant: Map<string, number> }
-  >();
+
+  // Restaurants that placed an order, in a stable harvester-friendly order
+  // (Press → Understudy → Press Bar → others). These drive the grid columns.
+  const harvestOrder = (name: string): number => {
+    const lower = name.toLowerCase();
+    if (lower === "press") return 0;
+    if (lower.includes("under")) return 1;
+    if (lower.includes("bar")) return 2;
+    if (lower.includes("event")) return 3;
+    return 100;
+  };
+  const restaurantsInPlay: { id: string; name: string }[] = [];
+  const seenRestaurantIds = new Set<string>();
+  for (const o of orders) {
+    const r = o.restaurant;
+    if (!r?.id || seenRestaurantIds.has(r.id)) continue;
+    seenRestaurantIds.add(r.id);
+    restaurantsInPlay.push({ id: r.id, name: r.name });
+  }
+  restaurantsInPlay.sort((a, b) => {
+    const oa = harvestOrder(a.name);
+    const ob = harvestOrder(b.name);
+    if (oa !== ob) return oa - ob;
+    return a.name.localeCompare(b.name);
+  });
+
+  // (item_id, container) → row with per-restaurant columns. Different
+  // containers of the same crop become separate rows; regular + events lines
+  // for the same crop sum together (you pick the combined total).
+  type AggRow = HarvestGridRow & { category: ItemCategory };
+  const itemMap = new Map<string, AggRow>();
   let totalLines = 0;
   let resolvedLines = 0;
   let submittedOrderCount = 0;
   for (const order of orders) {
     if (order.status === "submitted") submittedOrderCount += 1;
+    const restaurantId = order.restaurant?.id;
     for (const oi of order.order_items ?? []) {
       const item = oi.availability_item?.item;
       if (!item) continue;
@@ -121,38 +150,69 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       // line for receiver hand-off.
       if (oi.picked_at || oi.is_shorted) resolvedLines += 1;
 
-      const lineUnit = (oi.unit_type ?? "").trim().toLowerCase() ||
-        (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea");
+      const lineUnit = ((oi.unit_type ?? "").trim().toLowerCase() ||
+        (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea")) as UnitType;
       const qty = oi.is_shorted ? Number(oi.quantity_fulfilled ?? 0) : Number(oi.quantity_requested ?? 0);
-      if (qty <= 0) continue;
+      if (qty <= 0 || !restaurantId) continue;
 
       const key = `${item.id}|${lineUnit}`;
-      const restaurantName = order.restaurant?.name ?? "?";
-      const existing = aggMap.get(key);
-      if (existing) {
-        existing.total += qty;
-        existing.byRestaurant.set(
-          restaurantName,
-          (existing.byRestaurant.get(restaurantName) ?? 0) + qty,
-        );
-      } else {
-        aggMap.set(key, {
-          itemName: item.name,
+      let row = itemMap.get(key);
+      if (!row) {
+        row = {
+          itemId: item.id,
+          name: item.name,
+          category: (item.category ?? "other") as ItemCategory,
           unit: lineUnit,
-          total: qty,
-          byRestaurant: new Map([[restaurantName, qty]]),
-        });
+          qtyByRestaurant: {},
+          total: 0,
+        };
+        itemMap.set(key, row);
       }
+      row.qtyByRestaurant[restaurantId] = (row.qtyByRestaurant[restaurantId] ?? 0) + qty;
+      row.total += qty;
     }
   }
-  const harvestRows = [...aggMap.values()]
-    .map((r) => ({
-      itemName: r.itemName,
-      unit: r.unit,
-      total: r.total,
-      byRestaurant: [...r.byRestaurant.entries()].map(([name, qty]) => ({ name, qty })),
-    }))
-    .sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+  // Group harvest rows by category (CATEGORY_ORDER), alphabetical within each.
+  const harvestByCategory: Record<string, HarvestGridRow[]> = {};
+  for (const row of itemMap.values()) {
+    if (!harvestByCategory[row.category]) harvestByCategory[row.category] = [];
+    harvestByCategory[row.category].push(row);
+  }
+  for (const cat of Object.keys(harvestByCategory)) {
+    harvestByCategory[cat].sort((a, b) => a.name.localeCompare(b.name));
+  }
+  const harvestCategories: HarvestGridCategory[] = CATEGORY_ORDER
+    .filter((c) => harvestByCategory[c])
+    .map((c) => ({ key: c, rows: harvestByCategory[c] }));
+
+  // Container calculator — how many of each vessel to grab, by unit total.
+  const CONTAINER_MAP: Record<string, { label: string; icon: string }> = {
+    lg: { label: "Large To-Go", icon: "📦" },
+    sm: { label: "Small To-Go", icon: "📦" },
+    lbs: { label: "Green Bin", icon: "🟩" },
+    bx: { label: "Box", icon: "📦" },
+    bu: { label: "Bunch", icon: "🌿" },
+    qt: { label: "Quart", icon: "🥤" },
+    pt: { label: "Pint", icon: "🥤" },
+    cs: { label: "Case", icon: "📦" },
+    kit: { label: "Kit", icon: "🧰" },
+  };
+  const containerCounts: Record<string, HarvestGridContainer> = {};
+  for (const row of itemMap.values()) {
+    if (row.unit === "ea") continue;
+    const c = CONTAINER_MAP[row.unit];
+    if (!c) continue;
+    if (!containerCounts[row.unit]) {
+      containerCounts[row.unit] = { unit: row.unit, label: c.label, count: 0, icon: c.icon };
+    }
+    containerCounts[row.unit].count += row.total;
+  }
+  const harvestContainers = Object.values(containerCounts)
+    .filter((v) => v.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  const harvestItemCount = itemMap.size;
 
   // Per-order picked counts for the restaurant-card header badges
   const orderProgress = new Map<string, { picked: number; total: number; shorted: number }>();
@@ -167,37 +227,58 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
 
   return (
     <main>
-      <header className="page-header sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/orders"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
-            aria-label="Back to orders"
-          >
-            ←
-          </Link>
-          <h1 className="page-title">Orders</h1>
+      <header className="page-header sticky top-0 z-30 print:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/admin/orders"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
+              aria-label="Back to orders"
+            >
+              ←
+            </Link>
+            <h1 className="page-title">Orders</h1>
+          </div>
+          <PrintButton />
         </div>
       </header>
-      <EditorialHero
-        eyebrow={formatDeliveryDate(date)}
-        title="Order Detail"
-        subtitle={`${orders.length} restaurant${orders.length !== 1 ? "s" : ""} ordering for this date`}
-        flower="squash-blossom"
-        backHref="/admin/orders"
-      />
+      <div className="print:hidden">
+        <EditorialHero
+          eyebrow={formatDeliveryDate(date)}
+          title="Order Detail"
+          subtitle={`${orders.length} restaurant${orders.length !== 1 ? "s" : ""} ordering for this date`}
+          flower="squash-blossom"
+          backHref="/admin/orders"
+        />
+      </div>
 
-      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6 pb-32">
-        {/* Combined harvest totals — collapsible card at the very top.
-            Shows what to grab from the field before the per-restaurant
-            pack split. Print link opens the dedicated harvest-list page
-            for the paper-friendly version. */}
-        {harvestRows.length > 0 && (
-          <HarvestTotalsPanel
-            rows={harvestRows}
-            printHref={`/admin/orders/harvest?date=${date}`}
+      {/* Print-only header — the combined page prints as the harvest list. */}
+      <div className="hidden print:block px-4 py-4">
+        <h1 className="text-xl font-bold">HARVEST LIST — {formatDeliveryDate(date)}</h1>
+        <p className="text-sm text-farm-muted/90">
+          {harvestItemCount} item{harvestItemCount === 1 ? "" : "s"}
+          {restaurantsInPlay.length > 0 && (
+            <> · {restaurantsInPlay.map((r) => r.name).join(" / ")}</>
+          )}
+        </p>
+      </div>
+
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6 pb-32 print:py-2 print:space-y-4">
+        {/* Combined harvest grid — what to grab from the field before the
+            per-restaurant pack split. One row per (crop, container) with a
+            column per restaurant. This is the print artifact; the
+            interactive per-restaurant workflow below is hidden on print. */}
+        {harvestItemCount > 0 && (
+          <HarvestGrid
+            restaurants={restaurantsInPlay}
+            categories={harvestCategories}
+            containers={harvestContainers}
           />
         )}
+
+        {/* Interactive per-restaurant workflow — screen only. Printing the
+            page produces just the harvest grid above. */}
+        <div className="print:hidden space-y-6">
         {/* Empty-receiver banner — shown only when there are orders to pick
             (otherwise it'd be noise on a "no orders yet" date). Surfaces
             the gap BEFORE pick-and-pack starts so admin can invite a
@@ -396,18 +477,21 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
             </section>
           );
         })}
+        </div>
 
       </div>
 
       {/* Sticky hand-off bar — only renders when there are orders to
           process. Tracks pick + shortage progress and fires the
-          send-to-receiver flow (status bump + email). */}
-      <SendToReceiverBar
-        date={date}
-        totalLines={totalLines}
-        resolvedLines={resolvedLines}
-        submittedOrderCount={submittedOrderCount}
-      />
+          send-to-receiver flow (status bump + email). Screen only. */}
+      <div className="print:hidden">
+        <SendToReceiverBar
+          date={date}
+          totalLines={totalLines}
+          resolvedLines={resolvedLines}
+          submittedOrderCount={submittedOrderCount}
+        />
+      </div>
     </main>
   );
 }
