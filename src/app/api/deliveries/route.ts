@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       id, delivery_date, status, total_value, notes, created_at,
       restaurants ( id, name ),
       delivery_items (
-        id, quantity, unit, unit_price, line_total,
+        id, quantity, unit, unit_price, line_total, size_label,
         items ( id, name, category )
       )
     `)
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     delivery_date: string;
     restaurant_id: string;
     notes?: string;
-    items: { item_id: string; quantity: number; unit: string; unit_price: number; is_bonus?: boolean; bonus_note?: string | null }[];
+    items: { item_id: string; quantity: number; unit: string; unit_price: number; size_label?: string | null; is_bonus?: boolean; bonus_note?: string | null }[];
   };
   try {
     body = await request.json();
@@ -154,6 +154,7 @@ export async function POST(request: Request) {
     quantity: item.quantity,
     unit: item.unit,
     unit_price: item.unit_price,
+    size_label: item.size_label?.trim() || null,
     is_bonus: item.is_bonus ?? false,
     bonus_note: item.bonus_note ?? null,
   }));

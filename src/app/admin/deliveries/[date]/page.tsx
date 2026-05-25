@@ -31,7 +31,7 @@ export default async function AdminDeliveryLogPage({
   // so admins don't see them when adding new lines.
   const { data: items } = await (admin as any)
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, size, is_archived")
     .order("category")
     .order("name");
 
@@ -41,7 +41,7 @@ export default async function AdminDeliveryLogPage({
     .select(`
       id, restaurant_id, status, notes, total_value,
       delivery_items (
-        id, item_id, quantity, unit, unit_price, line_total, is_bonus, bonus_note
+        id, item_id, quantity, unit, unit_price, line_total, size_label, is_bonus, bonus_note
       )
     `)
     .eq("delivery_date", date);
@@ -53,7 +53,7 @@ export default async function AdminDeliveryLogPage({
     .select(`
       id, restaurant_id, status,
       order_items (
-        quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type,
+        quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type, size_label,
         availability_items (
           item:items (id, name, unit_type, default_price, unit_prices)
         )
@@ -92,6 +92,7 @@ export default async function AdminDeliveryLogPage({
         quantity_fulfilled: oi.quantity_fulfilled,
         unit: chosenUnit,
         unit_price: oi.unit_price_at_order ?? fallbackPrice,
+        size_label: oi.size_label ?? null,
       };
     }).filter((oi: any) => oi.item_id),
   }));

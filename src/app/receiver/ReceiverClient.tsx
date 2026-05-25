@@ -63,6 +63,14 @@ interface Props {
   deliveries: any[];
 }
 
+/** A line is "for events" only when the item is event-flagged AND withheld
+ *  from the regular menu. Items shown in both menus (the order form lists
+ *  them in Regular and Events alike) are normal order lines, not set-asides —
+ *  matches OrderForm's `show_in_regular_menu !== false` regular-menu rule. */
+function isEventOnly(item: any): boolean {
+  return Boolean(item?.is_event_item) && item?.show_in_regular_menu === false;
+}
+
 const STATUS_META: Record<Status, { label: string; pill: string; icon: string; sortOrder: number }> = {
   short:   { label: "Short",   pill: "bg-pf-master-orange/[0.12] text-pf-master-orange",   icon: "⚠", sortOrder: 0 },
   pending: { label: "Pending", pill: "bg-amber-50 text-amber-700",                          icon: "•", sortOrder: 1 },
@@ -122,7 +130,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
           sizeLabel,
           colorKey,
           imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
-          isEvent: Boolean(item.is_event_item),
+          isEvent: isEventOnly(item),
           ordered,
           delivered: fulfilled ?? 0,
           status: isShortedFlag ? "short" : "pending",
@@ -133,55 +141,100 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         });
       }
 
-      // Pass 2 — overlay delivery_items. Deliveries don't carry size/color
-      // today, so fall back to "any line for this item under the same unit"
-      // when there isn't a (item, unit, null, null) bucket.
+      // Pass 2 — overlay deliveries. Deliveries now carry size_label
+      // (migration 050), so a delivery line is credited straight to the
+      // matching (item, unit, size) order line. Legacy / size-less rows have
+      // no size and get pooled across the item+unit's ordered sizes, then
+      // distributed below — historical data keeps reconciling.
+      const deliveredPool = new Map<string, number>(); // `${itemId}__${unit}` -> unmatched qty
+      const norm = (s: string | null | undefined) => (s ?? "").toString().trim().toLowerCase();
+
       for (const di of delivery?.delivery_items ?? []) {
         const item = di.items;
         if (!item) continue;
         const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "";
         const delivered = Number(di.quantity ?? 0);
-        const exactKey = buildKey(item.id, unit, null, null);
-        let existing = lines.get(exactKey);
-        if (!existing) {
-          for (const line of lines.values()) {
-            if (line.itemId === item.id && line.unit === unit && line.status === "pending") {
-              existing = line;
-              break;
-            }
+        const size = norm(di.size_label);
+        const groupKey = `${item.id}__${unit}`;
+
+        const groupLines = Array.from(lines.values()).filter(
+          (l) => l.kind === "order_item" && l.itemId === item.id && l.unit === unit,
+        );
+
+        if (groupLines.length === 0) {
+          // Delivered but never ordered → extra. Sum repeated lines for the
+          // same item+unit; there's no order_item to attach the check to.
+          const extraKey = buildKey(item.id, unit, null, null);
+          const extra = lines.get(extraKey);
+          if (extra && extra.kind === "delivery_item") {
+            extra.delivered += delivered;
+          } else {
+            lines.set(extraKey, {
+              lineKey: extraKey,
+              itemId: item.id,
+              itemName: item.name,
+              category: item.category,
+              unit,
+              sizeLabel: di.size_label ?? null,
+              colorKey: null,
+              imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
+              isEvent: isEventOnly(item),
+              ordered: 0,
+              delivered,
+              status: "extra",
+              shortageReason: null,
+              dbId: di.id,
+              kind: "delivery_item",
+              receivedAt: di.received_at ?? null,
+            });
           }
+          continue;
         }
 
-        if (!existing) {
-          // Delivered but never ordered → extra. Stored on delivery_item
-          // since there's no order_item to attach the receiver check to.
-          lines.set(exactKey, {
-            lineKey: exactKey,
-            itemId: item.id,
-            itemName: item.name,
-            category: item.category,
-            unit,
-            sizeLabel: null,
-            colorKey: null,
-            imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
-            isEvent: Boolean(item.is_event_item),
-            ordered: 0,
-            delivered,
-            status: "extra",
-            shortageReason: null,
-            dbId: di.id,
-            kind: "delivery_item",
-            receivedAt: di.received_at ?? null,
-          });
+        // Credit an exact size match when the farm logged one; otherwise pool
+        // the quantity across the item+unit group.
+        const exact = size ? groupLines.find((l) => norm(l.sizeLabel) === size) : undefined;
+        if (exact) {
+          exact.delivered += delivered;
         } else {
-          // Sum if multiple delivery lines for the same item
-          existing.delivered += delivered;
-          if (existing.delivered >= existing.ordered) {
-            existing.status = "ready";
-            existing.shortageReason = null;
-          } else if (existing.delivered > 0) {
-            existing.status = "short";
-          }
+          deliveredPool.set(groupKey, (deliveredPool.get(groupKey) ?? 0) + delivered);
+        }
+      }
+
+      // Distribute each size-less pool across its group's unmet need, biggest
+      // shortfall first; the last line absorbs any surplus so over-delivery
+      // still reads ready.
+      for (const [groupKey, pooled] of deliveredPool) {
+        const splitAt = groupKey.lastIndexOf("__");
+        const itemId = groupKey.slice(0, splitAt);
+        const unit = groupKey.slice(splitAt + 2);
+        const group = Array.from(lines.values())
+          .filter((l) => l.kind === "order_item" && l.itemId === itemId && l.unit === unit)
+          .sort((a, b) => (b.ordered - b.delivered) - (a.ordered - a.delivered));
+
+        let remaining = pooled;
+        group.forEach((line, idx) => {
+          const need = Math.max(0, line.ordered - line.delivered);
+          const give = idx === group.length - 1 ? remaining : Math.min(remaining, need);
+          line.delivered += give;
+          remaining -= give;
+        });
+      }
+
+      // Final status. "Pending" means the farm hasn't logged this
+      // restaurant's delivery yet; once a delivery row exists an ordered line
+      // is ready (covered) or short (partial / didn't arrive). An admin-flagged
+      // shortage from pass 1 stays short even with no delivery row.
+      const hasDeliveryRow = Boolean(delivery);
+      for (const line of lines.values()) {
+        if (line.kind !== "order_item") continue;
+        if (line.ordered > 0 && line.delivered >= line.ordered) {
+          line.status = "ready";
+          line.shortageReason = null;
+        } else if (line.delivered > 0 || hasDeliveryRow) {
+          line.status = "short";
+        } else if (line.status !== "short") {
+          line.status = "pending";
         }
       }
 
