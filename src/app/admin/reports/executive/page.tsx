@@ -323,7 +323,7 @@ export default async function AdminExecutiveReportsPage() {
             </a>
             <h1 className="page-title">Executive Summary</h1>
           </div>
-          <PrintButton />
+          <PrintButton label="Download PDF" />
         </div>
       </header>
       <EditorialHero
