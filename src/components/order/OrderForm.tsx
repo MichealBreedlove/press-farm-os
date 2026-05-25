@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
+import { CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
@@ -32,6 +32,12 @@ interface OrderFormProps {
   editingOrderId?: string;
 }
 
+/** Which order-form section a line was placed in. Drives the quantity-key
+ *  prefix and persists to order_items.menu_section so Regular vs Events stay
+ *  separate. 'press_bar' lines never collide with the others, so they persist
+ *  as NULL (same as 'regular'). */
+export type MenuSection = "regular" | "events" | "press_bar";
+
 export interface OrderFormData {
   restaurantId: string;
   restaurantName: string;
@@ -45,6 +51,8 @@ export interface OrderFormData {
     sizeLabel: string | null;
     /** Comma-separated colors selected for this line ("red,blue"). null when none. */
     colorKey: string | null;
+    /** Order-form section this line came from. */
+    menuSection: MenuSection;
     quantity: number;
     unitPrice: number | null;
     itemNote: string;
@@ -113,6 +121,9 @@ export function OrderForm({
         else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
         else if (size) key = `${aiId}__${size}`;
         else key = aiId;
+        // Events-section lines live under a prefixed key so they stay
+        // independent of the Regular-section line for the same item.
+        if (it.menuSection === "events") key = `${EVENT_MENU_KEY_PREFIX}${key}`;
         restoredQuantities[key] = (restoredQuantities[key] ?? 0) + Number(it.quantity ?? 0);
         if (it.colorKey) {
           restoredColors[key] = String(it.colorKey).split(",").filter(Boolean);
@@ -149,6 +160,17 @@ export function OrderForm({
   // capitalization tweak still all route to the same gate.
   const isPressBarChef = restaurantName.trim().toLowerCase() === "press bar";
 
+  // An item flagged for both the Regular and Events menus renders in BOTH
+  // sections. To keep the two quantities independent (and submit them as two
+  // separate order lines) the Events-section copy is keyed under a prefixed
+  // synthetic id. Every quantity/color/note key in ItemRow derives from
+  // `ai.id`, so cloning the row with a prefixed id is all it takes — no
+  // changes needed downstream of here.
+  const asEventKeyAi = (ai: AvailabilityItemWithItem): AvailabilityItemWithItem =>
+    ({ ...ai, id: `${EVENT_MENU_KEY_PREFIX}${ai.id}` });
+  const realAvailId = (id: string): string =>
+    id.startsWith(EVENT_MENU_KEY_PREFIX) ? id.slice(EVENT_MENU_KEY_PREFIX.length) : id;
+
   // Independent menu visibility — each section asks "is the item flagged
   // for this menu?" with no cross-menu exclusion. An item with all three
   // flags appears in all three sections; an item with only Events flagged
@@ -163,10 +185,26 @@ export function OrderForm({
     : [];
   const eventItems = isPressBarChef
     ? []
-    : visibleItems.filter((ai) => (ai.item as any).is_event_item);
+    : visibleItems.filter((ai) => (ai.item as any).is_event_item).map(asEventKeyAi);
   const regularItems = isPressBarChef
     ? []
     : visibleItems.filter((ai) => (ai.item as any).show_in_regular_menu !== false);
+
+  // Flat list of every (item, section) pair the chef can order, computed from
+  // the UNFILTERED catalog so search never drops an in-progress quantity.
+  // Mirrors the section membership above; the Events copy carries the prefixed
+  // id so its keys diverge from the Regular copy's.
+  type KeyedSource = { ai: AvailabilityItemWithItem; section: MenuSection };
+  const orderedSources: KeyedSource[] = isPressBarChef
+    ? allAvailable
+        .filter((ai) => (ai.item as any).is_press_bar_item)
+        .map((ai) => ({ ai, section: "press_bar" as const }))
+    : allAvailable.flatMap((ai) => {
+        const sources: KeyedSource[] = [];
+        if ((ai.item as any).show_in_regular_menu !== false) sources.push({ ai, section: "regular" });
+        if ((ai.item as any).is_event_item) sources.push({ ai: asEventKeyAi(ai), section: "events" });
+        return sources;
+      });
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
@@ -216,14 +254,14 @@ export function OrderForm({
     }
   }
 
-  // Check if any item has quantity > 0 (across ALL items, not just searched)
-  const hasAnyOrdered = allAvailable.some((ai) => {
+  // Check if any item has quantity > 0 (across ALL items + sections, not just searched)
+  const hasAnyOrdered = orderedSources.some(({ ai }) => {
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) return true;
     return false;
   });
 
   // Total order lines with quantity > 0
-  const orderedCount = allAvailable.reduce((count, ai) => {
+  const orderedCount = orderedSources.reduce((count, { ai }) => {
     let n = 0;
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) n++;
     return count + n;
@@ -232,17 +270,18 @@ export function OrderForm({
   function handleReview() {
     const orderedItems: OrderFormData["items"] = [];
 
-    // Use allAvailable so search doesn't hide ordered items
-    for (const ai of allAvailable) {
+    // Iterate every (item, section) pair so an item ordered under both the
+    // Regular and Events menus produces two distinct lines.
+    for (const { ai, section } of orderedSources) {
       const itemNote = itemNotes[ai.id] ?? "";
 
       for (const { key, unit, size } of enumerateKeys(ai)) {
         const qty = quantities[key] ?? 0;
         if (qty <= 0) continue;
 
-        // Suffix the displayed name with unit + size when present
+        // Suffix the displayed name with unit + size + section when present
         const unitLabel = unit ? ((UNIT_LABELS as Record<string, string>)[unit] ?? unit.toUpperCase()) : null;
-        const suffixParts = [unitLabel, size].filter(Boolean) as string[];
+        const suffixParts = [unitLabel, size, section === "events" ? "Events" : null].filter(Boolean) as string[];
         const itemName = suffixParts.length > 0 ? `${ai.item.name} (${suffixParts.join(" · ")})` : ai.item.name;
 
         // Colors live at the same key as the qty
@@ -262,11 +301,12 @@ export function OrderForm({
         const unitPrice = priceForUnit(ai.item, unitForOrder);
 
         orderedItems.push({
-          availabilityItemId: ai.id,
+          availabilityItemId: realAvailId(ai.id),
           itemName,
           unitType: unitForOrder,
           sizeLabel: size ?? null,
           colorKey,
+          menuSection: section,
           quantity: qty,
           unitPrice,
           itemNote: note,

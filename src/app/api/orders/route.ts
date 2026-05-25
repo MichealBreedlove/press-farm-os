@@ -83,6 +83,9 @@ export async function POST(request: Request) {
       size_label?: string | null;
       /** Comma-separated colors selected for this line ("red,blue"). null when none. */
       color_key?: string | null;
+      /** Order-form section the line came from. 'events' keeps an Events-menu
+       *  line distinct from the Regular-menu line for the same item. */
+      menu_section?: string | null;
     }[];
     freeform_notes?: string;
     /** When set, this is an explicit edit — replace existing items.
@@ -273,6 +276,9 @@ export async function POST(request: Request) {
       const info = availInfoMap.get(item.availability_item_id);
       const chosenUnit =
         (item.unit_type ?? null) || info?.firstUnit || null;
+      // Only 'events' is persisted as a discriminator; Regular and Press Bar
+      // lines store NULL (Press Bar never collides with the others).
+      const menuSection = item.menu_section === "events" ? "events" : null;
       return {
         order_id: order.id,
         availability_item_id: item.availability_item_id,
@@ -281,6 +287,7 @@ export async function POST(request: Request) {
         unit_type: chosenUnit,
         size_label: item.size_label ?? null,
         color_key: item.color_key ?? null,
+        menu_section: menuSection,
       };
     });
 
@@ -292,10 +299,10 @@ export async function POST(request: Request) {
     // Merge: sum qty into matching existing lines (same availId+unit+size+color);
     // anything unmatched is appended. Existing untouched lines stay put.
     const lineKey = (l: any) =>
-      `${l.availability_item_id}|${l.unit_type ?? ""}|${l.size_label ?? ""}|${l.color_key ?? ""}`;
+      `${l.availability_item_id}|${l.unit_type ?? ""}|${l.size_label ?? ""}|${l.color_key ?? ""}|${l.menu_section ?? ""}`;
 
     const { data: existingItems } = await (supabase.from("order_items") as any)
-      .select("id, availability_item_id, unit_type, size_label, color_key, quantity_requested")
+      .select("id, availability_item_id, unit_type, size_label, color_key, menu_section, quantity_requested")
       .eq("order_id", order.id);
 
     const existingByKey = new Map<string, any>();
@@ -379,8 +386,9 @@ export async function POST(request: Request) {
       // for the email line. The actual ordered unit is stored on the line
       // item itself (via the OrderForm's enumerateKeys flow).
       const unitFirst = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
+      const baseName = item?.name ?? "Unknown item";
       return {
-        itemName: item?.name ?? "Unknown item",
+        itemName: (oi as any).menu_section === "events" ? `${baseName} (Events)` : baseName,
         quantity: oi.quantity_requested,
         unit: unitFirst,
       };

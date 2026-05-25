@@ -49,6 +49,7 @@ export default async function OrderDetailPage({
         unit_type,
         size_label,
         color_key,
+        menu_section,
         availability_items(
           id,
           status,
@@ -172,6 +173,7 @@ export default async function OrderDetailPage({
               const unit = (persistedUnit ?? String(item.unit_type ?? "").split(",")[0]?.trim() ?? "") as UnitType;
               const sizeLabel: string | null = oi.size_label ?? null;
               const colorKey: string | null = oi.color_key ?? null;
+              const isEvent = oi.menu_section === "events";
               const ordered = Number(oi.quantity_requested ?? 0);
               const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
               const isShorted = Boolean(oi.is_shorted);
@@ -200,6 +202,11 @@ export default async function OrderDetailPage({
                             </span>
                           )}
                         </p>
+                        {isEvent && (
+                          <span className="text-[9px] tracking-wider uppercase bg-pf-master-violet/[0.12] text-pf-master-violet px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                            Events
+                          </span>
+                        )}
                         {status === "short" && (
                           <span className="text-[9px] tracking-wider uppercase bg-pf-master-orange/[0.12] text-pf-master-orange px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
                             Short

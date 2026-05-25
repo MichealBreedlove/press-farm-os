@@ -8,6 +8,20 @@
 import type { ItemCategory, UnitType, AvailabilityStatus, OrderStatus, DeliveryStatus } from "@/types";
 
 // ============================================
+// Order-form quantity keys
+// ============================================
+
+/**
+ * Prefix that distinguishes an Events-Menu quantity key from the Regular-Menu
+ * key for the SAME availability item. An item flagged both is_event_item and
+ * show_in_regular_menu renders in both sections; without this prefix the two
+ * would share one quantity and collapse into a single order line. Persisted
+ * as order_items.menu_section = 'events' (migration 057) so the split
+ * round-trips through edit + merge.
+ */
+export const EVENT_MENU_KEY_PREFIX = "evt::";
+
+// ============================================
 // Item Categories
 // ============================================
 

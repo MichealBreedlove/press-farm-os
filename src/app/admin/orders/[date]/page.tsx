@@ -35,7 +35,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
       order_items(
-        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, picked_at,
+        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, menu_section, picked_at,
         availability_item:availability_items(
           id,
           item:items(id, name, category, unit_type)
@@ -355,6 +355,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                                   .filter(Boolean)[0] ||
                                 "",
                               sizeLabel: oi.size_label ?? null,
+                              isEvent: oi.menu_section === "events",
                               quantityRequested: oi.quantity_requested,
                               quantityFulfilled: oi.quantity_fulfilled,
                               isShorted: oi.is_shorted,

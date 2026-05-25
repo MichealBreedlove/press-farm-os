@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate } from "@/lib/utils";
+import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
@@ -69,7 +70,7 @@ export default async function OrderPage({
       .select(`
         id, delivery_date, freeform_notes, status,
         order_items(
-          quantity_requested, unit_type, size_label, color_key,
+          quantity_requested, unit_type, size_label, color_key, menu_section,
           availability_items(id, item:items(unit_type))
         )
       `)
@@ -101,6 +102,10 @@ export default async function OrderPage({
         } else {
           key = aiId;
         }
+        // Events-section lines hydrate under the prefixed key so the form
+        // renders them in the Events Menu copy, independent of any Regular
+        // line for the same item.
+        if (oi.menu_section === "events") key = `${EVENT_MENU_KEY_PREFIX}${key}`;
 
         initialQuantities[key] = (initialQuantities[key] ?? 0) + Number(oi.quantity_requested ?? 0);
         if (oi.color_key) {

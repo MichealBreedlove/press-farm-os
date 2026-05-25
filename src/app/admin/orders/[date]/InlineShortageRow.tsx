@@ -13,6 +13,8 @@ interface OrderItemForRow {
   unitType: string;
   /** Per-line size label (e.g. "Tiny", "Bronze") if the chef picked one. */
   sizeLabel?: string | null;
+  /** True when this line was ordered under the Events Menu (vs Regular). */
+  isEvent?: boolean;
   quantityRequested: number;
   quantityFulfilled: number | null;
   isShorted: boolean;
@@ -211,6 +213,11 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
             }`}
           >
             {orderItem.itemName}
+            {orderItem.isEvent && (
+              <span className="ml-1.5 align-middle text-[9px] tracking-wider uppercase bg-pf-master-violet/[0.12] text-pf-master-violet px-1.5 py-0.5 rounded font-semibold">
+                Events
+              </span>
+            )}
           </p>
           {isShorted && orderItem.shortageReason && !expanded && (
             <p className="text-xs text-orange-600 mt-0.5">{orderItem.shortageReason}</p>

@@ -63,6 +63,7 @@ export default function OrderReviewPage() {
             unit_type: item.unitType,
             size_label: item.sizeLabel,
             color_key: item.colorKey,
+            menu_section: item.menuSection,
           })),
           freeform_notes: freeformNotes || undefined,
           // Tells the API "this is an explicit edit — replace items".
