@@ -63,7 +63,7 @@ export function DemandGrid({ crops, restaurants, demand }: Props) {
       <table className="min-w-full text-sm">
         <thead>
           <tr>
-            <th className="text-left p-2">Crop</th>
+            <th className="text-left p-2 sticky left-0 bg-white z-10">Crop</th>
             {columns.map((c, i) => (
               <th key={i} className="p-2 text-xs whitespace-nowrap">{c.label}</th>
             ))}
@@ -72,7 +72,7 @@ export function DemandGrid({ crops, restaurants, demand }: Props) {
         <tbody>
           {crops.map((c) => (
             <tr key={c.id} className="border-t border-farm-muted/15">
-              <td className="p-2 font-medium whitespace-nowrap">{c.name}</td>
+              <td className="p-2 font-medium whitespace-nowrap sticky left-0 bg-white z-10">{c.name}</td>
               {columns.map((col, i) => {
                 const rows = rowsFor(c.id, col.restaurant?.id ?? null, col.dow);
                 const summary = summarizeCell(rows);
@@ -100,7 +100,7 @@ export function DemandGrid({ crops, restaurants, demand }: Props) {
         </tbody>
       </table>
       <p className="text-xs text-farm-muted mt-4">
-        Click a cell to set per-unit demand (LG / SM / EA / GB) for that crop × restaurant × delivery day.
+        Click a cell to set per-unit demand (LG / SM / EA) for that crop × restaurant × delivery day.
         Empty cells mean no manual target.
       </p>
 
@@ -134,7 +134,7 @@ function CellEditor({
     const row = existing.find((r) => r.target_unit === u);
     acc[u] = row ? String(row.target_quantity ?? "") : "";
     return acc;
-  }, { lg: "", sm: "", ea: "", gb: "" });
+  }, { lg: "", sm: "", ea: "" } as Record<YieldUnit, string>);
 
   const [values, setValues] = useState<Record<YieldUnit, string>>(initial);
   const [saving, setSaving] = useState(false);

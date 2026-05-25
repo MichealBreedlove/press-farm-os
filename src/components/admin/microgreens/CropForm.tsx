@@ -139,7 +139,7 @@ export function CropForm({ initial, items }: Props) {
         <p className="text-xs text-farm-muted leading-relaxed">
           Alternatives model: one tray yields the LG count <span className="font-medium">or</span> the SM count <span className="font-medium">or</span> the EA count, depending on packing decision. Leave any unit blank if you don't pack this crop in that size.
         </p>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {YIELD_UNITS.map((u) => (
             <label key={u} className="block">
               <span className="block text-xs text-farm-muted">{YIELD_UNIT_LABELS[u]} per tray</span>
