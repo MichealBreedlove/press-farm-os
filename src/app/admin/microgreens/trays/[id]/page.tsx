@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { StageBadge } from "@/components/admin/microgreens/StageBadge";
 import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
+import { harvestUnitLabel } from "@/lib/microgreens/types";
+
+function fmtQty(n: number): string {
+  return n % 1 === 0 ? String(n) : n.toFixed(1);
+}
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +27,15 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
     .order("harvested_at", { ascending: false });
 
   const crop = tray.batch?.crop;
-  const totalYield = (harvests ?? []).reduce((s: number, h: any) => s + Number(h.yield_oz), 0);
+  // Sum harvests per unit — mixing oz and LG/SM/EA into one number is meaningless.
+  const totalsByUnit: Record<string, number> = {};
+  for (const h of harvests ?? []) {
+    const label = harvestUnitLabel(h.unit);
+    totalsByUnit[label] = (totalsByUnit[label] ?? 0) + Number(h.yield_oz);
+  }
+  const totalsLabel = Object.entries(totalsByUnit)
+    .map(([u, q]) => `${fmtQty(q)} ${u}`)
+    .join(" · ");
 
   return (
     <main className="pb-24">
@@ -42,7 +55,7 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
 
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-2">
-            Harvest history ({totalYield.toFixed(1)} oz total)
+            Harvest history{totalsLabel ? ` (${totalsLabel} total)` : ""}
           </h2>
           {(harvests ?? []).length === 0 ? (
             <p className="text-sm text-farm-muted">No harvests logged yet.</p>
@@ -51,7 +64,7 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
               {(harvests ?? []).map((h: any) => (
                 <li key={h.id} className="p-2 bg-white rounded border border-farm-muted/15 flex justify-between">
                   <span>{new Date(h.harvested_at).toLocaleString()}</span>
-                  <span className="font-medium">{h.yield_oz} oz</span>
+                  <span className="font-medium">{h.yield_oz} {harvestUnitLabel(h.unit)}</span>
                   <span className="text-xs text-farm-muted">
                     {h.delivery?.delivery_date ?? "unassigned"}
                   </span>

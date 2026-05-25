@@ -47,11 +47,28 @@ export function DashboardClient({
   return (
     <>
       {overdueCount > 0 && (
-        <div className="p-3 rounded bg-red-50 border border-red-400 text-red-800 text-sm">
-          ⚠ {overdueCount} overdue task{overdueCount > 1 ? "s" : ""}
-          {plan.overdue.sow.length > 0 && ` · ${plan.overdue.sow.length} sow`}
-          {plan.overdue.advance.length > 0 && ` · ${plan.overdue.advance.length} advance`}
-          {plan.overdue.harvest.length > 0 && ` · ${plan.overdue.harvest.length} harvest`}
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+          <div className="flex items-center gap-2 text-sm font-semibold text-red-800">
+            <span aria-hidden>⚠</span>
+            {overdueCount} overdue task{overdueCount > 1 ? "s" : ""}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {plan.overdue.sow.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                {plan.overdue.sow.length} to sow
+              </span>
+            )}
+            {plan.overdue.advance.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                {plan.overdue.advance.length} to advance
+              </span>
+            )}
+            {plan.overdue.harvest.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800">
+                {plan.overdue.harvest.length} to harvest
+              </span>
+            )}
+          </div>
         </div>
       )}
 

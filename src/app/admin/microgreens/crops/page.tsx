@@ -2,7 +2,15 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { Sprout } from "lucide-react";
+import { YIELD_UNITS, YIELD_UNIT_LABELS } from "@/lib/microgreens/types";
 import type { MicrogreenCrop } from "@/types/database";
+
+function formatYield(crop: MicrogreenCrop): string {
+  const yp = (crop.yield_per_tray ?? {}) as Record<string, number>;
+  const parts = YIELD_UNITS.filter((u) => yp[u] != null).map((u) => `${yp[u]} ${YIELD_UNIT_LABELS[u]}`);
+  if (parts.length) return `${parts.join(" / ")} per tray`;
+  return "yield not set";
+}
 
 export default async function CropsListPage() {
   const admin = createAdminClient();
@@ -29,15 +37,21 @@ export default async function CropsListPage() {
             <li key={c.id}>
               <Link
                 href={`/admin/microgreens/crops/${c.id}`}
-                className="block p-3 rounded border border-farm-muted/20 hover:border-farm-green flex items-center gap-3"
+                className="flex items-center gap-3 p-3 rounded border border-farm-muted/20 hover:border-farm-green"
               >
-                <Sprout className="w-5 h-5 text-farm-green" />
-                <div className="flex-1">
-                  <div className="font-medium">{c.name}{c.variety ? ` — ${c.variety}` : ""}</div>
+                <Sprout className="w-5 h-5 text-farm-green shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium">
+                    {c.name}{c.variety ? ` — ${c.variety}` : ""}
+                    {!c.is_active && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wide text-farm-muted border border-farm-muted/30 rounded px-1.5 py-0.5">
+                        inactive
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-farm-muted">
-                    {c.ideal_harvest_day}d total · {c.blackout_days}d blackout · ~{c.expected_yield_oz_per_tray}oz/tray
+                    {c.ideal_harvest_day}d total · {c.blackout_days}d blackout · {formatYield(c)}
                     {c.is_continuous_harvest && " · continuous"}
-                    {!c.is_active && " · inactive"}
                   </div>
                 </div>
               </Link>

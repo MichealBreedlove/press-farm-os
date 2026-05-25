@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { HarvestTask } from "@/lib/microgreens/types";
+import { YIELD_UNITS, YIELD_UNIT_LABELS, type YieldUnit } from "@/lib/microgreens/types";
 
 export function HarvestForm({
   task, deliveries, onClose,
@@ -11,19 +12,25 @@ export function HarvestForm({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [yieldOz, setYieldOz] = useState<string>("");
+  // Units this crop is actually packed in (from yield_per_tray), falling back
+  // to all units so the form is never empty.
+  const cropUnits = YIELD_UNITS.filter((u) => (task.crop.yield_per_tray ?? {})[u] != null);
+  const unitOptions = cropUnits.length > 0 ? cropUnits : YIELD_UNITS;
+  const [quantity, setQuantity] = useState<string>("");
+  const [unit, setUnit] = useState<YieldUnit>(unitOptions[0]);
   const [deliveryId, setDeliveryId] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [isPending, start] = useTransition();
 
   async function submit() {
-    if (!yieldOz || Number(yieldOz) <= 0) return;
+    if (!quantity || Number(quantity) <= 0) return;
     start(async () => {
       const res = await fetch("/api/microgreens/harvests", {
         method: "POST",
         body: JSON.stringify({
           tray_id: task.tray.id,
-          yield_oz: Number(yieldOz),
+          quantity: Number(quantity),
+          unit,
           delivery_id: deliveryId || null,
           notes: notes || null,
         }),
@@ -45,11 +52,22 @@ export function HarvestForm({
           {task.crop.name} · day {task.days_since_sow}
           {task.kind === "continuous-ongoing" && " · continuous harvest"}
         </p>
-        <label className="block mt-4">
-          <span className="block text-sm">Yield (oz)</span>
-          <input type="number" step="0.1" className="input w-full" value={yieldOz}
-            onChange={(e) => setYieldOz(e.target.value)} autoFocus />
-        </label>
+        <div className="mt-4 flex gap-2">
+          <label className="block flex-1">
+            <span className="block text-sm">Yield</span>
+            <input type="number" step="0.1" min="0" className="input w-full" value={quantity}
+              onChange={(e) => setQuantity(e.target.value)} autoFocus />
+          </label>
+          <label className="block w-28">
+            <span className="block text-sm">Unit</span>
+            <select className="input w-full" value={unit}
+              onChange={(e) => setUnit(e.target.value as YieldUnit)}>
+              {unitOptions.map((u) => (
+                <option key={u} value={u}>{YIELD_UNIT_LABELS[u]}</option>
+              ))}
+            </select>
+          </label>
+        </div>
         <label className="block mt-3">
           <span className="block text-sm">Assign to delivery (optional)</span>
           <select className="input w-full" value={deliveryId} onChange={(e) => setDeliveryId(e.target.value)}>

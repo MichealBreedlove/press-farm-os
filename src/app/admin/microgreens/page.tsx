@@ -48,12 +48,22 @@ export default async function MicrogreensDashboardPage() {
         subtitle={`${(crops ?? []).length} crops · ${(trays ?? []).filter((t: any) => !["terminated","lost"].includes(t.status)).length} trays in flight`}
       />
       <div className="px-4 max-w-3xl mx-auto space-y-6">
-        <nav className="flex flex-wrap gap-2 text-sm">
-          <Link href="/admin/microgreens/crops" className="badge-blue">Crops</Link>
-          <Link href="/admin/microgreens/demand" className="badge-blue">Demand</Link>
-          <Link href="/admin/microgreens/trays" className="badge-blue">Trays</Link>
-          <Link href="/admin/microgreens/calendar" className="badge-blue">Calendar</Link>
-          <Link href="/admin/microgreens/harvests" className="badge-blue">Harvests</Link>
+        <nav className="flex flex-wrap gap-2">
+          {([
+            ["Crops", "/admin/microgreens/crops"],
+            ["Demand", "/admin/microgreens/demand"],
+            ["Trays", "/admin/microgreens/trays"],
+            ["Calendar", "/admin/microgreens/calendar"],
+            ["Harvests", "/admin/microgreens/harvests"],
+          ] as const).map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center min-h-[40px] px-3.5 py-2 rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-dark hover:border-farm-green hover:text-farm-green transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
         <DashboardClient
           plan={plan}

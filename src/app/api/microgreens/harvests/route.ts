@@ -23,8 +23,12 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { tray_id, yield_oz, delivery_id, restaurant_id, notes } = body;
-  if (!tray_id || yield_oz == null || yield_oz < 0) {
+  // quantity + unit (lg/sm/ea) is the current model; yield_oz accepted as a
+  // legacy alias. The DB column is still named yield_oz but holds the quantity.
+  const { tray_id, delivery_id, restaurant_id, notes } = body;
+  const quantity = body.quantity ?? body.yield_oz;
+  const unit = body.unit ?? "oz";
+  if (!tray_id || quantity == null || quantity < 0) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
@@ -42,7 +46,7 @@ export async function POST(req: Request) {
   const { data: harvest, error: hErr } = await (admin as any)
     .from("microgreen_harvests")
     .insert({
-      tray_id, yield_oz, unit: "oz",
+      tray_id, yield_oz: quantity, unit,
       delivery_id: delivery_id ?? null,
       restaurant_id: restaurant_id ?? null,
       notes: notes ?? null,

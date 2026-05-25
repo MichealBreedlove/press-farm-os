@@ -24,6 +24,16 @@ export const YIELD_UNIT_LABELS: Record<YieldUnit, string> = {
 };
 
 /**
+ * Display label for a harvest's stored unit. New harvests use lg/sm/ea;
+ * legacy rows (or a null unit) fall back to "oz".
+ */
+export function harvestUnitLabel(unit: string | null | undefined): string {
+  if (!unit) return "oz";
+  const u = unit.toLowerCase();
+  return (YIELD_UNIT_LABELS as Record<string, string>)[u] ?? unit;
+}
+
+/**
  * A single demand line — "8 LG of Pea Shoots needed Monday".
  */
 export type DemandLine = {
