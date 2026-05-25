@@ -1,5 +1,5 @@
 -- ============================================
--- Press Farm OS — Migration 051: Fennel parts, Nasturtium capers, plant-part grouping
+-- Press Farm OS — Migration 054: Fennel parts, Nasturtium capers, plant-part grouping
 --
 -- Per Micheal 2026-05-24:
 --   A. Fennel — clean up 5 tangled records into an umbrella "Fennel"

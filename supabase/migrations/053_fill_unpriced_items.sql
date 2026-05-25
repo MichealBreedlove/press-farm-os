@@ -1,7 +1,7 @@
 -- ============================================
--- Press Farm OS — Migration 050: Fill unpriced items + consolidate Bean→Beans
+-- Press Farm OS — Migration 053: Fill unpriced items + consolidate Bean→Beans
 --
--- Follow-up to 048/049, from the 2026-05-22 catalog audit. Eight items
+-- Follow-up to 051/052, from the 2026-05-22 catalog audit. Eight items
 -- had empty unit_prices (would import future deliveries at $0):
 --
 --   Aptenia          → lg $15,  sm $7.50

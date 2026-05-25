@@ -1,7 +1,7 @@
 -- ============================================
--- Press Farm OS — Migration 049: Item name casing & consolidation
+-- Press Farm OS — Migration 052: Item name casing & consolidation
 --
--- Follow-up to 048. Cleans up lowercase / variant item names surfaced
+-- Follow-up to 051. Cleans up lowercase / variant item names surfaced
 -- while filling in $0 delivery prices (2026-05-22 audit):
 --   - "Ethiopian kale" → "Ethiopian Kale"
 --   - "wild cress"     → "Wild Cress"
@@ -9,7 +9,7 @@
 --   - "forget me nots" → fold into existing "Forget-Me-Nots"
 --   - "pea flower"     → fold into existing "Pea Flowers"
 --
--- Uses the same collision-safe consolidation pattern as 048: where a
+-- Uses the same collision-safe consolidation pattern as 051: where a
 -- canonical target already exists, references are moved (handling the
 -- availability_items + price_catalog UNIQUE keys) and the dup is deleted;
 -- otherwise the item is simply renamed in place.

@@ -1,5 +1,5 @@
 -- ============================================
--- Press Farm OS — Migration 048: Delivery data cleanup
+-- Press Farm OS — Migration 051: Delivery data cleanup
 --
 -- Per Micheal 2026-05-22 audit of pressfarmdeliveries20260522.csv:
 --   - Rename Persimmon Leaf → Persimmon (end-of-season chop-down fruit, not leaves)
