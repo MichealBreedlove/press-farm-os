@@ -237,6 +237,10 @@ export const FROM_ADDRESSES = {
   digest: process.env.RESEND_FROM_DIGEST || "Press Farm Reports <digest@pressfarm.io>",
   /** Sent to weekly labor reviewer */
   timesheet: process.env.RESEND_FROM_TIMESHEET || "Press Farm <timesheet@pressfarm.io>",
+  /** Chefs get the forward-looking availability forecast */
+  forecast: process.env.RESEND_FROM_FORECAST || "Press Farm <availability@pressfarm.io>",
+  /** Partners (e.g. Chef Phil) get the monthly/quarterly partner report */
+  partnerReport: process.env.RESEND_FROM_PARTNER_REPORT || "Press Farm <hello@pressfarm.io>",
   /** Chef gets order confirmation/shortage notices */
   noreply: process.env.RESEND_FROM_NOREPLY || "Press Farm <noreply@pressfarm.io>",
 };

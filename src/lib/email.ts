@@ -14,6 +14,8 @@ import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 import EventRequestAccepted from "@/emails/event-request-accepted";
 import AvailabilityPublished from "@/emails/availability-published";
+import AvailabilityForecast, { type ForecastEmailSection, type ForecastEmailEntry } from "@/emails/availability-forecast";
+import PartnerReport, { type PartnerReportLine } from "@/emails/partner-report";
 
 // ---- Types ----
 
@@ -331,5 +333,128 @@ export async function sendAvailabilityPublishedEmail(
     }) as React.ReactElement,
     fallbackText,
     from: FROM_ADDRESSES.availability,
+  });
+}
+
+export interface AvailabilityForecastEmailParams {
+  toEmail: string;
+  chefName: string;
+  restaurantName: string;
+  /** Already-formatted reference date label, e.g. "Monday, May 26". */
+  asOfDate: string;
+  sections: ForecastEmailSection[];
+}
+
+/**
+ * Sent to each chef with a forward-looking crop availability forecast — what's
+ * harvestable now and what's coming over the next ~2 months, field + microgreen.
+ * Built from getAvailabilityBuckets. Never throws into the request.
+ */
+export async function sendAvailabilityForecastEmail(
+  params: AvailabilityForecastEmailParams,
+): Promise<void> {
+  const { toEmail, chefName, restaurantName, asOfDate, sections } = params;
+  const subject = `What's coming from the farm — ${asOfDate}`;
+
+  const fallbackLines = [
+    `Hi ${chefName},`,
+    `Here's the availability forecast for ${restaurantName} as of ${asOfDate}.`,
+    ``,
+  ];
+  for (const sec of sections) {
+    fallbackLines.push(`=== ${sec.title} (${sec.caption}) ===`);
+    if (sec.entries.length === 0) {
+      fallbackLines.push("  Nothing new in this window.");
+    } else {
+      for (const e of sec.entries) {
+        const tags = [
+          e.isMicrogreen ? "microgreen" : null,
+          e.window ?? null,
+          e.estimate ?? null,
+        ].filter(Boolean);
+        fallbackLines.push(`  - ${e.name}${tags.length ? ` (${tags.join(", ")})` : ""}`);
+      }
+    }
+    fallbackLines.push("");
+  }
+  const fallbackText = fallbackLines.join("\n");
+
+  await sendOrLog({
+    to: toEmail,
+    subject,
+    react: AvailabilityForecast({
+      chefName,
+      restaurantName,
+      asOfDate,
+      sections,
+    }) as React.ReactElement,
+    fallbackText,
+    from: FROM_ADDRESSES.forecast,
+  });
+}
+
+export interface PartnerReportEmailParams {
+  toEmail: string;
+  partnerName: string;
+  period: "monthly" | "quarterly";
+  /** Already-formatted period label, e.g. "April 2026" or "Q2 2026". */
+  periodLabel: string;
+  totalValue: string;
+  deliveryCount: number;
+  topItems: PartnerReportLine[];
+  byRestaurant: PartnerReportLine[];
+  comingSoon: ForecastEmailEntry[];
+}
+
+/**
+ * Sent to a partner chef (e.g. Phil) with a monthly or quarterly summary of the
+ * value of produce delivered + top crops + by-kitchen breakdown, plus a
+ * forward-looking teaser. Partner-facing framing — no expense/margin jargon.
+ * Never throws into the request.
+ */
+export async function sendPartnerReportEmail(
+  params: PartnerReportEmailParams,
+): Promise<void> {
+  const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon } = params;
+  const periodWord = period === "quarterly" ? "Quarter" : "Month";
+  const subject = `Press Farm — your ${periodWord.toLowerCase()} from the farm, ${periodLabel}`;
+
+  const fallbackLines = [
+    `Hello Chef ${partnerName},`,
+    ``,
+    `${periodLabel} in review.`,
+    `Produce delivered: ${totalValue} across ${deliveryCount} ${deliveryCount === 1 ? "delivery" : "deliveries"}.`,
+    ``,
+    `By kitchen:`,
+    ...byRestaurant.map((r) => `  ${r.label}: ${r.value}`),
+    ``,
+    `Top crops:`,
+    ...topItems.map((t) => `  ${t.label}${t.sub ? ` (${t.sub})` : ""}: ${t.value}`),
+    ``,
+    `Coming soon from the farm:`,
+    ...(comingSoon.length
+      ? comingSoon.map((e) => `  - ${e.name}${e.isMicrogreen ? " (microgreen)" : ""}${e.window ? ` — ${e.window}` : ""}`)
+      : ["  Fresh forecast coming soon."]),
+    ``,
+    `Thank you for cooking with what we grow.`,
+    `— Press Farm`,
+  ];
+  const fallbackText = fallbackLines.join("\n");
+
+  await sendOrLog({
+    to: toEmail,
+    subject,
+    react: PartnerReport({
+      partnerName,
+      period,
+      periodLabel,
+      totalValue,
+      deliveryCount,
+      topItems,
+      byRestaurant,
+      comingSoon,
+    }) as React.ReactElement,
+    fallbackText,
+    from: FROM_ADDRESSES.partnerReport,
   });
 }

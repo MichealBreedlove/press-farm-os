@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/receiver-notify",
       "schedule": "0 14,15 * * *"
+    },
+    {
+      "path": "/api/availability/forecast-email",
+      "schedule": "0 16 * * 3"
+    },
+    {
+      "path": "/api/reports/partner-report",
+      "schedule": "0 9 1 * *"
     }
   ]
 }
