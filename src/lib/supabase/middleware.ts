@@ -43,7 +43,10 @@ export async function updateSession(request: NextRequest) {
   // via validateApiKey (src/lib/api-auth.ts). It must bypass this redirect or
   // external clients with a valid PRESSFARM_API_KEY can never reach the
   // handler.
-  const publicPaths = ["/login", "/about", "/auth/callback", "/auth/confirm", "/api/v1"];
+  // /api/inbound/* receives webhooks from Resend Inbound for chef email replies
+  // (route at /api/inbound/reply). Each request is signature-verified inside
+  // the handler — Resend can't authenticate via Supabase cookies.
+  const publicPaths = ["/login", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {
