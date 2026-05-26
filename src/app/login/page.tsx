@@ -55,20 +55,23 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="identifier" className="login-label">Username</label>
+              <label htmlFor="identifier" className="login-label">Email or username</label>
               <input
                 id="identifier"
                 type="text"
                 required
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="press"
+                placeholder="you@email.com"
                 className="login-input"
                 autoComplete="username"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
               />
+              <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted/80">
+                Chefs sign in with their email address.
+              </p>
             </div>
 
             <div>

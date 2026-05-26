@@ -1,8 +1,30 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type Params = Promise<{ userId: string }>;
+
+/**
+ * Strong, human-shareable temporary password (URL/voice-safe alphabet, no
+ * ambiguous chars, dash-separated groups). Mirrors the generator in
+ * POST /api/users. Never logged.
+ */
+function generateTempPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const groups = 3;
+  const perGroup = 5;
+  const bytes = randomBytes(groups * perGroup);
+  const out: string[] = [];
+  for (let g = 0; g < groups; g++) {
+    let chunk = "";
+    for (let i = 0; i < perGroup; i++) {
+      chunk += alphabet[bytes[g * perGroup + i] % alphabet.length];
+    }
+    out.push(chunk);
+  }
+  return out.join("-");
+}
 
 /**
  * PATCH /api/users/[userId]
@@ -20,7 +42,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { is_active?: boolean; password?: string };
+  let body: { is_active?: boolean; password?: string; generate_password?: boolean };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
@@ -31,19 +53,26 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
 
   const admin = createAdminClient();
 
-  // Update password via Supabase Auth admin API
-  if (body.password) {
-    if (body.password.length < 8) {
+  // Reset password via Supabase Auth admin API. Either an admin-supplied
+  // password, or `generate_password:true` to mint a strong temp one that we
+  // return ONCE to the UI (same model as account creation — never logged/emailed).
+  if (body.password || body.generate_password) {
+    const supplied = body.password?.trim();
+    if (supplied && supplied.length < 8) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
+    const generated = !supplied;
+    const password = supplied || generateTempPassword();
+
     const { error: authError } = await admin.auth.admin.updateUserById(userId, {
-      password: body.password,
+      password,
     });
     if (authError) return NextResponse.json({ error: authError.message }, { status: 500 });
 
-    // If only password was sent, return early
+    // If only the password was changed, return it (when generated) so the admin
+    // can share it once.
     if (body.is_active === undefined) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, ...(generated ? { password, generated } : {}) });
     }
   }
 

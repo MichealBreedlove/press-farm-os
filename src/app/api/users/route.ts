@@ -1,12 +1,33 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { APP_URL } from "@/lib/constants";
 
 /**
  * GET /api/users — List all chef profiles with restaurant assignments. Admin only.
- * POST /api/users/invite — Invite a new chef via magic link. Admin only.
+ * POST /api/users — Create an individual chef/receiver account with a password. Admin only.
  */
+
+/**
+ * Generate a strong, human-shareable temporary password. ~72 bits of entropy
+ * from a URL/voice-safe alphabet (no ambiguous 0/O/1/l/I), formatted in dash-
+ * separated groups so it's easy to read aloud or paste once. Never logged.
+ */
+function generateTempPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const groups = 3;
+  const perGroup = 5;
+  const bytes = randomBytes(groups * perGroup);
+  const out: string[] = [];
+  for (let g = 0; g < groups; g++) {
+    let chunk = "";
+    for (let i = 0; i < perGroup; i++) {
+      chunk += alphabet[bytes[g * perGroup + i] % alphabet.length];
+    }
+    out.push(chunk);
+  }
+  return out.join("-");
+}
 export async function GET(_request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -52,8 +73,13 @@ export async function GET(_request: Request) {
 
 /**
  * POST /api/users
- * Body: { email, full_name, restaurant_id }
- * Invites a new chef via Supabase magic link. Admin only.
+ * Body: { email, full_name, restaurant_id?, role?, password? }
+ *
+ * Creates an INDIVIDUAL account authenticated by email + password (replaces
+ * the old magic-link invite flow). If `password` is omitted we generate a
+ * strong temporary one server-side. The (temp) password is returned in the
+ * response so the admin can share it ONCE, securely — it is never emailed or
+ * logged. Admin only.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -66,12 +92,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { email: string; full_name: string; restaurant_id?: string; role?: string };
+  let body: { email: string; full_name: string; restaurant_id?: string; role?: string; password?: string };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { email, full_name } = body;
-  // Default role is "chef" for back-compat with the original invite form
+  const email = body.email?.trim().toLowerCase();
+  const full_name = body.full_name;
+  // Default role is "chef" for back-compat with the original form
   const role = body.role === "receiver" ? "receiver" : "chef";
   const restaurant_id = body.restaurant_id;
 
@@ -83,29 +110,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "restaurant_id required for chef role" }, { status: 400 });
   }
 
+  // Accept an admin-supplied password, otherwise generate a strong temp one.
+  const suppliedPassword = body.password?.trim();
+  if (suppliedPassword && suppliedPassword.length < 8) {
+    return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+  }
+  const generated = !suppliedPassword;
+  const password = suppliedPassword || generateTempPassword();
+
   const admin = createAdminClient();
 
-  // Invite via Supabase Auth (sends magic link email)
-  const { data: inviteData, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: full_name.trim() },
-    redirectTo: `${APP_URL}/auth/callback`,
+  // Create the auth user directly with a password. email_confirm:true so the
+  // account is immediately usable at /login (no confirmation email round-trip).
+  const { data: createData, error: createErr } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: full_name.trim() },
   });
 
-  if (inviteErr) return NextResponse.json({ error: inviteErr.message }, { status: 500 });
+  if (createErr) return NextResponse.json({ error: createErr.message }, { status: 500 });
 
-  const newUserId = inviteData.user.id;
+  const newUserId = createData.user.id;
 
-  // Upsert profile with the chosen role
+  // The handle_new_user trigger inserts a profiles row (role 'chef'). Upsert to
+  // set full_name + the chosen role + is_active.
   await (admin as any)
     .from("profiles")
     .upsert({ id: newUserId, full_name: full_name.trim(), role, is_active: true }, { onConflict: "id" });
 
-  // Link to restaurant only when chef — receivers see all restaurants by role
+  // Link to restaurant only when chef — receivers see all restaurants by role.
   if (role === "chef" && restaurant_id) {
     await (admin as any)
       .from("restaurant_users")
       .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
   }
 
-  return NextResponse.json({ userId: newUserId, role }, { status: 201 });
+  // Return the (temp) password ONCE so the admin can share it securely. Do NOT
+  // log it; do NOT email it. `generated` tells the UI whether to show the
+  // "share this once" callout.
+  return NextResponse.json(
+    { userId: newUserId, role, email, password, generated },
+    { status: 201 }
+  );
 }

@@ -9,8 +9,9 @@ import React from "react";
 
 /**
  * POST /api/users/[userId]/welcome
- * Sends a welcome email to an existing chef + magic link.
- * Admin only.
+ * Sends a welcome email to an existing chef. The email points to /login and
+ * explains they'll receive their password separately — it never embeds a
+ * password or a magic link. Admin only.
  */
 export async function POST(
   _request: Request,
@@ -54,11 +55,9 @@ export async function POST(
   }
 
   try {
-    // Always link to the /login page — never an embedded magic-link URL.
-    // Magic-link OTPs from generateLink() expire in 1 hour, are one-shot, and
-    // get consumed by mail-security scanners (Outlook SafeLinks, gmail preview)
-    // before the chef even sees the email. The /login page lets the chef
-    // request a fresh magic link on demand, which is reliable.
+    // Always link to the /login page — never an embedded password or magic
+    // link. Chefs sign in with their email + the password the farm shares with
+    // them out-of-band. The /login page works on demand and never expires.
     const reactEl = ChefWelcome({
       chefName: chef.full_name ?? "Chef",
       restaurantName,

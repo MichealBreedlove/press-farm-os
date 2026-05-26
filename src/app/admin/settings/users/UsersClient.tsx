@@ -23,11 +23,14 @@ interface Props {
   currentUserId: string;
 }
 
+const SHARED_DOMAIN = "@accounts.pressfarm.app";
+const isSharedAccount = (email: string) => email.toLowerCase().endsWith(SHARED_DOMAIN);
+
 export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showInvite, setShowInvite] = useState(false);
-  const [form, setForm] = useState({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef" });
+  const [form, setForm] = useState({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef", password: "" });
   const [inviting, setInviting] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
@@ -36,6 +39,19 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const [welcomingId, setWelcomingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // The temporary password to surface ONCE after create / generated reset.
+  const [tempCredential, setTempCredential] = useState<{ email: string; password: string; label: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Couldn't copy — select and copy the password manually.");
+    }
+  }
 
   async function handleSendWelcome(user: UserRow) {
     setWelcomingId(user.id);
@@ -58,6 +74,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
     setInviting(true);
     setError(null);
     setSuccess(null);
+    setTempCredential(null);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -65,9 +82,16 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         body: JSON.stringify(form),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Invite failed");
-      setSuccess(`Invite sent to ${form.email}`);
-      setForm({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef" });
+      if (!res.ok) throw new Error(json.error ?? "Account creation failed");
+      // Surface the password once so the admin can share it securely. We always
+      // get one back (admin-supplied or generated); show it either way.
+      setTempCredential({
+        email: json.email ?? form.email,
+        password: json.password,
+        label: json.generated ? "Generated password" : "Password",
+      });
+      setSuccess(`Account created for ${json.email ?? form.email}`);
+      setForm({ email: "", full_name: "", restaurant_id: restaurants[0]?.id ?? "", role: "chef", password: "" });
       setShowInvite(false);
       startTransition(() => router.refresh());
     } catch (err: any) {
@@ -96,22 +120,30 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
     }
   }
 
-  async function handleResetPassword(userId: string) {
-    if (newPassword.length < 8) {
+  // mode "set": admin typed a password. mode "generate": server mints + returns one.
+  async function handleResetPassword(user: UserRow, mode: "set" | "generate") {
+    if (mode === "set" && newPassword.length < 8) {
       setError("Password must be at least 8 characters");
       return;
     }
     setResetting(true);
     setError(null);
+    setSuccess(null);
+    setTempCredential(null);
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      const res = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify(mode === "generate" ? { generate_password: true } : { password: newPassword }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to reset password");
-      setSuccess("Password updated successfully");
+      if (json.password) {
+        setTempCredential({ email: user.email, password: json.password, label: "Generated password" });
+        setSuccess(`New password generated for ${user.email}`);
+      } else {
+        setSuccess("Password updated successfully");
+      }
       setResetUserId(null);
       setNewPassword("");
     } catch (err: any) {
@@ -135,18 +167,57 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         </div>
       )}
 
-      {/* Invite button */}
+      {/* Temporary-password callout — shown ONCE after create / generated reset.
+          The admin shares this securely (text/voice/in person), not by email. */}
+      {tempCredential && (
+        <div className="bg-pf-master-blue/[0.06] border border-pf-master-blue/25 rounded-xl p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-farm-dark">Share this password once</p>
+              <p className="text-xs text-farm-muted mt-0.5 leading-relaxed">
+                Send it securely (text, voice, or in person) — not by email. It won&apos;t be shown again.
+                Ask {tempCredential.email} to change it after their first sign-in.
+              </p>
+            </div>
+            <button
+              onClick={() => { setTempCredential(null); setCopied(false); }}
+              className="text-pf-master-blue/60 hover:text-pf-master-blue min-w-[32px] min-h-[32px] flex items-center justify-center flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="bg-white border border-pf-master-blue/15 rounded-lg p-3 space-y-2">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-farm-muted">Email</p>
+              <p className="text-sm font-medium text-farm-dark break-all">{tempCredential.email}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-farm-muted">{tempCredential.label}</p>
+              <p className="font-mono text-base text-farm-dark break-all select-all">{tempCredential.password}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => copyToClipboard(`Email: ${tempCredential.email}\nPassword: ${tempCredential.password}`)}
+            className="btn-primary w-full min-h-[44px] text-sm font-medium"
+          >
+            {copied ? "Copied ✓" : "Copy email + password"}
+          </button>
+        </div>
+      )}
+
+      {/* Create-account button */}
       <button
         onClick={() => { setShowInvite((v) => !v); setError(null); }}
         className={showInvite ? "btn-ghost w-full text-sm" : "btn-primary w-full text-sm"}
       >
-        {showInvite ? "Cancel" : "+ Invite Chef"}
+        {showInvite ? "Cancel" : "+ Add Chef"}
       </button>
 
-      {/* Invite form */}
+      {/* Create-account form */}
       {showInvite && (
         <form onSubmit={handleInvite} className="card p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-farm-dark">Invite Chef</h3>
+          <h3 className="text-sm font-semibold text-farm-dark">Add Chef</h3>
           <div>
             <label className="block text-xs text-farm-muted mb-1">Full Name</label>
             <input
@@ -228,13 +299,33 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               Read-only: they can&apos;t place or edit orders.
             </p>
           )}
+
+          <div>
+            <label className="block text-xs text-farm-muted mb-1">Password (optional)</label>
+            <input
+              type="text"
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              placeholder="Leave blank to auto-generate"
+              className="input-field font-mono"
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <p className="text-[11px] text-farm-muted/80 mt-1.5 leading-relaxed">
+              We&apos;ll show the password once after creating the account so you can
+              share it securely. The chef can change it after signing in.
+            </p>
+          </div>
+
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={inviting}
             className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
           >
-            {inviting ? "Sending invite…" : "Send Magic Link Invite"}
+            {inviting ? "Creating account…" : "Create Account"}
           </button>
         </form>
       )}
@@ -265,7 +356,10 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             {receivers.map((u) => (
               <div key={u.id} className="card p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "Receiver"}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "Receiver"}</p>
+                    {isSharedAccount(u.email) && <SharedTag />}
+                  </div>
                   <p className="text-xs text-farm-muted truncate">{u.email}</p>
                 </div>
                 <span className="text-xs px-2 py-1 bg-pf-master-violet/[0.12] text-pf-master-violet rounded-full flex-shrink-0 font-semibold">
@@ -292,7 +386,10 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             >
               <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
+                  {isSharedAccount(u.email) && <SharedTag />}
+                </div>
                 <p className="text-xs text-farm-muted truncate">{u.email}</p>
                 {u.restaurants.length > 0 && (
                   <p className="text-xs text-farm-muted mt-0.5">{u.restaurants.join(", ")}</p>
@@ -308,7 +405,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                       onClick={() => handleSendWelcome(u)}
                       disabled={welcomingId === u.id}
                       className="min-h-[44px] px-3 flex items-center justify-center text-xs text-farm-green hover:bg-farm-green-light rounded-lg disabled:opacity-50 transition-colors"
-                      title="Send welcome email with magic-link login"
+                      title="Send welcome email (points to /login — no password embedded)"
                     >
                       {welcomingId === u.id ? "Sending…" : "📧 Welcome"}
                     </button>
@@ -334,20 +431,33 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               </div>
               </div>
               {resetUserId === u.id && (
-                <div className="mt-3 pt-3 border-t border-farm-dark/5 flex gap-2">
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password (min 8 chars)"
-                    className="flex-1 border border-farm-dark/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  />
+                <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New password (min 8 chars)"
+                      className="flex-1 border border-farm-dark/10 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-farm-green"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    <button
+                      onClick={() => handleResetPassword(u, "set")}
+                      disabled={resetting}
+                      className="min-h-[44px] px-4 bg-farm-green text-white rounded-lg text-sm font-medium hover:bg-farm-green/90 disabled:opacity-50"
+                    >
+                      {resetting ? "…" : "Set"}
+                    </button>
+                  </div>
                   <button
-                    onClick={() => handleResetPassword(u.id)}
+                    onClick={() => handleResetPassword(u, "generate")}
                     disabled={resetting}
-                    className="min-h-[44px] px-4 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+                    className="w-full min-h-[40px] text-xs text-farm-muted hover:text-farm-dark/80 border border-farm-dark/10 rounded-lg disabled:opacity-50"
                   >
-                    {resetting ? "…" : "Set"}
+                    {resetting ? "…" : "Generate a new password"}
                   </button>
                 </div>
               )}
@@ -361,6 +471,18 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
       {error && !showInvite && <p className="text-xs text-red-600 text-center">{error}</p>}
     </div>
+  );
+}
+
+/** Small badge marking a legacy SHARED login (e.g. press@accounts.pressfarm.app). */
+function SharedTag() {
+  return (
+    <span
+      className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full font-medium flex-shrink-0"
+      title="Legacy shared login — kept working during the move to individual chef accounts"
+    >
+      shared
+    </span>
   );
 }
 

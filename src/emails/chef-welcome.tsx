@@ -62,10 +62,14 @@ export default function ChefWelcome({
               <Text style={styles.eyebrow}>Welcome</Text>
               <Text style={styles.h1}>Hello, {chefName}</Text>
               <Text style={styles.paragraph}>
-                You&apos;ve been added to the Press Farm ordering system for{" "}
-                <strong>{restaurantName}</strong>. From now on, you&apos;ll order
-                produce directly through our app — no more spreadsheets or
-                back-and-forth.
+                Your Press Farm account is ready. You&apos;ll order produce for{" "}
+                <strong>{restaurantName}</strong> directly through our app — no
+                more spreadsheets or back-and-forth.
+              </Text>
+              <Text style={styles.paragraph}>
+                Sign in with <strong>your email address</strong> and the password
+                the farm shares with you separately. We never send passwords by
+                email — once you&apos;re in, you can change it anytime.
               </Text>
 
               <Section style={styles.ctaWrap}>
