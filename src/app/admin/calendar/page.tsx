@@ -3,12 +3,20 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import {
+  ForecastCalendar,
+  FORECAST_LEGEND,
+  forecastEventKind,
+} from "@/components/shared/ForecastCalendar";
+import { HarvestBuckets } from "@/components/admin/HarvestBuckets";
+import { getCalendarEvents, getAvailabilityBuckets } from "@/lib/forecasting";
+import type { ForecastCalendarEvent } from "@/lib/forecasting";
 import { CalendarGrid } from "./CalendarGrid";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; view?: string }>;
 }
 
 /**
@@ -31,7 +39,8 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     .from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") redirect("/");
 
-  const { year: yearParam, month: monthParam } = await searchParams;
+  const { year: yearParam, month: monthParam, view: viewParam } = await searchParams;
+  const view = viewParam === "forecast" ? "forecast" : "activity";
   const today = new Date();
   const year = parseInt(yearParam ?? "") || today.getFullYear();
   // Stored 1-indexed in URL (1=Jan, 12=Dec) so it reads naturally; converted
@@ -121,15 +130,33 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
 
   const activity = Array.from(map.values());
 
-  // Prev / next month navigation
+  // Prev / next month navigation (preserve the active view)
   const prevDate = new Date(year, monthOneIndexed - 2, 1);
   const nextDate = new Date(year, monthOneIndexed, 1);
-  const prevHref = `/admin/calendar?year=${prevDate.getFullYear()}&month=${prevDate.getMonth() + 1}`;
-  const nextHref = `/admin/calendar?year=${nextDate.getFullYear()}&month=${nextDate.getMonth() + 1}`;
+  const viewQs = view === "forecast" ? "&view=forecast" : "";
+  const prevHref = `/admin/calendar?year=${prevDate.getFullYear()}&month=${prevDate.getMonth() + 1}${viewQs}`;
+  const nextHref = `/admin/calendar?year=${nextDate.getFullYear()}&month=${nextDate.getMonth() + 1}${viewQs}`;
+  const todayHref = `/admin/calendar${view === "forecast" ? "?view=forecast" : ""}`;
   const monthLabel = new Date(year, monthOneIndexed - 1, 1).toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
   });
+
+  // ── Harvest forecast layer ───────────────────────────────────────────────
+  // Always load the "available now / 2wk / 4wk / 2mo" buckets for the summary.
+  // Only load the month's calendar events when the forecast view is active.
+  const todayIso = today.toISOString().slice(0, 10);
+  const [buckets, forecastEvents] = await Promise.all([
+    getAvailabilityBuckets(todayIso),
+    view === "forecast"
+      ? getCalendarEvents(monthStart, monthEnd)
+      : Promise.resolve([] as ForecastCalendarEvent[]),
+  ]);
+
+  const forecastByDate: Record<string, ForecastCalendarEvent[]> = {};
+  for (const e of forecastEvents) {
+    (forecastByDate[e.date] ??= []).push(e);
+  }
 
   // Month-level stats for the eyebrow
   const monthOrderCount = activity.reduce((s, d) => s + d.orderCount, 0);
@@ -157,15 +184,58 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
         backHref="/admin/dashboard"
       />
 
-      <div className="px-4 py-6 max-w-3xl mx-auto">
-        <CalendarGrid
-          year={year}
-          month={monthOneIndexed - 1}
-          monthLabel={monthLabel}
-          activity={activity}
-          prevHref={prevHref}
-          nextHref={nextHref}
-        />
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+        {/* Horizon summary — projected harvest availability */}
+        <section>
+          <h3 className="text-[11px] tracking-[0.18em] uppercase text-farm-muted font-semibold mb-3">
+            Projected Harvest Availability
+          </h3>
+          <HarvestBuckets buckets={buckets} />
+        </section>
+
+        {/* View toggle: existing activity calendar vs harvest forecast */}
+        <div className="inline-flex rounded-full border border-farm-dark/10 bg-white p-1 text-xs font-medium">
+          <Link
+            href={`/admin/calendar?year=${year}&month=${monthOneIndexed}`}
+            className={`px-4 py-2 rounded-full min-h-[40px] flex items-center transition-colors ${
+              view === "activity" ? "bg-farm-green text-white" : "text-farm-muted hover:text-farm-dark"
+            }`}
+          >
+            Activity
+          </Link>
+          <Link
+            href={`/admin/calendar?year=${year}&month=${monthOneIndexed}&view=forecast`}
+            className={`px-4 py-2 rounded-full min-h-[40px] flex items-center transition-colors ${
+              view === "forecast" ? "bg-farm-green text-white" : "text-farm-muted hover:text-farm-dark"
+            }`}
+          >
+            Harvest forecast
+          </Link>
+        </div>
+
+        {view === "activity" ? (
+          <CalendarGrid
+            year={year}
+            month={monthOneIndexed - 1}
+            monthLabel={monthLabel}
+            activity={activity}
+            prevHref={prevHref}
+            nextHref={nextHref}
+          />
+        ) : (
+          <ForecastCalendar
+            year={year}
+            month={monthOneIndexed - 1}
+            monthLabel={monthLabel}
+            eventsByDate={forecastByDate}
+            legend={FORECAST_LEGEND}
+            eventKind={forecastEventKind}
+            prevHref={prevHref}
+            nextHref={nextHref}
+            todayHref={todayHref}
+            todayIso={todayIso}
+          />
+        )}
       </div>
     </main>
   );
