@@ -29,6 +29,18 @@ export type DeliveryDate = Database["public"]["Tables"]["delivery_dates"]["Row"]
 export type AvailabilityItem = Database["public"]["Tables"]["availability_items"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type OrderItem = Database["public"]["Tables"]["order_items"]["Row"];
+export type OrderAudit = Database["public"]["Tables"]["order_audit"]["Row"];
+
+/** Canonical set of audited order actions (free text in DB, narrowed here). */
+export type OrderAuditAction =
+  | "submitted"
+  | "edited"
+  | "merged"
+  | "shortage_marked"
+  | "shortage_cleared"
+  | "status_changed"
+  | "fulfilled"
+  | "cancelled";
 export type PriceHistory = Database["public"]["Tables"]["price_history"]["Row"];
 export type PriceCatalog = Database["public"]["Tables"]["price_catalog"]["Row"];
 export type Delivery = Database["public"]["Tables"]["deliveries"]["Row"];

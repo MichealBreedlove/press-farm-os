@@ -227,6 +227,8 @@ export interface Database {
           submitted_at: string | null;
           fulfilled_at: string | null;
           closed_for_ordering: boolean;
+          last_edited_by: string | null;
+          last_edited_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -240,6 +242,8 @@ export interface Database {
           submitted_at?: string | null;
           fulfilled_at?: string | null;
           closed_for_ordering?: boolean;
+          last_edited_by?: string | null;
+          last_edited_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -249,6 +253,8 @@ export interface Database {
           submitted_at?: string | null;
           fulfilled_at?: string | null;
           closed_for_ordering?: boolean;
+          last_edited_by?: string | null;
+          last_edited_at?: string | null;
           updated_at?: string;
         };
       };
@@ -265,6 +271,7 @@ export interface Database {
           unit_type: string | null;
           size_label: string | null;
           color_key: string | null;
+          created_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -280,6 +287,7 @@ export interface Database {
           unit_type?: string | null;
           size_label?: string | null;
           color_key?: string | null;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -294,6 +302,31 @@ export interface Database {
           color_key?: string | null;
           updated_at?: string;
         };
+      };
+      order_audit: {
+        Row: {
+          id: string;
+          order_id: string | null;
+          restaurant_id: string;
+          delivery_date: string | null;
+          actor_id: string | null;
+          actor_name: string | null;
+          action: string;
+          detail: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id?: string | null;
+          restaurant_id: string;
+          delivery_date?: string | null;
+          actor_id?: string | null;
+          actor_name?: string | null;
+          action: string;
+          detail?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: never;
       };
       price_history: {
         Row: {
