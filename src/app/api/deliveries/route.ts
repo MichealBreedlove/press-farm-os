@@ -98,7 +98,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "items array required" }, { status: 400 });
   }
 
-  // Validate items
+  // Validate items. Normalize unit to lowercase before the DB CHECK
+  // constraint sees it — the input on DeliveryLogForm renders uppercase
+  // via CSS but submits the raw typed value, so 'LG' would otherwise
+  // hit delivery_items_unit_check and surface as an opaque Postgres error.
+  const ALLOWED_UNITS = new Set(['ea', 'sm', 'lg', 'gb', 'lbs', 'bu', 'qt', 'bx', 'cs', 'pt', 'kit']);
   for (const item of items) {
     if (!item.item_id) return NextResponse.json({ error: "Each item needs item_id" }, { status: 400 });
     if (!Number.isFinite(item.quantity) || item.quantity < 0) {
@@ -106,6 +110,13 @@ export async function POST(request: Request) {
     }
     if (!Number.isFinite(item.unit_price) || item.unit_price < 0) {
       return NextResponse.json({ error: "Invalid unit_price" }, { status: 400 });
+    }
+    item.unit = String(item.unit ?? '').trim().toLowerCase();
+    if (!ALLOWED_UNITS.has(item.unit)) {
+      return NextResponse.json(
+        { error: `Invalid unit "${item.unit}". Must be one of: ${[...ALLOWED_UNITS].join(', ')}` },
+        { status: 400 },
+      );
     }
   }
 
