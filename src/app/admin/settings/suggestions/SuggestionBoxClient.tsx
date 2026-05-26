@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquarePlus, Trash2, Send } from "lucide-react";
+import { MessageSquarePlus, Trash2, Send, Mail } from "lucide-react";
 
 interface Suggestion {
   id: string;
@@ -10,6 +11,8 @@ interface Suggestion {
   author: string;
   status: string;
   created_at: string;
+  source?: "manual" | "email_reply" | null;
+  inbound_message_id?: string | null;
 }
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -105,7 +108,7 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
             <div key={s.id} className="card px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className={STATUS_LABELS[s.status]?.cls ?? "badge-gray"}>
                       {STATUS_LABELS[s.status]?.label ?? s.status}
                     </span>
@@ -113,6 +116,23 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
                     <span className="text-xs text-farm-muted/60">
                       {new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
+                    {s.source === "email_reply" && (
+                      s.inbound_message_id ? (
+                        <Link
+                          href={`/admin/inbox/${s.inbound_message_id}`}
+                          className="inline-flex items-center gap-1 text-[10px] text-pf-master-gold hover:text-pf-master-gold/80 px-1.5 py-0.5 rounded-full bg-pf-master-gold/10"
+                          title="View original email"
+                        >
+                          <Mail className="w-3 h-3" />
+                          from email reply
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-farm-muted px-1.5 py-0.5 rounded-full bg-farm-cream/60">
+                          <Mail className="w-3 h-3" />
+                          from email reply
+                        </span>
+                      )
+                    )}
                   </div>
                   <p className="text-sm text-farm-dark">{s.text}</p>
                   <div className="flex gap-1 mt-2">

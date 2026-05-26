@@ -221,6 +221,19 @@ export const APP_URL = resolveAppUrl();
 export const ADMIN_EMAIL = "pressfarm@pressnapavalley.com";
 
 /**
+ * Reply-To address on every outbound email.
+ *
+ * Lands at Resend Inbound, which POSTs the message to /api/inbound/reply.
+ * The webhook stores it in `inbound_messages` and runs LLM extraction to
+ * pull item requests into the `suggestions` table.
+ *
+ * Override with RESEND_REPLY_TO env var if you ever need to point replies
+ * somewhere else (e.g. during a Resend Inbound outage).
+ */
+export const REPLY_TO_ADDRESS =
+  process.env.RESEND_REPLY_TO || "replies@pressfarm.io";
+
+/**
  * Per-purpose sender addresses. Each can be overridden by an env var.
  * Falls back to RESEND_FROM_EMAIL, then to default @pressfarm.io.
  */

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { REPLY_TO_ADDRESS } from "@/lib/constants";
 
 /**
  * Resend email client — lazy singleton.
@@ -79,15 +80,30 @@ function applyOverride(payload: ResendSendPayload): ResendSendPayload {
 }
 
 /**
- * Wrapper around `resend.emails.send` that applies EMAIL_OVERRIDE_TO when set.
- * Every outbound send in the app MUST go through this helper — never call
- * `getResendClient().emails.send` directly.
+ * Default Reply-To on every outbound email unless a caller overrides it.
+ *
+ * Replies land at replies@pressfarm.io → Resend Inbound webhook →
+ * POST /api/inbound/reply. Without this, chef replies to *@pressfarm.io
+ * bounce or disappear silently because Resend's sender domains have no
+ * inbound MX of their own.
+ *
+ * If a caller explicitly passes `replyTo` (even empty string), we respect it.
+ */
+function applyReplyTo(payload: ResendSendPayload): ResendSendPayload {
+  if ("replyTo" in payload && payload.replyTo !== undefined) return payload;
+  return { ...payload, replyTo: REPLY_TO_ADDRESS } as ResendSendPayload;
+}
+
+/**
+ * Wrapper around `resend.emails.send` that applies EMAIL_OVERRIDE_TO when set
+ * and stamps a default Reply-To header. Every outbound send in the app MUST
+ * go through this helper — never call `getResendClient().emails.send` directly.
  */
 export async function safeResendSend(
   payload: ResendSendPayload,
   options?: ResendSendOptions,
 ) {
-  const final = applyOverride(payload);
+  const final = applyOverride(applyReplyTo(payload));
   return getResendClient().emails.send(final, options);
 }
 
