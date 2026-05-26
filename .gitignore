@@ -56,3 +56,6 @@ backup_*/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# brainstorming visual companion (mockups, server state)
+.superpowers/
