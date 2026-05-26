@@ -12,8 +12,9 @@ import { SendToReceiverBar } from "./SendToReceiverBar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { OrderActivity } from "@/components/shared/OrderActivity";
 import Link from "next/link";
-import type { ItemCategory, OrderStatus, UnitType } from "@/types";
+import type { ItemCategory, OrderStatus, UnitType, OrderAudit } from "@/types";
 
 interface AdminOrdersByDatePageProps {
   params: Promise<{ date: string }>;
@@ -32,9 +33,10 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
   const { data: ordersRaw } = await (supabase as any)
     .from("orders")
     .select(`
-      id, delivery_date, status, freeform_notes, submitted_at,
+      id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
+      edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
       order_items(
         id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, menu_section, picked_at,
         availability_item:availability_items(
@@ -70,6 +72,21 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       )
     `)
     .eq("delivery_date", date);
+
+  // Activity timeline rows for every order on this date (admin client = all
+  // restaurants). Grouped by order_id below for per-card rendering.
+  const { data: auditRaw } = await (admin as any)
+    .from("order_audit")
+    .select("id, order_id, restaurant_id, delivery_date, actor_id, actor_name, action, detail, created_at")
+    .eq("delivery_date", date)
+    .order("created_at", { ascending: false });
+  const auditByOrder = new Map<string, OrderAudit[]>();
+  for (const row of (auditRaw ?? []) as OrderAudit[]) {
+    if (!row.order_id) continue;
+    const list = auditByOrder.get(row.order_id) ?? [];
+    list.push(row);
+    auditByOrder.set(row.order_id, list);
+  }
 
   // Active-receiver count — for the empty-state banner that surfaces the
   // gap BEFORE pick-and-pack (so admin can invite a receiver before
@@ -348,6 +365,19 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                       : "Not submitted"}
                     {" · "}{totalItems} items
                   </p>
+                  {order.edited_by?.full_name &&
+                    order.last_edited_by &&
+                    order.last_edited_by !== order.chef?.id && (
+                      <p className="text-[11px] text-farm-muted/80 mt-0.5">
+                        last edited by {order.edited_by.full_name}
+                        {order.last_edited_at && (
+                          <> at {new Date(order.last_edited_at).toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}</>
+                        )}
+                      </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {/* Picked-progress badge — primary signal during the
@@ -474,6 +504,13 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                 )}
                 <DeleteOrderButton orderId={order.id} restaurantName={order.restaurant?.name ?? "this"} />
               </div>
+
+              {/* Activity timeline — who placed/edited/shorted/fulfilled, when. */}
+              {(auditByOrder.get(order.id)?.length ?? 0) > 0 && (
+                <div className="border-t border-farm-dark/5">
+                  <OrderActivity entries={auditByOrder.get(order.id) ?? []} bare />
+                </div>
+              )}
             </section>
           );
         })}

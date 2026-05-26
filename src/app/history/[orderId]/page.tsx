@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { OrderActivity } from "@/components/shared/OrderActivity";
 import type { OrderStatus, UnitType } from "@/types";
 
 /**
@@ -68,6 +69,14 @@ export default async function OrderDetailPage({
   if (!order) {
     notFound();
   }
+
+  // Activity timeline — order_audit rows for this order. Chef RLS scopes reads
+  // to their own restaurant, so this only returns rows they're allowed to see.
+  const { data: auditRows } = await supabase
+    .from("order_audit")
+    .select("id, order_id, restaurant_id, delivery_date, actor_id, actor_name, action, detail, created_at")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false }) as any;
 
   // Pull delivery_items for the same date+restaurant so we can surface
   // "extras" — produce Press Farm threw in that wasn't on the chef's order.
@@ -321,6 +330,9 @@ export default async function OrderDetailPage({
             <span className="font-mono text-xs text-gray-400">{order.id.slice(0, 8)}</span>
           </div>
         </div>
+
+        {/* Activity timeline — who did what, when. */}
+        <OrderActivity entries={auditRows ?? []} />
       </div>
     </main>
   );

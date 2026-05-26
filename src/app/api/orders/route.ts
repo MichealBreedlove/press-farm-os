@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
+import { recordOrderAudit } from "@/lib/order-audit";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -188,22 +189,31 @@ export async function POST(request: Request) {
     }
   }
 
+  // Accountability: a brand-new order stamps chef_id = creator. An edit/merge
+  // of an existing order PRESERVES the original chef_id and instead records who
+  // last touched it (last_edited_by / last_edited_at). Omitting chef_id from the
+  // upsert payload for existing orders keeps the DB value untouched on conflict.
+  const isNewOrder = !existingOrder;
+  const nowIso = new Date().toISOString();
+  const orderPayload: Record<string, unknown> = {
+    restaurant_id,
+    delivery_date,
+    status: "submitted",
+    freeform_notes: mergedNotes,
+    submitted_at: nowIso,
+    last_edited_by: user.id,
+    last_edited_at: nowIso,
+  };
+  if (isNewOrder) {
+    orderPayload.chef_id = user.id;
+  }
+
   const { data: order, error: orderError } = await (supabase
     .from("orders") as any)
-    .upsert(
-      {
-        restaurant_id,
-        chef_id: user.id,
-        delivery_date,
-        status: "submitted",
-        freeform_notes: mergedNotes,
-        submitted_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "restaurant_id,delivery_date",
-        ignoreDuplicates: false,
-      }
-    )
+    .upsert(orderPayload, {
+      onConflict: "restaurant_id,delivery_date",
+      ignoreDuplicates: false,
+    })
     .select("id")
     .single();
 
@@ -288,12 +298,18 @@ export async function POST(request: Request) {
         size_label: item.size_label ?? null,
         color_key: item.color_key ?? null,
         menu_section: menuSection,
+        // Accountability: who added this line. Stamped on every insert.
+        created_by: user.id,
       };
     });
 
   // Track items used for the email summary. In merge mode this is just the
   // new lines (the chef only needs to see what they just submitted).
   let orderItems = incomingLines;
+
+  // Merge-only counts surfaced in the audit detail (cheap to compute here).
+  let mergeAdded = 0;
+  let mergeBumped = 0;
 
   if (isMerge) {
     // Merge: sum qty into matching existing lines (same availId+unit+size+color);
@@ -341,6 +357,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to merge order items" }, { status: 500 });
       }
     }
+    mergeAdded = toInsert.length;
+    mergeBumped = toUpdate.length;
   } else {
     // Replace: explicit edit flow OR brand-new order. Wipe + reinsert.
     await supabase.from("order_items").delete().eq("order_id", order.id);
@@ -353,6 +371,36 @@ export async function POST(request: Request) {
     }
   }
 
+  // Actor name snapshot — fetched once, reused for the audit row AND the email
+  // summaries below so we don't double-query profiles.
+  const { data: actorProfile } = await (supabase.from("profiles") as any)
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+  const actorName: string | null = actorProfile?.full_name ?? null;
+
+  // Audit trail — non-blocking. 'submitted' = brand-new order, 'edited' =
+  // explicit edit (replace mode), 'merged' = follow-up submission appended to
+  // an existing order. detail carries cheap counts for the timeline UIs.
+  const auditAction = isNewOrder ? "submitted" : isMerge ? "merged" : "edited";
+  const auditDetail: Record<string, unknown> = {
+    delivery_date,
+    item_count: incomingLines.length,
+  };
+  if (isMerge) {
+    auditDetail.added = mergeAdded;
+    auditDetail.bumped = mergeBumped;
+  }
+  await recordOrderAudit(supabase, {
+    orderId: order.id,
+    restaurantId: restaurant_id,
+    deliveryDate: delivery_date,
+    actorId: user.id,
+    actorName,
+    action: auditAction,
+    detail: auditDetail,
+  });
+
   // Send email notifications — non-blocking, errors do not fail the response.
   // Two emails fire: one to admin (OrderReceived) and one to chef (OrderConfirmation).
   try {
@@ -361,10 +409,7 @@ export async function POST(request: Request) {
       .eq("id", restaurant_id)
       .single();
 
-    const { data: chefProfile } = await (supabase.from("profiles") as any)
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
+    const chefProfile = { full_name: actorName };
 
     // Fetch item details for ordered items. Note: items.unit_type (not items.unit
     // — that column doesn't exist; the previous query was silently returning

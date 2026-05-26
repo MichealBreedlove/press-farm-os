@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types";
 import { sendOrderConfirmedEmail } from "@/lib/email";
+import { recordOrderAudit } from "@/lib/order-audit";
 
 /**
  * PATCH /api/orders/[orderId] — Update order status (admin only)
@@ -24,10 +25,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify admin
+  // Verify admin (full_name doubles as the audit actor snapshot below)
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
-    .select("role")
+    .select("role, full_name")
     .eq("id", user.id)
     .single();
   if (!profileRaw || profileRaw.role !== "admin") {
@@ -148,6 +149,25 @@ export async function PATCH(
       console.error("[EMAIL] Failed to send order confirmed email:", emailErr);
     }
   }
+
+  // Audit trail — non-blocking. Use the specific 'fulfilled'/'cancelled'
+  // actions when the order lands in those terminal states; otherwise log a
+  // generic 'status_changed' carrying the new status in detail.
+  const auditAction =
+    status === "fulfilled"
+      ? "fulfilled"
+      : status === "cancelled"
+        ? "cancelled"
+        : "status_changed";
+  await recordOrderAudit(adminClient, {
+    orderId,
+    restaurantId: order.restaurant_id,
+    deliveryDate: order.delivery_date,
+    actorId: user.id,
+    actorName: profileRaw.full_name ?? null,
+    action: auditAction,
+    detail: { status },
+  });
 
   return NextResponse.json({ data: order, error: null });
 }

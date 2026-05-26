@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { sendShortageEmail } from "@/lib/email";
+import { recordOrderAudit } from "@/lib/order-audit";
 
 /**
  * PATCH /api/orders/[orderId]/shortage — Mark order items as shorted (admin only)
@@ -23,10 +24,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify admin
+  // Verify admin (full_name doubles as the audit actor snapshot below)
   const { data: profileRaw } = await (supabase as any)
     .from("profiles")
-    .select("role")
+    .select("role, full_name")
     .eq("id", user.id)
     .single();
   if (!profileRaw || profileRaw.role !== "admin") {
@@ -71,11 +72,18 @@ export async function PATCH(
     (order.order_items ?? []).map((oi: any) => [oi.id, oi.quantity_requested])
   );
 
+  // Track per-line outcome (marked vs cleared) for the audit trail below.
+  const lineOutcome = new Map<string, { cleared: boolean; reason: string | null }>();
+
   // Update each order item — auto-clear shortage if fulfilled >= requested or `clear` flag set
   const updates = await Promise.all(
     items.map(({ order_item_id, quantity_fulfilled, shortage_reason, clear }) => {
       const requested = itemQtyMap.get(order_item_id) ?? Infinity;
       const shouldClear = clear || quantity_fulfilled >= requested;
+      lineOutcome.set(order_item_id, {
+        cleared: shouldClear,
+        reason: shouldClear ? null : shortage_reason,
+      });
       return (adminClient.from("order_items") as any)
         .update({
           is_shorted: !shouldClear,
@@ -152,6 +160,35 @@ export async function PATCH(
     }
   } catch (emailErr) {
     console.error("[EMAIL] Failed to send shortage notice email:", emailErr);
+  }
+
+  // Audit trail — non-blocking. One row per touched line: 'shortage_marked'
+  // when the line is now short, 'shortage_cleared' when it was resolved.
+  // detail carries { item, reason } so the timeline reads naturally.
+  const itemNameById = new Map<string, string>(
+    (updatedOrder?.order_items ?? []).map((oi: any) => [
+      oi.id,
+      oi.availability_item?.item?.name ?? "Unknown item",
+    ]),
+  );
+  const restaurantId: string | undefined = updatedOrder?.restaurant_id;
+  if (restaurantId) {
+    await Promise.all(
+      Array.from(lineOutcome.entries()).map(([orderItemId, outcome]) =>
+        recordOrderAudit(adminClient, {
+          orderId,
+          restaurantId,
+          deliveryDate: updatedOrder?.delivery_date ?? null,
+          actorId: user.id,
+          actorName: profileRaw.full_name ?? null,
+          action: outcome.cleared ? "shortage_cleared" : "shortage_marked",
+          detail: {
+            item: itemNameById.get(orderItemId) ?? "Unknown item",
+            reason: outcome.reason,
+          },
+        }),
+      ),
+    );
   }
 
   return NextResponse.json({ data: updatedOrder, error: null });

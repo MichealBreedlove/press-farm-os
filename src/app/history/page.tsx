@@ -73,6 +73,10 @@ export default async function HistoryPage() {
       status,
       submitted_at,
       created_at,
+      last_edited_by,
+      last_edited_at,
+      chef:profiles!orders_chef_id_fkey(id, full_name),
+      edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
       order_items(id, is_shorted)
     `)
     .eq("restaurant_id", restaurant.id)
@@ -107,6 +111,14 @@ export default async function HistoryPage() {
               const status = order.status as OrderStatus;
               const flower = HISTORY_FLOWERS[hashOrderId(order.id) % HISTORY_FLOWERS.length];
 
+              // Accountability line: who placed it, and who last touched it if
+              // that's a different person. Names are snapshots via the profile
+              // joins above; fall back gracefully when a profile is missing.
+              const placedBy = order.chef?.full_name ?? null;
+              const editedBy = order.edited_by?.full_name ?? null;
+              const showEditedBy =
+                editedBy && order.last_edited_by && order.last_edited_by !== order.chef?.id;
+
               return (
                 <li key={order.id}>
                   <Link
@@ -133,6 +145,14 @@ export default async function HistoryPage() {
                           </span>
                         )}
                       </p>
+                      {placedBy && (
+                        <p className="text-[11px] text-farm-muted/80 mt-0.5 truncate">
+                          Placed by {placedBy}
+                          {showEditedBy && (
+                            <span> · edited by {editedBy}</span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <StatusPill status={status} />

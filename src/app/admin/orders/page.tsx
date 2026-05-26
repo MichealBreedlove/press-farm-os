@@ -63,9 +63,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   const { data: ordersRaw } = await (supabase as any)
     .from("orders")
     .select(`
-      id, delivery_date, status, freeform_notes, submitted_at,
+      id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
+      edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
       order_items(id, is_shorted)
     `)
     .eq("delivery_date", activeDate);
@@ -133,6 +134,18 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           const itemCount = order.order_items?.length ?? 0;
           const shortedCount = order.order_items?.filter((i: any) => i.is_shorted).length ?? 0;
 
+          // Show "last edited by X" only when someone other than the original
+          // creator touched it (individual accountability across staff).
+          const editedByName = order.edited_by?.full_name ?? null;
+          const showEdited =
+            editedByName && order.last_edited_by && order.last_edited_by !== order.chef?.id;
+          const editedTime = order.last_edited_at
+            ? new Date(order.last_edited_at).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            : null;
+
           return (
             <Link
               key={restaurant.id}
@@ -151,6 +164,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                         })
                       : "Not submitted"}
                   </p>
+                  {showEdited && (
+                    <p className="text-xs text-farm-muted/80 mt-0.5">
+                      last edited by {editedByName}
+                      {editedTime && <> at {editedTime}</>}
+                    </p>
+                  )}
                 </div>
                 <StatusPill status={order.status as OrderStatus} />
               </div>
