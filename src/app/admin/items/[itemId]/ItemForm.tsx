@@ -33,6 +33,7 @@ interface Item {
   is_press_bar_item?: boolean;
   show_in_regular_menu?: boolean;
   parent_item_id?: string | null;
+  seasonal_months?: number[];
 }
 
 interface ParentCandidate {
@@ -88,6 +89,7 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
     // so they keep showing in Regular like they always did.
     show_in_regular_menu: item?.show_in_regular_menu ?? true,
     parent_item_id: item?.parent_item_id ?? prefillFromParent?.parent_item_id ?? "",
+    seasonal_months: (item?.seasonal_months ?? []) as number[],
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -225,6 +227,7 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
         variety: form.variety || null,
         color: form.color || null,
         parent_item_id: form.parent_item_id || null,
+        seasonal_months: form.seasonal_months,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -686,6 +689,46 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
             placeholder="e.g. 2 weeks left"
             className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
+        </div>
+      </div>
+
+      {/* Typical season — months when this item is usually available.
+          Fills in the far-future zone on /order/forecast where there is
+          no concrete planting data yet. Independent of Season Status
+          (which describes current availability). */}
+      <div>
+        <label className="form-label">Typical Season</label>
+        <p className="text-[11px] text-farm-muted mb-2 leading-snug">
+          Tap months this item is usually available. Powers the chef
+          forecast page for months without planted data yet.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((label, i) => {
+            const m = i + 1;
+            const isOn = form.seasonal_months.includes(m);
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setForm((f) => ({
+                    ...f,
+                    seasonal_months: isOn
+                      ? f.seasonal_months.filter((x) => x !== m)
+                      : [...f.seasonal_months, m].sort((a, b) => a - b),
+                  }));
+                }}
+                aria-pressed={isOn}
+                className={
+                  isOn
+                    ? "min-w-[44px] min-h-[36px] px-2.5 rounded-full text-xs font-semibold bg-farm-green text-white"
+                    : "min-w-[44px] min-h-[36px] px-2.5 rounded-full text-xs border border-pf-master-gold/40 text-farm-muted hover:border-pf-master-gold/70"
+                }
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

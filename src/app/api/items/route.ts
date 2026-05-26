@@ -129,6 +129,15 @@ export async function POST(request: Request) {
       // column default and the form's checkbox initial state.
       show_in_regular_menu: body.show_in_regular_menu === undefined ? true : Boolean(body.show_in_regular_menu),
       parent_item_id,
+      seasonal_months: Array.isArray((body as any).seasonal_months)
+        ? Array.from(
+            new Set(
+              ((body as any).seasonal_months as unknown[])
+                .map(Number)
+                .filter((m) => Number.isInteger(m) && m >= 1 && m <= 12),
+            ),
+          ).sort((a, b) => a - b)
+        : [],
     })
     .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, parent_item_id")
     .single();

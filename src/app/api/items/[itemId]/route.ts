@@ -106,6 +106,16 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (body.size !== undefined) updates.size = body.size || null;
   if (body.variety !== undefined) updates.variety = body.variety || null;
   if (body.color !== undefined) updates.color = body.color || null;
+  if (body.seasonal_months !== undefined) {
+    if (!Array.isArray(body.seasonal_months)) {
+      return NextResponse.json({ error: "seasonal_months must be an array" }, { status: 400 });
+    }
+    const months = (body.seasonal_months as unknown[]).map(Number);
+    if (months.some((m) => !Number.isInteger(m) || m < 1 || m > 12)) {
+      return NextResponse.json({ error: "seasonal_months entries must be integers 1-12" }, { status: 400 });
+    }
+    updates.seasonal_months = Array.from(new Set(months)).sort((a, b) => a - b);
+  }
 
   const admin = createAdminClient();
 
