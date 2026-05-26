@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { FROM_EMAIL } from "@/lib/constants";
+import { safeResendSend, isEmailOverrideActive, getEmailOverrideList } from "@/lib/resend/client";
 
 /**
  * GET /api/test-email?to=email@example.com
@@ -35,6 +36,8 @@ export async function GET(request: Request) {
     from_email_constant: FROM_EMAIL,
     will_use_from: process.env.RESEND_FROM_EMAIL || FROM_EMAIL,
     to_email: to,
+    override_active: isEmailOverrideActive(),
+    override_recipients: getEmailOverrideList(),
   };
 
   if (!process.env.RESEND_API_KEY) {
@@ -46,16 +49,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-
     const fromAddress = process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await safeResendSend({
       from: fromAddress,
       to,
       subject: "Press Farm OS — Test Email",
-      text: `This is a test email from Press Farm OS.\n\nIf you received this, your email configuration is working.\n\nFrom: ${fromAddress}\nTo: ${to}\nTime: ${new Date().toISOString()}\n\n— Press Farm OS`,
+      text: `This is a test email from Press Farm OS.\n\nIf you received this, your email configuration is working.\n\nFrom: ${fromAddress}\nTo (intended): ${to}\nOverride active: ${isEmailOverrideActive()}\nTime: ${new Date().toISOString()}\n\n— Press Farm OS`,
     });
 
     if (error) {

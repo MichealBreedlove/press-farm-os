@@ -149,8 +149,7 @@ async function sendDigest() {
 
   // Send via Resend
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { safeResendSend } = await import("@/lib/resend/client");
 
     // Also check for configured email in farm_settings
     const { data: settings } = await (admin as any)
@@ -190,7 +189,7 @@ async function sendDigest() {
       }),
     }) as React.ReactElement;
 
-    await resend.emails.send({
+    await safeResendSend({
       from: FROM_ADDRESSES.digest,
       to: toEmail,
       subject,

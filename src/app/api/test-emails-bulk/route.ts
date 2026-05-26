@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
-import { getResendClient } from "@/lib/resend/client";
+import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
 // 12 emails × 600ms throttle ≈ 7.2s of work; bump the function's max
@@ -53,13 +53,12 @@ export async function GET(request: Request) {
   const onlyParam = url.searchParams.get("only");
   const skipPerRestaurant = onlyParam === "receiver";
 
-  const resend = getResendClient();
   const sampleDate = "Thursday, May 1";
   const results: { template: string; restaurant: string; status: string; id?: string; error?: any }[] = [];
 
   async function send(template: string, restaurant: string, fromAddress: string, subject: string, react: React.ReactElement) {
     try {
-      const { data, error } = await resend.emails.send({
+      const { data, error } = await safeResendSend({
         from: fromAddress,
         to,
         subject: `[SAMPLE · ${restaurant}] ${subject}`,

@@ -6,7 +6,7 @@
  */
 
 import { render } from "@react-email/render";
-import { getResendClient } from "@/lib/resend/client";
+import { safeResendSend } from "@/lib/resend/client";
 import { ADMIN_EMAIL, FROM_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import OrderReceived from "@/emails/order-received";
 import OrderConfirmation from "@/emails/order-confirmation";
@@ -92,7 +92,7 @@ async function sendOrLog(params: {
   const fromAddress = from || process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
 
   try {
-    const { data: sendData, error } = await getResendClient().emails.send({
+    const { data: sendData, error } = await safeResendSend({
       from: fromAddress,
       to,
       subject,
