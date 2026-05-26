@@ -211,7 +211,7 @@ export default function DeliveryLogForm({
           items: validLines.map((l) => ({
             item_id: l.item_id,
             quantity: parseFloat(l.quantity),
-            unit: l.unit,
+            unit: l.unit.trim().toLowerCase(),
             unit_price: parseFloat(l.unit_price),
             size_label: l.size_label || null,
             is_bonus: l.is_bonus,
