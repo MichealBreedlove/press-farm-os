@@ -27,7 +27,9 @@ import type {
   ForecastMicrogreenBatchRow,
   ForecastMicrogreenCropRow,
   ForecastPlantingRow,
+  HistoricalDeliveryRow,
   MicrogreenWindow,
+  SeasonalItemRow,
 } from "./types";
 
 const PLANTING_SELECT = `
@@ -170,4 +172,73 @@ function normalizeForecastData(raw: {
   const crops: ForecastMicrogreenCropRow[] = raw.crops ?? [];
 
   return { plantings, batches, crops };
+}
+
+// ─── Year-view fetchers (for /order/forecast) ────────────────────────────────
+
+/**
+ * Past delivery actuals for a single restaurant within [from, to].
+ * Uses the admin client (bypasses RLS); the caller must have already
+ * verified the chef is mapped to this restaurant.
+ */
+export async function fetchHistoricalDeliveries(
+  from: string,
+  to: string,
+  restaurantId: string,
+): Promise<HistoricalDeliveryRow[]> {
+  const admin = createAdminClient();
+  const { data, error } = await (admin as any)
+    .from("delivery_items")
+    .select(`
+      quantity,
+      unit,
+      items!inner ( id, name, category, unit_type ),
+      deliveries!inner ( delivery_date, restaurant_id )
+    `)
+    .gte("deliveries.delivery_date", from)
+    .lte("deliveries.delivery_date", to)
+    .eq("deliveries.restaurant_id", restaurantId);
+
+  if (error) {
+    console.error("[forecasting] fetchHistoricalDeliveries error:", error);
+    return [];
+  }
+  if (!data) return [];
+
+  return data.map((row: any) => ({
+    delivery_date: row.deliveries.delivery_date,
+    item_id: row.items.id,
+    item_name: row.items.name,
+    category: row.items.category,
+    unit_type: row.items.unit_type,
+    quantity: Number(row.quantity),
+    unit: row.unit,
+  }));
+}
+
+/**
+ * All non-archived items with non-empty seasonal_months. Single-farm
+ * assumption — the items table is single-farm in this app.
+ */
+export async function fetchSeasonalItems(): Promise<SeasonalItemRow[]> {
+  const admin = createAdminClient();
+  const { data, error } = await (admin as any)
+    .from("items")
+    .select("id, name, category, seasonal_months")
+    .eq("is_archived", false);
+
+  if (error) {
+    console.error("[forecasting] fetchSeasonalItems error:", error);
+    return [];
+  }
+  if (!data) return [];
+
+  return data
+    .map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      seasonal_months: (row.seasonal_months ?? []) as number[],
+    }))
+    .filter((it: SeasonalItemRow) => it.seasonal_months.length > 0);
 }

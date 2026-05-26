@@ -194,3 +194,61 @@ export interface ForecastCalendarEvent {
   /** Originating planting id (field) or batch id (microgreen). */
   refId: string;
 }
+
+// ─── Year-view types (for /order/forecast) ───────────────────────────────────
+
+/**
+ * Past delivery actuals row — what was actually shipped to a restaurant in
+ * a given week. Sourced from delivery_items JOIN deliveries.
+ */
+export interface HistoricalDeliveryRow {
+  delivery_date: string;
+  item_id: string;
+  item_name: string;
+  category: string | null;
+  unit_type: string | null;
+  quantity: number;
+  unit: string;
+}
+
+/**
+ * Item with seasonal_months populated — used by the far-future "seasonal" zone.
+ */
+export interface SeasonalItemRow {
+  id: string;
+  name: string;
+  category: string | null;
+  seasonal_months: number[];
+}
+
+/**
+ * A bucket of historical deliveries grouped by ISO week.
+ */
+export interface WeekBucket {
+  /** ISO week-start date (Monday), YYYY-MM-DD. */
+  weekStart: string;
+  /** Distinct items delivered that week, sorted by name. */
+  items: Array<{
+    id: string;
+    name: string;
+    category: string | null;
+    unit_type: string | null;
+    /** Sum across all delivery_items rows for that item in that week. */
+    quantity: number;
+    /** Most-common unit for that item-week (e.g. "lb" or "lg"). */
+    unit: string;
+  }>;
+}
+
+/**
+ * Density bucket for a single month in the year strip.
+ */
+export interface MonthDensity {
+  /** 1=Jan..12=Dec */
+  month: number;
+  /** Distinct-item count, deduplicated across all three zones (by lowercased name). */
+  count: number;
+  /** Highest-priority zone touching this month, used to pick tab styling.
+   *  Priority order: past > concrete > seasonal > empty. */
+  zone: "past" | "concrete" | "seasonal" | "empty";
+}

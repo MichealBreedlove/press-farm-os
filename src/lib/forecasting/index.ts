@@ -14,6 +14,9 @@
  *     - availabilityBuckets(referenceDate, data)
  *     - cropWindowsInRange(from, to, data)         → calendar events (field)
  *     - microgreenEventsInRange(from, to, data)    → calendar events (microgreen)
+ *     - historicalWeeks(from, to, rows)            → past delivery actuals by week
+ *     - monthDensity(year, sources)                → 12-month density for /order/forecast
+ *     - monthSeasonalItems(month, items)           → seasonal hints grouped by category
  *
  *   Server data layer (Supabase, admin client):
  *     - fetchForecastData(from, to)
@@ -22,6 +25,8 @@
  *     - getFieldCropWindows(from, to)
  *     - getMicrogreenWindows(from, to)
  *     - getCalendarEvents(from, to)
+ *     - fetchHistoricalDeliveries(from, to, restaurantId)
+ *     - fetchSeasonalItems()
  *
  *   Date helpers (UTC ISO-date math):
  *     - addDays, daysBetween, isWithin, isoDateUtc, toIso
@@ -44,6 +49,14 @@ export {
   TWO_MONTHS_DAYS,
 } from "./compute";
 
+// Year-view compute (for /order/forecast)
+export {
+  historicalWeeks,
+  monthDensity,
+  monthSeasonalItems,
+  isoWeekStart,
+} from "./yearView";
+
 // Server-side data layer (do not import into client components)
 export {
   fetchForecastData,
@@ -52,6 +65,8 @@ export {
   getFieldCropWindows,
   getMicrogreenWindows,
   getCalendarEvents,
+  fetchHistoricalDeliveries,
+  fetchSeasonalItems,
 } from "./fetch";
 
 // Date helpers
@@ -72,4 +87,8 @@ export type {
   FieldEventType,
   MicrogreenEventType,
   ForecastCalendarEvent,
+  HistoricalDeliveryRow,
+  SeasonalItemRow,
+  WeekBucket,
+  MonthDensity,
 } from "./types";
