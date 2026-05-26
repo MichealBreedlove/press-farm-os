@@ -13,8 +13,24 @@
       "schedule": "0 16 * * 3"
     },
     {
-      "path": "/api/reports/partner-report",
+      "path": "/api/reports/partner-report?type=monthly",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/reports/partner-report?type=q1",
+      "schedule": "0 23 31 3 *"
+    },
+    {
+      "path": "/api/reports/partner-report?type=q2",
+      "schedule": "0 23 30 6 *"
+    },
+    {
+      "path": "/api/reports/partner-report?type=q3",
+      "schedule": "0 23 30 9 *"
+    },
+    {
+      "path": "/api/reports/partner-report?type=q4",
+      "schedule": "0 23 31 12 *"
     }
   ]
 }

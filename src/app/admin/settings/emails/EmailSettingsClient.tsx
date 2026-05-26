@@ -61,6 +61,15 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
   const [sending, setSending] = useState<string | null>(null);
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
+  // Quarterly send selector — defaults to the most recent COMPLETED quarter.
+  const now = new Date();
+  const currentQuarter = Math.floor(now.getMonth() / 3) + 1; // 1–4
+  const defaultQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
+  const defaultQYear = currentQuarter === 1 ? now.getFullYear() - 1 : now.getFullYear();
+  const [quarter, setQuarter] = useState<number>(defaultQuarter);
+  const [quarterYear, setQuarterYear] = useState<number>(defaultQYear);
+  const yearOptions = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+
   function set(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
     setSaved(false);
@@ -79,18 +88,23 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
         res = await fetch("/api/reports/partner-report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ period: kind === "partner-quarterly" ? "quarterly" : "monthly" }),
+          body: JSON.stringify(
+            kind === "partner-quarterly"
+              ? { period: "quarterly", year: quarterYear, quarter }
+              : { period: "monthly" },
+          ),
         });
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setSendResult({ kind: "err", msg: data?.error || "Send failed." });
-      } else if (data?.skipped || data?.results?.monthly?.skipped) {
-        setSendResult({ kind: "err", msg: data?.message || data?.results?.monthly?.message || "Skipped — no recipient configured." });
+      } else if (data?.skipped) {
+        setSendResult({ kind: "err", msg: data?.message || "Skipped — no recipient configured." });
       } else if (kind === "forecast") {
         setSendResult({ kind: "ok", msg: `Forecast sent to ${data?.emailsSent ?? 0} chef${data?.emailsSent === 1 ? "" : "s"}.` });
       } else {
-        setSendResult({ kind: "ok", msg: `${kind === "partner-quarterly" ? "Quarterly" : "Monthly"} partner report sent to ${data?.to ?? "partner"}.` });
+        const label = data?.periodLabel ? ` (${data.periodLabel})` : "";
+        setSendResult({ kind: "ok", msg: `${kind === "partner-quarterly" ? "Quarterly" : "Monthly"} partner report sent to ${data?.to ?? "partner"}${label}.` });
       }
     } catch (err) {
       setSendResult({ kind: "err", msg: String(err) });
@@ -164,8 +178,9 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           <div>
             <h2 className="font-display text-sm text-farm-dark">Send Now</h2>
             <p className="text-xs text-farm-muted">
-              Trigger a send immediately. These also run on schedule (forecast weekly; partner report
-              monthly + at the start of each quarter).
+              Trigger a send immediately. These also run on schedule: forecast weekly; the monthly
+              report on the 1st; the quarterly report at the end of each quarter (Mar 31 covers
+              Jan–Mar, Jun 30 covers Apr–Jun, and so on).
             </p>
           </div>
         </div>
@@ -199,14 +214,38 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
             {sending === "partner-monthly" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Send Monthly Partner Report
           </button>
-          <button
-            onClick={() => sendNow("partner-quarterly")}
-            disabled={sending !== null}
-            className="btn-secondary w-full flex items-center justify-center gap-2"
-          >
-            {sending === "partner-quarterly" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Send Quarterly Partner Report
-          </button>
+          <div className="rounded-lg border border-farm-dark/10 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-farm-muted whitespace-nowrap">Quarter</label>
+              <select
+                value={quarter}
+                onChange={(e) => setQuarter(parseInt(e.target.value, 10))}
+                className="input-field flex-1 py-1.5"
+              >
+                <option value={1}>Q1 · Jan–Mar</option>
+                <option value={2}>Q2 · Apr–Jun</option>
+                <option value={3}>Q3 · Jul–Sep</option>
+                <option value={4}>Q4 · Oct–Dec</option>
+              </select>
+              <select
+                value={quarterYear}
+                onChange={(e) => setQuarterYear(parseInt(e.target.value, 10))}
+                className="input-field py-1.5"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => sendNow("partner-quarterly")}
+              disabled={sending !== null}
+              className="btn-secondary w-full flex items-center justify-center gap-2"
+            >
+              {sending === "partner-quarterly" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send Q{quarter} {quarterYear} Partner Report
+            </button>
+          </div>
         </div>
       </div>
     </div>

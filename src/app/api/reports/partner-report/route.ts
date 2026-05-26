@@ -8,24 +8,76 @@ import type { PartnerReportLine } from "@/emails/partner-report";
 import type { ForecastEmailEntry } from "@/emails/availability-forecast";
 
 type Period = "monthly" | "quarterly";
+interface PeriodRange {
+  start: string;
+  end: string;
+  label: string;
+}
 
 /**
  * Partner / Chef Phil report (monthly + quarterly).
  *
- *   GET  — Vercel Cron (`0 9 1 * *`, the 1st of every month). Requires
- *          `Authorization: Bearer ${CRON_SECRET}` (fail-closed in prod, allow
- *          unsigned in local dev). The handler decides what to send:
- *            • always the previous MONTH's summary on the 1st
- *            • additionally the previous QUARTER's summary when the 1st starts
- *              a quarter (Jan/Apr/Jul/Oct 1).
- *   POST — Manual admin trigger. Body: { period: 'monthly' | 'quarterly' }.
+ *   GET  — Vercel Cron. The `type` query param selects what to send:
+ *            • `type=monthly` (1st of each month) → previous calendar month.
+ *            • `type=q1|q2|q3|q4` (last day of Mar/Jun/Sep/Dec) → that exact
+ *              calendar quarter of the current year. Quarters are fixed:
+ *              Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec.
+ *          Requires `Authorization: Bearer ${CRON_SECRET}` (fail-closed in
+ *          prod, unsigned OK in local dev).
+ *   POST — Manual admin trigger. Body:
+ *            • { period: 'quarterly', year, quarter }  (year/quarter optional —
+ *              default to the most recent COMPLETED quarter)
+ *            • { period: 'monthly', year, month }      (optional — default to
+ *              the previous month)
  *
  * Recipient is read from farm_settings.email_partner_report. If unset, the send
  * is skipped and a clear message is returned (graceful no-op).
  *
- * Reuses the deliveries + farm-reports query shapes from /api/reports/income +
- * /api/reports/monthly, but the email is partner-facing — no expense/margin.
+ * The period range is ALWAYS an exact calendar boundary, so a quarterly report
+ * only ever contains that quarter's three months — never spillover.
  */
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Exact calendar quarter. quarter is 1-based (1=Q1 Jan–Mar … 4=Q4 Oct–Dec). */
+function quarterRange(year: number, quarter: number): PeriodRange {
+  const startMonth = (quarter - 1) * 3; // 0-based
+  const endMonth = startMonth + 2;
+  const start = `${year}-${pad(startMonth + 1)}-01`;
+  const lastDay = new Date(year, endMonth + 1, 0).getDate();
+  const end = `${year}-${pad(endMonth + 1)}-${pad(lastDay)}`;
+  return { start, end, label: `Q${quarter} ${year}` };
+}
+
+/** Single calendar month. month is 1-based. */
+function monthRange(year: number, month: number): PeriodRange {
+  const start = `${year}-${pad(month)}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const end = `${year}-${pad(month)}-${pad(lastDay)}`;
+  const label = new Date(year, month - 1, 1).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  return { start, end, label };
+}
+
+function previousMonth(now: Date): { year: number; month: number } {
+  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
+/** The most recent fully-completed quarter relative to `now`. */
+function mostRecentCompletedQuarter(now: Date): { year: number; quarter: number } {
+  const currentQuarter = Math.floor(now.getMonth() / 3) + 1; // 1–4
+  let quarter = currentQuarter - 1;
+  let year = now.getFullYear();
+  if (quarter < 1) {
+    quarter = 4;
+    year -= 1;
+  }
+  return { year, quarter };
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
@@ -37,18 +89,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
   }
 
-  // Cron fires on the 1st. Always send the previous month; additionally send the
-  // previous quarter when the 1st begins a new quarter.
+  const { searchParams } = new URL(request.url);
+  const type = (searchParams.get("type") ?? "monthly").toLowerCase();
   const now = new Date();
-  const month = now.getMonth(); // 0-based
-  const periods: Period[] = ["monthly"];
-  if (month % 3 === 0) periods.push("quarterly"); // Jan/Apr/Jul/Oct
 
-  const results: Record<string, unknown> = {};
-  for (const period of periods) {
-    results[period] = await buildAndSend(period);
+  let period: Period;
+  let range: PeriodRange;
+  const quarterMatch = /^q([1-4])$/.exec(type);
+  if (quarterMatch) {
+    // Fired on the last day of the quarter — report that quarter of this year.
+    period = "quarterly";
+    range = quarterRange(now.getFullYear(), parseInt(quarterMatch[1], 10));
+  } else {
+    period = "monthly";
+    const { year, month } = previousMonth(now);
+    range = monthRange(year, month);
   }
-  return NextResponse.json({ success: true, results });
+
+  const result = await buildAndSend(period, range);
+  return NextResponse.json({ success: true, period, periodLabel: range.label, ...(result as object) });
 }
 
 export async function POST(request: Request) {
@@ -62,51 +121,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({} as any));
   const period: Period = body?.period === "quarterly" ? "quarterly" : "monthly";
-  const result = await buildAndSend(period);
-  return NextResponse.json({ success: true, period, ...(result as object) });
-}
-
-/**
- * Resolve the [start, end] ISO date range + a human label for the period that
- * just CLOSED relative to today (previous month / previous quarter).
- */
-function resolvePeriod(period: Period): { start: string; end: string; label: string } {
   const now = new Date();
-  const year = now.getFullYear();
-  const monthIdx = now.getMonth(); // 0-based, current month
 
-  if (period === "monthly") {
-    // Previous calendar month.
-    const prev = new Date(year, monthIdx - 1, 1);
-    const y = prev.getFullYear();
-    const m = prev.getMonth(); // 0-based
-    const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-    const label = prev.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-    return { start, end, label };
+  let range: PeriodRange;
+  if (period === "quarterly") {
+    let year = Number(body?.year);
+    let quarter = Number(body?.quarter);
+    if (!Number.isInteger(year) || !Number.isInteger(quarter) || quarter < 1 || quarter > 4) {
+      ({ year, quarter } = mostRecentCompletedQuarter(now));
+    }
+    range = quarterRange(year, quarter);
+  } else {
+    let year = Number(body?.year);
+    let month = Number(body?.month);
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      ({ year, month } = previousMonth(now));
+    }
+    range = monthRange(year, month);
   }
 
-  // Previous calendar quarter.
-  const currentQuarter = Math.floor(monthIdx / 3); // 0-3
-  let qYear = year;
-  let prevQuarter = currentQuarter - 1;
-  if (prevQuarter < 0) {
-    prevQuarter = 3;
-    qYear = year - 1;
-  }
-  const startMonth = prevQuarter * 3; // 0-based
-  const endMonth = startMonth + 2;
-  const start = `${qYear}-${String(startMonth + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(qYear, endMonth + 1, 0).getDate();
-  const end = `${qYear}-${String(endMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  const label = `Q${prevQuarter + 1} ${qYear}`;
-  return { start, end, label };
+  const result = await buildAndSend(period, range);
+  return NextResponse.json({ success: true, period, periodLabel: range.label, ...(result as object) });
 }
 
-async function buildAndSend(period: Period) {
+async function buildAndSend(period: Period, { start, end, label }: PeriodRange) {
   const admin = createAdminClient();
 
   // Partner recipient from farm_settings — graceful skip when unset.
@@ -117,7 +157,6 @@ async function buildAndSend(period: Period) {
     .maybeSingle();
 
   const toEmail: string | null = setting?.value || null;
-  const { start, end, label } = resolvePeriod(period);
 
   if (!toEmail) {
     return {
@@ -128,7 +167,8 @@ async function buildAndSend(period: Period) {
     };
   }
 
-  // Deliveries in the period (value + restaurant). Mirrors /api/reports/income.
+  // Deliveries in the period (value + restaurant). Strictly bounded to the
+  // period's calendar start/end, so a quarter only ever holds its 3 months.
   const { data: deliveries } = await (admin as any)
     .from("deliveries")
     .select("id, delivery_date, total_value, restaurants(name)")
