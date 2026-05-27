@@ -1,4 +1,13 @@
--- Migration 047: Inbound reply capture
+-- Migration 060: Inbound reply capture
+--
+-- Renumbered from 047 → 059 → 060 to avoid collisions with three other
+-- migrations that shipped on main while this was in flight:
+-- 047_fix_nasturtium_leaves_miscategorization, 047_microgreens_units, and
+-- 059_items_seasonal_months.
+--
+-- Also uses `private.is_admin()` (not bare `is_admin()`) — the function was
+-- moved to the `private` schema in an intermediate migration and bare calls
+-- now fail with "function is_admin() does not exist".
 --
 -- New table:
 --   inbound_messages — raw chef replies captured via Resend Inbound webhook
@@ -53,8 +62,8 @@ ALTER TABLE inbound_messages ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Admin full access to inbound messages" ON inbound_messages;
 CREATE POLICY "Admin full access to inbound messages"
   ON inbound_messages FOR ALL
-  USING (is_admin())
-  WITH CHECK (is_admin());
+  USING (private.is_admin())
+  WITH CHECK (private.is_admin());
 
 DROP TRIGGER IF EXISTS update_inbound_messages_updated_at ON inbound_messages;
 CREATE TRIGGER update_inbound_messages_updated_at
