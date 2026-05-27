@@ -189,7 +189,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=        # server only, bypasses RLS
 RESEND_API_KEY=                   # server only
-NEXT_PUBLIC_APP_URL=              # https://pressfarm.app or localhost:3000
+NEXT_PUBLIC_APP_URL=              # https://pressfarm.io or localhost:3000
 RESEND_FROM_*                     # optional per-purpose sender overrides (orders/availability/digest/timesheet/noreply)
 ```
 
