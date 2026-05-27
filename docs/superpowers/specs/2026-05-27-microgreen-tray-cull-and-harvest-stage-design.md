@@ -55,7 +55,7 @@ This design ships both fixes in one change because the underlying module is smal
                   (status = 'lost' or DELETE)
 
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ Migration 047_microgreen_harvest_stage.sql                              │
+│ Migration 060_microgreen_harvest_stage.sql                              │
 │                                                                          │
 │ + CREATE TYPE microgreen_harvest_stage AS ENUM (…)                       │
 │ + ALTER TABLE microgreen_crops ADD harvest_stage … DEFAULT 'baby_green'  │
@@ -67,9 +67,9 @@ This design ships both fixes in one change because the underlying module is smal
 
 ## Detailed design
 
-### 1. Database changes (Migration 047)
+### 1. Database changes (Migration 060)
 
-File: `supabase/migrations/047_microgreen_harvest_stage.sql`
+File: `supabase/migrations/060_microgreen_harvest_stage.sql`
 
 ```sql
 -- 1a. New enum
@@ -259,7 +259,7 @@ File: `src/lib/microgreens/seedData.ts`
 - Add `harvest_stage: 'baby_green'` to every entry by default.
 - Override to `'cotyledon'` for `Pea Shoot`, `Sunflower`, `Wheatgrass`, `Popcorn`, `Corn`, `Nasturtium` to mirror the migration exception list. (These are shoot/grain crops where "baby green" is semantically nonsense.)
 
-No day-number changes in the seed file — those numbers remain the cotyledon-reference baseline for future re-seeding scenarios. The runtime DB diverges by design after migration 047 runs.
+No day-number changes in the seed file — those numbers remain the cotyledon-reference baseline for future re-seeding scenarios. The runtime DB diverges by design after migration 060 runs.
 
 ## Edge cases
 
@@ -267,6 +267,7 @@ No day-number changes in the seed file — those numbers remain the cotyledon-re
 - **Delete on a tray with harvests.** API returns 409, UI shows a toast pointing user to "Mark as lost" instead.
 - **Concurrent admin edits.** Last-write-wins. We don't optimistic-lock — the cull and edit volume is low.
 - **Migration applied while trays are in flight.** Tray `sow_date`-based timing math (`isReadyToHarvest`, `nextTransitionLabel`) reads `crop.ideal_harvest_day` at query time, so all in-flight trays immediately shift their "harvest today" date forward by 5 days. This is the desired effect.
+- **Migration number reuse risk.** Migration 047 already shipped (`047_microgreens_units.sql` introducing per-unit `yield_per_tray`). This design uses **060** as the next available number — re-verify before running.
 - **Crop with `keep_in_blackout = true`** (Popcorn, Corn): their `harvest_stage` is `cotyledon` and `ideal_harvest_day` is unchanged. No regression in the keep-in-blackout flow.
 - **`blackout_within_harvest` check constraint.** Migration only adds days, never subtracts, and never modifies `blackout_days`, so the constraint always remains satisfied.
 - **Crops not in the exception list but with weird timing.** If any active crop has unusual day numbers (e.g., a 30-day Sorrel), the +5 bump still applies. Micheal fine-tunes after via the crop edit page.
@@ -289,6 +290,7 @@ No day-number changes in the seed file — those numbers remain the cotyledon-re
 - Single PR-ish bundle (Micheal pushes directly to `main`).
 - Order: migration first (Micheal runs SQL in Supabase web editor), confirm column exists, then push code.
 - If the code lands before migration: the crop list / edit / detail pages will throw on `harvest_stage` selects until migration runs. **Ship migration → confirm → push code.**
+- The bulk-lost UI and per-tray Delete UI can ship independently of the migration — no schema dependency. If migration prep is slow, ship the cull half first.
 
 ## Open follow-ups
 
