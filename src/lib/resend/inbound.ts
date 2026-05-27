@@ -1,5 +1,5 @@
 /**
- * Resend Inbound webhook helpers.
+ * Resend Inbound (Receiving) webhook helpers.
  *
  * Resend signs inbound webhooks using the Svix format:
  *   Headers:
@@ -15,11 +15,33 @@
  *   the message if ANY signature matches.
  *
  * The signing secret is provisioned in the Resend dashboard when you
- * configure the inbound endpoint and stored in Vercel as
- * RESEND_INBOUND_SIGNING_SECRET.
+ * configure the webhook and stored in Vercel as RESEND_INBOUND_SIGNING_SECRET.
  *
  * Reject timestamps more than 5 minutes from now in either direction —
  * defends against replay of an old signed body.
+ *
+ * ─── Payload shape ─────────────────────────────────────────────────────
+ *
+ * Resend's `email.received` webhook delivers METADATA ONLY — no body,
+ * no headers, no attachments. We must call GET /emails/receiving/{id}
+ * to fetch the actual content. The fetch helper at the bottom of this
+ * file handles that.
+ *
+ * Webhook payload from docs (https://resend.com/docs/dashboard/receiving):
+ *   {
+ *     "type": "email.received",
+ *     "created_at": "...",
+ *     "data": {
+ *       "email_id": "uuid",          // use this to fetch the body
+ *       "created_at": "...",
+ *       "from": "sender@example.com",
+ *       "to": ["replies@pressfarm.io"],
+ *       "cc": [], "bcc": [],
+ *       "message_id": "<rfc-id>",
+ *       "subject": "...",
+ *       "attachments": [{...}]
+ *     }
+ *   }
  */
 
 import crypto from "node:crypto";
@@ -105,83 +127,142 @@ export function verifyResendSignature(
 }
 
 // ─── Payload typing ────────────────────────────────────────────────────
-//
-// Resend's inbound webhook delivers an event envelope. The payload shape
-// below is intentionally permissive — different inbound providers shape
-// fields slightly differently, and Resend's contract has been evolving.
-// We pick out the fields we need and tolerate extras.
 
-export interface InboundAddress {
-  email: string;
-  name?: string | null;
-}
-
-export interface InboundEmailPayload {
+export interface InboundEventData {
+  email_id: string;
+  created_at?: string;
+  from: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
   message_id?: string;
-  from: InboundAddress | { address: string; name?: string | null };
-  to: Array<InboundAddress | { address: string; name?: string | null }>;
   subject?: string | null;
-  text?: string | null;
-  html?: string | null;
-  in_reply_to?: string | null;
-  created_at?: string | null;
+  attachments?: unknown[];
 }
 
 export interface InboundEvent {
   type?: string;
-  data?: InboundEmailPayload & { id?: string; message_id?: string };
-  // Some providers post the email object directly without an envelope.
-  // We handle both by reading either `data.*` or top-level fields.
-  [key: string]: unknown;
+  created_at?: string;
+  data?: InboundEventData;
 }
 
-interface NormalizedEmail {
+export interface NormalizedInboundMetadata {
+  /** Resend's UUID for this received email — used to fetch the body. */
+  emailId: string;
+  /** RFC Message-ID header value (often wrapped in <>) — falls back to emailId. */
   messageId: string;
   from: { email: string; name: string | null };
-  to: Array<{ email: string; name: string | null }>;
+  to: string[];
   subject: string | null;
-  text: string | null;
-  html: string | null;
-  inReplyTo: string | null;
   receivedAt: string;
 }
 
-function normalizeAddress(
-  addr: InboundAddress | { address: string; name?: string | null } | null | undefined,
-): { email: string; name: string | null } | null {
-  if (!addr) return null;
-  const email = "email" in addr ? addr.email : addr.address;
-  if (!email) return null;
-  const name = "name" in addr && addr.name ? addr.name : null;
-  return { email, name };
-}
-
 /**
- * Pull the fields we care about out of an inbound event envelope.
- * Returns null if the payload is missing required fields.
+ * Parse an `email.received` event envelope into the metadata we need to
+ * (a) idempotently upsert the row and (b) fetch the body via the API.
+ *
+ * Returns null on any malformed/unsupported payload.
  */
-export function normalizeInboundEmail(event: InboundEvent): NormalizedEmail | null {
-  const payload = (event.data ?? event) as InboundEmailPayload & { id?: string; message_id?: string };
+export function normalizeInboundEvent(event: InboundEvent): NormalizedInboundMetadata | null {
+  if (event.type && event.type !== "email.received") return null;
+  const data = event.data;
+  if (!data?.email_id || !data.from) return null;
 
-  const messageId = payload.message_id ?? payload.id ?? null;
-  if (!messageId) return null;
+  // Resend's payload puts `from` as a plain email string. If a friendly name
+  // is ever needed it would come via the body-fetch headers, not the webhook.
+  const fromEmail = typeof data.from === "string" ? data.from : null;
+  if (!fromEmail) return null;
 
-  const from = normalizeAddress(payload.from as any);
-  if (!from) return null;
-
-  const toList = Array.isArray(payload.to)
-    ? (payload.to.map(normalizeAddress).filter(Boolean) as Array<{ email: string; name: string | null }>)
-    : [];
+  const toList = Array.isArray(data.to) ? data.to.filter((s): s is string => typeof s === "string") : [];
   if (toList.length === 0) return null;
 
   return {
-    messageId,
-    from,
+    emailId: data.email_id,
+    messageId: data.message_id ?? data.email_id,
+    from: { email: fromEmail, name: null },
     to: toList,
-    subject: payload.subject ?? null,
-    text: payload.text ?? null,
-    html: payload.html ?? null,
-    inReplyTo: payload.in_reply_to ?? null,
-    receivedAt: payload.created_at ?? new Date().toISOString(),
+    subject: data.subject ?? null,
+    receivedAt: data.created_at ?? event.created_at ?? new Date().toISOString(),
   };
+}
+
+// ─── Body fetch ────────────────────────────────────────────────────────
+//
+// Webhook payloads omit body/headers. We must follow up with a GET to
+// /emails/receiving/{email_id} using the Resend API key to get the actual
+// text/html so we can store + extract.
+//
+// API reference: https://resend.com/docs/api-reference/emails/retrieve-received-email
+
+export interface FetchedEmailBody {
+  text: string | null;
+  html: string | null;
+  fromName: string | null;
+  inReplyTo: string | null;
+}
+
+interface ReceivedEmailResponse {
+  object?: string;
+  id?: string;
+  from?: string;
+  to?: string[];
+  subject?: string | null;
+  html?: string | null;
+  text?: string | null;
+  headers?: Record<string, string> | null;
+  message_id?: string | null;
+}
+
+/**
+ * Best-effort plain-text fallback when Resend returns only HTML.
+ * Crude tag strip — fine for LLM consumption; not safe to render as-is.
+ */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/ /g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/**
+ * GET /emails/receiving/{email_id}
+ *
+ * Returns the full body + a few useful header values, or throws on a
+ * non-2xx response. Caller can decide whether to swallow.
+ */
+export async function fetchReceivedEmail(emailId: string, apiKey: string): Promise<FetchedEmailBody> {
+  const res = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend receiving API ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const json = (await res.json()) as ReceivedEmailResponse;
+
+  const text = json.text ?? (json.html ? htmlToText(json.html) : null);
+
+  // Headers come back as a flat object. Pull the friendly "From" name if
+  // present (e.g. "Chef Phil <phil@pressnapavalley.com>" → "Chef Phil").
+  let fromName: string | null = null;
+  const fromHeader = json.headers?.from ?? json.headers?.From;
+  if (fromHeader) {
+    const match = fromHeader.match(/^\s*"?([^"<]+?)"?\s*</);
+    if (match) fromName = match[1].trim() || null;
+  }
+
+  const inReplyTo = json.headers?.["in-reply-to"] ?? json.headers?.["In-Reply-To"] ?? null;
+
+  return { text, html: json.html ?? null, fromName, inReplyTo };
 }
