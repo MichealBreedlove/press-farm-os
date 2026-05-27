@@ -42,3 +42,28 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ tray: data });
 }
+
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const admin = createAdminClient();
+
+  // Refuse if any harvest events exist for this tray.
+  const { data: harvests, error: countErr } = await (admin as any)
+    .from("microgreen_harvests")
+    .select("id")
+    .eq("tray_id", params.id)
+    .limit(1);
+  if (countErr) return NextResponse.json({ error: countErr.message }, { status: 500 });
+  if ((harvests ?? []).length > 0) {
+    return NextResponse.json(
+      { error: "Tray has harvest events. Mark as lost or terminated instead." },
+      { status: 409 },
+    );
+  }
+
+  const { error } = await (admin as any)
+    .from("microgreen_trays").delete().eq("id", params.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
