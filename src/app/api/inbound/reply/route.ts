@@ -154,12 +154,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "db error" }, { status: 500 });
   }
 
-  // Fire-and-forget extraction. Only on the first ingest (skip if a retry
-  // landed on an already-processed row).
+  // Synchronous extraction. Originally fire-and-forget (`void promise`) but
+  // that gets killed when the serverless function returns — confirmed in
+  // prod testing 2026-05-27, messages were stuck in extraction_status='pending'
+  // until manually re-run. Next.js 14 has no `after()` so we just block on
+  // the LLM call. Haiku 4.5 typically returns in ~3s, well under maxDuration:60
+  // and Resend's webhook timeout. Catch errors so a failed extraction never
+  // turns into a webhook 500 (Resend would retry and we'd double-upsert).
+  // Only runs on the first ingest; idempotent retries skip if already processed.
   if (upserted.extraction_status === "pending") {
-    void extractItemRequests({ inboundMessageId: upserted.id }).catch((err) => {
+    try {
+      await extractItemRequests({ inboundMessageId: upserted.id });
+    } catch (err) {
       console.error("[INBOUND] extraction crashed", err);
-    });
+    }
   }
 
   return NextResponse.json({ ok: true, id: upserted.id });
