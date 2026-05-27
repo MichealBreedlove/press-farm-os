@@ -104,7 +104,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
           nextHref={nextHref}
           todayHref="/calendar"
           todayIso={todayIso}
-          cellHref={(iso) => `/order?date=${iso}`}
+          cellHrefBase="/order"
         />
 
         {/* Readable agenda — easier than the grid on a phone */}

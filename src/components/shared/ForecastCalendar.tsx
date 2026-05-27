@@ -51,11 +51,15 @@ interface Props {
   /** ISO date of today, for highlighting. */
   todayIso: string;
   /**
-   * Optional cell-link builder. When provided, day cells that have events
-   * become Links to `cellHref(iso)` (e.g. /order?date=ISO). When omitted the
-   * calendar is read-only (chef view default).
+   * Optional base path for day-cell links. When provided, day cells that
+   * have events become Links to `${cellHrefBase}?date=ISO` (e.g. pass
+   * "/order" to land chefs on the order form for that day). When omitted
+   * the calendar is read-only (chef view default).
+   *
+   * Must be a string — Server Components cannot pass function props to
+   * this Client Component without violating React Server Components rules.
    */
-  cellHref?: (iso: string) => string;
+  cellHrefBase?: string;
 }
 
 const DAY_HEADERS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -71,7 +75,7 @@ export function ForecastCalendar({
   nextHref,
   todayHref,
   todayIso,
-  cellHref,
+  cellHrefBase,
 }: Props) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -192,11 +196,11 @@ export function ForecastCalendar({
             isToday ? "bg-farm-cream/40 ring-1 ring-inset ring-farm-green/30" : ""
           }`;
 
-          if (cellHref && dayEvents.length > 0) {
+          if (cellHrefBase && dayEvents.length > 0) {
             return (
               <Link
                 key={cell.key}
-                href={cellHref(iso)}
+                href={`${cellHrefBase}?date=${iso}`}
                 className={`${cellClass} hover:bg-farm-cream/40 transition-colors`}
               >
                 {inner}
