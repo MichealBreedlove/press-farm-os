@@ -48,7 +48,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
 
   const admin = createAdminClient();
 
-  // Refuse if any harvest events exist for this tray.
+  // Guard: no harvest history (not active/inactive status) — allows hard-deleting typo'd lost/terminated trays.
   const { data: harvests, error: countErr } = await (admin as any)
     .from("microgreen_harvests")
     .select("id")
