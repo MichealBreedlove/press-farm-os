@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { Sprout } from "lucide-react";
 import { YIELD_UNITS, YIELD_UNIT_LABELS } from "@/lib/microgreens/types";
+import { HARVEST_STAGE_LABELS, HARVEST_STAGE_CHIP_CLASS } from "@/lib/microgreens/constants";
 import type { MicrogreenCrop } from "@/types/database";
 
 function formatYield(crop: MicrogreenCrop): string {
@@ -41,10 +42,15 @@ export default async function CropsListPage() {
               >
                 <Sprout className="w-5 h-5 text-farm-green shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium">
-                    {c.name}{c.variety ? ` — ${c.variety}` : ""}
+                  <div className="font-medium flex items-center gap-2">
+                    <span>{c.name}{c.variety ? ` — ${c.variety}` : ""}</span>
+                    <span
+                      className={`text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 ${HARVEST_STAGE_CHIP_CLASS[c.harvest_stage]}`}
+                    >
+                      {HARVEST_STAGE_LABELS[c.harvest_stage]}
+                    </span>
                     {!c.is_active && (
-                      <span className="ml-2 text-[10px] uppercase tracking-wide text-farm-muted border border-farm-muted/30 rounded px-1.5 py-0.5">
+                      <span className="text-[10px] uppercase tracking-wide text-farm-muted border border-farm-muted/30 rounded px-1.5 py-0.5">
                         inactive
                       </span>
                     )}
