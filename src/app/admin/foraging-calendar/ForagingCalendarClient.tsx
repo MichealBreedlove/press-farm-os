@@ -8,10 +8,12 @@ import {
   REGION_META,
   ALL_REGIONS,
   MONTH_LABELS,
+  wikiTitleFor,
   type ForageCategory,
   type ForageRegion,
   type ForageItem,
 } from "@/lib/foraging-calendar-data";
+import { ForageImage } from "./ForageImage";
 import { cn } from "@/lib/utils";
 
 type CategoryFilter = "all" | ForageCategory | "invasives";
@@ -264,6 +266,10 @@ export function ForagingCalendarClient({ defaultMonth }: ForagingCalendarClientP
         state and national parks; check land-use rules before harvesting. Take
         a fraction, leave the rest.
       </p>
+      <p className="mt-3 text-[10px] text-farm-muted/70 leading-relaxed text-center max-w-md mx-auto px-2">
+        Identification photos courtesy of Wikipedia &amp; Wikimedia Commons
+        contributors, served under their original Creative Commons licenses.
+      </p>
     </div>
   );
 }
@@ -284,8 +290,16 @@ function ForageCard({
   return (
     <li
       id={`forage-${item.slug}`}
-      className="rounded-2xl bg-white/85 border border-pf-master-gold/20 px-5 sm:px-6 py-5 transition-all"
+      className="rounded-2xl bg-white/85 border border-pf-master-gold/20 overflow-hidden transition-all"
     >
+      {/* Identification photo — pulled from Wikipedia REST API */}
+      <ForageImage
+        wikiTitle={wikiTitleFor(item)}
+        alt={`${item.name} — ${item.scientificName ?? "identification photo"}`}
+        className="w-full aspect-[5/3] rounded-none border-0 border-b border-pf-master-gold/15"
+      />
+
+      <div className="px-5 sm:px-6 py-5">
       {/* Eyebrow row */}
       <div className="flex items-center gap-2 flex-wrap">
         <p
@@ -429,6 +443,7 @@ function ForageCard({
           </p>
         </div>
       )}
+      </div>
     </li>
   );
 }

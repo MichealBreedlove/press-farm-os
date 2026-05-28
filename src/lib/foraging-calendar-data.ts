@@ -38,6 +38,28 @@ export interface ForageItem {
   notes: string;
   /** Optional caution — toxic lookalikes, allergen, or legal restriction. */
   caution?: string;
+  /**
+   * Override for the Wikipedia page used to source the identification photo.
+   * Defaults to scientificName with underscores (with "spp." stripped). Only
+   * set when the auto-derived title doesn't match a real WP page.
+   */
+  wikiTitle?: string;
+}
+
+/**
+ * Derive the Wikipedia page title for a foraging item. Used by the
+ * client-side image fetcher to pull a thumbnail from the Wikipedia REST
+ * API for identification.
+ */
+export function wikiTitleFor(item: ForageItem): string {
+  if (item.wikiTitle) return item.wikiTitle;
+  if (item.scientificName) {
+    return item.scientificName
+      .replace(/\s+spp\.$/i, "")
+      .trim()
+      .replace(/\s+/g, "_");
+  }
+  return item.name.replace(/\s+/g, "_");
 }
 
 export const CATEGORY_META: Record<
@@ -189,6 +211,7 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "chicken-of-the-woods",
     name: "Chicken of the Woods",
     scientificName: "Laetiporus gilbertsonii",
+    wikiTitle: "Laetiporus",
     category: "mushrooms",
     regions: ALL,
     peak: [9, 10, 11, 12],
@@ -258,6 +281,7 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "blewit",
     name: "Blewit",
     scientificName: "Clitocybe nuda",
+    wikiTitle: "Lepista_nuda",
     category: "mushrooms",
     regions: ALL,
     peak: [11, 12, 1, 2],
@@ -270,6 +294,7 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "wood-ear",
     name: "Wood Ear",
     scientificName: "Auricularia americana",
+    wikiTitle: "Auricularia_auricula-judae",
     category: "mushrooms",
     regions: ALL,
     peak: [11, 12, 1, 2, 3, 4],
@@ -314,6 +339,7 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "cauliflower",
     name: "Cauliflower Mushroom",
     scientificName: "Sparassis radicata",
+    wikiTitle: "Sparassis",
     category: "mushrooms",
     regions: ["marin", "santa-cruz"],
     peak: [10, 11, 12],
@@ -724,6 +750,7 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "sea-beans",
     name: "Sea Beans",
     scientificName: "Salicornia pacifica",
+    wikiTitle: "Salicornia",
     category: "greens",
     regions: ["marin", "east-bay", "peninsula"],
     peak: [5, 6, 7, 8, 9],
@@ -938,6 +965,8 @@ export const FORAGE_ITEMS: ForageItem[] = [
     slug: "california-bay-nut",
     name: "California Bay Nut",
     scientificName: "Umbellularia californica",
+    // Same Wikipedia page as bay laurel — different harvest, same plant
+    wikiTitle: "Umbellularia",
     category: "fruits",
     regions: ALL,
     peak: [10, 11, 12],
