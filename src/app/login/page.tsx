@@ -102,12 +102,24 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
-            New chef?{" "}
-            <Link href="/signup" className="underline hover:text-farm-dark">
-              Create an account
-            </Link>
-          </p>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-farm-dark/10" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-[10px] tracking-[0.2em] uppercase text-farm-muted/70">
+                New here
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/signup"
+            className="block w-full text-center min-h-[52px] py-3.5 rounded-xl border border-farm-dark/15 text-sm font-medium text-farm-dark hover:bg-farm-cream/40 hover:border-farm-dark/25 transition-colors"
+          >
+            Create a chef account
+          </Link>
+
           <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
             Trouble signing in? Contact Press Farm.
           </p>
