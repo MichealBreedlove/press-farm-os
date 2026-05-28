@@ -29,6 +29,7 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
 
   const crop = tray.batch?.crop;
   const totalsByUnit: Record<string, number> = {};
+  // Sum harvests per unit — mixing oz and LG/SM/EA into one number is meaningless.
   for (const h of harvests ?? []) {
     const label = harvestUnitLabel(h.unit);
     totalsByUnit[label] = (totalsByUnit[label] ?? 0) + Number(h.yield_oz);

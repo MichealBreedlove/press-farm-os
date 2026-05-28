@@ -26,6 +26,7 @@ export function TrayActionsFooter({ trayId, trayLabel, status, hasHarvests }: Pr
   async function markLost(reason: string) {
     const res = await fetch(`/api/microgreens/trays/${trayId}/terminate`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lost: true, lost_reason: reason }),
     });
     if (!res.ok) {
@@ -40,7 +41,7 @@ export function TrayActionsFooter({ trayId, trayLabel, status, hasHarvests }: Pr
     setDeleteError(null);
     const res = await fetch(`/api/microgreens/trays/${trayId}`, { method: "DELETE" });
     if (res.ok) {
-      router.push("/admin/microgreens/trays");
+      router.replace("/admin/microgreens/trays");
       return;
     }
     const body = await res.json().catch(() => ({}));
