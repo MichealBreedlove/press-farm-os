@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
-import { StageBadge } from "@/components/admin/microgreens/StageBadge";
+import { TrayListClient, type TrayRow } from "@/components/admin/microgreens/TrayListClient";
 import type { MicrogreenTrayStatus } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,6 @@ function daysBetween(fromIso: string, to: Date): number {
 }
 
 function statusOrder(s: string): number {
-  // Active stages first, terminal stages last; within group sort by sow_date desc
   const order: Record<string, number> = {
     soaking: 0, blackout: 1, light: 2, harvesting: 3, terminated: 4, lost: 5,
   };
@@ -29,7 +28,6 @@ export default async function TraysListPage({ searchParams }: Props) {
   const { status: statusFilter } = await searchParams;
   const admin = createAdminClient();
 
-  // Pull all trays + the bare crop fields we need for "next transition" math.
   let q = (admin as any).from("microgreen_trays")
     .select(`
       *,
@@ -43,7 +41,6 @@ export default async function TraysListPage({ searchParams }: Props) {
   if (statusFilter) q = q.eq("status", statusFilter);
   const { data: trays, error } = await q;
 
-  // Always fetch the full set for counts, regardless of current filter.
   const { data: allTrays } = await (admin as any)
     .from("microgreen_trays")
     .select("status");
@@ -94,6 +91,16 @@ export default async function TraysListPage({ searchParams }: Props) {
     return null;
   }
 
+  const rows: TrayRow[] = sortedTrays.map((t: any) => ({
+    id: t.id,
+    tray_label: t.tray_label,
+    status: t.status,
+    sow_date: t.sow_date,
+    cropName: t.batch?.crop?.name ?? "—",
+    daysIn: daysBetween(t.sow_date, now),
+    nextTransition: nextTransitionLabel(t),
+  }));
+
   return (
     <main className="pb-24">
       <EditorialHero
@@ -107,7 +114,6 @@ export default async function TraysListPage({ searchParams }: Props) {
         backHref="/admin/microgreens"
       />
       <div className="px-4 max-w-4xl mx-auto">
-        {/* Filter chips with live counts */}
         <div className="mb-4 flex gap-2 text-xs flex-wrap">
           <Link
             href="/admin/microgreens/trays"
@@ -144,42 +150,14 @@ export default async function TraysListPage({ searchParams }: Props) {
           </p>
         )}
 
-        {sortedTrays.length === 0 ? (
+        {rows.length === 0 ? (
           <p className="p-6 text-center text-sm text-farm-muted bg-white border border-farm-dark/10 rounded-xl">
             {statusFilter
               ? `No trays in ${statusFilter} status.`
               : "No trays sown yet. Open the dashboard and tap + Sow ad-hoc to log one."}
           </p>
         ) : (
-          <ul className="space-y-2">
-            {sortedTrays.map((t: any) => {
-              const cropName = t.batch?.crop?.name ?? "—";
-              const next = nextTransitionLabel(t);
-              const daysIn = daysBetween(t.sow_date, now);
-              return (
-                <li key={t.id}>
-                  <Link
-                    href={`/admin/microgreens/trays/${t.id}`}
-                    className="bg-white border border-farm-dark/10 rounded-xl px-4 py-3 hover:border-farm-dark/25 transition-colors flex items-center gap-3"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-mono text-xs text-farm-muted">{t.tray_label}</span>
-                        <span className="text-sm font-medium text-farm-dark truncate">
-                          {cropName}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-farm-muted mt-0.5">
-                        Sown {t.sow_date} · day {daysIn}
-                        {next ? ` · ${next}` : ""}
-                      </p>
-                    </div>
-                    <StageBadge status={t.status} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <TrayListClient trays={rows} />
         )}
       </div>
     </main>
