@@ -1,6 +1,22 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 import { RestaurantCard } from "@/components/shared/RestaurantCard";
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Press Farm — half an acre in Yountville, California, growing edible flowers, micro-greens, and seasonal produce in close partnership with the Napa Valley kitchens we feed.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About · Press Farm",
+    description:
+      "Half an acre in Yountville, California. Edible flowers, micro-greens, and seasonal produce — cultivated with chefs.",
+    url: "https://pressfarm.io/about",
+    type: "website",
+  },
+};
 
 const FEATURED_FLOWERS = [
   { src: "/assets/pressfarm/flowers/squash-blossom.png", name: "Squash Blossom", latin: "Cucurbita pepo", note: "Signature crop" },
@@ -61,6 +77,24 @@ const eyebrowFont = {
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-farm-cream">
+
+      {/* ============================================================
+           HEADER — minimal sticky masthead for wayfinding
+           ============================================================ */}
+      <header className="sticky top-0 z-30 bg-farm-cream/90 backdrop-blur border-b border-pf-master-gold/15">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/about" className="flex items-center" aria-label="Press Farm — home">
+            <PressFarmLogo size="icon" />
+          </Link>
+          <Link
+            href="/login"
+            className="text-[11px] tracking-[0.22em] uppercase text-farm-dark hover:text-pf-master-gold transition-colors"
+            style={eyebrowFont}
+          >
+            Chef sign in →
+          </Link>
+        </div>
+      </header>
 
       {/* ============================================================
            HERO — masthead, clean (no floating flowers)
@@ -171,8 +205,14 @@ export default function AboutPage() {
                 key={f.name}
                 className="bg-white rounded-2xl border border-pf-master-gold/15 p-6 text-center transition-all hover:border-pf-master-gold/40 hover:shadow-md"
               >
-                <div className="aspect-square flex items-center justify-center mb-4">
-                  <img src={f.src} alt={f.name} className="max-w-full max-h-full object-contain" loading="lazy" />
+                <div className="relative aspect-square mb-4">
+                  <Image
+                    src={f.src}
+                    alt={f.name}
+                    fill
+                    sizes="(min-width: 1024px) 220px, (min-width: 640px) 40vw, 45vw"
+                    className="object-contain"
+                  />
                 </div>
                 <figcaption>
                   <p className="font-display text-base text-farm-dark">{f.name}</p>
@@ -200,8 +240,16 @@ export default function AboutPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-3">
             {SUPPORTING_FLOWERS.map((f) => (
               <div key={f.name} className="text-center group">
-                <div className="aspect-square bg-farm-cream rounded-xl p-3 flex items-center justify-center transition-transform group-hover:scale-105 border border-farm-dark/5">
-                  <img src={f.src} alt={f.name} className="max-w-full max-h-full object-contain" loading="lazy" />
+                <div className="aspect-square bg-farm-cream rounded-xl p-3 flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-md border border-farm-dark/5">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={f.src}
+                      alt={f.name}
+                      fill
+                      sizes="(min-width: 1024px) 110px, (min-width: 640px) 22vw, 28vw"
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <p className="mt-2 text-[11px] text-farm-muted">{f.name}</p>
               </div>
@@ -229,8 +277,8 @@ export default function AboutPage() {
 
           <div className="grid sm:grid-cols-3 gap-12 sm:gap-8">
             <div className="text-center">
-              <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
-                <img src="/assets/pressfarm/flowers/squash-bud.png" alt="" aria-hidden="true" className="w-full h-full object-contain" />
+              <div className="relative mx-auto w-24 h-24 mb-4">
+                <Image src="/assets/pressfarm/flowers/squash-bud.png" alt="" aria-hidden="true" fill sizes="96px" className="object-contain" />
               </div>
               <p
                 className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-2"
@@ -245,8 +293,8 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="text-center">
-              <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
-                <img src="/assets/pressfarm/flowers/squash-blossom.png" alt="" aria-hidden="true" className="w-full h-full object-contain" />
+              <div className="relative mx-auto w-24 h-24 mb-4">
+                <Image src="/assets/pressfarm/flowers/squash-blossom.png" alt="" aria-hidden="true" fill sizes="96px" className="object-contain" />
               </div>
               <p
                 className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-2"
@@ -261,8 +309,8 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="text-center">
-              <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
-                <img src="/assets/pressfarm/flowers/marigold.png" alt="" aria-hidden="true" className="w-full h-full object-contain" />
+              <div className="relative mx-auto w-24 h-24 mb-4">
+                <Image src="/assets/pressfarm/flowers/marigold.png" alt="" aria-hidden="true" fill sizes="96px" className="object-contain" />
               </div>
               <p
                 className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-2"
@@ -315,8 +363,8 @@ export default function AboutPage() {
       <section className="px-6 py-20 sm:py-28 bg-farm-dark text-farm-cream text-center relative overflow-hidden">
         {/* Subtle background flowers on the dark panel */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.06]">
-          <img src="/assets/pressfarm/flowers/calendula.png" className="absolute top-8 left-8 w-32" alt="" />
-          <img src="/assets/pressfarm/flowers/borage.png" className="absolute bottom-8 right-8 w-32" alt="" />
+          <Image src="/assets/pressfarm/flowers/calendula.png" width={128} height={128} className="absolute top-8 left-8 w-32 h-auto" alt="" aria-hidden="true" />
+          <Image src="/assets/pressfarm/flowers/borage.png" width={128} height={128} className="absolute bottom-8 right-8 w-32 h-auto" alt="" aria-hidden="true" />
         </div>
 
         <div className="relative max-w-2xl mx-auto space-y-6">
