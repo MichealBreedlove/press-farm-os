@@ -43,13 +43,13 @@ const BATCH_SELECT = `
   id, crop_id, sow_date, planned_blackout_end, planned_harvest_date, tray_count,
   crop:microgreen_crops (
     id, name, variety, ideal_harvest_day, harvest_min_days, harvest_max_days,
-    is_continuous_harvest, productive_life_days, yield_per_tray
+    is_continuous_harvest, productive_life_days, yield_per_tray, harvest_stage
   )
 `;
 
 const CROP_SELECT = `
   id, name, variety, ideal_harvest_day, harvest_min_days, harvest_max_days,
-  is_continuous_harvest, productive_life_days, yield_per_tray
+  is_continuous_harvest, productive_life_days, yield_per_tray, harvest_stage
 `;
 
 /**
