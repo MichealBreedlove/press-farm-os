@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, ClipboardList, PackageOpen, Sprout, BarChart3, Mail, LogOut } from "lucide-react";
+import { Home, ClipboardList, PackageOpen, Sprout, BarChart3, Mail, CheckSquare, LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
   { label: "Home", Icon: Home, href: "/admin/dashboard" },
+  { label: "Tasks", Icon: CheckSquare, href: "/admin/tasks" },
   { label: "Orders", Icon: ClipboardList, href: "/admin/orders" },
   { label: "Deliveries", Icon: PackageOpen, href: "/admin/deliveries" },
   { label: "Micro", Icon: Sprout, href: "/admin/microgreens" },
@@ -19,9 +20,11 @@ const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
 interface BottomNavProps {
   /** Count of unread inbound replies — renders a red dot badge on the Inbox tab. */
   inboxUnreadCount?: number;
+  /** Count of open tasks due today/overdue — badge on the Tasks tab. */
+  tasksOpenCount?: number;
 }
 
-export function BottomNav({ inboxUnreadCount = 0 }: BottomNavProps) {
+export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -39,7 +42,10 @@ export function BottomNav({ inboxUnreadCount = 0 }: BottomNavProps) {
       <div className="flex items-stretch h-16">
         {NAV_ITEMS.map(({ label, Icon, href }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
-          const showBadge = href === "/admin/inbox" && inboxUnreadCount > 0;
+          const inboxBadge = href === "/admin/inbox" && inboxUnreadCount > 0;
+          const tasksBadge = href === "/admin/tasks" && tasksOpenCount > 0;
+          const showBadge = inboxBadge || tasksBadge;
+          const badgeValue = inboxBadge ? inboxUnreadCount : tasksOpenCount;
           return (
             <Link
               key={href}
@@ -57,9 +63,9 @@ export function BottomNav({ inboxUnreadCount = 0 }: BottomNavProps) {
                 {showBadge && (
                   <span
                     className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] font-semibold flex items-center justify-center leading-none"
-                    aria-label={`${inboxUnreadCount} unread`}
+                    aria-label={`${badgeValue} ${tasksBadge ? "open" : "unread"}`}
                   >
-                    {inboxUnreadCount > 9 ? "9+" : inboxUnreadCount}
+                    {badgeValue > 9 ? "9+" : badgeValue}
                   </span>
                 )}
               </div>

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { InboxActions } from "./InboxActions";
+import { TaskDraftCard } from "@/components/admin/tasks/TaskDraftCard";
+import type { InboxTaskDraft } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +91,21 @@ export default async function InboxDetailPage({ params }: { params: { id: string
     .eq("inbound_message_id", msg.id)
     .order("created_at", { ascending: true });
   const suggestions = (sData ?? []) as SuggestionRow[];
+
+  // Pending task drafts proposed for this email. Tolerant: migration 062
+  // may not be applied yet — return [] so the page still renders.
+  let drafts: InboxTaskDraft[] = [];
+  try {
+    const { data: dData } = await (admin as any)
+      .from("inbox_task_drafts")
+      .select("*")
+      .eq("inbound_message_id", msg.id)
+      .in("status", ["pending", "edited"])
+      .order("created_at", { ascending: true });
+    drafts = (dData ?? []) as InboxTaskDraft[];
+  } catch {
+    // migration 062 not applied
+  }
 
   const bodyText = msg.text_body?.trim() || (msg.html_body ? fallbackTextFromHtml(msg.html_body) : "");
   const senderName = msg.from_name?.trim() || msg.from_email;
@@ -226,6 +243,30 @@ export default async function InboxDetailPage({ params }: { params: { id: string
             </div>
           )}
         </div>
+
+        {/* Proposed tasks — LLM-generated growing schedules awaiting your
+            review. Confirming a card materializes the schedule into
+            farm_tasks rows. */}
+        {drafts.length > 0 && (
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-[10px] uppercase tracking-wider text-farm-muted">
+                Proposed Tasks
+              </div>
+              <Link
+                href="/admin/tasks?tab=drafts"
+                className="text-[11px] text-pf-master-gold hover:text-pf-master-gold/80"
+              >
+                All drafts →
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {drafts.map((d) => (
+                <TaskDraftCard key={d.id} draft={d} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

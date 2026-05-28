@@ -116,6 +116,26 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     }
     updates.seasonal_months = Array.from(new Set(months)).sort((a, b) => a - b);
   }
+  // Recurring sow schedule (migration 062). Drives the per-item task generator.
+  if (body.recurring_sow_active !== undefined) {
+    updates.recurring_sow_active = Boolean(body.recurring_sow_active);
+  }
+  if (body.recurring_sow_interval_days !== undefined) {
+    const n = body.recurring_sow_interval_days;
+    if (n !== null && (!Number.isInteger(n) || n <= 0)) {
+      return NextResponse.json(
+        { error: "recurring_sow_interval_days must be a positive integer" },
+        { status: 400 },
+      );
+    }
+    updates.recurring_sow_interval_days = n;
+  }
+  if (body.recurring_sow_anchor_date !== undefined) {
+    updates.recurring_sow_anchor_date = body.recurring_sow_anchor_date || null;
+  }
+  if (body.recurring_sow_notes !== undefined) {
+    updates.recurring_sow_notes = body.recurring_sow_notes || null;
+  }
 
   const admin = createAdminClient();
 

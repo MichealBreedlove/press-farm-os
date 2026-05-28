@@ -23,6 +23,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { proposeTaskSchedules } from "./task-schedule";
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_TOKENS = 1024;
@@ -235,6 +236,21 @@ export async function extractItemRequests({ inboundMessageId }: ExtractArgs): Pr
     console.log(
       `[EXTRACT] ${inboundMessageId}: extracted ${requests.length} request(s)`,
     );
+
+    // After suggestions are written, propose growing schedules so the inbox
+    // UI can offer "confirm 3 tasks" cards. This is the chef-request → task
+    // pipeline. Failures are isolated per-suggestion inside proposeTaskSchedules.
+    if (requests.length > 0) {
+      try {
+        const sched = await proposeTaskSchedules({ inboundMessageId });
+        console.log(
+          `[EXTRACT] ${inboundMessageId}: proposed ${sched.drafts_inserted} task draft(s)`,
+        );
+      } catch (schedErr) {
+        // Never let scheduler crash the extraction success path.
+        console.error("[EXTRACT] task-schedule pass crashed", schedErr);
+      }
+    }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[EXTRACT] failed", { inboundMessageId, errMsg });

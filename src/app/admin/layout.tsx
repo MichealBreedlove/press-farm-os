@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BottomNav } from "@/components/admin/BottomNav";
+import { getOpenTaskCount } from "@/lib/tasks/queries";
 import type { Profile } from "@/types";
 
 /**
@@ -60,11 +61,23 @@ export default async function AdminLayout({
   const admin = createAdminClient();
   const inboxUnreadCount = await getInboxUnreadCount(admin);
 
+  // Tasks badge — resolves the single farm row inline. Tolerant to the
+  // farm_tasks table not existing yet (returns 0) so deploying before
+  // migration 062 runs doesn't crash every admin page.
+  let tasksOpenCount = 0;
+  try {
+    const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+    const farmId = farms?.[0]?.id;
+    if (farmId) tasksOpenCount = await getOpenTaskCount(admin, farmId);
+  } catch {
+    // migration 062 not applied yet — leave count at 0
+  }
+
   return (
     <div className="min-h-screen bg-farm-cream">
       {/* Main content — padded bottom for bottom nav */}
       <div className="pb-20">{children}</div>
-      <BottomNav inboxUnreadCount={inboxUnreadCount} />
+      <BottomNav inboxUnreadCount={inboxUnreadCount} tasksOpenCount={tasksOpenCount} />
     </div>
   );
 }

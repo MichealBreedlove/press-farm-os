@@ -126,6 +126,10 @@ export interface Database {
           show_in_regular_menu: boolean;
           sort_order: number | null;
           seasonal_months: number[];
+          recurring_sow_active: boolean;
+          recurring_sow_interval_days: number | null;
+          recurring_sow_anchor_date: string | null;
+          recurring_sow_notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -146,6 +150,10 @@ export interface Database {
           show_in_regular_menu?: boolean;
           sort_order?: number | null;
           seasonal_months?: number[];
+          recurring_sow_active?: boolean;
+          recurring_sow_interval_days?: number | null;
+          recurring_sow_anchor_date?: string | null;
+          recurring_sow_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -165,6 +173,10 @@ export interface Database {
           show_in_regular_menu?: boolean;
           sort_order?: number | null;
           seasonal_months?: number[];
+          recurring_sow_active?: boolean;
+          recurring_sow_interval_days?: number | null;
+          recurring_sow_anchor_date?: string | null;
+          recurring_sow_notes?: string | null;
           updated_at?: string;
         };
       };
@@ -724,4 +736,83 @@ export interface MicrogreenHarvest {
   restaurant_id: string | null;
   notes: string | null;
   created_at: string;
+}
+
+// ─── Farm Tasks (migration 062) ───────────────────────────────────────
+
+export type FarmTaskSource =
+  | "manual"
+  | "microgreens-auto"
+  | "recurring-item"
+  | "inbox-confirmed";
+
+export type FarmTaskType =
+  | "sow"
+  | "transplant"
+  | "harvest"
+  | "terminate"
+  | "maintenance"
+  | "inventory"
+  | "delivery-prep"
+  | "chef-request"
+  | "custom";
+
+export type FarmTaskStatus =
+  | "open"
+  | "completed"
+  | "superseded"
+  | "cancelled"
+  | "snoozed";
+
+export interface FarmTask {
+  id: string;
+  farm_id: string;
+  title: string;
+  description: string | null;
+  type: FarmTaskType;
+  source: FarmTaskSource;
+  source_ref: Record<string, unknown>;
+  generator_key: string | null;
+  due_date: string;
+  due_time: string | null;
+  priority: 1 | 2 | 3 | 4;
+  status: FarmTaskStatus;
+  snoozed_until: string | null;
+  completed_at: string | null;
+  superseded_at: string | null;
+  superseded_reason: string | null;
+  completion_notes: string | null;
+  item_id: string | null;
+  microgreen_crop_id: string | null;
+  microgreen_batch_id: string | null;
+  inbound_message_id: string | null;
+  suggestion_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type InboxTaskDraftStatus = "pending" | "confirmed" | "dismissed" | "edited";
+export type InboxTaskDraftConfidence = "high" | "medium" | "low";
+
+export interface InboxTaskDraftScheduleItem {
+  task_type: "sow" | "transplant" | "harvest" | "maintenance";
+  offset_days_from_today: number;
+  title: string;
+  description: string;
+}
+
+export interface InboxTaskDraft {
+  id: string;
+  inbound_message_id: string;
+  suggestion_id: string | null;
+  proposed_item_name: string;
+  matched_item_id: string | null;
+  proposed_schedule: InboxTaskDraftScheduleItem[];
+  reasoning: string | null;
+  confidence: InboxTaskDraftConfidence;
+  status: InboxTaskDraftStatus;
+  confirmed_at: string | null;
+  dismissed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
