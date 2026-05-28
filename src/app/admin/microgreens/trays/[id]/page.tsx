@@ -5,6 +5,8 @@ import { StageBadge } from "@/components/admin/microgreens/StageBadge";
 import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
 import { TrayActionsFooter } from "@/components/admin/microgreens/TrayActionsFooter";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
+import { HARVEST_STAGE_LABELS } from "@/lib/microgreens/constants";
+import type { MicrogreenHarvestStage } from "@/types/database";
 
 function fmtQty(n: number): string {
   return n % 1 === 0 ? String(n) : n.toFixed(1);
@@ -43,7 +45,11 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
       <EditorialHero
         eyebrow="Microgreens / Trays"
         title={tray.tray_label}
-        subtitle={crop ? `${crop.name}${crop.variety ? ` — ${crop.variety}` : ""}` : undefined}
+        subtitle={
+          crop
+            ? `${crop.name}${crop.variety ? ` — ${crop.variety}` : ""} · harvest at ${HARVEST_STAGE_LABELS[crop.harvest_stage as MicrogreenHarvestStage]}`
+            : undefined
+        }
         backHref="/admin/microgreens/trays"
       />
       <div className="px-4 max-w-2xl mx-auto space-y-6">
