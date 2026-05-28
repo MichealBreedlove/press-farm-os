@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-const CACHE_KEY_PREFIX = "forage-img-v2:";
+const CACHE_KEY_PREFIX = "forage-img-v3:";
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const THUMB_PX = 500;
 
 interface ForageImageProps {
   /** Cache key — usually the scientific name with underscores. */
@@ -30,16 +29,42 @@ type State =
   | { kind: "missing" };
 
 /**
- * Search Wikipedia for the best matching page and return its lead
- * thumbnail URL, if any. Single API call per query — uses the
- * `generator=search` + `prop=pageimages` pattern so a search and a
- * thumbnail lookup happen together.
+ * Look up a taxon on iNaturalist and return its default photo URL.
+ * iNat photos are user-submitted observations curated by the community —
+ * always real photographs, never botanical drawings, and usually framed
+ * at ID distance rather than tight macro crops.
  */
-async function searchWikipediaThumb(query: string): Promise<string | null> {
+async function findInatPhoto(query: string): Promise<string | null> {
+  const url =
+    `https://api.inaturalist.org/v1/taxa?` +
+    `q=${encodeURIComponent(query)}` +
+    `&rank=species,genus,subspecies` +
+    `&per_page=5` +
+    `&is_active=true`;
+  const response = await fetch(url);
+  if (!response.ok) return null;
+  const data = await response.json();
+  const results = (data?.results ?? []) as {
+    default_photo?: { medium_url?: string; original_url?: string };
+    matched_term?: string;
+  }[];
+  for (const taxon of results) {
+    const photo = taxon.default_photo?.medium_url ?? taxon.default_photo?.original_url;
+    if (photo) return photo;
+  }
+  return null;
+}
+
+/**
+ * Search Wikipedia for a page-image thumbnail. Skips SVGs (which on
+ * plant/fungus articles are almost always botanical illustrations or
+ * range maps, not photos).
+ */
+async function findWikipediaPhoto(query: string): Promise<string | null> {
   const url =
     `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*` +
-    `&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=4` +
-    `&prop=pageimages&piprop=thumbnail&pithumbsize=${THUMB_PX}`;
+    `&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5` +
+    `&prop=pageimages&piprop=thumbnail&pithumbsize=600`;
   const response = await fetch(url);
   if (!response.ok) return null;
   const data = await response.json();
@@ -48,37 +73,51 @@ async function searchWikipediaThumb(query: string): Promise<string | null> {
     index?: number;
     thumbnail?: { source?: string };
   }[];
-  // Sort by Wikipedia's search rank (lower `index` = better match)
   candidates.sort((a, b) => (a.index ?? 999) - (b.index ?? 999));
   for (const page of candidates) {
-    if (page.thumbnail?.source) return page.thumbnail.source;
+    const src = page.thumbnail?.source;
+    if (!src) continue;
+    const lower = src.toLowerCase();
+    // Skip vector illustrations and range maps
+    if (lower.includes(".svg")) continue;
+    if (lower.includes("range_map")) continue;
+    if (lower.includes("distribution_map")) continue;
+    return src;
   }
   return null;
 }
 
 /**
- * Walk a series of search queries until one returns a thumbnail.
- * Scientific name first (most specific); then progressively broader
- * common-name searches.
+ * Walk a series of lookups until one returns a real photo.
+ * iNaturalist first (curated photographs), then Wikipedia (photos only,
+ * SVG illustrations excluded).
  */
-async function findBestThumb(
+async function findBestPhoto(
   scientificName: string | undefined,
   commonName: string,
 ): Promise<string | null> {
-  const queries = [
-    scientificName,
-    `${commonName} ${scientificName ?? ""}`.trim(),
-    `${commonName} foraging`,
-    commonName,
-  ].filter((q): q is string => Boolean(q && q.length > 0));
+  const tryOrder: { source: "inat" | "wiki"; query: string }[] = [];
+  if (scientificName) {
+    tryOrder.push({ source: "inat", query: scientificName });
+  }
+  tryOrder.push({ source: "inat", query: commonName });
+  if (scientificName) {
+    tryOrder.push({ source: "wiki", query: scientificName });
+    tryOrder.push({ source: "wiki", query: `${commonName} ${scientificName}` });
+  }
+  tryOrder.push({ source: "wiki", query: `${commonName} foraging` });
+  tryOrder.push({ source: "wiki", query: commonName });
 
-  // De-duplicate while preserving order
   const seen = new Set<string>();
-  for (const query of queries) {
-    if (seen.has(query)) continue;
-    seen.add(query);
+  for (const { source, query } of tryOrder) {
+    const key = `${source}::${query}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     try {
-      const url = await searchWikipediaThumb(query);
+      const url =
+        source === "inat"
+          ? await findInatPhoto(query)
+          : await findWikipediaPhoto(query);
       if (url) return url;
     } catch {
       /* try the next one */
@@ -90,13 +129,14 @@ async function findBestThumb(
 /**
  * Lazy-loaded identification photo for a foraging species.
  *
- * Searches Wikipedia for the best matching page using the species'
- * scientific name first, then a common-name fallback, then a broader
- * search query. Returns the lead thumbnail of the best result. Results
- * are cached in localStorage for 30 days.
+ * Uses iNaturalist as the primary photo source (real photographs only,
+ * curated by the citizen-science community) with Wikipedia as a fallback
+ * for any species iNat doesn't recognize. Botanical illustrations and
+ * range maps are filtered out. Results cached in localStorage for 30
+ * days.
  *
- * If nothing matches, a styled "No photo" placeholder is shown — never
- * a broken image.
+ * Image is rendered with `object-contain` over a cream background so the
+ * whole organism is visible — no aggressive macro-crop framing.
  */
 export function ForageImage({
   cacheKey,
@@ -122,13 +162,13 @@ export function ForageImage({
           }
         }
       },
-      { rootMargin: "300px" },
+      { rootMargin: "400px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, [state.kind]);
 
-  // Once loading, check the cache then call Wikipedia
+  // Once loading, check the cache then call iNat/Wikipedia
   useEffect(() => {
     if (state.kind !== "loading") return;
     let cancelled = false;
@@ -147,7 +187,7 @@ export function ForageImage({
       /* ignore corrupt cache */
     }
 
-    findBestThumb(scientificName, commonName)
+    findBestPhoto(scientificName, commonName)
       .then((url) => {
         if (cancelled) return;
         try {
@@ -175,7 +215,7 @@ export function ForageImage({
       ref={containerRef}
       className={cn(
         "relative overflow-hidden",
-        "bg-pf-master-gold/10 border border-pf-master-gold/15",
+        "bg-farm-cream",
         className,
       )}
     >
@@ -187,11 +227,11 @@ export function ForageImage({
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setState({ kind: "missing" })}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain p-2"
         />
       )}
       {state.kind === "missing" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-farm-cream/50">
+        <div className="absolute inset-0 flex items-center justify-center bg-farm-cream">
           <span className="text-[10px] uppercase tracking-[0.18em] text-farm-muted/70">
             No photo
           </span>

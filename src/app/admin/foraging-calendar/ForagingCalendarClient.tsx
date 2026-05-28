@@ -267,8 +267,9 @@ export function ForagingCalendarClient({ defaultMonth }: ForagingCalendarClientP
         a fraction, leave the rest.
       </p>
       <p className="mt-3 text-[10px] text-farm-muted/70 leading-relaxed text-center max-w-md mx-auto px-2">
-        Identification photos courtesy of Wikipedia &amp; Wikimedia Commons
-        contributors, served under their original Creative Commons licenses.
+        Identification photos courtesy of iNaturalist observers and Wikimedia
+        Commons contributors, served under their original Creative Commons
+        licenses.
       </p>
     </div>
   );
@@ -292,13 +293,13 @@ function ForageCard({
       id={`forage-${item.slug}`}
       className="rounded-2xl bg-white/85 border border-pf-master-gold/20 overflow-hidden transition-all"
     >
-      {/* Identification photo — searched from Wikipedia by scientific + common name */}
+      {/* Identification photo — pulled from iNaturalist (real photos only) with Wikipedia fallback */}
       <ForageImage
         cacheKey={wikiTitleFor(item)}
         commonName={item.name}
         scientificName={item.scientificName}
         alt={`${item.name} — ${item.scientificName ?? "identification photo"}`}
-        className="w-full aspect-[5/3] rounded-none border-0 border-b border-pf-master-gold/15"
+        className="w-full aspect-[4/3] rounded-none border-0 border-b border-pf-master-gold/15"
       />
 
       <div className="px-5 sm:px-6 py-5">
