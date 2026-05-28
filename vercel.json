@@ -9,6 +9,10 @@
       "schedule": "0 14,15 * * *"
     },
     {
+      "path": "/api/cron/tasks-regenerate",
+      "schedule": "0 9 * * *"
+    },
+    {
       "path": "/api/availability/forecast-email",
       "schedule": "0 16 * * 3"
     },

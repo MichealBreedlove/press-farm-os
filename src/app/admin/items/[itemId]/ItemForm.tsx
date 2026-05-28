@@ -34,6 +34,10 @@ interface Item {
   show_in_regular_menu?: boolean;
   parent_item_id?: string | null;
   seasonal_months?: number[];
+  recurring_sow_active?: boolean;
+  recurring_sow_interval_days?: number | null;
+  recurring_sow_anchor_date?: string | null;
+  recurring_sow_notes?: string | null;
 }
 
 interface ParentCandidate {
@@ -90,6 +94,13 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
     show_in_regular_menu: item?.show_in_regular_menu ?? true,
     parent_item_id: item?.parent_item_id ?? prefillFromParent?.parent_item_id ?? "",
     seasonal_months: (item?.seasonal_months ?? []) as number[],
+    recurring_sow_active: item?.recurring_sow_active ?? false,
+    recurring_sow_interval_days:
+      item?.recurring_sow_interval_days != null
+        ? String(item.recurring_sow_interval_days)
+        : "",
+    recurring_sow_anchor_date: item?.recurring_sow_anchor_date ?? "",
+    recurring_sow_notes: item?.recurring_sow_notes ?? "",
   });
 
   // Per-unit prices: { sm: "15.00", lg: "30.00", … } stored as strings while editing
@@ -228,6 +239,12 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
         color: form.color || null,
         parent_item_id: form.parent_item_id || null,
         seasonal_months: form.seasonal_months,
+        recurring_sow_active: Boolean(form.recurring_sow_active),
+        recurring_sow_interval_days: form.recurring_sow_interval_days
+          ? parseInt(form.recurring_sow_interval_days as string, 10)
+          : null,
+        recurring_sow_anchor_date: form.recurring_sow_anchor_date || null,
+        recurring_sow_notes: form.recurring_sow_notes || null,
       };
 
       const res = await fetch(isNew ? "/api/items" : `/api/items/${item!.id}`, {
@@ -663,6 +680,67 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
         <div className="mt-3">
           <label className="form-label">Growing Notes</label>
           <textarea value={form.growing_notes} onChange={(e) => set("growing_notes", e.target.value)} rows={2} placeholder="Cultivation tips, harvest info..." className="input-field resize-none" />
+        </div>
+
+        {/* Recurring sow schedule — drives the per-item auto-task generator.
+            When active, the nightly cron creates sow tasks at the interval
+            anchored from the date below. Completing a recurring task slides
+            the anchor forward via DB trigger, so missed cycles don't pile up. */}
+        <div className="mt-4 pt-4 border-t border-pf-master-gold/15">
+          <label className="flex items-center gap-2 text-sm text-farm-dark cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(form.recurring_sow_active)}
+              onChange={(e) => set("recurring_sow_active", e.target.checked)}
+              className="w-4 h-4 rounded border-pf-master-gold/30"
+            />
+            <span className="font-medium">Recurring sow schedule</span>
+            <span className="text-[10px] text-farm-muted">— auto-generates sow tasks</span>
+          </label>
+
+          {Boolean(form.recurring_sow_active) && (
+            <div className="mt-3 ml-6 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Sow every</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={form.recurring_sow_interval_days as string}
+                      onChange={(e) => set("recurring_sow_interval_days", e.target.value)}
+                      placeholder="e.g. 14"
+                      className="input-field w-24"
+                    />
+                    <span className="text-sm text-farm-muted">days</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label">Anchor date</label>
+                  <input
+                    type="date"
+                    value={form.recurring_sow_anchor_date as string}
+                    onChange={(e) => set("recurring_sow_anchor_date", e.target.value)}
+                    className="input-field"
+                  />
+                  <p className="text-[10px] text-farm-muted mt-1 leading-tight">
+                    Last sow date. Next sow = anchor + interval. Auto-slides forward on completion.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Recurring notes (optional)</label>
+                <input
+                  type="text"
+                  value={form.recurring_sow_notes as string}
+                  onChange={(e) => set("recurring_sow_notes", e.target.value)}
+                  placeholder='e.g. "Sow 2 trays for Press, 1 for Under-Study"'
+                  className="input-field"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -6,6 +6,9 @@ import { SendDigestButton } from "./SendDigestButton";
 import { RefreshButton } from "./RefreshButton";
 import { WeatherWidget } from "@/components/shared/WeatherWidget";
 import { SEEDS_ENABLED } from "@/lib/constants";
+import { listTodayTasks } from "@/lib/tasks/queries";
+import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
+import type { FarmTask } from "@/types/database";
 
 interface DashCard {
   href: string;
@@ -88,6 +91,33 @@ export default async function AdminDashboardPage() {
   const monthRevenue = (monthDeliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
   const monthExpenseTotal = (monthExpenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);
   const weekLaborHours = (weekLabor ?? []).reduce((s: number, l: any) => s + (l.hours ?? 0), 0);
+
+  // Today's tasks for the widget. Tolerant: migration 062 may not be applied,
+  // in which case listTodayTasks returns [] and the widget shows empty-state.
+  let todayTasks: FarmTask[] = [];
+  let taskItemNames: Record<string, string> = {};
+  let taskCropNames: Record<string, string> = {};
+  try {
+    const { data: farmRow } = await (admin as any).from("farms").select("id").limit(1).single();
+    if (farmRow?.id) {
+      todayTasks = await listTodayTasks(admin, farmRow.id);
+      const itemIds = Array.from(new Set(todayTasks.map((t) => t.item_id).filter(Boolean) as string[]));
+      const cropIds = Array.from(new Set(todayTasks.map((t) => t.microgreen_crop_id).filter(Boolean) as string[]));
+      if (itemIds.length > 0) {
+        const { data: items } = await (admin as any).from("items").select("id, name").in("id", itemIds);
+        taskItemNames = Object.fromEntries((items ?? []).map((r: any) => [r.id, r.name]));
+      }
+      if (cropIds.length > 0) {
+        const { data: crops } = await (admin as any)
+          .from("microgreen_crops")
+          .select("id, name")
+          .in("id", cropIds);
+        taskCropNames = Object.fromEntries((crops ?? []).map((r: any) => [r.id, r.name]));
+      }
+    }
+  } catch {
+    // migration not applied — widget shows empty
+  }
 
   // Each function gets a brand flower instead of a colored icon tile.
   // Mapping is loose-symbolic: signature crops for hero functions, supporting
@@ -194,6 +224,14 @@ export default async function AdminDashboardPage() {
       </section>
 
       <div className="px-4 py-6 space-y-8 max-w-3xl mx-auto">
+
+        {/* Today's tasks widget — operational pulse. Always visible (empty
+            state when there's nothing due). Links to /admin/tasks. */}
+        <TodayWidget
+          tasks={todayTasks}
+          itemNames={taskItemNames}
+          cropNames={taskCropNames}
+        />
 
         {/* Off-schedule orders banner — flagged when a chef ordered for
             a date outside the standard Thu/Sat/Mon schedule. Stays
