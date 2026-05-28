@@ -81,15 +81,12 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
           if (selectMode) {
             return (
               <li key={t.id}>
-                <button
-                  type="button"
-                  disabled={!isActive}
-                  onClick={() => isActive && toggle(t.id)}
+                <label
                   className={
-                    "w-full bg-white border rounded-xl px-4 py-3 flex items-center gap-3 text-left " +
+                    "bg-white border rounded-xl px-4 py-3 flex items-center gap-3 " +
                     (isActive
-                      ? "border-farm-dark/10 hover:border-farm-dark/25"
-                      : "border-farm-dark/5 opacity-50 cursor-not-allowed")
+                      ? "border-farm-dark/10 hover:border-farm-dark/25 cursor-pointer"
+                      : "border-farm-dark/5 opacity-50 cursor-not-allowed pointer-events-none")
                   }
                 >
                   <input
@@ -98,7 +95,6 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
                     onChange={() => isActive && toggle(t.id)}
                     disabled={!isActive}
                     className="w-5 h-5 accent-farm-green"
-                    onClick={(e) => e.stopPropagation()}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
@@ -110,7 +106,7 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
                     </p>
                   </div>
                   <StageBadge status={t.status} />
-                </button>
+                </label>
               </li>
             );
           }
@@ -138,7 +134,10 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
       </ul>
 
       {selectMode && selected.size > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-3">
+        <div
+          className="fixed left-0 right-0 z-40 px-4 pb-3"
+          style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="max-w-4xl mx-auto bg-white border border-farm-dark/15 rounded-xl shadow-lg p-3 flex items-center justify-between gap-3">
             <span className="text-sm font-medium">{selected.size} selected</span>
             <div className="flex gap-2">
