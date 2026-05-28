@@ -1,11 +1,17 @@
 import { cn } from "@/lib/utils";
+import { HARVEST_STAGE_LABELS } from "@/lib/microgreens/constants";
 import type { MicrogreenTrayStatus, MicrogreenCrop } from "@/types/database";
 
 const STAGES: MicrogreenTrayStatus[] = ["soaking", "blackout", "light", "harvesting"];
-const STAGE_LABELS: Record<MicrogreenTrayStatus, string> = {
-  soaking: "Soak", blackout: "Blackout", light: "Light",
-  harvesting: "Harvest", terminated: "Done", lost: "Lost",
-};
+
+function stageLabel(stage: MicrogreenTrayStatus, crop: MicrogreenCrop): string {
+  if (stage === "harvesting") return `Harvest (${HARVEST_STAGE_LABELS[crop.harvest_stage]})`;
+  const base: Record<MicrogreenTrayStatus, string> = {
+    soaking: "Soak", blackout: "Blackout", light: "Light",
+    harvesting: "Harvest", terminated: "Done", lost: "Lost",
+  };
+  return base[stage];
+}
 
 export function StageTimeline({
   current,
@@ -14,7 +20,6 @@ export function StageTimeline({
   current: MicrogreenTrayStatus;
   crop: MicrogreenCrop;
 }) {
-  // Hide soak step when crop has no soak phase
   const visible = STAGES.filter((s) =>
     !(s === "soaking" && crop.presoak_hours === 0 && crop.presprout_hours === 0)
   ).filter((s) =>
@@ -34,7 +39,7 @@ export function StageTimeline({
               i > currentIdx && "bg-farm-muted/15 text-farm-muted",
             )}
           >
-            {STAGE_LABELS[s]}
+            {stageLabel(s, crop)}
           </div>
           {i < visible.length - 1 && <span className="text-farm-muted">→</span>}
         </div>
