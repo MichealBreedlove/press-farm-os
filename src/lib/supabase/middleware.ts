@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
   // /api/inbound/* receives webhooks from Resend Inbound for chef email replies
   // (route at /api/inbound/reply). Each request is signature-verified inside
   // the handler — Resend can't authenticate via Supabase cookies.
-  const publicPaths = ["/login", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound"];
+  const publicPaths = ["/login", "/signup", "/api/auth/signup", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {

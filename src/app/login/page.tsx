@@ -103,6 +103,12 @@ export default function LoginPage() {
           </form>
 
           <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
+            New chef?{" "}
+            <Link href="/signup" className="underline hover:text-farm-dark">
+              Create an account
+            </Link>
+          </p>
+          <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
             Trouble signing in? Contact Press Farm.
           </p>
         </div>
