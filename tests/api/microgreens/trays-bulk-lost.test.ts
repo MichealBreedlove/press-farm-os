@@ -84,6 +84,19 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
     expect(res.status).toBe(400);
   });
 
+  it("returns 400 when lost_reason is only whitespace", async () => {
+    const sb = makeSupabaseMock({});
+    (createAdminClient as any).mockReturnValue(sb);
+    (createClient as any).mockResolvedValue(sb);
+
+    const req = new Request("http://test/api/microgreens/trays/bulk-lost", {
+      method: "POST",
+      body: JSON.stringify({ tray_ids: ["t1"], lost_reason: "   " }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
   it("returns 401 when not authenticated", async () => {
     const sb = makeSupabaseMock({});
     sb.auth.getUser = vi.fn(async () => ({ data: { user: null }, error: null })) as any;

@@ -12,12 +12,13 @@ export async function POST(req: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { tray_ids, lost_reason } = body;
+  const { tray_ids } = body;
+  const lost_reason = typeof body.lost_reason === "string" ? body.lost_reason.trim() : "";
 
   if (!Array.isArray(tray_ids) || tray_ids.length === 0) {
     return NextResponse.json({ error: "tray_ids must be a non-empty array" }, { status: 400 });
   }
-  if (!lost_reason || typeof lost_reason !== "string") {
+  if (!lost_reason) {
     return NextResponse.json({ error: "lost_reason required" }, { status: 400 });
   }
 
