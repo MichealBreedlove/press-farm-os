@@ -81,20 +81,26 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
           if (selectMode) {
             return (
               <li key={t.id}>
-                <label
+                <div
+                  role="checkbox"
+                  aria-checked={checked}
+                  aria-disabled={!isActive}
+                  onClick={() => isActive && toggle(t.id)}
                   className={
-                    "bg-white border rounded-xl px-4 py-3 flex items-center gap-3 " +
+                    "bg-white border rounded-xl px-4 py-3 flex items-center gap-3 select-none " +
                     (isActive
                       ? "border-farm-dark/10 hover:border-farm-dark/25 cursor-pointer"
-                      : "border-farm-dark/5 opacity-50 cursor-not-allowed pointer-events-none")
+                      : "border-farm-dark/5 opacity-50 cursor-not-allowed")
                   }
                 >
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => isActive && toggle(t.id)}
+                    readOnly
                     disabled={!isActive}
-                    className="w-5 h-5 accent-farm-green"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="w-5 h-5 accent-farm-green pointer-events-none"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
@@ -106,7 +112,7 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
                     </p>
                   </div>
                   <StageBadge status={t.status} />
-                </label>
+                </div>
               </li>
             );
           }
