@@ -292,9 +292,11 @@ function ForageCard({
       id={`forage-${item.slug}`}
       className="rounded-2xl bg-white/85 border border-pf-master-gold/20 overflow-hidden transition-all"
     >
-      {/* Identification photo — pulled from Wikipedia REST API */}
+      {/* Identification photo — searched from Wikipedia by scientific + common name */}
       <ForageImage
-        wikiTitle={wikiTitleFor(item)}
+        cacheKey={wikiTitleFor(item)}
+        commonName={item.name}
+        scientificName={item.scientificName}
         alt={`${item.name} — ${item.scientificName ?? "identification photo"}`}
         className="w-full aspect-[5/3] rounded-none border-0 border-b border-pf-master-gold/15"
       />
