@@ -124,6 +124,7 @@ export default async function AdminDashboardPage() {
         { href: "/admin/expenses", title: "Expenses", description: "Track costs", flower: "chive-blossom" },
         { href: "/admin/notes", title: "Notes", description: "Field observations", flower: "pansy" },
         { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", flower: "bachelor-button" },
+        { href: "/admin/foraging-calendar", title: "Foraging", description: "Wild harvest by season", flower: "green-leaf" },
       ],
     },
     {
