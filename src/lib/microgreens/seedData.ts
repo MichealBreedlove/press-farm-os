@@ -18,6 +18,7 @@ export type SeedCrop = {
   expected_yield_oz_per_tray: number;
   is_continuous_harvest: boolean;
   productive_life_days?: number;
+  harvest_stage: "cotyledon" | "true_leaf" | "baby_green";
   growing_medium: string[]; // ['soil'], ['hydroponic'], or both
   preferred_medium?: string;
   notes?: string;
@@ -42,6 +43,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 14,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil", "hydroponic"],
     preferred_medium: "any",
     notes:
@@ -61,6 +63,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil"],
     preferred_medium: "soil",
     notes:
@@ -80,6 +83,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil"],
     preferred_medium: "soil",
     notes:
@@ -100,6 +104,7 @@ export const SEED_CROPS: SeedCrop[] = [
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: true,
     productive_life_days: 14,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil", "hydroponic"],
     preferred_medium: "hydroponic, soil",
     notes:
@@ -119,6 +124,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 8,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil", "hydroponic"],
     preferred_medium: "soil",
     notes:
@@ -140,6 +146,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 12 g; Soak N; Bury N; Weight 2 - D; Blackout 4-6 D; Germination 3 D; Harvest 6-12 D",
@@ -160,6 +167,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 25,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight 5 D; Blackout 4-7 D; Germination 3-4 D; Harvest 20-25 D",
@@ -177,6 +185,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight 6 D; Blackout 5-7 D; Germination 4-4 D (suspect drag-fill); Harvest 24 D",
@@ -195,6 +204,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight 7 D; Blackout 6-7 D; Germination 5-4 D (suspect drag-fill); Harvest 17 D",
@@ -213,6 +223,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight 8 D; Blackout 7-7 D; Germination 6-4 D (suspect drag-fill); Harvest 24 D",
@@ -232,6 +243,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 14,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 35 g; Soak 4-8 hrs; Bury Y; Weight 4-5 D; Blackout N; Germination 3-4 D; Harvest 10-14 D",
@@ -250,6 +262,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 16,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 15 g; Soak N; Bury blank; Weight 2-3 D; Blackout 2-3 D; Germination 48-72 hrs; Harvest 12-16 D",
@@ -268,6 +281,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 22 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 8-12 D",
@@ -286,6 +300,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-10 D",
@@ -304,6 +319,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 100 g; Soak 4-8 hrs; Bury blank; Weight 3-5 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
@@ -322,6 +338,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 19 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
@@ -338,6 +355,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 30 g; Soak No; (other cols blank); Harvest 10 D",
     _review: true,
@@ -356,6 +374,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 28,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury Y; Weight N; Blackout 5 D; Germination 5 D; Harvest 21-28 D. Covering the seeds with a thin layer of soil on top helps to shed the hull.",
@@ -374,6 +393,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-10 D",
@@ -392,6 +412,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 35,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight N; Blackout 4-5 D; Germination 2 Wk; Harvest 2-5 Wk. Must mist this everyday in germination.",
@@ -411,6 +432,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 14,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 30 g; Soak 4-8 hrs; Bury Y; Weight 4-5 D; Blackout N; Germination 3-4 D; Harvest 10-14 D. Burry the seed to keep the hull from being brought up into the canopy.",
@@ -428,6 +450,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 15,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 35 g; Soak No; Bury Y; Weight 5-5 D; Blackout N; Germination 4-4 D (suspect drag-fill); Harvest 15 D",
@@ -446,6 +469,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 15,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 35 g; Soak No; Bury Y; Weight 6-5 D; Blackout N; Germination 5-4 D (suspect drag-fill); Harvest 15 D",
@@ -464,6 +488,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 15,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 30 g; Soak No; Bury Y; Weight 7-5 D; Blackout N; Germination 6-4 D (suspect drag-fill); Harvest 15 D",
@@ -481,6 +506,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 20 g; Soak No; (other cols blank); Harvest 17 D",
     _review: true,
@@ -499,6 +525,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 15 g; Soak N; Bury N; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
@@ -515,6 +542,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 21, // 3 Wk
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 50 g; Soak N; Bury N; Weight 4 D; Blackout 2-3 D; Germination 1-2 Wk; Harvest 3 Wk",
@@ -534,6 +562,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 20,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 15 g; Soak N; Bury blank; Weight Humitity Dome 3-4 D; Blackout 2-3 D; Germination 48-72 hrs; Harvest 14-20 D",
@@ -552,6 +581,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 28,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 40 g; Soak 2-4 hrs; Bury Y; Weight 7 D; Blackout N; Germination 1-2 Wk; Harvest 3-4 Wk. Burying the seed and keeping weight on is extremely important.",
@@ -570,6 +600,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 1-2 D; Harvest 8-12 D",
@@ -588,6 +619,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury Y; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
@@ -606,6 +638,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil"],
     notes:
       "Seeding 275 g; Soak '2 - 6 g' (suspect typo, treated as 2-6 hrs); Bury Y; Weight N; Blackout Full Grow; Germination 1-2 D; Harvest 6-10 D",
@@ -625,6 +658,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight N; Blackout 4-5 D; Germination 3-5 D; Harvest 8-12 D",
@@ -641,6 +675,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 20 g; Soak No; (other cols blank); Harvest 17 D",
     _review: true,
@@ -659,6 +694,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 15,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury blank; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-15 D",
@@ -677,6 +713,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 16,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 300 g; Soak 4-6 hrs; Bury blank; Weight 4-5 D; Blackout 2-3 D; Germination 24-48 hrs; Harvest 12-16 D",
@@ -695,6 +732,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 20,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury blank; Weight 3-4 D; Blackout 2-3 D; Germination 3-4 D; Harvest 16-20 D",
@@ -713,6 +751,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 14,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 15 g; Soak blank; Bury blank; Weight 3-4 D; Blackout blank; Germination 48-72 hrs; Harvest 12-14 D",
@@ -731,6 +770,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 22 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
@@ -749,6 +789,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout N; Germination 2-3 D; Harvest 6-10 D",
@@ -766,6 +807,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 16 g; Soak No; (other cols blank); Harvest 10 D. Likely duplicate of Kohlrabi with slightly different params.",
@@ -785,6 +827,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 3 g; Soak N; Bury blank; Weight N; Blackout 3-5 D; Germination 1-2 D; Harvest 10-12 D",
@@ -801,6 +844,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 21,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 6 g; Soak N; Bury N; Weight N; Blackout N; Germination 10 D; Harvest 21 D",
@@ -819,6 +863,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 10 g; Soak N; Bury blank; Weight 2-3 D; Blackout blank; Germination 2-3 D; Harvest 10-12 D",
@@ -838,6 +883,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 15,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury Y; Weight 2-3 D; Blackout blank; Germination blank; Harvest 10-15 D",
@@ -856,6 +902,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 10 g; Soak N; Bury N; Weight 2-3 D; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
@@ -873,6 +920,7 @@ export const SEED_CROPS: SeedCrop[] = [
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: true,
     productive_life_days: 30,
+    harvest_stage: "cotyledon",
     growing_medium: ["soil"],
     notes:
       "Seeding 100 g; Soak N; Bury Y; Weight Y; Blackout N; Germination 7 D; Harvest 10 D. Prone to mold on top of the medium. Can continue to be grown after first harvest for a second and third time.",
@@ -889,6 +937,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 35 g; Soak No; (other cols blank); Harvest 17 D",
     _review: true,
@@ -907,6 +956,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 16,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 50 g; Soak 6-8 hrs; Bury blank; Weight 3-5 D; Blackout blank; Germination 36-48 hrs; Harvest 12-16 D",
@@ -925,6 +975,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 20,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak blank; Bury blank; Weight blank; Blackout 4-5 D; Germination 36-48 hrs; Harvest 16-20 D",
@@ -941,6 +992,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 12 g; Soak N; Bury blank; Weight N; Blackout 4-5 D; Germination 6-7 D; Harvest 24 D",
@@ -959,6 +1011,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 35 g; Soak N; Bury N; Weight 2-3 D; Blackout blank; Germination 1-2 D; Harvest 5-12 D",
@@ -976,6 +1029,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 8,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
     _review: true,
@@ -993,6 +1047,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 8,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
     _review: true,
@@ -1010,6 +1065,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 8,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 40 g; Soak No; (other cols blank); Harvest 8 D",
     _review: true,
@@ -1026,6 +1082,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes: "Seeding 12 g; Soak No; (other cols blank); Harvest 17 D",
     _review: true,
@@ -1044,6 +1101,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 15 g; Soak N; Bury N; Weight N; Blackout 3-5 D; Germination 2-3 D; Harvest 8-12 D",
@@ -1060,6 +1118,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout 2 D; Germination 3 D; Harvest 10 D",
@@ -1078,6 +1137,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury blank; Weight 2-3 D; Blackout 1-2 D; Germination 48-72 hrs; Harvest 16-24 D",
@@ -1096,6 +1156,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 40 g; Soak N; Bury Y; Weight 2-3 D; Blackout blank; Germination 7-10 D; Harvest 8-12 D",
@@ -1114,6 +1175,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 12,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight 2-4 D; Blackout 2 D; Germination 2-3 D; Harvest 8-12 D",
@@ -1132,6 +1194,7 @@ export const SEED_CROPS: SeedCrop[] = [
     harvest_max_days: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 12 g; Soak N; Bury N; Weight 2-3 D; Blackout 4-5 D; Germination 72-96 D (suspect — probably hours, not days); Harvest 18-24 D",
@@ -1150,6 +1213,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 4 g; Soak N; Bury N; Weight 3-3 D; Blackout 5-5 D; Germination 73-96 D (suspect drag-fill / probably hours); Harvest 24 D",
@@ -1168,6 +1232,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 17,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 12 g; Soak N; Bury N; Weight 4-3 D; Blackout 6-5 D; Germination 74-96 D (suspect drag-fill / probably hours); Harvest 17 D",
@@ -1186,6 +1251,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 24,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 8 g; Soak N; Bury N; Weight 5-3 D; Blackout 7-5 D; Germination 75-96 D (suspect drag-fill / probably hours); Harvest 24 D",
@@ -1204,6 +1270,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 31,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 1 g; Soak N; Bury N; Weight 6-3 D; Blackout 8-5 D; Germination 76-96 D (suspect drag-fill / probably hours); Harvest 31 D",
@@ -1221,6 +1288,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 10,
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak N; Bury N; Weight 2-3 D; Blackout 2 D; Germination 3 D; Harvest 10 D",
@@ -1237,6 +1305,7 @@ export const SEED_CROPS: SeedCrop[] = [
     ideal_harvest_day: 14, // conservative guess — spreadsheet row truncated
     expected_yield_oz_per_tray: DEFAULT_YIELD_OZ,
     is_continuous_harvest: false,
+    harvest_stage: "baby_green",
     growing_medium: ["soil"],
     notes:
       "Seeding 20 g; Soak blank; Bury blank; Weight 4-5 D; Blackout Humitity Dome 2-3 D; Harvest data missing — used conservative 14 D guess",
