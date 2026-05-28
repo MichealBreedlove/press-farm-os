@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, RefreshCw, CheckCircle, Clock3, X, ChevronRight } from "lucide-react";
+import { Plus, RefreshCw, CheckCircle, Clock3, X, ChevronRight, Pencil, RotateCcw } from "lucide-react";
 import type {
   FarmTask,
   FarmTaskSource,
@@ -99,6 +99,13 @@ export function TasksClient({
     });
   }
 
+  async function reopenTask(id: string) {
+    startTransition(async () => {
+      await fetch(`/api/tasks/${id}/reopen`, { method: "POST" });
+      router.refresh();
+    });
+  }
+
   const draftsLowConfidence = initialDrafts.filter((d) => d.confidence === "low");
   const draftsOther = initialDrafts.filter((d) => d.confidence !== "low");
 
@@ -183,6 +190,7 @@ export function TasksClient({
           onComplete={completeTask}
           onSnooze={snoozeTask}
           onCancel={cancelTask}
+          onReopen={reopenTask}
           emptyMessage="Nothing due today. Nice."
         />
       )}
@@ -194,6 +202,7 @@ export function TasksClient({
           onComplete={completeTask}
           onSnooze={snoozeTask}
           onCancel={cancelTask}
+          onReopen={reopenTask}
         />
       )}
       {tab === "drafts" && (
@@ -210,6 +219,7 @@ export function TasksClient({
           onComplete={completeTask}
           onSnooze={snoozeTask}
           onCancel={cancelTask}
+          onReopen={reopenTask}
           variant="done"
           emptyMessage="No completed tasks in the last 30 days."
         />
@@ -225,6 +235,7 @@ interface ListProps {
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
+  onReopen: (id: string) => void;
   variant?: "open" | "done";
   emptyMessage?: string;
 }
@@ -236,6 +247,7 @@ function TaskList({
   onComplete,
   onSnooze,
   onCancel,
+  onReopen,
   variant = "open",
   emptyMessage,
 }: ListProps) {
@@ -257,6 +269,7 @@ function TaskList({
           onComplete={onComplete}
           onSnooze={onSnooze}
           onCancel={onCancel}
+          onReopen={onReopen}
           variant={variant}
         />
       ))}
@@ -271,6 +284,7 @@ function GroupedByDate({
   onComplete,
   onSnooze,
   onCancel,
+  onReopen,
 }: ListProps) {
   if (tasks.length === 0) {
     return (
@@ -303,6 +317,7 @@ function GroupedByDate({
                 onComplete={onComplete}
                 onSnooze={onSnooze}
                 onCancel={onCancel}
+                onReopen={onReopen}
               />
             ))}
           </ul>
@@ -319,6 +334,7 @@ interface RowProps {
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
+  onReopen: (id: string) => void;
   variant?: "open" | "done";
 }
 
@@ -329,6 +345,7 @@ function TaskRow({
   onComplete,
   onSnooze,
   onCancel,
+  onReopen,
   variant = "open",
 }: RowProps) {
   const [expanded, setExpanded] = useState(false);
@@ -414,6 +431,12 @@ function TaskRow({
           </div>
           {variant === "open" && (
             <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/admin/tasks/${task.id}/edit`}
+                className="text-xs px-2 py-1 rounded border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream inline-flex items-center gap-1"
+              >
+                <Pencil className="w-3 h-3" /> Edit
+              </Link>
               <button
                 onClick={() => onSnooze(task.id, 1)}
                 className="text-xs px-2 py-1 rounded border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream inline-flex items-center gap-1"
@@ -438,6 +461,22 @@ function TaskRow({
               >
                 <X className="w-3 h-3" /> Cancel
               </button>
+            </div>
+          )}
+          {variant === "done" && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => onReopen(task.id)}
+                className="text-xs px-2 py-1 rounded border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream inline-flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" /> Reopen
+              </button>
+              <Link
+                href={`/admin/tasks/${task.id}/edit`}
+                className="text-xs px-2 py-1 rounded border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream inline-flex items-center gap-1"
+              >
+                <Pencil className="w-3 h-3" /> Edit
+              </Link>
             </div>
           )}
           {task.completion_notes && (
