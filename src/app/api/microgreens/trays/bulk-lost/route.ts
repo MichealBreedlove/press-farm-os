@@ -5,11 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if (!profile || profile.role !== "admin") return null;
   return user;
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const { tray_ids } = body;

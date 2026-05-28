@@ -13,6 +13,7 @@ describe("DELETE /api/microgreens/trays/[id]", () => {
 
   it("deletes a tray with no harvests", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [{ id: "t1", status: "blackout" }],
       microgreen_harvests: [],
     });
@@ -28,6 +29,7 @@ describe("DELETE /api/microgreens/trays/[id]", () => {
 
   it("refuses delete when tray has harvest events", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [{ id: "t1", status: "harvesting" }],
       microgreen_harvests: [{ id: "h1", tray_id: "t1", yield_oz: 5 }],
     });
@@ -43,7 +45,7 @@ describe("DELETE /api/microgreens/trays/[id]", () => {
     expect(sb._data.microgreen_trays).toHaveLength(1);
   });
 
-  it("returns 401 when not authenticated", async () => {
+  it("returns 403 when not admin", async () => {
     const sb = makeSupabaseMock({});
     sb.auth.getUser = vi.fn(async () => ({ data: { user: null }, error: null })) as any;
     (createAdminClient as any).mockReturnValue(sb);
@@ -51,6 +53,6 @@ describe("DELETE /api/microgreens/trays/[id]", () => {
 
     const req = new Request("http://test/api/microgreens/trays/t1", { method: "DELETE" });
     const res = await DELETE(req, { params: { id: "t1" } });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
   });
 });

@@ -13,6 +13,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
 
   it("marks every listed active tray as lost with the reason", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [
         { id: "t1", status: "blackout", lost_reason: null },
         { id: "t2", status: "light", lost_reason: null },
@@ -37,6 +38,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
 
   it("skips trays already in a terminal state", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [
         { id: "t1", status: "blackout", lost_reason: null },
         { id: "t2", status: "terminated", lost_reason: null },
@@ -59,7 +61,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
   });
 
   it("returns 400 when tray_ids is empty", async () => {
-    const sb = makeSupabaseMock({});
+    const sb = makeSupabaseMock({ profiles: [{ id: "test-admin", role: "admin" }] });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
@@ -72,7 +74,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
   });
 
   it("returns 400 when lost_reason is missing", async () => {
-    const sb = makeSupabaseMock({});
+    const sb = makeSupabaseMock({ profiles: [{ id: "test-admin", role: "admin" }] });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
@@ -85,7 +87,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
   });
 
   it("returns 400 when lost_reason is only whitespace", async () => {
-    const sb = makeSupabaseMock({});
+    const sb = makeSupabaseMock({ profiles: [{ id: "test-admin", role: "admin" }] });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
@@ -97,7 +99,7 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 401 when not authenticated", async () => {
+  it("returns 403 when not admin", async () => {
     const sb = makeSupabaseMock({});
     sb.auth.getUser = vi.fn(async () => ({ data: { user: null }, error: null })) as any;
     (createAdminClient as any).mockReturnValue(sb);
@@ -108,6 +110,6 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
       body: JSON.stringify({ tray_ids: ["t1"], lost_reason: "x" }),
     });
     const res = await POST(req);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
   });
 });
