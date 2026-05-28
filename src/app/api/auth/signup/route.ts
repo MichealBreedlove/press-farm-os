@@ -8,9 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *
  * Creates an INDIVIDUAL chef account (role 'chef', is_active true) and links it
  * to the chosen restaurant via restaurant_users. Email is auto-confirmed so the
- * chef can sign in immediately. The legacy "Events" pseudo-restaurant is not a
- * valid signup target — events appear on every chef's order form via the
- * is_event_item flag, no assignment needed.
+ * chef can sign in immediately. Events is a valid target — the Events team
+ * places orders for flowers/branches and other event items.
  */
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; full_name?: string; restaurant_id?: string };
@@ -40,7 +39,6 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  // Confirm the restaurant exists and isn't the legacy Events pseudo-restaurant.
   const { data: restaurant, error: restErr } = await (admin as any)
     .from("restaurants")
     .select("id, name")
@@ -49,9 +47,6 @@ export async function POST(request: Request) {
 
   if (restErr || !restaurant) {
     return NextResponse.json({ error: "Restaurant not found" }, { status: 400 });
-  }
-  if (/event/i.test(restaurant.name)) {
-    return NextResponse.json({ error: "That restaurant isn't available for signup" }, { status: 400 });
   }
 
   const { data: createData, error: createErr } = await admin.auth.admin.createUser({
