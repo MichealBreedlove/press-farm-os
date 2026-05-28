@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { StageBadge } from "@/components/admin/microgreens/StageBadge";
 import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
+import { TrayActionsFooter } from "@/components/admin/microgreens/TrayActionsFooter";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
 
 function fmtQty(n: number): string {
@@ -27,7 +28,6 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
     .order("harvested_at", { ascending: false });
 
   const crop = tray.batch?.crop;
-  // Sum harvests per unit — mixing oz and LG/SM/EA into one number is meaningless.
   const totalsByUnit: Record<string, number> = {};
   for (const h of harvests ?? []) {
     const label = harvestUnitLabel(h.unit);
@@ -77,6 +77,13 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
         {tray.lost_reason && (
           <p className="text-sm text-red-700">Lost: {tray.lost_reason}</p>
         )}
+
+        <TrayActionsFooter
+          trayId={tray.id}
+          trayLabel={tray.tray_label}
+          status={tray.status}
+          hasHarvests={(harvests ?? []).length > 0}
+        />
       </div>
     </main>
   );
