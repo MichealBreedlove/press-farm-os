@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const REASON_CHIPS = [
   "Damping off disease",
@@ -20,6 +20,22 @@ export function LostReasonModal({ open, trayCount, onClose, onConfirm }: Props) 
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setReason("");
+      setError(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -45,8 +61,14 @@ export function LostReasonModal({ open, trayCount, onClose, onConfirm }: Props) 
   const title = trayCount === 1 ? "Mark tray as lost" : `Mark ${trayCount} trays as lost`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
-      <div className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold">{title}</h3>
           <button
@@ -80,17 +102,22 @@ export function LostReasonModal({ open, trayCount, onClose, onConfirm }: Props) 
         </div>
 
         <label className="block">
-          <span className="block text-xs text-farm-muted mb-1">Reason</span>
+          <span className="form-label">Reason</span>
           <input
             type="text"
-            className="input w-full"
+            className="input-field w-full"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. Damping off disease"
+            autoFocus
           />
         </label>
 
-        {error && <p className="text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 pt-1">
           <button
