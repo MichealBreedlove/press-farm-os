@@ -141,8 +141,8 @@ export function TrayListClient({ trays }: { trays: TrayRow[] }) {
 
       {selectMode && selected.size > 0 && (
         <div
-          className="fixed left-0 right-0 z-40 px-4 pb-3"
-          style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+          className="fixed left-0 right-0 z-[60] px-4 pb-3"
+          style={{ bottom: "calc(4rem + env(safe-area-inset-bottom) + 0.5rem)" }}
         >
           <div className="max-w-4xl mx-auto bg-white border border-farm-dark/15 rounded-xl shadow-lg p-3 flex items-center justify-between gap-3">
             <span className="text-sm font-medium">{selected.size} selected</span>

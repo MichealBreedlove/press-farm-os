@@ -19,7 +19,10 @@
 //        so every page rendered desktop-width on iPhone. Bumping the name
 //        makes iOS pick up this (network-first, viewport-correct) worker
 //        on next launch; activate then purges the stale shell.
-const CACHE_NAME = "press-farm-v4";
+//   v5 → microgreens trays multi-select sticky bar was z-40 vs BottomNav
+//        z-50 — invisible on Android. New bundle has z-[60] + raised
+//        offset; bumping cache to force PWA installs to refetch.
+const CACHE_NAME = "press-farm-v5";
 
 const PRECACHE_URLS = [
   "/",
