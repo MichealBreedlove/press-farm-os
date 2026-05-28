@@ -11,6 +11,7 @@ const { POST } = await import("@/app/api/microgreens/batches/route");
 describe("POST /api/microgreens/batches", () => {
   it("creates a batch + N trays", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_crops: [{
         id: "c1", name: "Broccoli", presoak_hours: 0, presprout_hours: 0,
         blackout_days: 3, ideal_harvest_day: 10, keep_in_blackout: false,
@@ -37,6 +38,7 @@ describe("POST /api/microgreens/batches", () => {
 
   it("uses 'soaking' status when crop has presoak_hours > 0", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_crops: [{
         id: "c1", name: "Pea Shoot", presoak_hours: 8, presprout_hours: 18,
         blackout_days: 3, ideal_harvest_day: 10, keep_in_blackout: false,

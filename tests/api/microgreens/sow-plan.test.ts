@@ -11,6 +11,7 @@ const { GET } = await import("@/app/api/microgreens/sow-plan/route");
 describe("GET /api/microgreens/sow-plan", () => {
   it("returns a plan with sow_today/advance_today/harvest_today buckets", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_crops: [],
       microgreen_demand: [],
       microgreen_batches: [],

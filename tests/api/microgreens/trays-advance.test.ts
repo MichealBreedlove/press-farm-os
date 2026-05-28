@@ -11,6 +11,7 @@ const { POST } = await import("@/app/api/microgreens/trays/[id]/advance/route");
 describe("POST /api/microgreens/trays/:id/advance", () => {
   it("advances blackout -> light and sets light_start", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [{
         id: "t1", batch_id: "b1", status: "blackout",
         sow_date: "2026-05-14", blackout_start: "2026-05-14",

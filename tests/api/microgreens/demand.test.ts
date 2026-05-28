@@ -12,7 +12,10 @@ describe("POST /api/microgreens/demand", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("creates a demand row", async () => {
-    const sb = makeSupabaseMock({ microgreen_demand: [] });
+    const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
+      microgreen_demand: [],
+    });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
@@ -29,7 +32,9 @@ describe("POST /api/microgreens/demand", () => {
   });
 
   it("rejects out-of-range day_of_week", async () => {
-    const sb = makeSupabaseMock({});
+    const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
+    });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
@@ -45,6 +50,7 @@ describe("POST /api/microgreens/demand", () => {
 describe("GET /api/microgreens/demand", () => {
   it("returns all demand rows", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_demand: [
         { id: "d1", crop_id: "c1", restaurant_id: "r1", day_of_week: 4, target_oz: 8 },
       ],

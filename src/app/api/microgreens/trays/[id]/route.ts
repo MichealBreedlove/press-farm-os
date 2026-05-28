@@ -5,11 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if (!profile || profile.role !== "admin") return null;
   return user;
 }
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const admin = createAdminClient();
   const { data, error } = await (admin as any)
     .from("microgreen_trays")
@@ -22,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 }
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
   // Only allow editing safe fields here — status transitions go through advance/terminate.
   const safe: Record<string, unknown> = {};

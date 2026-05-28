@@ -11,6 +11,12 @@ export async function GET(_req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { data: profile } = await (supabase as any)
+    .from("profiles").select("role").eq("id", user.id).single();
+  if (!profile || profile.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const admin = createAdminClient();
   const now = new Date();
   const horizon = new Date(now.getTime() + PLAN_HORIZON_DAYS * 24 * 3600 * 1000);

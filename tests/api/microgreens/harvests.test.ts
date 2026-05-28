@@ -11,6 +11,7 @@ const { POST } = await import("@/app/api/microgreens/harvests/route");
 describe("POST /api/microgreens/harvests", () => {
   it("creates a harvest event and moves single-cut tray to terminated", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [{ id: "t1", batch_id: "b1", status: "light", sow_date: "2026-05-07" }],
       microgreen_batches: [{ id: "b1", crop_id: "c1" }],
       microgreen_crops: [{ id: "c1", is_continuous_harvest: false }],
@@ -31,6 +32,7 @@ describe("POST /api/microgreens/harvests", () => {
 
   it("for continuous-harvest, leaves tray in 'harvesting'", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_trays: [{ id: "t1", batch_id: "b1", status: "light", sow_date: "2026-04-20" }],
       microgreen_batches: [{ id: "b1", crop_id: "c1" }],
       microgreen_crops: [{ id: "c1", is_continuous_harvest: true, productive_life_days: 30 }],

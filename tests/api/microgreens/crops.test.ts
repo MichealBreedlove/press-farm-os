@@ -13,6 +13,7 @@ describe("GET /api/microgreens/crops", () => {
 
   it("returns active crops sorted by name", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       microgreen_crops: [
         { id: "c1", name: "Broccoli", is_active: true },
         { id: "c2", name: "Arugula", is_active: true },
@@ -33,6 +34,7 @@ describe("GET /api/microgreens/crops", () => {
 describe("POST /api/microgreens/crops", () => {
   it("creates a crop with farm_id auto-filled", async () => {
     const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
       farms: [{ id: "farm-1" }],
       microgreen_crops: [],
     });
@@ -53,7 +55,10 @@ describe("POST /api/microgreens/crops", () => {
   });
 
   it("returns 400 for missing required fields", async () => {
-    const sb = makeSupabaseMock({ farms: [{ id: "farm-1" }] });
+    const sb = makeSupabaseMock({
+      profiles: [{ id: "test-admin", role: "admin" }],
+      farms: [{ id: "farm-1" }],
+    });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 
