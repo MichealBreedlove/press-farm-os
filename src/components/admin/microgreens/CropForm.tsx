@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { GROWING_MEDIA } from "@/lib/microgreens/constants";
+import { GROWING_MEDIA, HARVEST_STAGE_LABELS } from "@/lib/microgreens/constants";
 import { YIELD_UNITS, YIELD_UNIT_LABELS, type YieldUnit } from "@/lib/microgreens/types";
 import type { MicrogreenCrop } from "@/types/database";
 
@@ -29,6 +29,7 @@ export function CropForm({ initial, items }: Props) {
     ideal_harvest_day: initial?.ideal_harvest_day ?? 10,
     harvest_min_days: initial?.harvest_min_days ?? null,
     harvest_max_days: initial?.harvest_max_days ?? null,
+    harvest_stage: initial?.harvest_stage ?? "baby_green",
     expected_yield_oz_per_tray: initial?.expected_yield_oz_per_tray ?? 8,
     yield_per_tray: (initial?.yield_per_tray ?? {}) as Record<string, number>,
     is_continuous_harvest: initial?.is_continuous_harvest ?? false,
@@ -121,6 +122,21 @@ export function CropForm({ initial, items }: Props) {
           <input type="number" className="input w-full"
             value={form.ideal_harvest_day}
             onChange={(e) => update("ideal_harvest_day", Number(e.target.value))} required />
+        </label>
+        <label className="block">
+          <span className="block text-sm">Harvest stage</span>
+          <select
+            className="input w-full"
+            value={form.harvest_stage}
+            onChange={(e) => update("harvest_stage", e.target.value)}
+          >
+            {(Object.keys(HARVEST_STAGE_LABELS) as Array<keyof typeof HARVEST_STAGE_LABELS>).map((k) => (
+              <option key={k} value={k}>{HARVEST_STAGE_LABELS[k]}</option>
+            ))}
+          </select>
+          <p className="text-xs text-farm-muted mt-1">
+            Determines the label shown on tray timelines. Set "Ideal harvest day" above to the actual day count.
+          </p>
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={form.weight_during_blackout}
