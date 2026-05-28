@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 
@@ -50,7 +51,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="login-card px-8 py-12 sm:px-12 sm:py-14 space-y-8">
           <div className="text-center">
-            <PressFarmLogo size="lg" />
+            <Link href="/about" aria-label="About Press Farm" className="inline-block">
+              <PressFarmLogo size="lg" />
+            </Link>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -102,6 +105,15 @@ export default function LoginPage() {
           <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
             Trouble signing in? Contact Press Farm.
           </p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            href="/about"
+            className="text-xs tracking-[0.18em] uppercase text-farm-muted/90 hover:text-pf-master-gold transition-colors"
+          >
+            About Press Farm →
+          </Link>
         </div>
 
         <p className="login-footer">Yountville · California · Est. 2024</p>
