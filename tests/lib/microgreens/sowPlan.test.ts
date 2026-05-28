@@ -12,6 +12,7 @@ const broccoli: MicrogreenCrop = {
   bury_seed: false, weight_during_blackout: false,
   blackout_days: 3, keep_in_blackout: false,
   ideal_harvest_day: 10, harvest_min_days: 8, harvest_max_days: 12,
+  harvest_stage: "baby_green",
   expected_yield_oz_per_tray: 8,
   // Migration 047 unit-based yield. 1 tray = 8 LG or 16 SM.
   // EA intentionally omitted so the missing_yield_config test has a unit to trigger on.

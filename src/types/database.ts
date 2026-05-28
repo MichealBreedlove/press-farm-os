@@ -635,6 +635,8 @@ export interface SeedWithOnHandRow extends SeedRow {
 export type MicrogreenTrayStatus =
   | "soaking" | "blackout" | "light" | "harvesting" | "terminated" | "lost";
 
+export type MicrogreenHarvestStage = "cotyledon" | "true_leaf" | "baby_green";
+
 export interface MicrogreenCrop {
   id: string;
   farm_id: string;
@@ -651,6 +653,7 @@ export interface MicrogreenCrop {
   ideal_harvest_day: number;
   harvest_min_days: number | null;
   harvest_max_days: number | null;
+  harvest_stage: MicrogreenHarvestStage;
   expected_yield_oz_per_tray: number;
   // Migration 047: per-unit alternative yields, e.g. {"lg": 4, "sm": 8, "ea": 32}
   // One tray yields 4 LG OR 8 SM OR 32 EA, depending on packing decision.

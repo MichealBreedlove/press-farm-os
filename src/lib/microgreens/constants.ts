@@ -1,4 +1,4 @@
-import type { MicrogreenTrayStatus } from "@/types/database";
+import type { MicrogreenHarvestStage, MicrogreenTrayStatus } from "@/types/database";
 
 export const TRAY_STATUSES: MicrogreenTrayStatus[] = [
   "soaking", "blackout", "light", "harvesting", "terminated", "lost",
@@ -31,3 +31,15 @@ export const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const GROWING_MEDIA = ["soil", "hydroponic"] as const;
 export type GrowingMedium = (typeof GROWING_MEDIA)[number];
+
+export const HARVEST_STAGE_LABELS: Record<MicrogreenHarvestStage, string> = {
+  cotyledon: "Cotyledon",
+  true_leaf: "True Leaf",
+  baby_green: "Baby Green",
+};
+
+export const HARVEST_STAGE_CHIP_CLASS: Record<MicrogreenHarvestStage, string> = {
+  cotyledon: "bg-farm-muted/10 text-farm-muted",
+  true_leaf: "bg-farm-green/10 text-farm-green",
+  baby_green: "bg-farm-green/20 text-farm-green font-medium",
+};
