@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Save, Check, Send, Loader2, Sprout } from "lucide-react";
+import { Mail, Save, Check, Send, Loader2, Sprout, Inbox } from "lucide-react";
+
+/** Where "Send All Test Emails" routes its sample sends. */
+const TEST_EMAIL_RECIPIENT = "mikejohnbreedlove@gmail.com";
 
 const EMAIL_FIELDS = [
   {
@@ -60,6 +63,8 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const [sendingTests, setSendingTests] = useState(false);
+  const [testResult, setTestResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
   // Quarterly send selector — defaults to the most recent COMPLETED quarter.
   const now = new Date();
@@ -110,6 +115,33 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
       setSendResult({ kind: "err", msg: String(err) });
     }
     setSending(null);
+  }
+
+  async function sendAllTests() {
+    setSendingTests(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(
+        `/api/test-emails-bulk?to=${encodeURIComponent(TEST_EMAIL_RECIPIENT)}`,
+      );
+      const data = await res.json().catch(() => ({}));
+      const failed = (data?.results ?? []).filter((r: any) => r.status !== "sent");
+      if (!res.ok || (data?.failed ?? 0) > 0) {
+        const labels = failed.map((r: any) => r.template).join(", ");
+        setTestResult({
+          kind: "err",
+          msg: data?.error || `Sent ${data?.succeeded ?? 0}/${data?.total ?? 0}.${labels ? ` Failed: ${labels}.` : ""}`,
+        });
+      } else {
+        setTestResult({
+          kind: "ok",
+          msg: `Sent all ${data?.succeeded ?? data?.total ?? 0} sample emails to ${data?.sent_to ?? TEST_EMAIL_RECIPIENT}. Subjects are prefixed [SAMPLE].`,
+        });
+      }
+    } catch (err) {
+      setTestResult({ kind: "err", msg: String(err) });
+    }
+    setSendingTests(false);
   }
 
   async function handleSave() {
@@ -247,6 +279,46 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+            <Inbox className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-sm text-farm-dark">Preview All Templates</h2>
+            <p className="text-xs text-farm-muted">
+              Sends a sample of every email template — order confirmation, shortage notice,
+              availability, receiver handoff, weekly digest, timesheet, partner report, and the
+              rest — filled with sample data so you can check that each one renders correctly. The
+              chef-facing set goes out once per restaurant. All land at{" "}
+              <span className="font-medium text-farm-dark">{TEST_EMAIL_RECIPIENT}</span>; subjects
+              are prefixed <span className="font-mono">[SAMPLE]</span>.
+            </p>
+          </div>
+        </div>
+
+        {testResult && (
+          <div
+            className={`mb-3 rounded-lg px-3 py-2 text-xs ${
+              testResult.kind === "ok"
+                ? "bg-green-50 text-farm-green border border-green-100"
+                : "bg-amber-50 text-amber-800 border border-amber-100"
+            }`}
+          >
+            {testResult.msg}
+          </div>
+        )}
+
+        <button
+          onClick={sendAllTests}
+          disabled={sendingTests}
+          className="btn-secondary w-full flex items-center justify-center gap-2"
+        >
+          {sendingTests ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Send All Test Emails
+        </button>
       </div>
     </div>
   );

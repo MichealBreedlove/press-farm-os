@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
-// 12 emails × 600ms throttle ≈ 7.2s of work; bump the function's max
-// runtime so we don't get cut off mid-batch on Vercel.
+// ~18 emails × 600ms throttle ≈ 11s of work (12 per-restaurant + receiver +
+// 5 farm-level); bump the function's max runtime so we don't get cut off
+// mid-batch on Vercel.
 export const maxDuration = 30;
 
 import ChefWelcome from "@/emails/chef-welcome";
@@ -15,13 +16,22 @@ import OrderReceived from "@/emails/order-received";
 import OrderFulfilled from "@/emails/order-fulfilled";
 import ShortageNotice from "@/emails/shortage-notice";
 import ReceiverDaily from "@/emails/receiver-daily";
+import AvailabilityForecast from "@/emails/availability-forecast";
+import EventRequestAccepted from "@/emails/event-request-accepted";
+import WeeklyDigest from "@/emails/weekly-digest";
+import LaborTimesheet from "@/emails/labor-timesheet";
+import PartnerReport from "@/emails/partner-report";
 
 /**
  * GET /api/test-emails-bulk?to=email&restaurant=Press
  *
- * Sends sample versions of all 6 transactional emails. By default, sends one
- * full set per restaurant (Press + Under-Study) → 12 emails total. Pass
- * ?restaurant=Press (or any single name) to scope to one set.
+ * Sends sample versions of every email template so each can be eyeballed for
+ * correctness. The 6 transactional emails (welcome, availability, order
+ * confirmation/received/fulfilled, shortage) are sent once per restaurant
+ * (Press + Under-Study by default → 12 emails). The receiver-daily summary and
+ * the 5 farm-level templates (forecast, event-request-accepted, weekly digest,
+ * timesheet, partner report) are sent once each since they aren't restaurant-
+ * scoped. Pass ?restaurant=Press to scope the per-restaurant set to one.
  *
  * Admin only.
  */
@@ -229,6 +239,146 @@ export async function GET(request: Request) {
             { itemName: "Chamomile",    ordered: 100, delivered: 100, unit: "ea", status: "ready", isEvent: true },
           ],
         },
+      ],
+    }) as React.ReactElement,
+  );
+
+  // ── Farm-level templates — not restaurant-scoped, sent once each ──────
+
+  // 8. Availability forecast (forward-looking, chef-facing)
+  await send(
+    "availability-forecast",
+    "All",
+    FROM_ADDRESSES.forecast,
+    "Looking ahead — what's coming from the farm",
+    AvailabilityForecast({
+      chefName: "Chef Sample",
+      restaurantName: "Press",
+      asOfDate: sampleDate,
+      sections: [
+        {
+          title: "Available Now",
+          caption: "Harvesting this week",
+          entries: [
+            { name: "Nasturtium", category: "herbs_leaves", isMicrogreen: false, estimate: "plenty" },
+            { name: "Borage Flowers", category: "flowers", isMicrogreen: false, estimate: "2–3 flats" },
+            { name: "Pea Shoots", category: "micros_leaves", isMicrogreen: true, estimate: "12 clamshells" },
+          ],
+        },
+        {
+          title: "In ~2 Weeks",
+          caption: "Sizing up now",
+          entries: [
+            { name: "Zinnia", category: "flowers", isMicrogreen: false, window: "opens mid-June" },
+            { name: "Cherry Tomatoes", category: "fruit_veg", isMicrogreen: false, window: "first pick ~Jun 16" },
+          ],
+        },
+      ],
+    }) as React.ReactElement,
+  );
+
+  // 9. Event request accepted (chef-facing)
+  await send(
+    "event-request-accepted",
+    "All",
+    FROM_ADDRESSES.availability,
+    "Your event request is confirmed",
+    EventRequestAccepted({
+      chefName: "Chef Sample",
+      restaurantName: "Press",
+      deliveryDate: sampleDate,
+      items: [
+        { itemName: "Edible Flower Mix", quantity: 6, unit: "clamshell" },
+        { itemName: "Micro Herb Selection", quantity: 4, unit: "clamshell" },
+      ],
+      eventName: "Harvest Dinner — Private",
+      adminResponse: "All set for that date. I'll bring the flower mix in two deliveries so it stays fresh.",
+    }) as React.ReactElement,
+  );
+
+  // 10. Weekly digest (admin-facing)
+  await send(
+    "weekly-digest",
+    "All",
+    FROM_ADDRESSES.digest,
+    "Press Farm — your week in review",
+    WeeklyDigest({
+      startLabel: "May 24",
+      endLabel: "May 30",
+      aiIntro: "Steady week. Three deliveries landed on plan and labor held under budget despite the Saturday double-header.",
+      totalRevenue: "$1,842.00",
+      totalExpenses: "$214.50",
+      totalLaborHours: "31.5",
+      totalLaborCost: "$472.50",
+      netLabel: "$1,155.00",
+      deliveryCount: 3,
+      deliveries: [
+        { dateLabel: "Thu, May 28", restaurantName: "Press", value: "$612.00" },
+        { dateLabel: "Sat, May 30", restaurantName: "Press", value: "$734.00" },
+        { dateLabel: "Sat, May 30", restaurantName: "Under-Study", value: "$496.00" },
+      ],
+      expenses: [
+        { category: "Seeds & Starts", amount: "$128.00", description: "Zinnia + cosmos seed restock" },
+        { category: "Supplies", amount: "$86.50", description: "Clamshells, rubber bands" },
+      ],
+      workers: [
+        { name: "Micheal", hours: "18.0" },
+        { name: "Field Helper", hours: "13.5" },
+      ],
+    }) as React.ReactElement,
+  );
+
+  // 11. Labor timesheet (supervisor-facing)
+  await send(
+    "labor-timesheet",
+    "All",
+    FROM_ADDRESSES.timesheet,
+    "Timesheet for week of May 24",
+    LaborTimesheet({
+      weekLabel: "May 24",
+      days: [
+        {
+          dateLabel: "Thursday, May 28",
+          workers: [
+            { name: "Micheal", tail: "6:30 - 10:00, 10:30 - 3:00", notes: "Harvest + Press delivery" },
+            { name: "Field Helper", tail: "7:00 - 12:00" },
+          ],
+        },
+        {
+          dateLabel: "Saturday, May 30",
+          workers: [
+            { name: "Micheal", tail: "6:00 - 11:30", notes: "Double delivery day" },
+          ],
+        },
+      ],
+      signOff: "Micheal Breedlove",
+    }) as React.ReactElement,
+  );
+
+  // 12. Partner report (partner-facing, e.g. Chef Phil)
+  await send(
+    "partner-report",
+    "All",
+    FROM_ADDRESSES.partnerReport,
+    "Press Farm — your monthly partner report",
+    PartnerReport({
+      partnerName: "Phil",
+      period: "monthly",
+      periodLabel: "May 2026",
+      totalValue: "$7,284.00",
+      deliveryCount: 13,
+      topItems: [
+        { label: "Nasturtium", value: "$1,120.00", sub: "2,800 ea" },
+        { label: "Squash Blossoms", value: "$864.00", sub: "1,440 ea" },
+        { label: "Borage Flowers", value: "$612.00", sub: "34 lg" },
+      ],
+      byRestaurant: [
+        { label: "Press", value: "$4,910.00", sub: "8 deliveries" },
+        { label: "Under-Study", value: "$2,374.00", sub: "5 deliveries" },
+      ],
+      comingSoon: [
+        { name: "Zinnia", category: "flowers", isMicrogreen: false, window: "opens mid-June" },
+        { name: "Cherry Tomatoes", category: "fruit_veg", isMicrogreen: false, window: "first pick ~Jun 16" },
       ],
     }) as React.ReactElement,
   );
