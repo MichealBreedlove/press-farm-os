@@ -501,7 +501,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                           {/* Colors selector */}
                           {colorsList.length > 0 && (
                             <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <span className="text-[9px] text-farm-muted">Colors:</span>
+                              <span className="text-[9px] text-farm-muted">Varieties:</span>
                               {(() => {
                                 const sel =
                                   sharedState.available_colors === null

@@ -337,7 +337,7 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
           />
         </div>
         <div>
-          <label className="form-label">Color</label>
+          <label className="form-label">Variety options</label>
           <input
             type="text"
             value={form.color}
