@@ -117,7 +117,7 @@ SET color = 'Purple, Yellow, Red Veined, Burgundy'
 WHERE id = 'a49d0d7c-5143-4558-9da9-8bd3c8f95b95';
 
 -- ── Variety-list seeding (no fold) ────────────────────────────────────
-UPDATE items SET color = 'Genovese, Thai, Lemon, Lettuce Leaf, Purple'
+UPDATE items SET color = 'Genovese, Thai, Lemon, Purple'
   WHERE id = '820030fb-1c45-4f34-b62f-8861a45e0986';  -- Basil
 UPDATE items SET color = 'Little Gem, Butter, Oak Leaf, Red Leaf, Romaine'
   WHERE id = '01492b61-43c2-4a35-bcb1-8c6e186237c6';  -- Lettuce
