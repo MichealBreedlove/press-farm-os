@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { loadFarmerPayRates, farmerPayForQuarter } from "@/lib/farmer-pay";
 
 interface Props {
   searchParams: Promise<{ year?: string; quarter?: string }>;
@@ -16,9 +17,7 @@ const MONTH_LABELS: Record<string, string> = {
   "10": "Oct", "11": "Nov", "12": "Dec",
 };
 
-// Farmer pay is a fixed operating expense, $12K per quarter
-const FARMER_PAY_PER_QUARTER = 12000;
-
+// Farmer pay is a date-effective operating expense (see src/lib/farmer-pay.ts).
 // Industry benchmarks for market farms
 const BENCHMARKS = {
   grossMargin: { label: "Gross Margin", range: "50–70%", min: 0.5, max: 0.7 },
@@ -130,7 +129,8 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const cogs = Object.values(monthData).reduce((s, m) => s + m.expenses, 0);
   const grossProfit = revenue - cogs;
   const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
-  const operatingExpenses = FARMER_PAY_PER_QUARTER;
+  const payRates = await loadFarmerPayRates(admin);
+  const operatingExpenses = farmerPayForQuarter(year, quarter, payRates);
   const operatingProfit = grossProfit - operatingExpenses;
   const operatingMargin = revenue > 0 ? operatingProfit / revenue : 0;
   const netIncome = operatingProfit; // no other income/tax adjustments

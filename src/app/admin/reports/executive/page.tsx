@@ -4,17 +4,26 @@ import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/shared/PrintButton";
 import ExecutiveDashboard from "./ExecutiveDashboard";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import {
+  loadFarmerPayRates,
+  farmerPayForQuarters,
+  type FarmerPayRate,
+} from "@/lib/farmer-pay";
 
-const FARMER_PAY_PER_QUARTER = 12000;
 const FARM_ACRES = 0.5;
 
-// Calculate farmer pay for a given year based on quarters that have delivery data
-function calcFarmerPay(year: string, quartersWithData: Set<string>): number {
-  let count = 0;
+// Farmer pay for a year = sum over its quarters-with-data, each prorated
+// across any mid-quarter rate change (see src/lib/farmer-pay.ts).
+function calcFarmerPay(
+  year: string,
+  quartersWithData: Set<string>,
+  rates: FarmerPayRate[]
+): number {
+  const keys: string[] = [];
   for (let q = 1; q <= 4; q++) {
-    if (quartersWithData.has(`${year}-Q${q}`)) count++;
+    if (quartersWithData.has(`${year}-Q${q}`)) keys.push(`${year}-Q${q}`);
   }
-  return count * FARMER_PAY_PER_QUARTER;
+  return farmerPayForQuarters(keys, rates);
 }
 
 export type AnnualSummary = {
@@ -80,6 +89,8 @@ export default async function AdminExecutiveReportsPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
+
+  const payRates = await loadFarmerPayRates(admin);
 
   const [{ data: deliveries }, { data: expenses }, { data: deliveryItems }] =
     await Promise.all([
@@ -155,7 +166,7 @@ export default async function AdminExecutiveReportsPage() {
     const revenue = yearRevMap[year] ?? 0;
     const expenses = yearExpMap[year] ?? 0;
     const gross_profit = revenue - expenses;
-    const farmer_pay = calcFarmerPay(year, quartersWithData);
+    const farmer_pay = calcFarmerPay(year, quartersWithData, payRates);
     const operating_profit = gross_profit - farmer_pay;
     const net_income = operating_profit;
     const gross_margin = revenue > 0 ? gross_profit / revenue : 0;
