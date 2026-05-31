@@ -290,7 +290,7 @@ export function OrderForm({
         // Keep the human-readable color note in itemNote for backwards-compat
         // displays; the structured colorKey field is what receiver/edit
         // hydration round-trips through.
-        const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
+        const colorNote = colors.length > 0 ? `Variety: ${colors.join(", ")}` : "";
         const note = [colorNote, itemNote].filter(Boolean).join(" | ");
 
         // Persist the specific unit chosen (or fall back to whatever's on the item)
