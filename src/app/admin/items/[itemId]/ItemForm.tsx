@@ -342,7 +342,7 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
             type="text"
             value={form.color}
             onChange={(e) => set("color", e.target.value)}
-            placeholder="e.g. Purple, Red"
+            placeholder="e.g. Mizuna, Wasabina"
             className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
           />
         </div>

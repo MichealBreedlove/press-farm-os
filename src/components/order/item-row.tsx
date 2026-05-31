@@ -63,7 +63,7 @@ function ColorPicker({
   colors,
   selected,
   onToggle,
-  label = "Colors",
+  label = "Varieties",
 }: {
   colors: string[];
   selected: string[];
