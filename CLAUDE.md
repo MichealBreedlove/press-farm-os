@@ -302,7 +302,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 
 **Audit follow-ups (codebase audit, 2026-06-01):**
 3. **Regenerate `src/types/database.ts`** from the live schema — it covers ~18 of ~34 tables, driving ~580 `(supabase as any)` casts. Pairs with extracting a `requireAdmin()` helper (the auth-check block is duplicated across ~87 routes).
-4. **Reports do full-table JS aggregation** — `/admin/reports/page.tsx` and `reports/executive` fetch all of `delivery_items` and roll up in JS. Move to a SQL view / `GROUP BY` (income + crops reports already date-bound — copy that).
+4. ~~Reports full-table JS aggregation~~ — **Largely done.** The big scan (`delivery_items`, 3.7k rows, fastest-growing) is now SQL via the `report_item_revenue` view (migration 065). The residual month/year rollup over `deliveries` (~403) + `farm_expenses` (~132) is intentionally left in JS — tiny bounded tables, and a new view would couple `main`'s auto-deploy to a manual migration for negligible gain. Revisit only if `deliveries` grows into the tens of thousands.
 5. **Unbounded list queries** — chef history, labor, notes select with no limit/date window on ever-growing tables.
 6. **Dead code** — 5 orphaned `components/shared/` files (`PageHeader`, `TopBar`, `EmptyState`, `status-badge.tsx`, `delivery-date-picker.tsx`); the reserved-but-unused `historicalDeliveryItems` path in the sow-plan flow.
 7. **Supabase advisors** — migration **064** fixes the three SQL findings (`seeds_with_on_hand` SECURITY DEFINER view, `match_inbound_sender` anon-executable, `slide_recurring_anchor` search_path); run it. Still manual: enable leaked-password protection in the Auth dashboard.
