@@ -80,8 +80,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/assets/pressfarm/logo/png/pressfarm-mandala-only.png",
-        width: 3000,
-        height: 3000,
+        width: 1024,
+        height: 1024,
         alt: "Press Farm — botanical mandala",
       },
     ],
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale — pinch-zoom must stay enabled (WCAG 2.1 SC 1.4.4).
   themeColor: "#00774A",
 };
 

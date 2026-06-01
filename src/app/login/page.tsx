@@ -73,7 +73,7 @@ export default function LoginPage() {
                 spellCheck={false}
               />
               <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted/80">
-                Chefs sign in with their email address.
+                Chefs sign in with their email; shared kitchen accounts use a username.
               </p>
             </div>
 
