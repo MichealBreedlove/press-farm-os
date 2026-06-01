@@ -20,15 +20,13 @@ export async function GET(request: Request) {
   const showArchived = searchParams.get("archived") === "true";
 
   const admin = createAdminClient();
-  let query = (admin as any)
+  let query = admin
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, sort_order")
-    .order("category")
-    .order("name");
+    .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, sort_order");
 
   if (!showArchived) query = query.eq("is_archived", false);
 
-  const { data, error } = await query;
+  const { data, error } = await query.order("category").order("name");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ items: data });
@@ -81,14 +79,14 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: farm } = await (admin as any).from("farms").select("id").single();
+  const { data: farm } = await admin.from("farms").select("id").single();
   if (!farm) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
   // Validate parent_item_id (single-level only): the proposed parent must
   // exist and must not itself be a child of another item.
   let parent_item_id: string | null = null;
   if (body.parent_item_id) {
-    const { data: parent } = await (admin as any)
+    const { data: parent } = await admin
       .from("items")
       .select("id, parent_item_id")
       .eq("id", body.parent_item_id)
@@ -100,7 +98,7 @@ export async function POST(request: Request) {
     parent_item_id = parent.id;
   }
 
-  const { data: item, error } = await (admin as any)
+  const { data: item, error } = await admin
     .from("items")
     .insert({
       farm_id: farm.id,
