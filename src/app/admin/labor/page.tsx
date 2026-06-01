@@ -14,7 +14,8 @@ export default async function AdminLaborPage() {
   const { data: entries } = await (admin as any)
     .from("labor_entries")
     .select("*")
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .limit(1000);
 
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id ?? "";

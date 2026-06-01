@@ -80,7 +80,8 @@ export default async function HistoryPage() {
       order_items(id, is_shorted)
     `)
     .eq("restaurant_id", restaurant.id)
-    .order("delivery_date", { ascending: false }) as any;
+    .order("delivery_date", { ascending: false })
+    .limit(200) as any;
 
   return (
     <main className="min-h-screen bg-farm-cream pb-20">
