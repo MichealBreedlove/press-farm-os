@@ -115,7 +115,7 @@ export async function DELETE(request: Request) {
   let itemsCleared = 0;
   let itemsClearError: string | null = null;
   try {
-    const { data: cleared, error: clearErr } = await (admin as any)
+    const { data: cleared, error: clearErr } = await admin
       .from("items")
       .update({ image_url: null })
       .in("image_url", urlsBeingDeleted)

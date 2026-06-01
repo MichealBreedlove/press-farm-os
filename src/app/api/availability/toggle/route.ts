@@ -20,7 +20,7 @@ export async function PATCH(request: Request) {
   }
 
   // Verify admin
-  const { data: profileRaw } = await (supabase as any)
+  const { data: profileRaw } = await supabase
     .from("profiles")
     .select("role, is_active")
     .eq("id", user.id)

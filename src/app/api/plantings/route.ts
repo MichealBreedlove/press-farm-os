@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const season = url.searchParams.get("season") ?? new Date().getFullYear().toString();
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("plantings")
     .select("*, items(name, image_url, category, unit_type)")
     .eq("season", parseInt(season))
@@ -24,52 +24,21 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || profile.role !== "admin")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const body = await request.json();
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("plantings")
     .insert(body)
     .select()
     .single();
 
+  // NOTE: a former block here auto-inserted into `planting_tasks` — that table
+  // was dropped in migration 062 (superseded by farm_tasks), so the insert had
+  // been silently failing. Removed. Re-add against farm_tasks if planting-driven
+  // task generation is wanted again.
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Auto-generate tasks from planting dates
-  if (data) {
-    const tasks: { planting_id: string; task_type: string; title: string; due_date: string }[] = [];
-    const p = data;
-
-    if (p.sow_date) {
-      const bedPrepDate = new Date(p.sow_date + "T12:00:00");
-      bedPrepDate.setDate(bedPrepDate.getDate() - 7);
-      tasks.push({ planting_id: p.id, task_type: "bed_prep", title: `Bed Prep: ${p.crop_name}`, due_date: bedPrepDate.toISOString().split("T")[0] });
-      tasks.push({ planting_id: p.id, task_type: "sow", title: `Sow: ${p.crop_name}${p.variety ? ` (${p.variety})` : ""}`, due_date: p.sow_date });
-    }
-
-    if (p.harvest_start) {
-      if (p.sow_date) {
-        const mid = new Date((new Date(p.sow_date + "T12:00:00").getTime() + new Date(p.harvest_start + "T12:00:00").getTime()) / 2);
-        tasks.push({ planting_id: p.id, task_type: "cultivate", title: `Cultivating: ${p.crop_name}`, due_date: mid.toISOString().split("T")[0] });
-      }
-      tasks.push({ planting_id: p.id, task_type: "harvest", title: `Harvest: ${p.crop_name}`, due_date: p.harvest_start });
-    }
-
-    if (p.harvest_end || p.termination_date) {
-      tasks.push({ planting_id: p.id, task_type: "terminate", title: `Terminate: ${p.crop_name}`, due_date: p.termination_date ?? p.harvest_end });
-    }
-
-    if (tasks.length > 0) {
-      await (admin as any).from("planting_tasks").insert(tasks);
-    }
-  }
-
   return NextResponse.json({ data });
 }

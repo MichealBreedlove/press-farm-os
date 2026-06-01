@@ -19,13 +19,16 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Allow chef + admin roles. Receivers don't need this; events team
-  // accounts use chef role (per Ask 1 plan).
-  const { data: profile } = await (supabase as any)
+  // accounts use chef role (per Ask 1 plan). Not requireAdmin — that's
+  // admin-only. (Result asserted: the SSR client's typed select/single
+  // chain infers `never` for this row, so narrow it explicitly.)
+  const { data: profileRow } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
-  if (!profile || (profile.role !== "chef" && profile.role !== "admin")) {
+  const role = (profileRow as { role: string } | null)?.role ?? null;
+  if (!role || (role !== "chef" && role !== "admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
 
   // If a row already exists for this date, just open it (don't override
   // an explicit Thursday → 'thursday' day_of_week with 'custom').
-  const { data: existing } = await (admin as any)
+  const { data: existing } = await admin
     .from("delivery_dates")
     .select("id, day_of_week, ordering_open")
     .eq("date", date)
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
 
   if (existing) {
     if (!existing.ordering_open) {
-      const { error } = await (admin as any)
+      const { error } = await admin
         .from("delivery_dates")
         .update({ ordering_open: true })
         .eq("id", existing.id);
@@ -81,7 +84,7 @@ export async function POST(request: Request) {
   };
   const day_of_week = dowMap[dow] ?? "custom";
 
-  const { error: insertErr } = await (admin as any)
+  const { error: insertErr } = await admin
     .from("delivery_dates")
     .insert({ date, day_of_week, ordering_open: true });
   if (insertErr) {

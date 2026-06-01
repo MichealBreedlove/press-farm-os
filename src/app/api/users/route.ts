@@ -36,7 +36,7 @@ export async function GET(_request: Request) {
 
   const admin = createAdminClient();
 
-  const { data: profiles, error } = await (admin as any)
+  const { data: profiles, error } = await admin
     .from("profiles")
     .select(`
       id, full_name, role, is_active, created_at,
@@ -124,13 +124,13 @@ export async function POST(request: Request) {
 
   // The handle_new_user trigger inserts a profiles row (role 'chef'). Upsert to
   // set full_name + the chosen role + is_active.
-  await (admin as any)
+  await admin
     .from("profiles")
     .upsert({ id: newUserId, full_name: full_name.trim(), role, is_active: true }, { onConflict: "id" });
 
   // Link to restaurant only when chef — receivers see all restaurants by role.
   if (role === "chef" && restaurant_id) {
-    await (admin as any)
+    await admin
       .from("restaurant_users")
       .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
   }

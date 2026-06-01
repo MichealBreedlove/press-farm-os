@@ -73,7 +73,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   // Update profile active status
-  const { data: updated, error } = await (admin as any)
+  const { data: updated, error } = await admin
     .from("profiles")
     .update({ is_active: body.is_active })
     .eq("id", userId)

@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   let itemsUpdated = 0;
   let itemsUpdateError: string | null = null;
   try {
-    const { data: updated, error: upErr } = await (admin as any)
+    const { data: updated, error: upErr } = await admin
       .from("items")
       .update({ image_url: newUrl })
       .eq("image_url", oldUrl)

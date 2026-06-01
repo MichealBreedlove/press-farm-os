@@ -9,7 +9,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("suggestions")
     .select("*")
     .order("created_at", { ascending: false });
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("suggestions")
     .insert(body)
     .select()
