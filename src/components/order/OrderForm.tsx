@@ -298,7 +298,10 @@ export function OrderForm({
 
         // Resolve per-unit price → fallback to default_price.
         // Frozen at submit time so future price changes don't rewrite history.
-        const unitPrice = priceForUnit(ai.item, unitForOrder);
+        const unitPrice = priceForUnit(
+          { default_price: ai.item.default_price, unit_prices: ai.item.unit_prices as Record<string, number> | null },
+          unitForOrder,
+        );
 
         orderedItems.push({
           availabilityItemId: realAvailId(ai.id),

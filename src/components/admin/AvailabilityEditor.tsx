@@ -289,8 +289,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
   const itemsByCategory: Partial<Record<ItemCategory, Item[]>> = {};
   for (const item of filteredItems) {
-    if (!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
-    itemsByCategory[item.category]!.push(item);
+    const cat = item.category as ItemCategory;
+    if (!itemsByCategory[cat]) itemsByCategory[cat] = [];
+    itemsByCategory[cat]!.push(item);
   }
 
   return (
