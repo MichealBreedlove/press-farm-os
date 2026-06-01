@@ -297,7 +297,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 
 ## Open Follow-ups (Prioritized)
 
-1. **P&L PDF export** — `/admin/reports/executive` renders a full P&L view but there's no "Download PDF" button. Adding one needs a PDF library decision (puppeteer / @react-pdf/renderer / browser print) — ask Micheal before adding a dep.
+1. ~~P&L PDF export~~ — **Done.** `/admin/reports/executive` has a "Download PDF" button (`PrintButton` → `window.print()`); the `@media print` block in `globals.css` scopes `.exec-report` to a one-page letter-portrait P&L (nav/decoration hidden via `.print-hide`). No PDF dependency — browser print-to-PDF.
 2. **"Financial fixes" backlog** — placeholder for any pricing / margin / line-total bugs Micheal surfaces during use. No concrete items currently.
 
 **Audit follow-ups (codebase audit, 2026-06-01):**
