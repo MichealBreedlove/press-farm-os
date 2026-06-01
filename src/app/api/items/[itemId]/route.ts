@@ -16,14 +16,14 @@ export async function GET(_req: Request, { params }: { params: Params }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { itemId } = await params;
   const admin = createAdminClient();
 
-  const { data: item, error } = await (admin as any)
+  const { data: item, error } = await admin
     .from("items")
     .select("id, name, category, unit_type, default_price, unit_prices, chef_notes, internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu, sort_order")
     .eq("id", itemId)
@@ -42,7 +42,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -151,7 +151,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
       if (proposed === itemId) {
         return NextResponse.json({ error: "Item cannot be its own parent" }, { status: 400 });
       }
-      const { data: parent } = await (admin as any)
+      const { data: parent } = await admin
         .from("items")
         .select("id, parent_item_id")
         .eq("id", proposed)
@@ -160,7 +160,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
       if (parent.parent_item_id) {
         return NextResponse.json({ error: "Parent item is itself a subitem — only one level of nesting is supported" }, { status: 400 });
       }
-      const { count: childCount } = await (admin as any)
+      const { count: childCount } = await admin
         .from("items")
         .select("id", { count: "exact", head: true })
         .eq("parent_item_id", itemId);
@@ -175,7 +175,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  const { data: item, error } = await (admin as any)
+  const { data: item, error } = await admin
     .from("items")
     .update(updates)
     .eq("id", itemId)

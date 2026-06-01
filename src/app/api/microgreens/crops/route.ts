@@ -17,7 +17,7 @@ export async function GET(_req: Request) {
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("microgreen_crops")
     .select("*")
     .eq("is_active", true)
@@ -40,11 +40,11 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farm_id = farms?.[0]?.id;
   if (!farm_id) return NextResponse.json({ error: "No farm configured" }, { status: 500 });
 
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("microgreen_crops")
     .insert({ ...body, farm_id })
     .select()

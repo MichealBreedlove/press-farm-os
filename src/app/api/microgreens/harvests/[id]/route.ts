@@ -9,7 +9,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("microgreen_harvests")
     .delete()
     .eq("id", params.id);

@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   // Verify admin (and capture admin id for the "keep this row" step).
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
   }
 
   // ── Step 2: pre-fetch restaurants so we can map name → id ──
-  const { data: restaurants } = await (admin as any)
+  const { data: restaurants } = await admin
     .from("restaurants")
     .select("id, name");
   const restaurantByName = new Map<string, string>(
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
     // The handle_new_user trigger reads role from user_metadata, but
     // older deployments might not have that path. Force-update the
     // profile so we don't depend on trigger behavior we can't test.
-    await (admin as any)
+    await admin
       .from("profiles")
       .update({ role: acct.role, full_name: acct.fullName, is_active: true })
       .eq("id", newUser.user.id);
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     if (acct.restaurantName) {
       const rid = restaurantByName.get(acct.restaurantName.toLowerCase());
       if (rid) {
-        await (admin as any)
+        await admin
           .from("restaurant_users")
           .insert({ user_id: newUser.user.id, restaurant_id: rid });
         resolvedRestaurant = acct.restaurantName;

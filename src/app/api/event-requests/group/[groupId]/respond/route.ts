@@ -31,7 +31,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
 
   const admin = createAdminClient();
 
-  const { data: rows, error: fetchErr } = await (admin as any)
+  const { data: rows, error: fetchErr } = await admin
     .from("event_requests")
     .select(
       "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status",
@@ -75,7 +75,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
   // -- Decline path --
   if (action === "decline") {
     const pendingIds = pending.map((r) => r.id);
-    const { error: updErr } = await (admin as any)
+    const { error: updErr } = await admin
       .from("event_requests")
       .update({
         status: "declined",
@@ -108,12 +108,12 @@ export async function POST(request: Request, { params }: { params: Params }) {
       const { data: chefAuth } = await admin.auth.admin.getUserById(first.chef_id);
       const chefEmail = chefAuth?.user?.email ?? null;
       if (chefEmail) {
-        const { data: chef } = await (admin as any)
+        const { data: chef } = await admin
           .from("profiles")
           .select("full_name")
           .eq("id", first.chef_id)
           .single();
-        const { data: rest } = await (admin as any)
+        const { data: rest } = await admin
           .from("restaurants")
           .select("name")
           .eq("id", first.restaurant_id)

@@ -91,15 +91,15 @@ async function sendForecastToChefs() {
 
   // Recipient resolution — copied from /api/availability/notify (do not import
   // that route, so changes there can't break this flow).
-  const { data: restaurants } = await (admin as any)
+  const { data: restaurants } = await admin
     .from("restaurants")
     .select("id, name");
 
-  const { data: restaurantUsers } = await (admin as any)
+  const { data: restaurantUsers } = await admin
     .from("restaurant_users")
     .select("user_id, restaurant_id");
 
-  const { data: profiles } = await (admin as any)
+  const { data: profiles } = await admin
     .from("profiles")
     .select("id, full_name, role")
     .eq("role", "chef")

@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const search = url.searchParams.get("search");
 
   const admin = createAdminClient();
-  let query = (admin as any).from("items").select("*").order("name");
+  let query = admin.from("items").select("*").order("name");
 
   if (!archived) query = query.eq("is_archived", false);
   if (category) query = query.eq("category", category);

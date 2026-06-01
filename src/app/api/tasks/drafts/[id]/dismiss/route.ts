@@ -12,7 +12,7 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
 
   const admin = createAdminClient();
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("inbox_task_drafts")
     .update({ status: "dismissed", dismissed_at: new Date().toISOString() })
     .eq("id", id);

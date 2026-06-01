@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const includeArchived = searchParams.get("archived") === "true";
 
   const admin = createAdminClient();
-  let query = (admin as any)
+  let query = admin
     .from("items")
     .select(`
       id, name, category, unit_type, default_price, unit_prices,

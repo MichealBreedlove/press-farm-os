@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const restaurantId = url.searchParams.get("restaurant_id");
 
   const admin = createAdminClient();
-  let query = (admin as any).from("availability_items")
+  let query = admin.from("availability_items")
     .select("*, items(name, category, unit_type, size, color)")
     .eq("delivery_date", date);
 

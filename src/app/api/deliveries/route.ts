@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const month = searchParams.get("month"); // e.g. "2026-04"
 
   const admin = createAdminClient();
-  let query = (admin as any)
+  let query = admin
     .from("deliveries")
     .select(`
       id, delivery_date, status, total_value, notes, created_at,
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   // Upsert delivery record
-  const { data: existing } = await (admin as any)
+  const { data: existing } = await admin
     .from("deliveries")
     .select("id")
     .eq("delivery_date", delivery_date)
@@ -118,13 +118,13 @@ export async function POST(request: Request) {
   if (existing) {
     deliveryId = existing.id;
     // Delete old items before reinserting
-    await (admin as any).from("delivery_items").delete().eq("delivery_id", deliveryId);
-    await (admin as any)
+    await admin.from("delivery_items").delete().eq("delivery_id", deliveryId);
+    await admin
       .from("deliveries")
       .update({ notes: notes ?? null, status: "logged" })
       .eq("id", deliveryId);
   } else {
-    const { data: newDelivery, error: deliveryError } = await (admin as any)
+    const { data: newDelivery, error: deliveryError } = await admin
       .from("deliveries")
       .insert({
         restaurant_id,
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     bonus_note: item.bonus_note ?? null,
   }));
 
-  const { error: itemsError } = await (admin as any)
+  const { error: itemsError } = await admin
     .from("delivery_items")
     .insert(deliveryItems);
 
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
   }
 
   // Fetch updated delivery with total (trigger recalculates total_value)
-  const { data: delivery } = await (admin as any)
+  const { data: delivery } = await admin
     .from("deliveries")
     .select("id, total_value, status")
     .eq("id", deliveryId)
@@ -207,7 +207,7 @@ export async function DELETE(request: Request) {
   // Compute "before" stats for the response so the UI can confirm what
   // was nuked. Cheap aggregate, runs against the same scope as the
   // delete itself.
-  let baseQuery = (admin as any).from("deliveries");
+  let baseQuery = admin.from("deliveries");
 
   let countBefore = 0;
   let valueBefore = 0;
@@ -220,7 +220,7 @@ export async function DELETE(request: Request) {
       0,
     );
 
-    const { error } = await (admin as any).from("deliveries").delete().not("id", "is", null);
+    const { error } = await admin.from("deliveries").delete().not("id", "is", null);
     if (error) {
       console.error("DELETE all deliveries failed:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -237,7 +237,7 @@ export async function DELETE(request: Request) {
       0,
     );
 
-    const { error } = await (admin as any).from("deliveries").delete().in("id", ids);
+    const { error } = await admin.from("deliveries").delete().in("id", ids);
     if (error) {
       console.error("DELETE deliveries by id failed:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });

@@ -12,7 +12,7 @@ export async function GET(_req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("farm_tasks")
     .select("*")
     .eq("farm_id", auth.farmId)
@@ -59,7 +59,7 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("farm_tasks")
     .update(updates)
     .eq("farm_id", auth.farmId)
@@ -84,7 +84,7 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
 
   const admin = createAdminClient();
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("farm_tasks")
     .update({ status: "cancelled" })
     .eq("farm_id", auth.farmId)

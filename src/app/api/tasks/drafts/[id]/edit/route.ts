@@ -50,7 +50,7 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("inbox_task_drafts")
     .update({ proposed_schedule: schedule, status: "edited" })
     .eq("id", id)

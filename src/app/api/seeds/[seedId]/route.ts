@@ -10,7 +10,7 @@ async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
@@ -29,20 +29,20 @@ export async function GET(_req: Request, { params }: { params: Params }) {
   const { seedId } = await params;
   const admin = createAdminClient();
 
-  const { data: seed, error } = await (admin as any)
+  const { data: seed, error } = await admin
     .from("seeds_with_on_hand")
     .select("*, item:items(id, name, category)")
     .eq("id", seedId)
     .single();
   if (error || !seed) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { data: sowings } = await (admin as any)
+  const { data: sowings } = await admin
     .from("seed_sowings")
     .select("*, planting:plantings(id, crop_name, variety, sow_date)")
     .eq("seed_id", seedId)
     .order("sown_on", { ascending: false });
 
-  const { data: germTests } = await (admin as any)
+  const { data: germTests } = await admin
     .from("seed_germination_tests")
     .select("*")
     .eq("seed_id", seedId)
@@ -116,7 +116,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   const admin = createAdminClient();
-  const { data: seed, error } = await (admin as any)
+  const { data: seed, error } = await admin
     .from("seeds")
     .update(updates)
     .eq("id", seedId)
@@ -138,7 +138,7 @@ export async function DELETE(_req: Request, { params }: { params: Params }) {
   const { seedId } = await params;
   const admin = createAdminClient();
 
-  const { count } = await (admin as any)
+  const { count } = await admin
     .from("seed_sowings")
     .select("id", { count: "exact", head: true })
     .eq("seed_id", seedId);
@@ -150,7 +150,7 @@ export async function DELETE(_req: Request, { params }: { params: Params }) {
     );
   }
 
-  const { error } = await (admin as any).from("seeds").delete().eq("id", seedId);
+  const { error } = await admin.from("seeds").delete().eq("id", seedId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

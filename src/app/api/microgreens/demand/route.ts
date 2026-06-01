@@ -9,7 +9,7 @@ export async function GET(_req: Request) {
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("microgreen_demand")
     .select("*, crop:microgreen_crops(id,name), restaurant:restaurants(id,name)")
     .order("crop_id");
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("microgreen_demand")
     .insert(body)
     .select()

@@ -118,7 +118,7 @@ export async function GET(request: Request) {
 
   // Pull items + photos in parallel — neither depends on the other
   const [itemsRes, photosRes] = await Promise.all([
-    (admin as any)
+    admin
       .from("items")
       .select("id, name, image_url, is_archived")
       .eq("is_archived", false)
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
         return;
       }
       try {
-        const { error } = await (admin as any)
+        const { error } = await admin
           .from("items")
           .update({ image_url: photoUrl })
           .eq("id", itemId);

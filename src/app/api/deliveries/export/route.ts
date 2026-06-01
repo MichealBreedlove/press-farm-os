@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   // Pull deliveries first (so we can filter by restaurant + date), then their line items
-  let dQuery = (admin as any)
+  let dQuery = admin
     .from("deliveries")
     .select("id, delivery_date, restaurant_id, status, notes, restaurants(name)")
     .order("delivery_date", { ascending: false });
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     return csvResponse(body);
   }
 
-  const { data: lines, error: lErr } = await (admin as any)
+  const { data: lines, error: lErr } = await admin
     .from("delivery_items")
     .select("delivery_id, quantity, unit, unit_price, line_total, items(name)")
     .in("delivery_id", deliveryIds);

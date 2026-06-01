@@ -9,14 +9,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data: batch } = await (admin as any)
+  const { data: batch } = await admin
     .from("microgreen_batches")
     .select("*, crop:microgreen_crops(*)")
     .eq("id", params.id)
     .maybeSingle();
   if (!batch) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { data: trays } = await (admin as any)
+  const { data: trays } = await admin
     .from("microgreen_trays")
     .select("*")
     .eq("batch_id", params.id)

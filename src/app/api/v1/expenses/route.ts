@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const category = url.searchParams.get("category");
 
   const admin = createAdminClient();
-  let query = (admin as any).from("farm_expenses").select("*").order("date", { ascending: false });
+  let query = admin.from("farm_expenses").select("*").order("date", { ascending: false });
 
   if (month) {
     query = query.gte("date", `${month}-01`);

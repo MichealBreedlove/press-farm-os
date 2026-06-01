@@ -216,7 +216,7 @@ export async function POST(request: Request) {
   // "tripointleek" all match the same catalog row — common drift in
   // hand-maintained spreadsheets where the same crop gets typed
   // differently across years.
-  const { data: allItems } = await (admin as any).from("items").select("id, name");
+  const { data: allItems } = await admin.from("items").select("id, name");
   const itemByName: Record<string, string> = {};
   const itemByNorm: Record<string, string> = {};
   for (const item of (allItems ?? []) as Array<{ id: string; name: string }>) {
@@ -231,7 +231,7 @@ export async function POST(request: Request) {
   }
 
   // Restaurants for name → id matching (with first-word fuzzy fallback)
-  const { data: allRestaurants } = await (admin as any).from("restaurants").select("id, name");
+  const { data: allRestaurants } = await admin.from("restaurants").select("id, name");
   const restaurantByName: Record<string, { id: string }> = {};
   for (const r of (allRestaurants ?? []) as Array<{ id: string; name: string }>) {
     restaurantByName[r.name.toLowerCase().trim()] = { id: r.id };
@@ -267,7 +267,7 @@ export async function POST(request: Request) {
     const validStatus = ["pending", "logged", "finalized"].includes(status) ? status : "finalized";
 
     // Upsert delivery (UNIQUE on (delivery_date, restaurant_id))
-    const { data: existing } = await (admin as any)
+    const { data: existing } = await admin
       .from("deliveries")
       .select("id")
       .eq("delivery_date", date)
@@ -278,13 +278,13 @@ export async function POST(request: Request) {
     if (existing) {
       deliveryId = existing.id;
       // Refresh status + notes, then wipe + reinsert lines
-      await (admin as any)
+      await admin
         .from("deliveries")
         .update({ status: validStatus, notes: notes || null })
         .eq("id", deliveryId);
-      await (admin as any).from("delivery_items").delete().eq("delivery_id", deliveryId);
+      await admin.from("delivery_items").delete().eq("delivery_id", deliveryId);
     } else {
-      const { data: newDel, error: delErr } = await (admin as any)
+      const { data: newDel, error: delErr } = await admin
         .from("deliveries")
         .insert({ restaurant_id: restMatch.id, delivery_date: date, status: validStatus, notes: notes || null })
         .select("id")
@@ -315,7 +315,7 @@ export async function POST(request: Request) {
     }
 
     if (insertRows.length > 0) {
-      const { error: rowErr } = await (admin as any).from("delivery_items").insert(insertRows);
+      const { error: rowErr } = await admin.from("delivery_items").insert(insertRows);
       if (rowErr) {
         lineErrors += insertRows.length;
       } else {

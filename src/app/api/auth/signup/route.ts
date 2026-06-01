@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const { data: restaurant, error: restErr } = await (admin as any)
+  const { data: restaurant, error: restErr } = await admin
     .from("restaurants")
     .select("id, name")
     .eq("id", restaurant_id)
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
   // handle_new_user trigger inserts a profiles row with default role 'chef'.
   // Upsert to set full_name + is_active explicitly.
-  const { error: profileErr } = await (admin as any)
+  const { error: profileErr } = await admin
     .from("profiles")
     .upsert(
       { id: newUserId, full_name, role: "chef", is_active: true },
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: profileErr.message }, { status: 500 });
   }
 
-  const { error: linkErr } = await (admin as any)
+  const { error: linkErr } = await admin
     .from("restaurant_users")
     .upsert(
       { user_id: newUserId, restaurant_id },

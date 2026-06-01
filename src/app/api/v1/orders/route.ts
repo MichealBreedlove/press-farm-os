@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const limit = parseInt(url.searchParams.get("limit") ?? "100");
 
   const admin = createAdminClient();
-  let query = (admin as any).from("orders")
+  let query = admin.from("orders")
     .select("*, restaurants(name), profiles!orders_chef_id_fkey(full_name), order_items(*, availability_items(item:items(name, category, unit_type)))")
     .order("delivery_date", { ascending: false })
     .limit(limit);

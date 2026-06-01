@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("farm_tasks")
     .insert({
       farm_id: auth.farmId,

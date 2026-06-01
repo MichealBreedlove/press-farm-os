@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
   const client = maybeClient; // narrowed type survives closure capture
 
   const admin = createAdminClient();
-  const { data: itemRows } = await (admin as any)
+  const { data: itemRows } = await admin
     .from("items")
     .select(
       "id, name, category, variety, color, source, chef_notes, growing_notes, season_note, days_to_maturity, sun_requirement, sow_method, sow_depth, plant_spacing",
@@ -223,7 +223,7 @@ async function processOne(
     };
   }
 
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("items")
     .update(updates)
     .eq("id", item.id);

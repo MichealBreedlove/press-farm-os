@@ -18,7 +18,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("suggestions").update({ status: body.status }).eq("id", id).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,7 +32,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { error } = await (admin as any).from("suggestions").delete().eq("id", id);
+  const { error } = await admin.from("suggestions").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

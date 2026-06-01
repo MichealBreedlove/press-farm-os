@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("microgreen_trays")
     .update({
       status,

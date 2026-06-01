@@ -48,7 +48,7 @@ async function matchSenderToProfile(
 ): Promise<MatchedSender> {
   // RPC reads auth.users (not in PostgREST) + restaurant_users in one shot.
   // Defined in migration 060. Best-effort: many senders won't match.
-  const { data, error } = await (admin as any).rpc("match_inbound_sender", {
+  const { data, error } = await admin.rpc("match_inbound_sender", {
     p_email: senderEmail.trim(),
   });
   if (error) {
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminClient();
 
   // Resolve the single farm — Press Farm OS is single-tenant.
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id;
   if (!farmId) {
     console.error("[INBOUND] no farm row found — DB not seeded?");
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   const matched = await matchSenderToProfile(admin, meta.from.email);
 
   // Idempotent upsert: same resend_message_id should never produce two rows.
-  const { data: upserted, error: upsertErr } = await (admin as any)
+  const { data: upserted, error: upsertErr } = await admin
     .from("inbound_messages")
     .upsert(
       {

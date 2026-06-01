@@ -145,7 +145,7 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
   const admin = createAdminClient();
 
   // Partner recipient from farm_settings — graceful skip when unset.
-  const { data: setting } = await (admin as any)
+  const { data: setting } = await admin
     .from("farm_settings")
     .select("value")
     .eq("key", "email_partner_report")
@@ -164,7 +164,7 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
 
   // Deliveries in the period (value + restaurant). Strictly bounded to the
   // period's calendar start/end, so a quarter only ever holds its 3 months.
-  const { data: deliveries } = await (admin as any)
+  const { data: deliveries } = await admin
     .from("deliveries")
     .select("id, delivery_date, total_value, restaurants(name)")
     .gte("delivery_date", start)
@@ -188,7 +188,7 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
   const deliveryIds = deliveryRows.map((d: any) => d.id).filter(Boolean);
   const topItems: PartnerReportLine[] = [];
   if (deliveryIds.length > 0) {
-    const { data: items } = await (admin as any)
+    const { data: items } = await admin
       .from("delivery_items")
       .select("quantity, unit, line_total, items(name)")
       .in("delivery_id", deliveryIds);
@@ -232,7 +232,7 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
   }
 
   // Optional partner display name; defaults to "Phil" per the partner report spec.
-  const { data: nameSetting } = await (admin as any)
+  const { data: nameSetting } = await admin
     .from("farm_settings")
     .select("value")
     .eq("key", "email_partner_name")

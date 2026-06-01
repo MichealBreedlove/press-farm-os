@@ -8,7 +8,7 @@ async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
@@ -23,7 +23,7 @@ export async function DELETE(_req: Request, { params }: { params: Params }) {
 
   const { seedId, testId } = await params;
   const admin = createAdminClient();
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("seed_germination_tests")
     .delete()
     .eq("id", testId)

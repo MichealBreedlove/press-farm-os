@@ -21,18 +21,18 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  const { data: restaurants } = await (admin as any)
+  const { data: restaurants } = await admin
     .from("restaurants")
     .select("id, name");
 
-  const { data: availItems } = await (admin as any)
+  const { data: availItems } = await admin
     .from("availability_items")
     .select("restaurant_id, status")
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable");
 
   // Items with seasonal status get called out at the bottom of the email.
-  const { data: seasonItems } = await (admin as any)
+  const { data: seasonItems } = await admin
     .from("items")
     .select("name, season_status, season_note")
     .in("season_status", ["ending_soon", "coming_soon"]);
@@ -40,11 +40,11 @@ export async function POST(request: Request) {
   const endingSoon = (seasonItems ?? []).filter((i: any) => i.season_status === "ending_soon");
   const comingSoon = (seasonItems ?? []).filter((i: any) => i.season_status === "coming_soon");
 
-  const { data: restaurantUsers } = await (admin as any)
+  const { data: restaurantUsers } = await admin
     .from("restaurant_users")
     .select("user_id, restaurant_id");
 
-  const { data: profiles } = await (admin as any)
+  const { data: profiles } = await admin
     .from("profiles")
     .select("id, full_name, role")
     .eq("role", "chef")

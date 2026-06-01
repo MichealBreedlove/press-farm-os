@@ -37,7 +37,7 @@ export async function POST(
 
   // Confirm the order_item belongs to the URL's order so a forged
   // order_item_id can't be flipped outside its scope.
-  const { data: row } = await (admin as any)
+  const { data: row } = await admin
     .from("order_items")
     .select("id, order_id")
     .eq("id", orderItemId)
@@ -46,7 +46,7 @@ export async function POST(
     return NextResponse.json({ error: "Order item not found" }, { status: 404 });
   }
 
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("order_items")
     .update({ picked_at: picked ? new Date().toISOString() : null })
     .eq("id", orderItemId);

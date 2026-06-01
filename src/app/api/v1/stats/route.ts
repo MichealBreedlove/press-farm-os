@@ -27,12 +27,12 @@ export async function GET(request: Request) {
     { data: labor },
     { data: restaurants },
   ] = await Promise.all([
-    (admin as any).from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
-    (admin as any).from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
-    (admin as any).from("deliveries").select("total_value, delivery_date, restaurant_id").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
-    (admin as any).from("farm_expenses").select("amount, category").gte("date", monthStart).lte("date", monthEnd),
-    (admin as any).from("labor_entries").select("hours, hourly_rate, worker_name").gte("date", monthStart).lte("date", monthEnd),
-    (admin as any).from("restaurants").select("id, name"),
+    admin.from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
+    admin.from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    admin.from("deliveries").select("total_value, delivery_date, restaurant_id").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
+    admin.from("farm_expenses").select("amount, category").gte("date", monthStart).lte("date", monthEnd),
+    admin.from("labor_entries").select("hours, hourly_rate, worker_name").gte("date", monthStart).lte("date", monthEnd),
+    admin.from("restaurants").select("id, name"),
   ]);
 
   const totalRevenue = (deliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);

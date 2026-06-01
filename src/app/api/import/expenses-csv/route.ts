@@ -153,7 +153,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: farm } = await (admin as any).from("farms").select("id").single();
+  const { data: farm } = await admin.from("farms").select("id").single();
   if (!farm) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
   let imported = 0;
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
       amount: r.amount,
       receipt_url: r.receipt_url,
     }));
-    const { error } = await (admin as any).from("farm_expenses").insert(payload);
+    const { error } = await admin.from("farm_expenses").insert(payload);
     if (error) {
       errors.push({ row: `${inserts.length} new rows`, error: error.message });
     } else {
@@ -181,7 +181,7 @@ export async function POST(request: Request) {
 
   // Updates (one per row to surface per-row errors clearly)
   for (const r of updates) {
-    const { error } = await (admin as any)
+    const { error } = await admin
       .from("farm_expenses")
       .update({
         date: r.date,

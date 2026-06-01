@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   if (action === "archive" || action === "unarchive") {
-    const { data, error } = await (admin as any)
+    const { data, error } = await admin
       .from("items")
       .update({ is_archived: action === "archive" })
       .in("id", ids)
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   if (action === "flag-event" || action === "unflag-event") {
-    const { data, error } = await (admin as any)
+    const { data, error } = await admin
       .from("items")
       .update({ is_event_item: action === "flag-event" })
       .in("id", ids)
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   if (action === "flag-press-bar" || action === "unflag-press-bar") {
-    const { data, error } = await (admin as any)
+    const { data, error } = await admin
       .from("items")
       .update({ is_press_bar_item: action === "flag-press-bar" })
       .in("id", ids)
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
 
   // ── action === "delete" ──────────────────────────────────────────
   // Look up names up-front so the per-item failure list is human-readable.
-  const { data: nameRows } = await (admin as any)
+  const { data: nameRows } = await admin
     .from("items")
     .select("id, name")
     .in("id", ids);
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       const my = cursor++;
       const id = ids[my];
       try {
-        const { error } = await (admin as any).from("items").delete().eq("id", id);
+        const { error } = await admin.from("items").delete().eq("id", id);
         if (error) {
           // Translate the foreign-key error into something user-readable.
           const msg = String(error.message ?? "").toLowerCase();

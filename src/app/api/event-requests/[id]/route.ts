@@ -27,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
 
   const admin = createAdminClient();
 
-  const { data: req, error: fetchErr } = await (admin as any)
+  const { data: req, error: fetchErr } = await admin
     .from("event_requests")
     .select(
       "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status",
@@ -66,7 +66,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   if (action === "decline") {
-    const { error: updErr } = await (admin as any)
+    const { error: updErr } = await admin
       .from("event_requests")
       .update({
         status: "declined",
@@ -92,12 +92,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     const { data: chefAuth } = await admin.auth.admin.getUserById(req.chef_id);
     const chefEmail = chefAuth?.user?.email ?? null;
     if (chefEmail) {
-      const { data: chef } = await (admin as any)
+      const { data: chef } = await admin
         .from("profiles")
         .select("full_name")
         .eq("id", req.chef_id)
         .single();
-      const { data: rest } = await (admin as any)
+      const { data: rest } = await admin
         .from("restaurants")
         .select("name")
         .eq("id", req.restaurant_id)

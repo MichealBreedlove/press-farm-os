@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   // 1. Is today a delivery date?
-  const { data: deliveryDateRow } = await (admin as any)
+  const { data: deliveryDateRow } = await admin
     .from("delivery_dates")
     .select("date")
     .eq("date", todayLA)
@@ -71,7 +71,7 @@ export async function GET(request: Request) {
   }
 
   // 2. Already notified today?
-  const { count: existingNotifyCount } = await (admin as any)
+  const { count: existingNotifyCount } = await admin
     .from("receiver_notify_log")
     .select("id", { count: "exact", head: true })
     .eq("delivery_date", todayLA);
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
 
   // Find a "system" sender id — first admin in the table — so the
   // receiver_notify_log row has a non-null sent_by FK.
-  const { data: anyAdmin } = await (admin as any)
+  const { data: anyAdmin } = await admin
     .from("profiles")
     .select("id")
     .eq("role", "admin")
@@ -116,7 +116,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (anyAdmin) {
-    await (admin as any).from("receiver_notify_log").insert({
+    await admin.from("receiver_notify_log").insert({
       delivery_date: todayLA,
       sent_by: anyAdmin.id,
       recipients_count: results.length,

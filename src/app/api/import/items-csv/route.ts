@@ -341,7 +341,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: farm } = await (admin as any).from("farms").select("id").single();
+  const { data: farm } = await admin.from("farms").select("id").single();
   if (!farm) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
   let imported = 0;
@@ -352,7 +352,7 @@ export async function POST(request: Request) {
     // Check existence to count imports vs updates accurately. Match by
     // (farm_id, name, category) per the new unique constraint added in
     // migration 032 — same name is allowed across different categories.
-    const { data: existing } = await (admin as any)
+    const { data: existing } = await admin
       .from("items").select("id").eq("farm_id", farm.id).eq("name", row.name).eq("category", row.category).maybeSingle();
 
     const payload = {
@@ -375,7 +375,7 @@ export async function POST(request: Request) {
       color: row.color,
     };
 
-    const { error } = await (admin as any)
+    const { error } = await admin
       .from("items")
       .upsert(payload, { onConflict: "farm_id,name,category", ignoreDuplicates: false });
 

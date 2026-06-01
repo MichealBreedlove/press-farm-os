@@ -31,12 +31,12 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   const [{ data: deliveries }, { data: expenses }] = await Promise.all([
-    (admin as any)
+    admin
       .from("deliveries")
       .select("delivery_date, total_value, restaurants(name)")
       .gte("delivery_date", start)
       .lte("delivery_date", end),
-    (admin as any)
+    admin
       .from("farm_expenses")
       .select("date, amount, category")
       .gte("date", start)

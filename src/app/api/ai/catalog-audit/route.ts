@@ -71,7 +71,7 @@ export async function POST(_request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -86,7 +86,7 @@ export async function POST(_request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: itemRows } = await (admin as any)
+  const { data: itemRows } = await admin
     .from("items")
     .select("id, name, category, variety, color, parent_item_id")
     .eq("is_archived", false)

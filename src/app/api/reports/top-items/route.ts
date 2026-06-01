@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   // Fetch delivery items with joins
-  let query = (admin as any)
+  let query = admin
     .from("delivery_items")
     .select(`
       item_id, quantity, line_total,

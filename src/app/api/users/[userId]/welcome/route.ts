@@ -26,7 +26,7 @@ export async function POST(
   const admin = createAdminClient();
 
   // Get chef info
-  const { data: chef } = await (admin as any)
+  const { data: chef } = await admin
     .from("profiles")
     .select(`
       id, full_name,

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   startDate.setDate(1);
   const startStr = startDate.toISOString().slice(0, 10);
 
-  const { data: deliveries, error: dErr } = await (admin as any)
+  const { data: deliveries, error: dErr } = await admin
     .from("deliveries")
     .select("delivery_date, total_value, restaurant_id, status, restaurants(name)")
     .gte("delivery_date", startStr)
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   if (dErr) return NextResponse.json({ error: dErr.message }, { status: 500 });
 
   // Fetch expenses for the same range
-  const { data: expenses } = await (admin as any)
+  const { data: expenses } = await admin
     .from("farm_expenses")
     .select("date, amount, category")
     .gte("date", startStr)

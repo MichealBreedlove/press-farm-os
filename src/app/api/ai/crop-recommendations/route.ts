@@ -70,7 +70,7 @@ export async function POST(_request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -87,7 +87,7 @@ export async function POST(_request: Request) {
   const admin = createAdminClient();
 
   // Resolve the single farm row — Press Farm is a single-tenant install
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id;
   if (!farmId) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
@@ -100,7 +100,7 @@ export async function POST(_request: Request) {
   // Pull delivery_items + items + deliveries via nested selects. Filter the
   // join with !inner so the date range applies — without !inner Supabase
   // returns delivery_items whose parent delivery is outside the window.
-  const { data: deliveryRowsRaw } = await (admin as any)
+  const { data: deliveryRowsRaw } = await admin
     .from("delivery_items")
     .select(
       "quantity, line_total, unit, items(id, name, category, parent_item_id), deliveries!inner(delivery_date, restaurant_id, restaurants(name))",
@@ -144,7 +144,7 @@ export async function POST(_request: Request) {
   const bottom15 = itemsByRevenue.slice(-15).reverse();
 
   // Expenses by category — sum amount per category over the last 12 months
-  const { data: expenseRows } = await (admin as any)
+  const { data: expenseRows } = await admin
     .from("farm_expenses")
     .select("category, amount, vendor")
     .eq("farm_id", farmId)
@@ -175,7 +175,7 @@ export async function POST(_request: Request) {
     }));
 
   // Current plantings — group by status; capture top revenue projections
-  const { data: plantingRows } = await (admin as any)
+  const { data: plantingRows } = await admin
     .from("plantings")
     .select("crop_name, variety, category, status, beds, bed_feet, projected_revenue, season")
     .eq("farm_id", farmId);
@@ -211,7 +211,7 @@ export async function POST(_request: Request) {
 
   // Active catalog size by category — gives the model a sense of what
   // crops the farm already has set up to grow vs what would be net-new.
-  const { data: itemRows } = await (admin as any)
+  const { data: itemRows } = await admin
     .from("items")
     .select("category")
     .eq("farm_id", farmId)

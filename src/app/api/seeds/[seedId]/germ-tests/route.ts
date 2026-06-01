@@ -8,7 +8,7 @@ async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
@@ -37,10 +37,10 @@ export async function POST(request: Request, { params }: { params: Params }) {
   }
 
   const admin = createAdminClient();
-  const { data: seed } = await (admin as any).from("seeds").select("id").eq("id", seedId).single();
+  const { data: seed } = await admin.from("seeds").select("id").eq("id", seedId).single();
   if (!seed) return NextResponse.json({ error: "Seed not found" }, { status: 404 });
 
-  const { data: test, error } = await (admin as any)
+  const { data: test, error } = await admin
     .from("seed_germination_tests")
     .insert({
       seed_id: seedId,

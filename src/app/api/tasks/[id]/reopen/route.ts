@@ -25,7 +25,7 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("farm_tasks")
     .update({
       status: "open",

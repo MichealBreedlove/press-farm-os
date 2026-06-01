@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   // Bump statuses. We only touch 'submitted' rows so re-sending after a
   // shortage edit doesn't undo a 'fulfilled' order — the receiver may
   // have already finished part of the day.
-  const { error: statusErr, count: bumpedCount } = await (admin as any)
+  const { error: statusErr, count: bumpedCount } = await admin
     .from("orders")
     .update({ status: "in_progress" }, { count: "exact" })
     .eq("delivery_date", date)
