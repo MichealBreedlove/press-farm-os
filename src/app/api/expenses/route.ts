@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const month = searchParams.get("month"); // "2026-04"
 
   const admin = createAdminClient();
-  let query = (admin as any)
+  let query = admin
     .from("farm_expenses")
     .select("id, date, category, description, amount, created_at")
     .order("date", { ascending: false });
@@ -68,14 +68,14 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   // Get farm_id (single-farm app)
-  const { data: farm } = await (admin as any)
+  const { data: farm } = await admin
     .from("farms")
     .select("id")
     .single();
 
   if (!farm) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
-  const { data: expense, error } = await (admin as any)
+  const { data: expense, error } = await admin
     .from("farm_expenses")
     .insert({
       farm_id: farm.id,

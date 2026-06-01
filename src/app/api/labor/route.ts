@@ -12,7 +12,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("labor_entries")
     .select("*")
     .order("date", { ascending: false })
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("labor_entries")
     .insert({
       farm_id,

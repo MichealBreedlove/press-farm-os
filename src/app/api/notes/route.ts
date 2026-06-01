@@ -12,7 +12,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("farm_notes")
     .select("*")
     .order("date", { ascending: false })
@@ -38,11 +38,11 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id;
   if (!farmId) return NextResponse.json({ error: "No farm found" }, { status: 500 });
 
-  const { data, error } = await (admin as any).from("farm_notes").insert({
+  const { data, error } = await admin.from("farm_notes").insert({
     farm_id: farmId,
     date: date || new Date().toISOString().split("T")[0],
     text: text.trim(),

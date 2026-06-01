@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const to = searchParams.get("to");
 
   const admin = createAdminClient();
-  let query = (admin as any)
+  let query = admin
     .from("farm_expenses")
     .select("id, date, vendor, category, description, amount, receipt_url")
     .order("date", { ascending: false });

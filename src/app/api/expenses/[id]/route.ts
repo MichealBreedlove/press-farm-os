@@ -17,7 +17,7 @@ export async function PATCH(
   const { id } = await params;
   const admin = createAdminClient();
 
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("farm_expenses")
     .delete()
     .eq("id", id);

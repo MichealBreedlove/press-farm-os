@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   // Get the latest existing delivery date
-  const { data: latest } = await (admin as any)
+  const { data: latest } = await admin
     .from("delivery_dates")
     .select("date")
     .order("date", { ascending: false })
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   const afterDate = (latest as any)?.date ?? new Date().toISOString().slice(0, 10);
   const toInsert = generateDatesAfter(afterDate, count);
 
-  const { data: inserted, error } = await (admin as any)
+  const { data: inserted, error } = await admin
     .from("delivery_dates")
     .insert(toInsert)
     .select();

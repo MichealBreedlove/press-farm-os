@@ -16,7 +16,7 @@ export async function DELETE(
   if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
-  const { error } = await (admin as any).from("labor_entries").delete().eq("id", id);
+  const { error } = await admin.from("labor_entries").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
