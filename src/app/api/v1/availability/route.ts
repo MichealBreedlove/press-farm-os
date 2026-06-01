@@ -28,44 +28,8 @@ export async function GET(request: Request) {
   return NextResponse.json({ data, count: data?.length ?? 0 });
 }
 
-/**
- * POST /api/v1/availability — Publish availability for all restaurants
- * Body: { date, items: [{ item_id, status, limited_qty?, cycle_notes?, available_sizes?, available_colors? }], restaurant_ids?: string[] }
- * If restaurant_ids omitted, applies to all restaurants
- */
-export async function POST(request: Request) {
-  const authError = validateApiKey(request);
-  if (authError) return authError;
+// The write verb (POST) was removed: /api/v1 is a read-only public API gated by
+// a single shared key. Publishing availability and opening ordering must go
+// through the authenticated admin routes (/api/availability), not a leakable
+// bearer token.
 
-  const body = await request.json();
-  const admin = createAdminClient();
-
-  let restaurantIds = body.restaurant_ids;
-  if (!restaurantIds) {
-    const { data: restaurants } = await (admin as any).from("restaurants").select("id");
-    restaurantIds = (restaurants ?? []).map((r: any) => r.id);
-  }
-
-  for (const rid of restaurantIds) {
-    const rows = (body.items ?? []).map((item: any) => ({
-      item_id: item.item_id,
-      restaurant_id: rid,
-      delivery_date: body.date,
-      status: item.status ?? "available",
-      limited_qty: item.limited_qty ?? null,
-      cycle_notes: item.cycle_notes ?? null,
-      available_sizes: item.available_sizes ?? null,
-      available_colors: item.available_colors ?? null,
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { error } = await (admin as any).from("availability_items")
-      .upsert(rows, { onConflict: "item_id,restaurant_id,delivery_date", ignoreDuplicates: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // Open ordering
-  await (admin as any).from("delivery_dates").update({ ordering_open: true }).eq("date", body.date);
-
-  return NextResponse.json({ success: true, restaurants: restaurantIds.length });
-}

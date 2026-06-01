@@ -29,35 +29,8 @@ export async function GET(request: Request) {
   return NextResponse.json({ data, count: data?.length ?? 0 });
 }
 
-/**
- * PATCH /api/v1/orders — Update order status
- * Body: { id, status }
- */
-export async function PATCH(request: Request) {
-  const authError = validateApiKey(request);
-  if (authError) return authError;
+// Write verbs (PATCH/DELETE) were removed: /api/v1 is a read-only public API
+// gated by a single shared key. Order status changes and deletions must go
+// through the authenticated admin/chef routes (/api/orders), not a leakable
+// bearer token.
 
-  const { id, status } = await request.json();
-  if (!id || !status) return NextResponse.json({ error: "id and status required" }, { status: 400 });
-
-  const admin = createAdminClient();
-  const { data, error } = await (admin as any).from("orders").update({ status }).eq("id", id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
-}
-
-/**
- * DELETE /api/v1/orders — Delete an order
- * Body: { id }
- */
-export async function DELETE(request: Request) {
-  const authError = validateApiKey(request);
-  if (authError) return authError;
-
-  const { id } = await request.json();
-  const admin = createAdminClient();
-  await (admin as any).from("order_items").delete().eq("order_id", id);
-  const { error } = await (admin as any).from("orders").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
-}
