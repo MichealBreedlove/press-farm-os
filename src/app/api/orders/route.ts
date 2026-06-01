@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
+import { planOrderItemMerge } from "@/lib/orders";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -313,32 +314,12 @@ export async function POST(request: Request) {
   if (isMerge) {
     // Merge: sum qty into matching existing lines (same availId+unit+size+color);
     // anything unmatched is appended. Existing untouched lines stay put.
-    const lineKey = (l: any) =>
-      `${l.availability_item_id}|${l.unit_type ?? ""}|${l.size_label ?? ""}|${l.color_key ?? ""}|${l.menu_section ?? ""}`;
-
+    // (planOrderItemMerge is the unit-tested core — see src/lib/orders.ts.)
     const { data: existingItems } = await (supabase.from("order_items") as any)
       .select("id, availability_item_id, unit_type, size_label, color_key, menu_section, quantity_requested")
       .eq("order_id", order.id);
 
-    const existingByKey = new Map<string, any>();
-    for (const ei of existingItems ?? []) {
-      existingByKey.set(lineKey(ei), ei);
-    }
-
-    const toInsert: any[] = [];
-    const toUpdate: { id: string; quantity_requested: number }[] = [];
-    for (const line of incomingLines) {
-      const match = existingByKey.get(lineKey(line));
-      if (match) {
-        toUpdate.push({
-          id: match.id,
-          quantity_requested:
-            Number(match.quantity_requested ?? 0) + Number(line.quantity_requested),
-        });
-      } else {
-        toInsert.push(line);
-      }
-    }
+    const { toInsert, toUpdate } = planOrderItemMerge(existingItems ?? [], incomingLines);
 
     for (const upd of toUpdate) {
       const { error: updErr } = await (supabase.from("order_items") as any)
