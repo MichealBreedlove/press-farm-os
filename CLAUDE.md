@@ -21,8 +21,10 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | Hosting | Vercel — auto-deploys from `main` |
 | Email | Resend + React Email |
 | Charts | Recharts |
+| AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
+| Tests | Vitest — 126 tests across 19 files in top-level `tests/` |
 
 Repo: github.com/MichealBreedlove/press-farm-os
 Local: `D:\LLM\LLM Projects\press-farm-os`
@@ -32,65 +34,84 @@ Local: `D:\LLM\LLM Projects\press-farm-os`
 ```
 src/
   app/
-    login/                       # Magic link login
+    login/                       # Username/password + magic link login
+    signup/                      # Public chef self-signup (open registration)
     order/                       # Chef portal — list / review / confirmed
+    events/                      # Chef event-request flow (advance orders for events)
     history/                     # Chef order history
+    receiver/                    # Destination-side unpack / check-in (+ archive)
     about/                       # Public — partner restaurants, brand voice
     admin/
       dashboard/                 # Admin home (weather widget, stats)
-      items/                     # Catalog list + [itemId] detail
-        data/                    # Items Import/Export (CSV + KEY-tab XLSX)
-      availability/              # /[date] editor: per-unit / size / color toggles
+      items/                     # Catalog list + [itemId] detail (+ data/, photos/, audit/)
+      availability/              # /[date] editor: per-unit / size / color toggles (+ offer-sheet)
       orders/                    # Dashboard + [date] detail + harvest list
-      deliveries/                # Log + [date] detail + finalize
-        data/                    # Deliveries Import/Export (CSV + DELIVERY TRACKER XLSX)
-      expenses/                  # Farm expense log
-        data/                    # Expenses Import/Export
+      deliveries/                # Log + [date] detail + finalize (+ data/)
+      expenses/                  # Farm expense log (+ data/)
       labor/                     # Time tracking + weekly timesheet email
       crop-plan/                 # Plantings + crop plan
       forecast/                  # Production forecasting
-      packs/                     # Pack manager (container inventory) — partial
+      seeds/                     # Seed inventory + sowings + germination tests
+      microgreens/               # Microgreens production module (see What's Shipping)
+      tasks/                     # Unified automated operations list (recurring sow / advance / harvest)
+      inbox/                     # Inbound chef emails → AI-extracted task drafts (+ archived/)
+      event-requests/            # Admin review of chef event requests
+      foraging-calendar/         # Seasonal foraging reference calendar
+      calendar/                  # Monthly grid with order/delivery/notify badges
       notes/                     # Farm notes
-      reports/                   # Income, expenses, items, YoY, executive
+      reports/                   # income, expenses, items, yoy, executive, crops, labor-efficiency
       settings/                  # Users / data-check / emails / suggestions
+      setup-shared-accounts/     # One-time provisioning of shared chef accounts
       ui-kit/                    # Brand reference page
     api/
       orders/                    # Submit / update / shortage
-      availability/              # Publish / duplicate / toggle / notify / ordering lock
+      availability/              # Publish / duplicate / toggle / notify / ordering lock / forecast-email
       deliveries/                # Log / finalize / export
-      expenses/                  # CRUD + export
-      items/                     # CRUD + export
+      expenses/, items/          # CRUD + export
       import/                    # items-csv, expenses-csv, deliveries-csv
       labor/                     # CRUD + send-timesheet
-      plantings/, crop-plan/, notes/, photos/, packs/, suggestions/
+      ai/                        # Anthropic-backed: draft-item-content, catalog-audit, bulk-fill-items, crop-recommendations
+      tasks/                     # Task CRUD + complete/snooze/reopen/cancel + draft confirm/dismiss
+      inbound/                   # Resend inbound webhook (signature-verified) — chef email replies
+      cron/                      # tasks-regenerate, receiver-notify (Bearer CRON_SECRET, fail-closed)
+      receiver/, seeds/, event-requests/, microgreens/
+      plantings/, crop-plan/, notes/, photos/, suggestions/
       reports/                   # monthly, income, top-items, weekly-digest
-      v1/                        # Public read-only — items / orders / deliveries / expenses / availability / stats
+      v1/                        # Public READ-ONLY (GET only) — items / orders / deliveries / expenses / availability / stats
       users/                     # CRUD + welcome email
-      delivery-dates/, settings/, upload/, test-email/
+      delivery-dates/, settings/, upload/, test-email/, test-emails-bulk/, email-status/
     auth/callback/               # Supabase auth redirect handler
   components/
-    shared/                      # EditorialHero, FloralCorners, BottomNav, StatusBadge, DeliveryDatePicker
+    shared/                      # EditorialHero, FloralCorners, BottomNav, etc.
     order/                       # Multi-unit + multi-size + multi-color order form
-    admin/                       # OrderCard, AvailabilityEditor, HarvestList, etc.
+    admin/                       # OrderCard, AvailabilityEditor, HarvestList, microgreens/, seeds/, etc.
   emails/                        # React Email templates
   lib/
     supabase/                    # client.ts (browser), server.ts, admin.ts (service role), middleware.ts
-    resend/                      # client.ts
+    resend/                      # client.ts + inbound.ts (HMAC signature verification)
+    extraction/                  # AI parsing of inbound emails → item-requests / task-schedule
+    tasks/                       # Recurring-task + microgreens regeneration, task queries
+    forecasting/                 # Availability bucket + year-view forecasting
+    microgreens/                 # Sow-plan algorithm, stages, seed data
     flower-images.ts             # name → /assets/pressfarm/flowers/*.png resolver
+    api-auth.ts                  # validateApiKey (v1 shared-key gate)
     constants.ts                 # Categories, units, sizes, statuses (single source of truth)
     utils.ts                     # Date / currency formatting
   types/
-    database.ts                  # Supabase-compatible DB types (manually maintained — `(supabase as any)` casts are fine)
+    database.ts                  # DB types — covers ~18 of ~34 tables; the rest use `(supabase as any)` casts
     index.ts                     # App-level types + enriched join shapes
+tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 126 tests
+scripts/
+  optimize-images.mjs            # Idempotent brand-image downsizer (npm run optimize:images)
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 046 (last applied: 046_seed_inventory.sql)
+supabase/migrations/             # 001 → 063 (66 files; see table — numbers 044/047/062 each used twice)
 ```
 
 ## Database Migrations
 
-15 base tables + 2 views, plus 5 microgreen tables (045) and 3 seed inventory tables (046). Last applied: **046**. Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **66 migration files, numbered 001 → 063** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied: **063**. **Next migration number is 064.** Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -141,14 +162,35 @@ supabase/migrations/             # 001 → 046 (last applied: 046_seed_inventory
 | 044 | repricing_2026_05_18 | 37 UPDATE statements on `items.unit_prices` from Micheal's 2026-05-18 list (filename collision with 044_drop_unused_indexes — both shipped) |
 | 045 | microgreens_module | `microgreen_crops`, `_demand`, `_batches`, `_trays`, `_harvests` + `microgreen_tray_status` enum |
 | 046 | seed_inventory | `seeds`, `seed_sowings`, `seed_germination_tests` + `seeds_with_on_hand` view + `plantings.seed_id` FK |
+| 047 | fix_nasturtium_leaves_miscategorization | Data fix — Nasturtium leaves category (collides with 047_microgreens_units) |
+| 047 | microgreens_units | Unit-based yield + demand for microgreens (collides with 047_fix_nasturtium…) |
+| 048 | fix_nasturtium_items | Nasturtium catalog cleanup (data-only) |
+| 049 | nasturtium_leaf_palm_size | Adds "Palm" size to Nasturtium leaves |
+| 050 | delivery_item_size | `delivery_items` size descriptor for drop-off logging |
+| 051 | delivery_data_cleanup | Historical delivery data corrections |
+| 052 | item_name_casing | Item name casing + consolidation |
+| 053 | fill_unpriced_items | Fill unpriced items + consolidate Bean→Beans |
+| 054 | plant_part_grouping | Fennel parts, Nasturtium capers, plant-part grouping |
+| 055 | bucket_b_plant_parts | Bucket B plant-part splits |
+| 056 | fix_nasturtium_flower_price | Nasturtium Flowers price fix |
+| 057 | order_item_menu_section | `order_items` menu-section provenance (which menu the line came from) |
+| 058 | order_accountability | `order_audit` table + who-placed / who-last-edited tracking on orders |
+| 059 | items_seasonal_months | `items.seasonal_months` array |
+| 060 | inbound_replies | `inbound_messages` + `inbox_task_drafts` — chef email replies → AI task drafts |
+| 061 | fix_lg_qty_outliers | Targeted delivery + catalog corrections |
+| 062 | farm_tasks | `farm_tasks` — unified automated operations list (recurring sow/advance/harvest) |
+| 062 | microgreen_harvest_stage | `harvest_stage` enum + one-time timing bump (collides with 062_farm_tasks) |
+| 063 | seed_puff_ball_marigold | Adds Puff Ball Marigold to catalog, published AVAILABLE |
 
 ## Auth Model
 
 - **Admin**: Supabase email+password. Bypasses RLS via `is_admin()` helper.
-- **Chefs**: Supabase magic link. RLS scopes them to their restaurant via `user_restaurant_ids()`.
+- **Chefs**: Supabase magic link (or username/password for shared accounts). RLS scopes them to their restaurant via `user_restaurant_ids()`.
+- **Receiver**: `receiver` role for destination-side unpack/check-in.
 - `profiles` extends `auth.users` with `role` and `is_active`.
 - `restaurant_users` join table maps users to restaurants.
 - Service-role key (`createAdminClient`) is **server-only**. Never expose to browser.
+- **Open signup**: `/signup` + `/api/auth/signup` let anyone self-register against any restaurant (auto-confirmed). This is intentional per Micheal — do **not** lock it down without an explicit ask. Each API route still self-gates on `profiles.role`; there is no shared `requireAdmin()` helper yet, so the `getUser()` → fetch role → compare block is repeated across routes.
 
 ## Key Business Rules
 
@@ -170,6 +212,7 @@ The brand is built out — **do not redesign without an explicit ask**.
 
 - **Logo**: mandala (color/mono/gold/black), circular seal, horizontal/stacked/wordmark, app icon. Live under `public/assets/pressfarm/logo/`.
 - **Flowers**: ~38 hand-illustrated botanicals at `public/assets/pressfarm/flowers/`. Auto-resolve via `src/lib/flower-images.ts`. Don't rename/delete files without checking `flowerImageForName()` callers and `FLOWER_NAME_MAP`. Legacy alias `"fairyvetch"` exists for the old Hairy Vetch misspelling.
+- **Image weights**: brand PNGs are downsized to 768px (flowers) / 1024px (logos) — originals were 2048–3000px (141MB → 47MB). Keep new assets web-sized; run `npm run optimize:images` (idempotent, in-place, preserves PNG + filename + alpha) after adding art. Logos stay PNG because some email clients can't render WebP.
 - **Typography**: Bank Gothic LT (wordmark + tagline), Cormorant Garamond (display), Inter (body), JetBrains Mono (code).
 - **Tokens**: prefer `pf-*` (`--pf-master-blue`, `--pf-master-orange`, `--pf-master-violet`) for new work. `farm-green / farm-cream / farm-dark / farm-muted` are core legacy and still used everywhere — don't remove.
 - **Status palette**: blue-700/100 = info/update, amber-700/800 = soft warn, red-700/800 = error, farm-green = success. Match `badge-blue/gold/red/green` tone families. **No ad-hoc colors.**
@@ -202,14 +245,15 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **045**.
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **064**. (044/047/062 each already collide across two files — don't add to those numbers.)
 - The user does NOT have `supabase` CLI linked. After writing a migration, present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
 
 **Build**
 - Always `npm run build` before committing — auto-deploy means a broken push goes straight to prod.
-- TypeScript strict; `(supabase as any)` casts are acceptable where generated types lag.
+- The build **enforces** TypeScript and ESLint (`next.config.js` no longer ignores either). A type or lint *error* fails the build by design; warnings (e.g. `<img>` usage) don't. `tsc --noEmit`, `next lint`, and `vitest run` should all be clean before pushing.
+- TypeScript strict; `(supabase as any)` casts are acceptable where `database.ts` doesn't yet cover a table (~16 tables uncovered). Note: `next build` validates route files — `app/api/**/route.ts` may only export HTTP handlers + recognized route config, never helper functions.
 
 ## Source Data (legacy import targets)
 
@@ -238,14 +282,29 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Offer sheet (printable/shareable PDF-style view per delivery date).
 - Public About page with partner restaurants + logos.
 - Resend email pipelines (8 React Email templates + 2 raw HTML).
-- Public read-only `/api/v1/*` endpoints.
+- Public **read-only** (GET-only) `/api/v1/*` endpoints — gated by a single shared `PRESSFARM_API_KEY`. Write verbs were removed; mutations go through authenticated `/api/*` routes.
 - Editorial brand system + UI Kit reference page.
-- `/admin/microgreens` — production module: variety library, demand targets, sow plan dashboard, tray ops (soaking→blackout→light→harvesting→terminated), harvest event log, calendar. 53 unit tests covering the algorithm.
+- `/admin/microgreens` — production module: variety library, demand targets, sow plan dashboard, tray ops (soaking→blackout→light→harvesting→terminated), harvest event log, calendar.
+- `/admin/seeds` — seed inventory, sowings, germination tests (`seeds_with_on_hand` view).
+- `/admin/tasks` — unified automated operations list; a nightly cron (`/api/cron/tasks-regenerate`) generates recurring sow/advance/harvest tasks; complete/snooze/reopen/cancel.
+- `/admin/inbox` — chef email replies arrive via the Resend inbound webhook (`/api/inbound/reply`, HMAC-verified), get parsed by the Anthropic SDK (`src/lib/extraction/`) into task drafts you confirm or dismiss.
+- `/admin/event-requests` + chef `/events` — advance event-order flow.
+- `/admin/foraging-calendar` — seasonal foraging reference.
+- Individual-account order accountability (`order_audit`, migration 058).
+- `/receiver` — destination-side unpack / check-in.
+- **126 Vitest tests** across 19 files in `tests/` — concentrated on the microgreens algorithm, forecasting, and tasks. (The financial core — orders, deliveries, pricing, reports — has no automated coverage yet.)
 
 ## Open Follow-ups (Prioritized)
 
 1. **P&L PDF export** — `/admin/reports/executive` renders a full P&L view but there's no "Download PDF" button. Adding one needs a PDF library decision (puppeteer / @react-pdf/renderer / browser print) — ask Micheal before adding a dep.
 2. **"Financial fixes" backlog** — placeholder for any pricing / margin / line-total bugs Micheal surfaces during use. No concrete items currently.
+
+**Audit follow-ups (codebase audit, 2026-06-01):**
+3. **Regenerate `src/types/database.ts`** from the live schema — it covers ~18 of ~34 tables, driving ~580 `(supabase as any)` casts. Pairs with extracting a `requireAdmin()` helper (the auth-check block is duplicated across ~87 routes).
+4. **Reports do full-table JS aggregation** — `/admin/reports/page.tsx` and `reports/executive` fetch all of `delivery_items` and roll up in JS. Move to a SQL view / `GROUP BY` (income + crops reports already date-bound — copy that).
+5. **Unbounded list queries** — chef history, labor, notes select with no limit/date window on ever-growing tables.
+6. **Dead code** — 5 orphaned `components/shared/` files (`PageHeader`, `TopBar`, `EmptyState`, `status-badge.tsx`, `delivery-date-picker.tsx`); the reserved-but-unused `historicalDeliveryItems` path in the sow-plan flow.
+7. **Supabase advisors** — `seeds_with_on_hand` is a SECURITY DEFINER view; `match_inbound_sender` is anon-executable via RPC; `slide_recurring_anchor` has a mutable `search_path`; leaked-password protection is off.
 
 Pack manager is descoped (Micheal 2026-05-15) — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.
 
