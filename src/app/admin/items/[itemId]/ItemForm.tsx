@@ -123,7 +123,7 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
 
-  function set(field: keyof typeof form, value: string) {
+  function set(field: keyof typeof form, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 

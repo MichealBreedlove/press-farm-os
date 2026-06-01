@@ -14,7 +14,7 @@ interface ChildItem {
 interface Props {
   parentId: string;
   parentName: string;
-  children: ChildItem[];
+  subitems: ChildItem[];
 }
 
 /**
@@ -26,7 +26,7 @@ interface Props {
  * Children render as standalone items on the chef order form — this panel
  * only exists for admin organization.
  */
-export function SubitemsPanel({ parentId, parentName, children }: Props) {
+export function SubitemsPanel({ parentId, parentName, subitems }: Props) {
   return (
     <section className="border-t border-farm-dark/5 pt-6">
       <div className="flex items-baseline justify-between mb-3">
@@ -45,7 +45,7 @@ export function SubitemsPanel({ parentId, parentName, children }: Props) {
         </Link>
       </div>
 
-      {children.length === 0 ? (
+      {subitems.length === 0 ? (
         <div className="text-center py-6 px-4 rounded-xl border border-dashed border-farm-dark/10 bg-farm-cream/30">
           <p className="text-sm text-farm-muted">No subitems yet.</p>
           <p className="text-[11px] text-farm-muted/70 mt-1">
@@ -54,7 +54,7 @@ export function SubitemsPanel({ parentId, parentName, children }: Props) {
         </div>
       ) : (
         <ul className="space-y-1">
-          {children.map((child) => {
+          {subitems.map((child) => {
             const imgUrl = getItemImageUrl(child as any);
             const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
             return (

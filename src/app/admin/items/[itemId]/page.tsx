@@ -117,7 +117,7 @@ export default async function AdminItemEditPage({
             admin see all children at a glance and quick-add a new one
             with parent_item_id pre-filled. */}
         {!isNew && item && !item.parent_item_id && (
-          <SubitemsPanel parentId={item.id} parentName={item.name} children={children} />
+          <SubitemsPanel parentId={item.id} parentName={item.name} subitems={children} />
         )}
       </div>
     </main>

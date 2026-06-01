@@ -135,7 +135,7 @@ export function CropForm({ initial, items }: Props) {
             ))}
           </select>
           <p className="text-xs text-farm-muted mt-1">
-            Determines the label shown on tray timelines. Set "Ideal harvest day" above to the actual day count.
+            Determines the label shown on tray timelines. Set &ldquo;Ideal harvest day&rdquo; above to the actual day count.
           </p>
         </label>
         <label className="flex items-center gap-2">
@@ -153,7 +153,7 @@ export function CropForm({ initial, items }: Props) {
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold uppercase tracking-wide">Yield</legend>
         <p className="text-xs text-farm-muted leading-relaxed">
-          Alternatives model: one tray yields the LG count <span className="font-medium">or</span> the SM count <span className="font-medium">or</span> the EA count, depending on packing decision. Leave any unit blank if you don't pack this crop in that size.
+          Alternatives model: one tray yields the LG count <span className="font-medium">or</span> the SM count <span className="font-medium">or</span> the EA count, depending on packing decision. Leave any unit blank if you don&apos;t pack this crop in that size.
         </p>
         <div className="grid grid-cols-3 gap-2">
           {YIELD_UNITS.map((u) => (

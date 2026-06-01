@@ -136,7 +136,7 @@ export function SeedForm({ mode, items, initial, seedId }: Props) {
         </select>
         {mode === "edit" && (
           <p className="text-[11px] text-farm-muted mt-1">
-            Crop link can't be changed after creation. Discard this seed and create a new one if it was wrong.
+            Crop link can&apos;t be changed after creation. Discard this seed and create a new one if it was wrong.
           </p>
         )}
       </Field>

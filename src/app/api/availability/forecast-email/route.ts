@@ -74,9 +74,10 @@ function toEntry(e: AvailabilityEntry, kind: "future" | "now"): ForecastEmailEnt
 /**
  * Map the four horizon buckets into the email's section list. Field crops and
  * microgreens are both included; microgreens flagged via `isMicrogreen`.
- * Exported so the partner report can reuse the bucket → entry mapping.
+ * Kept module-local — Next.js route files may only export HTTP handlers and
+ * recognized route config, not helper functions.
  */
-export function bucketsToSections(buckets: AvailabilityBuckets): ForecastEmailSection[] {
+function bucketsToSections(buckets: AvailabilityBuckets): ForecastEmailSection[] {
   return [
     { title: "Available Now", caption: "Harvesting this week", entries: buckets.now.map((e) => toEntry(e, "now")) },
     { title: "In ~2 Weeks", caption: "Windows opening soon", entries: buckets.in2Weeks.map((e) => toEntry(e, "future")) },

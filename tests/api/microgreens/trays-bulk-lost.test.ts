@@ -56,8 +56,8 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
     const body = await res.json();
 
     expect(body.updated).toBe(1);
-    expect(sb._data.microgreen_trays.find((t: any) => t.id === "t2").status).toBe("terminated");
-    expect(sb._data.microgreen_trays.find((t: any) => t.id === "t3").lost_reason).toBe("Mold");
+    expect(sb._data.microgreen_trays.find((t: any) => t.id === "t2")!.status).toBe("terminated");
+    expect(sb._data.microgreen_trays.find((t: any) => t.id === "t3")!.lost_reason).toBe("Mold");
   });
 
   it("returns 400 when tray_ids is empty", async () => {

@@ -2,14 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Temporarily ignore TS build errors caused by @supabase/ssr v0.5.x
-  // incompatibility with @supabase/supabase-js v2.99.x (path resolution issue).
-  // TODO: Remove after running `npx supabase gen types typescript` against real DB.
+  // Type and lint errors fail the build. The codebase passes `tsc --noEmit`
+  // and `next lint` cleanly, and `main` auto-deploys to Vercel, so a broken
+  // build must stop here rather than ship to prod.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 };
 

@@ -467,7 +467,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
             <li><strong>Date</strong>: ISO YYYY-MM-DD, M/D/YY, or any standard date string.</li>
             <li><strong>Restaurant</strong>: matches by full name first, then first-word fuzzy fallback.</li>
             <li><strong>Item</strong>: matches by name (case-insensitive). Items not in catalog are skipped.</li>
-            <li><strong>Unit</strong>: ea, sm, lg, gb, bu, qt, pt, lbs, bx, cs, kit (or full names like "Bunch").</li>
+            <li><strong>Unit</strong>: ea, sm, lg, gb, bu, qt, pt, lbs, bx, cs, kit (or full names like &ldquo;Bunch&rdquo;).</li>
             <li><strong>Status</strong>: pending, logged, finalized (defaults to <code>finalized</code> for legacy XLSX, <code>logged</code> for CSV).</li>
             <li><strong>Re-imports</strong>: existing delivery for that date+restaurant has its line items wiped and re-inserted from the file.</li>
           </ul>

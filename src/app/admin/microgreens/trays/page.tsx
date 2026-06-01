@@ -146,7 +146,7 @@ export default async function TraysListPage({ searchParams }: Props) {
 
         {error && (
           <p className="p-3 mb-3 rounded bg-red-50 border border-red-200 text-red-800 text-sm">
-            Couldn't load trays: {(error as any).message}
+            Couldn&apos;t load trays: {(error as any).message}
           </p>
         )}
 

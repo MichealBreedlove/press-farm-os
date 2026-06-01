@@ -66,7 +66,7 @@ export default function SetupSharedAccountsPage() {
       <main className="min-h-screen bg-farm-cream pb-32">
         <header className="page-header">
           <h1 className="page-title">Accounts Provisioned</h1>
-          <p className="text-sm text-white/70">Save these credentials. You won't see them again.</p>
+          <p className="text-sm text-white/70">Save these credentials. You won&apos;t see them again.</p>
         </header>
         <div className="px-4 py-5 space-y-4">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
@@ -100,7 +100,7 @@ export default function SetupSharedAccountsPage() {
           </div>
           <p className="text-xs text-farm-muted text-center px-2 leading-relaxed">
             These accounts log in at <code className="text-farm-dark">/login</code> with the username field
-            (no @ needed). Internally they're mapped to <code className="text-farm-dark">username@accounts.pressfarm.app</code>{" "}
+            (no @ needed). Internally they&apos;re mapped to <code className="text-farm-dark">username@accounts.pressfarm.app</code>{" "}
             so Supabase Auth has an email under the hood — chefs never see it.
           </p>
         </div>

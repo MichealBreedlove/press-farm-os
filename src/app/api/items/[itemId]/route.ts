@@ -121,7 +121,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     updates.recurring_sow_active = Boolean(body.recurring_sow_active);
   }
   if (body.recurring_sow_interval_days !== undefined) {
-    const n = body.recurring_sow_interval_days;
+    const n = body.recurring_sow_interval_days as number | null;
     if (n !== null && (!Number.isInteger(n) || n <= 0)) {
       return NextResponse.json(
         { error: "recurring_sow_interval_days must be a positive integer" },
