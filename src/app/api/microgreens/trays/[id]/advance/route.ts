@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { nextStatus } from "@/lib/microgreens/stages";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || profile.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
   const { data: tray } = await (admin as any)

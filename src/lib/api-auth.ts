@@ -1,4 +1,45 @@
 import { NextResponse } from "next/server";
+import type { User } from "@supabase/supabase-js";
+import type { createClient } from "@/lib/supabase/server";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+export type AdminAuthResult =
+  | { ok: true; user: User }
+  | { ok: false; response: NextResponse };
+
+/**
+ * Session-based admin gate for API routes.
+ *
+ * Replaces the getUser() → fetch `profiles.role` → compare block that was
+ * duplicated across ~86 routes. Pass the request-scoped server client
+ * (`await createClient()`); on success returns the authenticated `user`, on
+ * failure a ready-to-return 401 (no session) or 403 (not admin) response:
+ *
+ *   const supabase = await createClient();
+ *   const auth = await requireAdmin(supabase);
+ *   if (!auth.ok) return auth.response;
+ *   // ...auth.user.id is the admin
+ */
+export async function requireAdmin(supabase: SupabaseServerClient): Promise<AdminAuthResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if ((profile as any)?.role !== "admin") {
+    return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+
+  return { ok: true, user };
+}
 
 /**
  * API Key authentication for external access (OpenClaw, scripts, etc.)

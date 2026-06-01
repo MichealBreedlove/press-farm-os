@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
@@ -9,17 +10,8 @@ import { EXPENSE_CATEGORIES } from "@/lib/constants";
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if ((profile as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const month = searchParams.get("month"); // "2026-04"
@@ -51,17 +43,8 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if ((profile as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   let body: { date: string; category: string; description?: string; amount: number };
   try {
