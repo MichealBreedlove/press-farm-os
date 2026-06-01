@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { resolveOrderUnitPrice } from "@/lib/pricing";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -268,12 +269,10 @@ export async function POST(request: Request) {
   // Resolve the price for a given availability+unit. Precedence:
   // unit_prices[unit] → default_price → 0. Defaulting to 0 (instead of null)
   // keeps the line in the COALESCE(SUM(line_total)) revenue rollup; a NULL
-  // line_total would silently disappear from totals.
+  // line_total would silently disappear from totals. (resolveOrderUnitPrice
+  // is the unit-tested core — see src/lib/pricing.ts.)
   function resolvePrice(availId: string, unit: string | null): number {
-    const info = availInfoMap.get(availId);
-    if (!info) return 0;
-    if (unit && typeof info.unitPrices[unit] === "number") return info.unitPrices[unit];
-    return info.defaultPrice ?? 0;
+    return resolveOrderUnitPrice(availInfoMap.get(availId), unit);
   }
 
   // Build the canonical line shape for incoming items. Persist the
