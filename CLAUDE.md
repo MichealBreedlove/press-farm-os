@@ -106,12 +106,12 @@ scripts/
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 063 (66 files; see table — numbers 044/047/062 each used twice)
+supabase/migrations/             # 001 → 064 (67 files; see table — numbers 044/047/062 each used twice)
 ```
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **66 migration files, numbered 001 → 063** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied: **063**. **Next migration number is 064.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **67 migration files, numbered 001 → 064** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **063** (064 is written but pending Micheal running it). **Next migration number is 065.** Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -181,6 +181,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 062 | farm_tasks | `farm_tasks` — unified automated operations list (recurring sow/advance/harvest) |
 | 062 | microgreen_harvest_stage | `harvest_stage` enum + one-time timing bump (collides with 062_farm_tasks) |
 | 063 | seed_puff_ball_marigold | Adds Puff Ball Marigold to catalog, published AVAILABLE |
+| 064 | security_advisor_fixes | `seeds_with_on_hand` → security_invoker; revoke `match_inbound_sender` from anon/authenticated; pin `slide_recurring_anchor` search_path (DDL-only, no code change) |
 
 ## Auth Model
 
@@ -245,7 +246,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **064**. (044/047/062 each already collide across two files — don't add to those numbers.)
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **065** (064 written, pending run). (044/047/062 each already collide across two files — don't add to those numbers.)
 - The user does NOT have `supabase` CLI linked. After writing a migration, present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
@@ -304,7 +305,7 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 4. **Reports do full-table JS aggregation** — `/admin/reports/page.tsx` and `reports/executive` fetch all of `delivery_items` and roll up in JS. Move to a SQL view / `GROUP BY` (income + crops reports already date-bound — copy that).
 5. **Unbounded list queries** — chef history, labor, notes select with no limit/date window on ever-growing tables.
 6. **Dead code** — 5 orphaned `components/shared/` files (`PageHeader`, `TopBar`, `EmptyState`, `status-badge.tsx`, `delivery-date-picker.tsx`); the reserved-but-unused `historicalDeliveryItems` path in the sow-plan flow.
-7. **Supabase advisors** — `seeds_with_on_hand` is a SECURITY DEFINER view; `match_inbound_sender` is anon-executable via RPC; `slide_recurring_anchor` has a mutable `search_path`; leaked-password protection is off.
+7. **Supabase advisors** — migration **064** fixes the three SQL findings (`seeds_with_on_hand` SECURITY DEFINER view, `match_inbound_sender` anon-executable, `slide_recurring_anchor` search_path); run it. Still manual: enable leaked-password protection in the Auth dashboard.
 
 Pack manager is descoped (Micheal 2026-05-15) — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.
 
