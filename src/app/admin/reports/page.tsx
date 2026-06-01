@@ -16,8 +16,11 @@ export default async function AdminReportsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const currentMonth = today.slice(0, 7);
 
-  // Fetch ALL historical delivery and expense data
-  const [{ data: deliveries }, { data: expenses }, { data: deliveryItems }] = await Promise.all([
+  // Fetch historical delivery + expense totals (bounded tables) and the
+  // per-item revenue rollup (pre-aggregated in SQL by report_item_revenue —
+  // see migration 065 — so we transfer ~hundreds of item rows, not the full
+  // delivery_items history).
+  const [{ data: deliveries }, { data: expenses }, { data: topItemRows }] = await Promise.all([
     (admin as any)
       .from("deliveries")
       .select("delivery_date, total_value, restaurant_id, status, restaurants(name)")
@@ -29,12 +32,10 @@ export default async function AdminReportsPage() {
       .order("date", { ascending: true }),
 
     (admin as any)
-      .from("delivery_items")
-      .select(`
-        item_id, quantity, line_total,
-        items ( name, category, unit_type ),
-        deliveries ( delivery_date )
-      `),
+      .from("report_item_revenue")
+      .select("*")
+      .order("total_revenue", { ascending: false })
+      .limit(15),
   ]);
 
   // Aggregate monthly data (all time)
@@ -94,24 +95,15 @@ export default async function AdminReportsPage() {
   const ytdValue = allMonthlyData.filter(m => m.month.startsWith(ytdYear)).reduce((s, m) => s + m.total_value, 0);
   const ytdExpenses = allMonthlyData.filter(m => m.month.startsWith(ytdYear)).reduce((s, m) => s + m.total_expenses, 0);
 
-  // Top items (all time — from delivery_items detail records only, not aggregates)
-  const itemAgg: Record<string, { name: string; category: string; unit: string; total_value: number; total_qty: number }> = {};
-  for (const di of deliveryItems ?? []) {
-    if (!di.items) continue;
-    itemAgg[di.item_id] ??= {
-      name: (di.items as any).name,
-      category: (di.items as any).category,
-      unit: (di.items as any).unit_type,
-      total_value: 0,
-      total_qty: 0,
-    };
-    itemAgg[di.item_id].total_value += di.line_total ?? 0;
-    itemAgg[di.item_id].total_qty += di.quantity ?? 0;
-  }
-  const topItems = Object.entries(itemAgg)
-    .sort(([, a], [, b]) => b.total_value - a.total_value)
-    .slice(0, 15)
-    .map(([id, v]) => ({ item_id: id, ...v }));
+  // Top items (all time) — already grouped + ordered by SQL (migration 065).
+  const topItems = (topItemRows ?? []).map((r: any) => ({
+    item_id: r.item_id,
+    name: r.name,
+    category: r.category,
+    unit: r.unit_type,
+    total_value: Number(r.total_revenue ?? 0),
+    total_qty: Number(r.total_qty ?? 0),
+  }));
 
   // Expense breakdown for display month
   const monthExpenseBreakdown: Record<string, number> = {};

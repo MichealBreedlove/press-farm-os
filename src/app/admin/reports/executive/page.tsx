@@ -81,7 +81,7 @@ export default async function AdminExecutiveReportsPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: deliveries }, { data: expenses }, { data: deliveryItems }] =
+  const [{ data: deliveries }, { data: expenses }, { data: itemRevenueRows }] =
     await Promise.all([
       (admin as any)
         .from("deliveries")
@@ -93,11 +93,9 @@ export default async function AdminExecutiveReportsPage() {
         .select("date, amount, category")
         .order("date", { ascending: true }),
 
-      (admin as any).from("delivery_items").select(`
-          item_id, quantity, line_total,
-          items ( name, category, unit_type ),
-          deliveries ( delivery_date )
-        `),
+      // Per-item revenue/qty, pre-aggregated in SQL (migration 065) — one row
+      // per item instead of the full delivery_items history.
+      (admin as any).from("report_item_revenue").select("*"),
     ]);
 
   // ---- Monthly revenue map ----
@@ -213,20 +211,14 @@ export default async function AdminExecutiveReportsPage() {
     }
   > = {};
 
-  for (const di of deliveryItems ?? []) {
-    if (!di.items) continue;
-    const id = di.item_id;
-    if (!itemAgg[id]) {
-      itemAgg[id] = {
-        name: (di.items as any).name,
-        category: (di.items as any).category,
-        unit: (di.items as any).unit_type,
-        total_revenue: 0,
-        total_qty: 0,
-      };
-    }
-    itemAgg[id].total_revenue += di.line_total ?? 0;
-    itemAgg[id].total_qty += di.quantity ?? 0;
+  for (const r of itemRevenueRows ?? []) {
+    itemAgg[r.item_id] = {
+      name: r.name,
+      category: r.category,
+      unit: r.unit_type,
+      total_revenue: Number(r.total_revenue ?? 0),
+      total_qty: Number(r.total_qty ?? 0),
+    };
   }
 
   const totalRevenueAllTime = Object.values(itemAgg).reduce(
