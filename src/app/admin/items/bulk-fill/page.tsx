@@ -20,7 +20,7 @@ export default async function BulkFillPage() {
   // client can show what's already done and what would change. Sorting
   // by category then name matches the catalog's natural grouping so the
   // progress list reads predictably.
-  const { data: itemsRaw } = await (admin as any)
+  const { data: itemsRaw } = await admin
     .from("items")
     .select(
       "id, name, category, chef_notes, growing_notes, season_note, days_to_maturity, sun_requirement, sow_method, sow_depth, plant_spacing",

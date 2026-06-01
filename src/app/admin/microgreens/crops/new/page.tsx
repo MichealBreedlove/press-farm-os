@@ -4,7 +4,7 @@ import { CropForm } from "@/components/admin/microgreens/CropForm";
 
 export default async function NewCropPage() {
   const admin = createAdminClient();
-  const { data: items } = await (admin as any)
+  const { data: items } = await admin
     .from("items").select("id, name").order("name");
 
   return (

@@ -57,7 +57,7 @@ export default async function CropRevenueReportPage({ searchParams }: Props) {
   }
 
   // Pull delivery_items joined to items + deliveries for date filtering.
-  let q = (admin as any)
+  let q = admin
     .from("delivery_items")
     .select(`
       item_id, quantity, line_total,

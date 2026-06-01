@@ -8,13 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function BatchDetailPage({ params }: { params: { id: string } }) {
   const admin = createAdminClient();
-  const { data: batch } = await (admin as any)
+  const { data: batch } = await admin
     .from("microgreen_batches")
     .select("*, crop:microgreen_crops(*)")
     .eq("id", params.id).maybeSingle();
   if (!batch) notFound();
 
-  const { data: trays } = await (admin as any)
+  const { data: trays } = await admin
     .from("microgreen_trays").select("*").eq("batch_id", params.id).order("tray_label");
 
   return (

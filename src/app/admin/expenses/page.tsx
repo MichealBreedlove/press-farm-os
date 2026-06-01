@@ -37,7 +37,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: expensesRaw } = await (admin as any)
+  const { data: expensesRaw } = await admin
     .from("farm_expenses")
     .select("id, date, category, description, amount, vendor")
     .gte("date", start)

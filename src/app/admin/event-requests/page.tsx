@@ -14,7 +14,7 @@ export default async function AdminEventRequestsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -22,7 +22,7 @@ export default async function AdminEventRequestsPage() {
   if ((profile as any)?.role !== "admin") redirect("/order");
 
   const admin = createAdminClient();
-  const { data: rowsRaw } = await (admin as any)
+  const { data: rowsRaw } = await admin
     .from("event_requests")
     .select(
       "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, event_group_id, created_at, restaurant:restaurants(id, name), chef:profiles!event_requests_chef_id_fkey(id, full_name), item:items(id, name, category, unit_type)",

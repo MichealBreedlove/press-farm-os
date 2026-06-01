@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
   const admin = createAdminClient();
-  const { data: restaurants } = await (admin as any)
+  const { data: restaurants } = await admin
     .from("restaurants")
     .select("id, name")
     .order("name");

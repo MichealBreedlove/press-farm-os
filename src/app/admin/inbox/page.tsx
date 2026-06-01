@@ -53,7 +53,7 @@ export default async function InboxPage() {
 
   const admin = createAdminClient();
 
-  const { data: messagesData } = await (admin as any)
+  const { data: messagesData } = await admin
     .from("inbound_messages")
     .select(
       "id, from_email, from_name, subject, text_body, status, extraction_status, received_at, matched_restaurant_id",
@@ -70,7 +70,7 @@ export default async function InboxPage() {
   ) as string[];
   let restaurantMap = new Map<string, string>();
   if (restaurantIds.length > 0) {
-    const { data: rData } = await (admin as any)
+    const { data: rData } = await admin
       .from("restaurants")
       .select("id, name")
       .in("id", restaurantIds);
@@ -81,7 +81,7 @@ export default async function InboxPage() {
   const messageIds = messages.map((m) => m.id);
   let suggestionCounts = new Map<string, number>();
   if (messageIds.length > 0) {
-    const { data: sData } = await (admin as any)
+    const { data: sData } = await admin
       .from("suggestions")
       .select("inbound_message_id")
       .in("inbound_message_id", messageIds);

@@ -64,17 +64,17 @@ export default async function AdminDashboardPage() {
     { data: weekLabor },
     { data: offScheduleOrders },
   ] = await Promise.all([
-    (admin as any).from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
-    (admin as any).from("event_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    (admin as any).from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
-    (admin as any).from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
-    (admin as any).from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
-    (admin as any).from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
+    admin.from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    admin.from("event_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    admin.from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
+    admin.from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
+    admin.from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
+    admin.from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
     // Off-schedule orders: any active order whose linked delivery_date
     // has day_of_week='custom' (anything not Thu/Sat/Mon, or an ad-hoc
     // date the chef opened from the order page). Limited to 20 most
     // recent — banner shows them all but caps the query for safety.
-    (admin as any)
+    admin
       .from("orders")
       .select("id, delivery_date, status, restaurant:restaurants(name), delivery_dates!inner(day_of_week)")
       .in("status", ["submitted", "in_progress", "fulfilled"])
@@ -98,17 +98,17 @@ export default async function AdminDashboardPage() {
   let taskItemNames: Record<string, string> = {};
   let taskCropNames: Record<string, string> = {};
   try {
-    const { data: farmRow } = await (admin as any).from("farms").select("id").limit(1).single();
+    const { data: farmRow } = await admin.from("farms").select("id").limit(1).single();
     if (farmRow?.id) {
       todayTasks = await listTodayTasks(admin, farmRow.id);
       const itemIds = Array.from(new Set(todayTasks.map((t) => t.item_id).filter(Boolean) as string[]));
       const cropIds = Array.from(new Set(todayTasks.map((t) => t.microgreen_crop_id).filter(Boolean) as string[]));
       if (itemIds.length > 0) {
-        const { data: items } = await (admin as any).from("items").select("id, name").in("id", itemIds);
+        const { data: items } = await admin.from("items").select("id, name").in("id", itemIds);
         taskItemNames = Object.fromEntries((items ?? []).map((r: any) => [r.id, r.name]));
       }
       if (cropIds.length > 0) {
-        const { data: crops } = await (admin as any)
+        const { data: crops } = await admin
           .from("microgreen_crops")
           .select("id, name")
           .in("id", cropIds);

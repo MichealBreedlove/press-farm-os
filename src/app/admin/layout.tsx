@@ -16,7 +16,7 @@ async function getInboxUnreadCount(
   admin: ReturnType<typeof createAdminClient>,
 ): Promise<number> {
   try {
-    const { count, error } = await (admin as any)
+    const { count, error } = await admin
       .from("inbound_messages")
       .select("id", { count: "exact", head: true })
       .eq("status", "unread");
@@ -47,7 +47,7 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const { data: profileRaw } = await (supabase as any)
+  const { data: profileRaw } = await supabase
     .from("profiles")
     .select("role, is_active")
     .eq("id", user.id)
@@ -66,7 +66,7 @@ export default async function AdminLayout({
   // migration 062 runs doesn't crash every admin page.
   let tasksOpenCount = 0;
   try {
-    const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+    const { data: farms } = await admin.from("farms").select("id").limit(1);
     const farmId = farms?.[0]?.id;
     if (farmId) tasksOpenCount = await getOpenTaskCount(admin, farmId);
   } catch {

@@ -10,11 +10,11 @@ export default async function EmailSettingsPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { data: settings } = await (admin as any).from("farm_settings").select("key, value");
+  const { data: settings } = await admin.from("farm_settings").select("key, value");
   const settingsMap: Record<string, string> = {};
   for (const row of settings ?? []) settingsMap[row.key] = row.value ?? "";
 
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id ?? "";
 
   return (

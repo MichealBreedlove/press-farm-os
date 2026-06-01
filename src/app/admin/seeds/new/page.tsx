@@ -15,7 +15,7 @@ export default async function NewSeedPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { data: itemsRaw } = await (admin as any)
+  const { data: itemsRaw } = await admin
     .from("items")
     .select("id, name, category")
     .eq("is_archived", false)

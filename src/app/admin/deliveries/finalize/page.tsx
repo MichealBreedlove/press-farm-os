@@ -45,7 +45,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
 
   const admin = createAdminClient();
 
-  const { data: deliveries } = await (admin as any)
+  const { data: deliveries } = await admin
     .from("deliveries")
     .select(`
       id, delivery_date, status, total_value, notes,

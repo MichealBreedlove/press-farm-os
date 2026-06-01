@@ -74,13 +74,13 @@ export default async function LaborEfficiencyReportPage({ searchParams }: Props)
     dateTo = `${now.getFullYear()}-12-31`;
   }
 
-  let laborQ = (admin as any)
+  let laborQ = admin
     .from("labor_entries")
     .select("date, hours, hourly_rate, worker_name");
   if (dateFrom && dateTo) laborQ = laborQ.gte("date", dateFrom).lte("date", dateTo);
   const { data: labor } = await laborQ;
 
-  let deliveryQ = (admin as any)
+  let deliveryQ = admin
     .from("deliveries")
     .select("delivery_date, total_value, status");
   if (dateFrom && dateTo) {

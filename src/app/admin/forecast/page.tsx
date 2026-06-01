@@ -44,7 +44,7 @@ export default async function ForecastPage({
   const today = new Date().toISOString().split("T")[0]!;
   let targetDate: string = dateParam ?? "";
   if (!targetDate) {
-    const { data: nextDate } = await (admin as any)
+    const { data: nextDate } = await admin
       .from("delivery_dates")
       .select("date")
       .gte("date", today)
@@ -61,7 +61,7 @@ export default async function ForecastPage({
   cutoff.setDate(cutoff.getDate() - 56); // 8 weeks back
   const cutoffStr = cutoff.toISOString().split("T")[0];
 
-  const { data: deliveryItems } = await (admin as any)
+  const { data: deliveryItems } = await admin
     .from("delivery_items")
     .select(`
       quantity, unit,

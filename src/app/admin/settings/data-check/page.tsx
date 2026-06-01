@@ -38,22 +38,22 @@ export default async function DataCheckPage() {
     { data: expenseRange },
     { data: categories },
   ] = await Promise.all([
-    (admin as any).from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
-    (admin as any).from("items").select("*", { count: "exact", head: true }).eq("is_archived", true),
-    (admin as any).from("deliveries").select("*", { count: "exact", head: true }),
-    (admin as any).from("delivery_items").select("*", { count: "exact", head: true }),
-    (admin as any).from("farm_expenses").select("*", { count: "exact", head: true }),
-    (admin as any).from("orders").select("*", { count: "exact", head: true }),
-    (admin as any).from("order_items").select("*", { count: "exact", head: true }),
-    (admin as any).from("availability_items").select("*", { count: "exact", head: true }),
-    (admin as any).from("delivery_dates").select("*", { count: "exact", head: true }),
-    (admin as any).from("labor_entries").select("*", { count: "exact", head: true }),
-    (admin as any).from("farm_notes").select("*", { count: "exact", head: true }),
-    (admin as any).from("profiles").select("*", { count: "exact", head: true }),
-    (admin as any).from("restaurants").select("*", { count: "exact", head: true }),
-    (admin as any).from("deliveries").select("delivery_date").order("delivery_date", { ascending: true }).limit(1).single(),
-    (admin as any).from("farm_expenses").select("date").order("date", { ascending: true }).limit(1).single(),
-    (admin as any).from("items").select("category").then((r: any) => {
+    admin.from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
+    admin.from("items").select("*", { count: "exact", head: true }).eq("is_archived", true),
+    admin.from("deliveries").select("*", { count: "exact", head: true }),
+    admin.from("delivery_items").select("*", { count: "exact", head: true }),
+    admin.from("farm_expenses").select("*", { count: "exact", head: true }),
+    admin.from("orders").select("*", { count: "exact", head: true }),
+    admin.from("order_items").select("*", { count: "exact", head: true }),
+    admin.from("availability_items").select("*", { count: "exact", head: true }),
+    admin.from("delivery_dates").select("*", { count: "exact", head: true }),
+    admin.from("labor_entries").select("*", { count: "exact", head: true }),
+    admin.from("farm_notes").select("*", { count: "exact", head: true }),
+    admin.from("profiles").select("*", { count: "exact", head: true }),
+    admin.from("restaurants").select("*", { count: "exact", head: true }),
+    admin.from("deliveries").select("delivery_date").order("delivery_date", { ascending: true }).limit(1).single(),
+    admin.from("farm_expenses").select("date").order("date", { ascending: true }).limit(1).single(),
+    admin.from("items").select("category").then((r: any) => {
       const counts: Record<string, number> = {};
       for (const item of r.data ?? []) {
         counts[item.category] = (counts[item.category] ?? 0) + 1;
@@ -63,16 +63,16 @@ export default async function DataCheckPage() {
   ]);
 
   // Get latest delivery
-  const { data: latestDelivery } = await (admin as any)
+  const { data: latestDelivery } = await admin
     .from("deliveries").select("delivery_date").order("delivery_date", { ascending: false }).limit(1).single();
 
   // Get total delivery value
-  const { data: allDeliveries } = await (admin as any)
+  const { data: allDeliveries } = await admin
     .from("deliveries").select("total_value");
   const totalDeliveryValue = (allDeliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
 
   // Get total expenses
-  const { data: allExpenses } = await (admin as any)
+  const { data: allExpenses } = await admin
     .from("farm_expenses").select("amount");
   const totalExpenseValue = (allExpenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);
 

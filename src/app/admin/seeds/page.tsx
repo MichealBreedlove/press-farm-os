@@ -16,7 +16,7 @@ export default async function AdminSeedsPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { data: seedsRaw } = await (admin as any)
+  const { data: seedsRaw } = await admin
     .from("seeds_with_on_hand")
     .select("*, item:items(id, name, category)")
     .order("status", { ascending: true })

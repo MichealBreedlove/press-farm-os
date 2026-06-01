@@ -10,15 +10,15 @@ export default async function ItemsDataPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") redirect("/");
 
   // Headline counts so the page feels grounded
   const admin = createAdminClient();
   const [{ count: activeCount }, { count: archivedCount }] = await Promise.all([
-    (admin as any).from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
-    (admin as any).from("items").select("*", { count: "exact", head: true }).eq("is_archived", true),
+    admin.from("items").select("*", { count: "exact", head: true }).eq("is_archived", false),
+    admin.from("items").select("*", { count: "exact", head: true }).eq("is_archived", true),
   ]);
 
   return (

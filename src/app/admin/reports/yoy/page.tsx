@@ -36,8 +36,8 @@ export default async function YoYReportPage() {
 
   // Fetch all delivery and expense data
   const [{ data: deliveries }, { data: expenses }] = await Promise.all([
-    (admin as any).from("deliveries").select("delivery_date, total_value"),
-    (admin as any).from("farm_expenses").select("date, amount"),
+    admin.from("deliveries").select("delivery_date, total_value"),
+    admin.from("farm_expenses").select("date, amount"),
   ]);
 
   // Aggregate by year, then by month

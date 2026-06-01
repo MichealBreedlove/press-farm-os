@@ -24,7 +24,7 @@ export default async function ArchivedInboxPage() {
 
   const admin = createAdminClient();
 
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("inbound_messages")
     .select("id, from_email, from_name, subject, received_at")
     .eq("status", "archived")

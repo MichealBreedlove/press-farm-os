@@ -20,7 +20,7 @@ export default async function AdminDeliveryLogPage({
   const admin = createAdminClient();
 
   // Load restaurants
-  const { data: restaurants } = await (admin as any)
+  const { data: restaurants } = await admin
     .from("restaurants")
     .select("id, name")
     .order("name");
@@ -29,14 +29,14 @@ export default async function AdminDeliveryLogPage({
   // delivery rows that reference archived items can still resolve their
   // names. The DeliveryLogForm filters archived items out of the picker
   // so admins don't see them when adding new lines.
-  const { data: items } = await (admin as any)
+  const { data: items } = await admin
     .from("items")
     .select("id, name, category, unit_type, default_price, unit_prices, size, is_archived")
     .order("category")
     .order("name");
 
   // Load existing deliveries for this date (already logged)
-  const { data: existingDeliveries } = await (admin as any)
+  const { data: existingDeliveries } = await admin
     .from("deliveries")
     .select(`
       id, restaurant_id, status, notes, total_value,
@@ -48,7 +48,7 @@ export default async function AdminDeliveryLogPage({
 
   // Load fulfilled orders for this date (pre-populate source)
   // order_items references availability_items which references items, so we need to join through
-  const { data: rawOrders } = await (admin as any)
+  const { data: rawOrders } = await admin
     .from("orders")
     .select(`
       id, restaurant_id, status,

@@ -22,8 +22,8 @@ export default async function EditTaskPage({ params }: PageProps) {
   const admin = createAdminClient();
 
   const [{ data: taskRow }, { data: items }] = await Promise.all([
-    (admin as any).from("farm_tasks").select("*").eq("id", id).maybeSingle(),
-    (admin as any)
+    admin.from("farm_tasks").select("*").eq("id", id).maybeSingle(),
+    admin
       .from("items")
       .select("id, name")
       .eq("is_archived", false)

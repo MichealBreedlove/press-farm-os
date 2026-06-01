@@ -10,7 +10,7 @@ export default async function AdminNotesPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { data: notes } = await (admin as any)
+  const { data: notes } = await admin
     .from("farm_notes")
     .select("id, date, text, category")
     .order("date", { ascending: false });

@@ -10,18 +10,18 @@ export default async function ExpensesDataPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") redirect("/");
 
   const admin = createAdminClient();
   const [{ count: totalCount }, { data: dateRange }] = await Promise.all([
-    (admin as any).from("farm_expenses").select("*", { count: "exact", head: true }),
-    (admin as any).from("farm_expenses").select("date").order("date", { ascending: false }).limit(1),
+    admin.from("farm_expenses").select("*", { count: "exact", head: true }),
+    admin.from("farm_expenses").select("date").order("date", { ascending: false }).limit(1),
   ]);
 
   // Sum total amount (small dataset; fine to fetch and reduce)
-  const { data: amounts } = await (admin as any).from("farm_expenses").select("amount");
+  const { data: amounts } = await admin.from("farm_expenses").select("amount");
   const totalAmount = ((amounts ?? []) as Array<{ amount: number | string }>).reduce(
     (sum, r) => sum + (typeof r.amount === "number" ? r.amount : parseFloat(String(r.amount)) || 0),
     0,

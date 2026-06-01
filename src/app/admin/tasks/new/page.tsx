@@ -14,7 +14,7 @@ export default async function NewTaskPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { data: items } = await (admin as any)
+  const { data: items } = await admin
     .from("items")
     .select("id, name")
     .eq("is_archived", false)

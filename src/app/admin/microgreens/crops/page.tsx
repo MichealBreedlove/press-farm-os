@@ -15,7 +15,7 @@ function formatYield(crop: MicrogreenCrop): string {
 
 export default async function CropsListPage() {
   const admin = createAdminClient();
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("microgreen_crops")
     .select("*")
     .order("name");

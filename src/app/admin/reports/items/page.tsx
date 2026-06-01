@@ -53,7 +53,7 @@ export default async function ItemPerformancePage({
   const admin = createAdminClient();
 
   // Fetch delivery items with details
-  const { data: deliveryItems } = await (admin as any)
+  const { data: deliveryItems } = await admin
     .from("delivery_items")
     .select(`
       quantity, unit, unit_price, line_total,
@@ -102,7 +102,7 @@ export default async function ItemPerformancePage({
   const mostFrequent = [...allStats].sort((a, b) => b.deliveryCount - a.deliveryCount).slice(0, 10);
 
   // Dead stock: items in catalog but NOT in deliveries this window
-  const { data: allItems } = await (admin as any)
+  const { data: allItems } = await admin
     .from("items")
     .select("id, name, category")
     .eq("is_archived", false);

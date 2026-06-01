@@ -25,7 +25,7 @@ export default async function TasksPage() {
 
   // Tolerant fetches: migration 062 may not be applied yet. Each helper
   // already returns [] on error, so the page still renders.
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id;
 
   let today: FarmTask[] = [];
@@ -59,14 +59,14 @@ export default async function TasksPage() {
   const cropMap = new Map<string, string>();
 
   if (allItemIds.length > 0) {
-    const { data: items } = await (admin as any)
+    const { data: items } = await admin
       .from("items")
       .select("id, name")
       .in("id", allItemIds);
     for (const r of items ?? []) itemMap.set(r.id, r.name);
   }
   if (cropIds.size > 0) {
-    const { data: crops } = await (admin as any)
+    const { data: crops } = await admin
       .from("microgreen_crops")
       .select("id, name")
       .in("id", Array.from(cropIds));

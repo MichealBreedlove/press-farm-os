@@ -9,7 +9,7 @@ export default async function CalendarPage() {
   const today = new Date();
   const back = new Date(today.getTime() - 45 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const fwd  = new Date(today.getTime() + 60 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("microgreen_batches")
     .select(`
       *,

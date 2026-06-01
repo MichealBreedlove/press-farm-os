@@ -13,7 +13,7 @@ export default async function CatalogAuditPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const { count: activeCount } = await (admin as any)
+  const { count: activeCount } = await admin
     .from("items")
     .select("id", { count: "exact", head: true })
     .eq("is_archived", false);

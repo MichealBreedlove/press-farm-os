@@ -12,7 +12,7 @@ function formatWhen(iso: string): string {
 
 export default async function HarvestLogPage() {
   const admin = createAdminClient();
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("microgreen_harvests")
     .select("*, tray:microgreen_trays(tray_label, batch:microgreen_batches(crop:microgreen_crops(name))), delivery:deliveries(delivery_date)")
     .order("harvested_at", { ascending: false }).limit(200);

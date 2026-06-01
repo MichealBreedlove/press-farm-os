@@ -10,14 +10,14 @@ export default async function DeliveriesDataPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await (supabase as any)
+  const { data: profile } = await supabase
     .from("profiles").select("role").eq("id", user.id).single();
   if ((profile as any)?.role !== "admin") redirect("/");
 
   const admin = createAdminClient();
-  const { count: deliveryCount } = await (admin as any)
+  const { count: deliveryCount } = await admin
     .from("deliveries").select("*", { count: "exact", head: true });
-  const { count: lineCount } = await (admin as any)
+  const { count: lineCount } = await admin
     .from("delivery_items").select("*", { count: "exact", head: true });
 
   return (

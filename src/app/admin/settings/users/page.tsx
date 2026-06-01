@@ -13,7 +13,7 @@ export default async function AdminUsersPage() {
   const admin = createAdminClient();
 
   const [{ data: profiles }, { data: authData }, { data: restaurantsRaw }] = await Promise.all([
-    (admin as any)
+    admin
       .from("profiles")
       .select("id, full_name, role, is_active, created_at, restaurant_users(restaurant_id, restaurants(name))")
       .order("created_at", { ascending: true }),
@@ -21,7 +21,7 @@ export default async function AdminUsersPage() {
     // Hide the legacy "Events" pseudo-restaurant from the invite picker.
     // Events are now a tag on items (migration 023); chefs invited to a real
     // restaurant automatically see event items in their order form.
-    (admin as any)
+    admin
       .from("restaurants")
       .select("id, name")
       .not("name", "ilike", "%event%")

@@ -43,7 +43,7 @@ export default async function AdminDeliveriesPage({
 
   // Upcoming delivery dates (for "Log Delivery" links)
   const today = new Date().toISOString().slice(0, 10);
-  const { data: upcomingDates } = await (admin as any)
+  const { data: upcomingDates } = await admin
     .from("delivery_dates")
     .select("date, ordering_open")
     .gte("date", today)
@@ -52,7 +52,7 @@ export default async function AdminDeliveriesPage({
 
   // All logged deliveries, most recent first
   // If a month filter is provided, only return that month
-  let deliveriesQuery = (admin as any)
+  let deliveriesQuery = admin
     .from("deliveries")
     .select(`
       id, delivery_date, status, total_value,

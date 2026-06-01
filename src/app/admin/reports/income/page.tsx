@@ -62,7 +62,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
 
   if (!yearParam || !quarterParam) {
     // Find most recent quarter with delivery data
-    const { data: latestDelivery } = await (admin as any)
+    const { data: latestDelivery } = await admin
       .from("deliveries")
       .select("delivery_date")
       .order("delivery_date", { ascending: false })
@@ -86,12 +86,12 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const end = `${year}-${String(endMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const [{ data: deliveries }, { data: expenses }] = await Promise.all([
-    (admin as any)
+    admin
       .from("deliveries")
       .select("delivery_date, total_value, restaurants(name)")
       .gte("delivery_date", start)
       .lte("delivery_date", end),
-    (admin as any)
+    admin
       .from("farm_expenses")
       .select("date, amount, category")
       .gte("date", start)
