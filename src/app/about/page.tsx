@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 import { RestaurantCard } from "@/components/shared/RestaurantCard";
+import { ContactForm } from "./ContactForm";
 
 export const metadata: Metadata = {
   title: "About",
@@ -420,14 +421,9 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <a
-                href="mailto:PressFarm@PressNapaValley.com"
-                className="login-cta inline-flex items-center"
-                style={{ background: "#faf7f0", color: "#0D2A1E" }}
-              >
-                Send us a note
-              </a>
+            <ContactForm />
+
+            <div className="pt-6 text-center">
               <Link href="/login" className="text-sm text-farm-cream/80 hover:text-farm-cream tracking-wide">
                 Chef sign in →
               </Link>
