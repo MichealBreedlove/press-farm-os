@@ -137,6 +137,24 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
     }
   }
 
+  /**
+   * Pick a shortage reason. On a not-yet-shorted line a reason signals intent
+   * to short, so if the picked qty is still the full requested amount we drop
+   * it to 0 — that way a quick "tap item → tap reason → Save" records a full
+   * shortage instead of silently clearing (fulfilled === requested reads as
+   * "fully picked"). A qty the admin already lowered for a partial shortage is
+   * left untouched.
+   */
+  function selectReason(r: string) {
+    setReason(r);
+    if (!isShorted) {
+      const current = parseFloat(fulfilledQty);
+      if (!isFinite(current) || current >= orderItem.quantityRequested) {
+        setFulfilledQty("0");
+      }
+    }
+  }
+
   function handleSave() {
     const fulfilled = parseFloat(fulfilledQty);
     if (!isFinite(fulfilled) || fulfilled < 0) {
@@ -144,7 +162,16 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
       return;
     }
     if (fulfilled >= orderItem.quantityRequested) {
-      // Not a shortage — clear instead
+      // Picked qty meets/exceeds the request, so there's no shortage to record.
+      if (reason.trim()) {
+        // A reason was given — the admin means to short this line but hasn't
+        // lowered the quantity. Guide them rather than silently clearing.
+        setError(
+          `Lower the picked quantity below ${formatQty(orderItem.quantityRequested)} to record this shortage.`
+        );
+        return;
+      }
+      // No reason + full qty — nothing to short; clear any existing shortage.
       clearShortage();
       return;
     }
@@ -290,7 +317,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
               <button
                 key={r}
                 type="button"
-                onClick={() => setReason(r)}
+                onClick={() => selectReason(r)}
                 className={`text-xs min-h-[32px] px-3 py-1.5 rounded-full transition-colors ${
                   reason === r
                     ? "bg-orange-500 text-white"
