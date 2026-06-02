@@ -17,21 +17,40 @@ import type { UnitType } from "@/types";
 export default function OrderReviewPage() {
   const router = useRouter();
   const [orderData, setOrderData] = useState<OrderFormData | null>(null);
+  const [expired, setExpired] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("press_farm_order");
     if (!raw) {
-      router.replace("/order");
+      setExpired(true);
       return;
     }
     try {
       setOrderData(JSON.parse(raw));
     } catch {
-      router.replace("/order");
+      setExpired(true);
     }
-  }, [router]);
+  }, []);
+
+  if (expired) {
+    return (
+      <main className="min-h-screen bg-farm-cream flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <p className="section-eyebrow text-farm-muted mb-2">Order session expired</p>
+          <h1 className="font-display text-2xl text-farm-dark mb-3">Nothing to review yet</h1>
+          <p className="text-sm text-farm-muted mb-6 leading-relaxed">
+            Your order wasn&apos;t carried over — this can happen after a reload or
+            in a new tab. Head back and add your items again.
+          </p>
+          <button onClick={() => router.replace("/order")} className="btn-primary px-6 py-3 text-sm">
+            Back to order form
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (!orderData) {
     return (
@@ -137,7 +156,17 @@ export default function OrderReviewPage() {
                       <p className="text-sm font-medium text-farm-dark truncate">{item.itemName}</p>
                       <p className="text-xs text-farm-muted mt-0.5">
                         {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
+                        {item.sizeLabel ? ` · ${item.sizeLabel}` : ""}
                       </p>
+                      {item.colorKey && (
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {item.colorKey.split(",").map((c) => c.trim()).filter(Boolean).map((c) => (
+                            <span key={c} className="text-[10px] bg-pf-master-violet/[0.08] text-pf-master-violet px-2 py-0.5 rounded-full">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="text-sm font-semibold text-farm-dark">

@@ -23,6 +23,16 @@ export function SignupForm({ restaurants }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Live password validation — surface mismatches as the chef types rather
+  // than only on submit.
+  const passwordTooShort = password.length > 0 && password.length < 8;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const canSubmit =
+    !loading &&
+    restaurants.length > 0 &&
+    password.length >= 8 &&
+    password === confirmPassword;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -122,6 +132,7 @@ export function SignupForm({ restaurants }: Props) {
                 <select
                   id="restaurant"
                   required
+                  aria-label="Select your restaurant"
                   value={restaurantId}
                   onChange={(e) => setRestaurantId(e.target.value)}
                   className="login-input"
@@ -150,7 +161,11 @@ export function SignupForm({ restaurants }: Props) {
                 placeholder="At least 8 characters"
                 className="login-input"
                 autoComplete="new-password"
+                aria-invalid={passwordTooShort}
               />
+              {passwordTooShort && (
+                <p className="mt-1.5 text-[11px] text-amber-700">Use at least 8 characters.</p>
+              )}
             </div>
 
             <div>
@@ -165,7 +180,14 @@ export function SignupForm({ restaurants }: Props) {
                 placeholder="Re-enter password"
                 className="login-input"
                 autoComplete="new-password"
+                aria-invalid={passwordsMismatch}
               />
+              {passwordsMismatch && (
+                <p className="mt-1.5 text-[11px] text-amber-700">Passwords don&apos;t match yet.</p>
+              )}
+              {!passwordsMismatch && confirmPassword.length > 0 && password.length >= 8 && (
+                <p className="mt-1.5 text-[11px] text-farm-green">Passwords match.</p>
+              )}
             </div>
 
             {error && (
@@ -176,7 +198,7 @@ export function SignupForm({ restaurants }: Props) {
 
             <button
               type="submit"
-              disabled={loading || restaurants.length === 0}
+              disabled={!canSubmit}
               className="login-cta"
             >
               {loading ? "Creating account…" : "Create Account"}

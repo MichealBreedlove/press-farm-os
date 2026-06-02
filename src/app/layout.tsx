@@ -79,10 +79,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/assets/pressfarm/logo/png/pressfarm-mandala-only.png",
-        width: 3000,
-        height: 3000,
-        alt: "Press Farm — botanical mandala",
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "Press Farm — Cultivated with Chefs",
       },
     ],
   },
@@ -91,7 +91,7 @@ export const metadata: Metadata = {
     title: "Press Farm — Cultivated with Chefs",
     description:
       "Edible flowers + seasonal produce, cultivated with Napa Valley chefs. Yountville, California.",
-    images: ["/assets/pressfarm/logo/png/pressfarm-mandala-only.png"],
+    images: ["/og-default.png"],
   },
   formatDetection: {
     telephone: false,
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale — pinch-zoom must stay enabled (WCAG 2.1 SC 1.4.4).
   themeColor: "#00774A",
 };
 

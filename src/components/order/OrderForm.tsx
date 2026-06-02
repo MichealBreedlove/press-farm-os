@@ -352,6 +352,7 @@ export function OrderForm({
           <input
             type="search"
             placeholder="Search items..."
+            aria-label="Search items"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-farm-dark/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
