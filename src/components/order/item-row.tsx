@@ -71,7 +71,7 @@ function ColorPicker({
   label?: string;
 }) {
   return (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className="flex items-center gap-1 flex-wrap" role="group" aria-label={`${label} (multi-select)`}>
       <span className="text-[10px] text-farm-muted mr-0.5">
         {label}{selected.length > 0 ? ` (${selected.length})` : ""}:
       </span>
@@ -334,7 +334,7 @@ export function ItemRow({
             );
           })}
           {totalQty === 0 && (
-            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0">
+            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
               Hide options
             </button>
           )}
@@ -367,7 +367,7 @@ export function ItemRow({
             );
           })}
           {totalQty === 0 && (
-            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-0">
+            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
               Hide sizes
             </button>
           )}

@@ -11,6 +11,9 @@ export function ChefNav() {
   const router = useRouter();
 
   async function handleSignOut() {
+    // Bottom-nav placement makes accidental taps easy — confirm first so a
+    // mis-scroll doesn't drop a chef out of an in-progress order.
+    if (!window.confirm("Sign out of Press Farm?")) return;
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
