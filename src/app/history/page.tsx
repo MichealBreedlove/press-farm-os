@@ -22,13 +22,26 @@ function hashOrderId(id: string): number {
   return Math.abs(h);
 }
 
+/** Orders shown per page in the history list. */
+const PAGE_SIZE = 50;
+
 /**
  * /history — Chef order history list (Server Component)
  *
- * Fetches all past orders for the chef's restaurant, most recent first.
+ * Fetches the chef's past orders, most recent first, paginated so the list
+ * stays bounded as order volume grows.
  */
-export default async function HistoryPage() {
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams: { page?: string };
+}) {
   const supabase = await createClient();
+
+  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  // Fetch one extra row to detect whether a next page exists without a count.
+  const to = from + PAGE_SIZE;
 
   const {
     data: { user },
@@ -65,7 +78,7 @@ export default async function HistoryPage() {
   // Fetch all orders with item count + shortage flag so the list row
   // can surface a "1 shortage" caption inline — chefs can spot problem
   // orders without opening each one.
-  const { data: orders } = await supabase
+  const { data: rows } = await supabase
     .from("orders")
     .select(`
       id,
@@ -81,7 +94,11 @@ export default async function HistoryPage() {
     `)
     .eq("restaurant_id", restaurant.id)
     .order("delivery_date", { ascending: false })
-    .limit(200) as any;
+    .range(from, to) as any;
+
+  const hasNext = (rows?.length ?? 0) > PAGE_SIZE;
+  const orders = hasNext ? rows.slice(0, PAGE_SIZE) : rows;
+  const hasPrev = page > 1;
 
   return (
     <main className="min-h-screen bg-farm-cream pb-20">
@@ -164,6 +181,32 @@ export default async function HistoryPage() {
               );
             })}
           </ul>
+        )}
+
+        {(hasPrev || hasNext) && (
+          <nav className="flex items-center justify-between gap-3 mt-5" aria-label="Order history pages">
+            {hasPrev ? (
+              <Link
+                href={`/history?page=${page - 1}`}
+                className="btn-ghost bg-gray-50 hover:bg-gray-100 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
+              >
+                ‹ Newer
+              </Link>
+            ) : (
+              <span />
+            )}
+            <span className="text-xs text-farm-muted">Page {page}</span>
+            {hasNext ? (
+              <Link
+                href={`/history?page=${page + 1}`}
+                className="btn-ghost bg-gray-50 hover:bg-gray-100 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
+              >
+                Older ›
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
         )}
       </div>
     </main>
