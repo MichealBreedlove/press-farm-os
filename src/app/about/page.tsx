@@ -21,7 +21,6 @@ export const metadata: Metadata = {
 
 // Featured specimens — plated, numbered, with full botanical detail.
 const FEATURED_FLOWERS = [
-  { src: "/assets/pressfarm/flowers/squash-blossom.png", name: "Squash Blossom", latin: "Cucurbita pepo", family: "Cucurbitaceae", note: "Signature crop" },
   { src: "/assets/pressfarm/flowers/nasturtium.png", name: "Nasturtium", latin: "Tropaeolum majus", family: "Tropaeolaceae", note: "Peppery petal" },
   { src: "/assets/pressfarm/flowers/borage.png", name: "Borage", latin: "Borago officinalis", family: "Boraginaceae", note: "Cucumber note" },
   { src: "/assets/pressfarm/flowers/calendula.png", name: "Calendula", latin: "Calendula officinalis", family: "Asteraceae", note: "Tasting-menu petal" },
@@ -152,7 +151,6 @@ export default function AboutPage() {
               {/* Top register line */}
               <div className="flex items-center justify-between text-[10px] tracking-[0.24em] uppercase text-pf-master-gold mb-10" style={eyebrowFont}>
                 <span>Press Farm</span>
-                <span className="hidden sm:inline">Herbarium</span>
                 <span>Est. 2024</span>
               </div>
 
@@ -247,7 +245,7 @@ export default function AboutPage() {
               An edible flower index
             </h2>
             <p className="text-sm text-farm-muted mt-3 max-w-md mx-auto">
-              Twenty-plus species across the season — four plated below,
+              Twenty-plus species across the season — three plated below,
               the full register follows.
             </p>
           </div>
@@ -303,7 +301,7 @@ export default function AboutPage() {
               {SUPPORTING_FLOWERS.map((f, i) => (
                 <li key={f.name} className="group flex items-center gap-3 py-2.5 border-b border-pf-master-gold/12">
                   <span className="text-[10px] tabular-nums text-pf-master-gold/70 w-6 shrink-0" style={eyebrowFont}>
-                    {String(i + 5).padStart(2, "0")}
+                    {String(i + 4).padStart(2, "0")}
                   </span>
                   <div className="relative w-8 h-8 shrink-0 transition-transform group-hover:scale-110">
                     <Image src={f.src} alt={f.name} fill sizes="32px" className="object-contain" />
