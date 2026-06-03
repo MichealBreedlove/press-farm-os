@@ -82,6 +82,10 @@ export default async function AdminDeliveriesPage({
   );
   const allFinalized = monthDeliveries.length > 0 &&
     monthDeliveries.every((d: any) => d.status === "finalized");
+  // Logged deliveries still at $0 (no items) — warn before the month is locked.
+  const monthEmptyCount = monthDeliveries.filter(
+    (d: any) => d.status === "logged" && (d.total_value ?? 0) === 0
+  ).length;
 
   // Group by YYYY-MM
   const grouped: Record<string, any[]> = {};
@@ -136,7 +140,7 @@ export default async function AdminDeliveriesPage({
               {monthDeliveries.length} delivery{monthDeliveries.length !== 1 ? "s" : ""} logged
             </p>
             {monthDeliveries.length > 0 && !allFinalized && (
-              <FinalizeButton month={currentMonth} />
+              <FinalizeButton month={currentMonth} emptyCount={monthEmptyCount} />
             )}
             {allFinalized && (
               <span className="badge-green">Finalized</span>

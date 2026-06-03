@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function FinalizeButton({ month }: { month: string }) {
+export default function FinalizeButton({
+  month,
+  emptyCount = 0,
+}: {
+  month: string;
+  /** Logged deliveries in this month that are still $0/itemless — finalizing
+   *  locks them in and silently under-counts revenue, so we warn first. */
+  emptyCount?: number;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -13,7 +21,13 @@ export default function FinalizeButton({ month }: { month: string }) {
       month: "long",
       year: "numeric",
     });
-    if (!confirm(`Finalize all deliveries for ${label}? This cannot be undone.`)) return;
+    const warning =
+      emptyCount > 0
+        ? `Heads up: ${emptyCount} ${
+            emptyCount === 1 ? "delivery has" : "deliveries have"
+          } no items logged and will be locked in at $0.\n\n`
+        : "";
+    if (!confirm(`${warning}Finalize all deliveries for ${label}? This cannot be undone.`)) return;
 
     setLoading(true);
     setError(null);
