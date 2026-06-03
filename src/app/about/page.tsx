@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { PressFarmLogo } from "@/components/shared/PressFarmLogo";
 import { RestaurantCard } from "@/components/shared/RestaurantCard";
 import { ContactForm } from "./ContactForm";
 
@@ -126,7 +125,14 @@ export default function AboutPage() {
       <header className="sticky top-0 z-30 bg-farm-cream/90 backdrop-blur border-b border-pf-master-gold/15">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/about" className="flex items-center" aria-label="Press Farm — home">
-            <PressFarmLogo size="icon" />
+            <Image
+              src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png"
+              alt="Press Farm"
+              width={36}
+              height={36}
+              className="object-contain"
+              priority
+            />
           </Link>
           <Link
             href="/login"
@@ -152,7 +158,6 @@ export default function AboutPage() {
               {/* Top register line */}
               <div className="flex items-center justify-between text-[10px] tracking-[0.24em] uppercase text-pf-master-gold mb-10" style={eyebrowFont}>
                 <span>Press Farm</span>
-                <span className="hidden sm:inline">Herbarium</span>
                 <span>Est. 2024</span>
               </div>
 
