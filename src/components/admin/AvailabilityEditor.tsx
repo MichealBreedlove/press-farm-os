@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback, useMemo } from "react";
+import { useState, useTransition, useCallback, useMemo, useEffect, useRef } from "react";
 import type { Item, AvailabilityItem, Restaurant } from "@/types";
 import type { AvailabilityStatus, ItemCategory, UnitType } from "@/types/database";
 import { CATEGORY_ORDER, CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
@@ -148,10 +148,69 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   const [isDuplicating, startDuplicating] = useTransition();
   const [search, setSearch] = useState("");
 
-  const filteredItems = search.trim()
-    ? items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase().trim()))
-    : items;
-  const isSearching = search.trim().length > 0;
+  // ── Restaurant + status filter ──
+  // Narrows the visible item list to one restaurant's column, optionally by that
+  // restaurant's status. filterRestaurantId === null means "All" (filter off);
+  // filterStatus === "any" means no status constraint.
+  const [filterRestaurantId, setFilterRestaurantId] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<AvailabilityStatus | "any">("any");
+
+  // Always-current statuses, read inside the snapshot effect WITHOUT being a
+  // reactive dependency — so editing a chip while filtered doesn't re-run it.
+  const statusesRef = useRef(statuses);
+  statusesRef.current = statuses;
+
+  // Snapshot of item IDs matching the active filter. null = no narrowing. Recomputed
+  // only when the filter *selection* changes (not on every status edit), so rows
+  // don't vanish out from under you while you cycle a chip through its states.
+  const [matchedIds, setMatchedIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (filterRestaurantId === null || filterStatus === "any") {
+      setMatchedIds(null);
+      return;
+    }
+    const map = statusesRef.current[filterRestaurantId] ?? {};
+    const ids = new Set<string>();
+    for (const item of items) {
+      if ((map[item.id] ?? "unavailable") === filterStatus) ids.add(item.id);
+    }
+    setMatchedIds(ids);
+  }, [filterRestaurantId, filterStatus, items]);
+
+  // Selecting a restaurant defaults status to "Available" (the common
+  // "what did I turn on" view); returning to All clears the status constraint.
+  const selectRestaurant = useCallback(
+    (id: string | null) => {
+      if (id === null) {
+        setFilterRestaurantId(null);
+        setFilterStatus("any");
+        return;
+      }
+      if (filterRestaurantId === null) setFilterStatus("available");
+      setFilterRestaurantId(id);
+    },
+    [filterRestaurantId],
+  );
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setFilterRestaurantId(null);
+    setFilterStatus("any");
+  }, []);
+
+  const isFiltering = filterRestaurantId !== null;
+  const filterRestaurantName =
+    orderedRestaurants.find((r) => r.id === filterRestaurantId)?.name ?? "";
+
+  const q = search.trim().toLowerCase();
+  const filteredItems = items.filter((i) => {
+    if (matchedIds !== null && !matchedIds.has(i.id)) return false;
+    if (q && !i.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const isSearching = q.length > 0;
+  const isNarrowed = isSearching || isFiltering;
 
   // ── State updates ──
 
@@ -330,11 +389,85 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             </button>
           )}
         </div>
-        {isSearching && (
-          <p className="text-xs text-farm-muted mt-1.5 px-1">
-            {filteredItems.length} match{filteredItems.length !== 1 ? "es" : ""}
-          </p>
+        {/* Filter: pick a restaurant, then optionally narrow by that restaurant's status */}
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => selectRestaurant(null)}
+            aria-pressed={!isFiltering}
+            className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[40px] ${
+              !isFiltering
+                ? "bg-farm-dark text-white border-farm-dark"
+                : "bg-white text-farm-dark/70 border-farm-dark/15"
+            }`}
+          >
+            All
+          </button>
+          {orderedRestaurants.map((r) => {
+            const active = filterRestaurantId === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => selectRestaurant(r.id)}
+                aria-pressed={active}
+                className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[40px] ${
+                  active
+                    ? "bg-farm-green text-white border-farm-green"
+                    : "bg-white text-farm-dark/70 border-farm-dark/15"
+                }`}
+              >
+                {r.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {isFiltering && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-farm-muted mr-0.5">
+              Status
+            </span>
+            {(["any", "available", "limited", "unavailable"] as const).map((st) => {
+              const active = filterStatus === st;
+              let activeCls = "bg-farm-dark text-white border-farm-dark";
+              if (st === "available") activeCls = "bg-farm-green text-white border-farm-green";
+              else if (st === "limited") activeCls = "bg-amber-500 text-white border-amber-500";
+              else if (st === "unavailable") activeCls = "bg-gray-500 text-white border-gray-500";
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setFilterStatus(st)}
+                  aria-pressed={active}
+                  className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[34px] ${
+                    active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
+                  }`}
+                >
+                  {st === "any" ? "Any" : `${STATUS_ICON[st]} ${STATUS_LABELS[st]}`}
+                </button>
+              );
+            })}
+          </div>
         )}
+
+        {isNarrowed && (
+          <div className="mt-2 flex items-center justify-between px-1">
+            <p className="text-xs text-farm-muted">
+              {filteredItems.length} of {items.length}
+              {isFiltering && ` · ${filterRestaurantName}`}
+              {isFiltering && filterStatus !== "any" && ` · ${STATUS_LABELS[filterStatus]}`}
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs font-medium text-farm-green"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         <p className="text-[11px] text-farm-muted mt-2 leading-snug">
           Tap a restaurant chip to cycle <span className="font-semibold text-farm-green">✓ Available</span>
           {" → "}
@@ -364,6 +497,18 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
       {/* Item list */}
       <div className="pb-4">
+        {filteredItems.length === 0 && (
+          <div className="px-4 py-12 text-center">
+            <p className="text-sm text-farm-muted">No items match this filter.</p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-2 text-sm font-medium text-farm-green"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
         {CATEGORY_ORDER.map((category) => {
           const catItems = itemsByCategory[category];
           if (!catItems?.length) return null;
