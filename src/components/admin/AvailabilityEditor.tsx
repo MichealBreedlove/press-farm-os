@@ -149,9 +149,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   const [search, setSearch] = useState("");
 
   // ── Restaurant + status filter ──
-  // Narrows the visible item list to one restaurant's column, optionally by that
-  // restaurant's status. filterRestaurantId === null means "All" (filter off);
-  // filterStatus === "any" means no status constraint.
+  // Two independent dimensions. filterRestaurantId === null means "All restaurants"
+  // (no restaurant constraint); filterStatus === "any" means no status constraint.
+  // With "All" + a status, an item matches if ANY restaurant has that status.
   const [filterRestaurantId, setFilterRestaurantId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<AvailabilityStatus | "any">("any");
 
@@ -166,32 +166,39 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   const [matchedIds, setMatchedIds] = useState<Set<string> | null>(null);
 
   useEffect(() => {
-    if (filterRestaurantId === null || filterStatus === "any") {
+    if (filterStatus === "any") {
       setMatchedIds(null);
       return;
     }
-    const map = statusesRef.current[filterRestaurantId] ?? {};
+    const snap = statusesRef.current;
     const ids = new Set<string>();
-    for (const item of items) {
-      if ((map[item.id] ?? "unavailable") === filterStatus) ids.add(item.id);
+    if (filterRestaurantId === null) {
+      // "All restaurants": match if ANY restaurant has this status.
+      for (const item of items) {
+        for (const r of orderedRestaurants) {
+          if ((snap[r.id]?.[item.id] ?? "unavailable") === filterStatus) {
+            ids.add(item.id);
+            break;
+          }
+        }
+      }
+    } else {
+      const map = snap[filterRestaurantId] ?? {};
+      for (const item of items) {
+        if ((map[item.id] ?? "unavailable") === filterStatus) ids.add(item.id);
+      }
     }
     setMatchedIds(ids);
-  }, [filterRestaurantId, filterStatus, items]);
+  }, [filterRestaurantId, filterStatus, items, orderedRestaurants]);
 
-  // Selecting a restaurant defaults status to "Available" (the common
-  // "what did I turn on" view); returning to All clears the status constraint.
-  const selectRestaurant = useCallback(
-    (id: string | null) => {
-      if (id === null) {
-        setFilterRestaurantId(null);
-        setFilterStatus("any");
-        return;
-      }
-      if (filterRestaurantId === null) setFilterStatus("available");
-      setFilterRestaurantId(id);
-    },
-    [filterRestaurantId],
-  );
+  // Picking a restaurant with no status lens chosen yet defaults to "Available"
+  // (the common "what did I turn on" view); otherwise the current status lens is
+  // kept. "All" leaves the status lens untouched, so "All + Limited" (everything
+  // limited anywhere) stays reachable.
+  const selectRestaurant = useCallback((id: string | null) => {
+    setFilterRestaurantId(id);
+    if (id !== null) setFilterStatus((s) => (s === "any" ? "available" : s));
+  }, []);
 
   const clearFilters = useCallback(() => {
     setSearch("");
@@ -199,7 +206,8 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     setFilterStatus("any");
   }, []);
 
-  const isFiltering = filterRestaurantId !== null;
+  const restaurantSelected = filterRestaurantId !== null;
+  const statusActive = filterStatus !== "any";
   const filterRestaurantName =
     orderedRestaurants.find((r) => r.id === filterRestaurantId)?.name ?? "";
 
@@ -210,7 +218,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     return true;
   });
   const isSearching = q.length > 0;
-  const isNarrowed = isSearching || isFiltering;
+  const isNarrowed = isSearching || statusActive || restaurantSelected;
 
   // ── State updates ──
 
@@ -267,12 +275,20 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     [],
   );
 
-  function markAll(status: AvailabilityStatus) {
+  // Bulk-set status for the items currently shown by the filter/search. Scope:
+  // when a restaurant is selected, only that restaurant changes; otherwise all
+  // restaurants change (always limited to the shown items).
+  function bulkSetStatus(status: AvailabilityStatus) {
+    const shownIds = filteredItems.map((i) => i.id);
+    const targetRestaurantIds =
+      filterRestaurantId !== null
+        ? [filterRestaurantId]
+        : orderedRestaurants.map((r) => r.id);
     setStatuses((prev) => {
-      const next: RestaurantStatuses = {};
-      for (const [rid, map] of Object.entries(prev)) {
-        const updated: StatusMap = {};
-        for (const itemId of Object.keys(map)) updated[itemId] = status;
+      const next: RestaurantStatuses = { ...prev };
+      for (const rid of targetRestaurantIds) {
+        const updated: StatusMap = { ...(prev[rid] ?? {}) };
+        for (const id of shownIds) updated[id] = status;
         next[rid] = updated;
       }
       return next;
@@ -394,9 +410,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
           <button
             type="button"
             onClick={() => selectRestaurant(null)}
-            aria-pressed={!isFiltering}
+            aria-pressed={!restaurantSelected}
             className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[40px] ${
-              !isFiltering
+              !restaurantSelected
                 ? "bg-farm-dark text-white border-farm-dark"
                 : "bg-white text-farm-dark/70 border-farm-dark/15"
             }`}
@@ -423,40 +439,42 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
           })}
         </div>
 
-        {isFiltering && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-farm-muted mr-0.5">
-              Status
-            </span>
-            {(["any", "available", "limited", "unavailable"] as const).map((st) => {
-              const active = filterStatus === st;
-              let activeCls = "bg-farm-dark text-white border-farm-dark";
-              if (st === "available") activeCls = "bg-farm-green text-white border-farm-green";
-              else if (st === "limited") activeCls = "bg-amber-500 text-white border-amber-500";
-              else if (st === "unavailable") activeCls = "bg-gray-500 text-white border-gray-500";
-              return (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setFilterStatus(st)}
-                  aria-pressed={active}
-                  className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[34px] ${
-                    active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
-                  }`}
-                >
-                  {st === "any" ? "Any" : `${STATUS_ICON[st]} ${STATUS_LABELS[st]}`}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-farm-muted mr-0.5">
+            Status
+          </span>
+          {(["any", "available", "limited", "unavailable"] as const).map((st) => {
+            const active = filterStatus === st;
+            let activeCls = "bg-farm-dark text-white border-farm-dark";
+            if (st === "available") activeCls = "bg-farm-green text-white border-farm-green";
+            else if (st === "limited") activeCls = "bg-amber-500 text-white border-amber-500";
+            else if (st === "unavailable") activeCls = "bg-gray-500 text-white border-gray-500";
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setFilterStatus(st)}
+                aria-pressed={active}
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[34px] ${
+                  active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
+                }`}
+              >
+                {st === "any" ? "Any" : `${STATUS_ICON[st]} ${STATUS_LABELS[st]}`}
+              </button>
+            );
+          })}
+        </div>
 
         {isNarrowed && (
           <div className="mt-2 flex items-center justify-between px-1">
             <p className="text-xs text-farm-muted">
               {filteredItems.length} of {items.length}
-              {isFiltering && ` · ${filterRestaurantName}`}
-              {isFiltering && filterStatus !== "any" && ` · ${STATUS_LABELS[filterStatus]}`}
+              {restaurantSelected
+                ? ` · ${filterRestaurantName}`
+                : statusActive
+                  ? " · Any restaurant"
+                  : ""}
+              {statusActive && ` · ${STATUS_LABELS[filterStatus]}`}
             </p>
             <button
               type="button"
@@ -477,22 +495,30 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
         </p>
       </div>
 
-      {/* Bulk actions */}
-      <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/10 flex gap-2">
-        <button
-          type="button"
-          onClick={() => markAll("available")}
-          className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold"
-        >
-          Mark All Available
-        </button>
-        <button
-          type="button"
-          onClick={() => markAll("unavailable")}
-          className="flex-1 py-2 rounded-lg bg-gray-200 text-farm-dark/80 text-xs font-semibold"
-        >
-          Mark All Unavailable
-        </button>
+      {/* Bulk actions — scoped to the shown items (and the selected restaurant, if any) */}
+      <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/10">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => bulkSetStatus("available")}
+            className="flex-1 py-2 rounded-lg bg-farm-green-light text-farm-green text-xs font-semibold"
+          >
+            Mark {isNarrowed ? "Shown" : "All"} Available
+          </button>
+          <button
+            type="button"
+            onClick={() => bulkSetStatus("unavailable")}
+            className="flex-1 py-2 rounded-lg bg-gray-200 text-farm-dark/80 text-xs font-semibold"
+          >
+            Mark {isNarrowed ? "Shown" : "All"} Unavailable
+          </button>
+        </div>
+        {isNarrowed && (
+          <p className="text-[10px] text-farm-muted mt-1.5 px-0.5">
+            Affects the {filteredItems.length} shown item{filteredItems.length !== 1 ? "s" : ""}
+            {restaurantSelected ? ` · ${filterRestaurantName} only` : " · all restaurants"}.
+          </p>
+        )}
       </div>
 
       {/* Item list */}
