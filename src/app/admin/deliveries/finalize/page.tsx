@@ -62,6 +62,10 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
   const allFinalized = rows.length > 0 && logged.length === 0;
   const grandTotal = rows.reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
   const loggedTotal = logged.reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
+  // Logged deliveries still sitting at $0 — almost always an un-logged
+  // delivery (items never entered). Finalizing locks them in and silently
+  // under-counts the month, so surface them before the irreversible step.
+  const emptyLogged = logged.filter((d: any) => (d.total_value ?? 0) === 0);
 
   return (
     <main className="pb-24">
@@ -115,10 +119,35 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
             {allFinalized ? (
               <span className="text-xs bg-white/20 px-2 py-1 rounded-full">All Finalized</span>
             ) : logged.length > 0 ? (
-              <FinalizeButton month={currentMonth} />
+              <FinalizeButton month={currentMonth} emptyCount={emptyLogged.length} />
             ) : null}
           </div>
         </div>
+
+        {/* Empty-delivery guard — don't lock in $0 by accident */}
+        {emptyLogged.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <p className="text-sm font-medium text-amber-800">
+              {emptyLogged.length} {emptyLogged.length === 1 ? "delivery has" : "deliveries have"} no
+              items — finalizing locks {emptyLogged.length === 1 ? "it" : "them"} in at $0
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Log {emptyLogged.length === 1 ? "it" : "them"} first, or the month under-counts revenue.
+            </p>
+            <div className="mt-2 space-y-1">
+              {emptyLogged.map((d: any) => (
+                <Link
+                  key={d.id}
+                  href={`/admin/deliveries/${d.delivery_date}`}
+                  className="flex items-center justify-between bg-white/70 rounded-lg px-3 py-2 text-xs text-amber-800 hover:text-amber-900"
+                >
+                  <span>{formatDate(d.delivery_date)} · {d.restaurants?.name}</span>
+                  <span className="font-medium">Log items →</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Status breakdown */}
         {rows.length > 0 && (
