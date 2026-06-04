@@ -316,8 +316,13 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 limited_qty:
                   status === "limited" && s.limited_qty !== "" ? Number(s.limited_qty) : null,
                 cycle_notes: s.cycle_notes || null,
-                available_sizes: s.available_sizes || null,
-                available_colors: s.available_colors || null,
+                // null = "all varieties available" (default); "" = "none — item
+                // is orderable but exposes no size/color choice". Preserve "" so
+                // deselect-all sticks instead of silently reverting to all.
+                available_sizes: s.available_sizes ?? null,
+                available_colors: s.available_colors ?? null,
+                // Units must always have ≥1 option (it's the container you order
+                // in), so deselect-all-units falls back to the item's full list.
                 available_units: s.available_units || null,
               };
             });
@@ -639,18 +644,22 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                             </div>
                           )}
 
-                          {/* Sizes selector */}
-                          {sizesList.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <span className="text-[9px] text-farm-muted">Sizes:</span>
-                              {(() => {
-                                const sel =
-                                  sharedState.available_sizes === null
-                                    ? new Set(sizesList)
-                                    : new Set(
-                                        sharedState.available_sizes?.split(",").filter(Boolean) ?? [],
-                                      );
-                                return sizesList.map((s) => (
+                          {/* Sizes selector. Empty selection (all line-through) is a
+                              real state — "none, ordered plain" — distinct from the
+                              default (null → all selected). */}
+                          {sizesList.length > 0 && (() => {
+                            const sel =
+                              sharedState.available_sizes === null
+                                ? new Set(sizesList)
+                                : new Set(
+                                    sharedState.available_sizes?.split(",").filter(Boolean) ?? [],
+                                  );
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-farm-muted">
+                                  Sizes{sel.size === 0 ? " (none — ordered plain)" : ""}:
+                                </span>
+                                {sizesList.map((s) => (
                                   <button
                                     key={s}
                                     type="button"
@@ -665,23 +674,27 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                                   >
                                     {s}
                                   </button>
-                                ));
-                              })()}
-                            </div>
-                          )}
+                                ))}
+                              </div>
+                            );
+                          })()}
 
-                          {/* Colors selector */}
-                          {colorsList.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1 flex-wrap">
-                              <span className="text-[9px] text-farm-muted">Colors:</span>
-                              {(() => {
-                                const sel =
-                                  sharedState.available_colors === null
-                                    ? new Set(colorsList)
-                                    : new Set(
-                                        sharedState.available_colors?.split(",").filter(Boolean) ?? [],
-                                      );
-                                return colorsList.map((c) => (
+                          {/* Colors selector. Empty selection (all line-through) is a
+                              real state — "none, ordered plain" — distinct from the
+                              default (null → all selected). */}
+                          {colorsList.length > 0 && (() => {
+                            const sel =
+                              sharedState.available_colors === null
+                                ? new Set(colorsList)
+                                : new Set(
+                                    sharedState.available_colors?.split(",").filter(Boolean) ?? [],
+                                  );
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-farm-muted">
+                                  Colors{sel.size === 0 ? " (none — ordered plain)" : ""}:
+                                </span>
+                                {colorsList.map((c) => (
                                   <button
                                     key={c}
                                     type="button"
@@ -696,10 +709,10 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                                   >
                                     {c}
                                   </button>
-                                ));
-                              })()}
-                            </div>
-                          )}
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
