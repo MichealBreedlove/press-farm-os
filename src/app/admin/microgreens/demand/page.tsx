@@ -15,7 +15,7 @@ export default async function DemandPage() {
       <EditorialHero
         eyebrow="Microgreens"
         title="Demand Targets"
-        subtitle="Set weekly oz targets per crop × restaurant × delivery day"
+        subtitle="Set per-unit targets per crop × restaurant × delivery day — weekly or on a multi-week cadence"
         backHref="/admin/microgreens"
       />
       <div className="px-4 max-w-5xl mx-auto">

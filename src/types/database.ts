@@ -2712,7 +2712,8 @@ export interface MicrogreenDemand {
   target_oz: number; // deprecated by migration 047 — use target_quantity + target_unit
   target_quantity: number | null;
   target_unit: "lg" | "sm" | "ea" | null;
-  effective_from: string | null;
+  interval_weeks: number; // 1 = weekly (default), 2 = every other week, etc. — migration 065
+  effective_from: string | null; // also the recurrence anchor when interval_weeks > 1
   effective_to: string | null;
   notes: string | null;
   created_at: string;

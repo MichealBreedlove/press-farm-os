@@ -23,6 +23,11 @@ export type SowPlanInput = {
 const MS_PER_DAY = 24 * 3600 * 1000;
 const VALID_UNITS: ReadonlySet<YieldUnit> = new Set(["lg", "sm", "ea"]);
 
+// Fixed anchor for interval_weeks recurrence when a demand row has no
+// effective_from. 2024-01-01 is a Monday, so week boundaries line up with the
+// Mon–Sun ISO week regardless of which day_of_week the demand targets.
+const RECURRENCE_EPOCH = "2024-01-01";
+
 function pad(n: number) { return n.toString().padStart(2, "0"); }
 
 function isoDateUtc(d: Date): string {
@@ -42,6 +47,21 @@ function daysBetween(fromIso: string, toIso: string): number {
 }
 
 /**
+ * True when a demand row's recurrence interval lands on this delivery date.
+ * interval_weeks = 1 (or unset) is weekly → always true. For longer intervals
+ * we count whole weeks from the anchor (effective_from, else RECURRENCE_EPOCH)
+ * and include only every Nth week. The double-mod keeps it correct even if a
+ * delivery date somehow precedes the epoch.
+ */
+function onRecurrenceWeek(d: MicrogreenDemand, deliveryDate: string): boolean {
+  const interval = d.interval_weeks ?? 1;
+  if (interval <= 1) return true;
+  const anchor = d.effective_from ?? RECURRENCE_EPOCH;
+  const weekIndex = Math.floor(daysBetween(anchor, deliveryDate) / 7);
+  return ((weekIndex % interval) + interval) % interval === 0;
+}
+
+/**
  * Resolve effective demand for a crop on a given delivery date.
  * Sums quantity per unit across all matching demand rows (restaurants, etc).
  */
@@ -56,6 +76,7 @@ function effectiveDemandFor(
     if (d.day_of_week !== dow) return false;
     if (d.effective_from && deliveryDate < d.effective_from) return false;
     if (d.effective_to && deliveryDate > d.effective_to) return false;
+    if (!onRecurrenceWeek(d, deliveryDate)) return false;
     if (d.target_quantity == null || d.target_quantity <= 0) return false;
     if (!d.target_unit || !VALID_UNITS.has(d.target_unit as YieldUnit)) return false;
     return true;

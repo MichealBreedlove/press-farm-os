@@ -27,6 +27,11 @@ export async function POST(req: Request) {
   if (!body.crop_id) return NextResponse.json({ error: "Missing crop_id" }, { status: 400 });
   if (body.day_of_week == null || body.day_of_week < 0 || body.day_of_week > 6)
     return NextResponse.json({ error: "day_of_week must be 0-6" }, { status: 400 });
+  if (body.interval_weeks != null) {
+    const iv = Number(body.interval_weeks);
+    if (!Number.isInteger(iv) || iv < 1)
+      return NextResponse.json({ error: "interval_weeks must be an integer >= 1" }, { status: 400 });
+  }
 
   // Migration 047: new shape uses target_quantity + target_unit. The legacy
   // target_oz path is still accepted for back-compat but new clients should

@@ -111,7 +111,7 @@ supabase/migrations/             # 001 → 064 (67 files; see table — numbers 
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **67 migration files, numbered 001 → 064** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **063** (064 is written but pending Micheal running it). **Next migration number is 065.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **68 migration files, numbered 001 → 065** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **065** (064, the security-advisor fixes, is written but still pending Micheal running it). **Next migration number is 066.** Read latest first when scoping work.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -182,6 +182,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 062 | microgreen_harvest_stage | `harvest_stage` enum + one-time timing bump (collides with 062_farm_tasks) |
 | 063 | seed_puff_ball_marigold | Adds Puff Ball Marigold to catalog, published AVAILABLE |
 | 064 | security_advisor_fixes | `seeds_with_on_hand` → security_invoker; revoke `match_inbound_sender` from anon/authenticated; pin `slide_recurring_anchor` search_path (DDL-only, no code change) |
+| 065 | microgreen_demand_interval | `microgreen_demand.interval_weeks` (1=weekly default, 2=biweekly, …; anchored to `effective_from` or a fixed epoch) so demand can recur on a multi-week cadence; also drops the stale `target_oz > 0` CHECK that 047 left behind (it silently rejected unit-based inserts) |
 
 ## Auth Model
 

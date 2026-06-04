@@ -37,6 +37,7 @@ function makeDemand(
     target_oz: 0,
     target_quantity: 8,
     target_unit: "lg",
+    interval_weeks: 1,
     effective_from: null,
     effective_to: null,
     notes: null,
@@ -204,6 +205,31 @@ describe("computeSowPlan", () => {
       deliveryDates: [delivery], now: today,
     });
     expect(plan.sow_today).toEqual([]);
+  });
+
+  it("includes biweekly demand on an on-week (anchor lands on the delivery week)", () => {
+    const delivery = "2026-05-27"; // sow_date == today
+    const demand = [
+      makeDemand("d1", { interval_weeks: 2, effective_from: "2026-05-27", target_quantity: 8, target_unit: "lg" }),
+    ];
+    const plan = computeSowPlan({
+      crops: [broccoli], demand, batches: [], trays: [],
+      deliveryDates: [delivery], now: today,
+    });
+    expect(plan.sow_today).toHaveLength(1);
+  });
+
+  it("skips biweekly demand on an off-week", () => {
+    const delivery = "2026-05-27"; // sow_date == today
+    // Anchor one week earlier → week index 1 → odd → skipped for interval 2.
+    const demand = [
+      makeDemand("d1", { interval_weeks: 2, effective_from: "2026-05-20", target_quantity: 8, target_unit: "lg" }),
+    ];
+    const plan = computeSowPlan({
+      crops: [broccoli], demand, batches: [], trays: [],
+      deliveryDates: [delivery], now: today,
+    });
+    expect(plan.sow_today).toHaveLength(0);
   });
 
   it("places past-due sow tasks in overdue.sow", () => {

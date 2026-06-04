@@ -7,6 +7,15 @@ import type { MicrogreenCrop, MicrogreenDemand } from "@/types/database";
 
 type Restaurant = { id: string; name: string };
 
+/** ISO date of the Monday of the current week — a sensible default anchor. */
+function thisWeekMondayIso(): string {
+  const d = new Date();
+  const day = d.getDay(); // 0 = Sun
+  const diff = (day + 6) % 7; // days since Monday
+  d.setDate(d.getDate() - diff);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 type Props = {
   crops: MicrogreenCrop[];
   restaurants: Restaurant[];
@@ -43,9 +52,11 @@ export function DemandGrid({ crops, restaurants, demand }: Props) {
       byUnit.set(u, (byUnit.get(u) ?? 0) + q);
     }
     if (byUnit.size === 0) return "—";
-    return Array.from(byUnit.entries())
+    const base = Array.from(byUnit.entries())
       .map(([u, q]) => `${q} ${YIELD_UNIT_LABELS[u as YieldUnit] ?? u.toUpperCase()}`)
       .join(" · ");
+    const interval = rows.find((r) => (r.interval_weeks ?? 1) > 1)?.interval_weeks;
+    return interval ? `${base} ⟳${interval}w` : base;
   }
 
   const columns: Array<{ restaurant: Restaurant | null; dow: number; label: string }> = [];
@@ -136,13 +147,23 @@ function CellEditor({
     return acc;
   }, { lg: "", sm: "", ea: "" } as Record<YieldUnit, string>);
 
+  // Interval + anchor are shared across the unit rows in a cell.
+  const initialInterval = existing.find((r) => (r.interval_weeks ?? 1) > 1)?.interval_weeks ?? 1;
+  const initialStart =
+    existing.find((r) => r.effective_from)?.effective_from ?? thisWeekMondayIso();
+
   const [values, setValues] = useState<Record<YieldUnit, string>>(initial);
+  const [interval, setInterval] = useState<number>(initialInterval);
+  const [startDate, setStartDate] = useState<string>(initialStart);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
     setSaving(true);
     setError(null);
+    // interval 1 = weekly: clear the anchor. interval > 1: anchor on startDate.
+    const interval_weeks = interval;
+    const effective_from = interval > 1 ? startDate : null;
     try {
       for (const u of YIELD_UNITS) {
         const raw = values[u].trim();
@@ -157,7 +178,7 @@ function CellEditor({
           await fetch(`/api/microgreens/demand/${existingRow.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target_quantity: n, target_unit: u }),
+            body: JSON.stringify({ target_quantity: n, target_unit: u, interval_weeks, effective_from }),
           });
         } else {
           await fetch("/api/microgreens/demand", {
@@ -169,6 +190,8 @@ function CellEditor({
               day_of_week: editing.dow,
               target_quantity: n,
               target_unit: u,
+              interval_weeks,
+              effective_from,
             }),
           });
         }
@@ -231,6 +254,39 @@ function CellEditor({
               />
             </label>
           ))}
+
+          <div className="pt-2 border-t border-farm-dark/10 space-y-2">
+            <label className="flex items-center gap-3">
+              <span className="w-12 text-sm font-medium text-farm-dark">Every</span>
+              <select
+                value={interval}
+                onChange={(e) => setInterval(Number(e.target.value))}
+                className="input-field flex-1"
+              >
+                <option value={1}>Every week</option>
+                <option value={2}>Every 2 weeks</option>
+                <option value={3}>Every 3 weeks</option>
+                <option value={4}>Every 4 weeks</option>
+              </select>
+            </label>
+            {interval > 1 && (
+              <label className="flex items-center gap-3">
+                <span className="w-12 text-sm font-medium text-farm-dark">From</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="input-field flex-1"
+                />
+              </label>
+            )}
+            {interval > 1 && (
+              <p className="text-[11px] text-farm-muted leading-snug">
+                Counts every {interval} weeks from the start date — the in-between weeks are skipped.
+              </p>
+            )}
+          </div>
+
           <div className="flex gap-2 pt-2">
             <button
               type="button"
