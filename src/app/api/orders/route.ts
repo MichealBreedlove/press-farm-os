@@ -155,7 +155,7 @@ export async function POST(request: Request) {
   // admin already started picking, fulfilled, or cancelled — including
   // racing with a "Finish & Send" that just emailed the receiver.
   const { data: existingOrder } = await (supabase.from("orders") as any)
-    .select("id, status")
+    .select("id, status, chef_id")
     .eq("restaurant_id", restaurant_id)
     .eq("delivery_date", delivery_date)
     .maybeSingle();
@@ -193,8 +193,14 @@ export async function POST(request: Request) {
 
   // Accountability: a brand-new order stamps chef_id = creator. An edit/merge
   // of an existing order PRESERVES the original chef_id and instead records who
-  // last touched it (last_edited_by / last_edited_at). Omitting chef_id from the
-  // upsert payload for existing orders keeps the DB value untouched on conflict.
+  // last touched it (last_edited_by / last_edited_at).
+  //
+  // chef_id MUST be in the payload even on edit/merge: chef_id is NOT NULL with
+  // no default, and `INSERT ... ON CONFLICT DO UPDATE` validates NOT NULL on the
+  // candidate insert tuple *before* resolving the conflict — so omitting it
+  // raises a not-null violation and the upsert never reaches the UPDATE path.
+  // Re-supplying the existing chef_id keeps the stored value unchanged on
+  // conflict while satisfying the constraint on the insert attempt.
   const isNewOrder = !existingOrder;
   const nowIso = new Date().toISOString();
   const orderPayload: Record<string, unknown> = {
@@ -203,12 +209,10 @@ export async function POST(request: Request) {
     status: "submitted",
     freeform_notes: mergedNotes,
     submitted_at: nowIso,
+    chef_id: isNewOrder ? user.id : (existingOrder.chef_id ?? user.id),
     last_edited_by: user.id,
     last_edited_at: nowIso,
   };
-  if (isNewOrder) {
-    orderPayload.chef_id = user.id;
-  }
 
   const { data: order, error: orderError } = await (supabase
     .from("orders") as any)
