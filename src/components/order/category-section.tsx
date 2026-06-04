@@ -5,6 +5,7 @@ import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { ItemRow } from "./item-row";
 import { cn } from "@/lib/utils";
+import { resolveSizes } from "@/lib/order-availability";
 
 interface CategorySectionProps {
   category: ItemCategory;
@@ -31,7 +32,7 @@ export function CategorySection({
 
   const orderedCount = items.filter((i) => {
     if ((quantities[i.id] ?? 0) > 0) return true;
-    const sizes = (i.item as any).size ? (i.item as any).size.split(", ") : [];
+    const sizes = resolveSizes(i.item, (i as any).available_sizes);
     return sizes.some((s: string) => (quantities[`${i.id}__${s}`] ?? 0) > 0);
   }).length;
 

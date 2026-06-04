@@ -9,15 +9,7 @@ import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import type { UnitType } from "@/types/database";
-
-/** Resolve which units this availability row exposes to the chef. */
-function resolveUnits(item: { unit_type: string }, availableUnits: string | null | undefined): UnitType[] {
-  const itemUnits = String(item.unit_type ?? "")
-    .split(",").map(u => u.trim()).filter(Boolean) as UnitType[];
-  if (!availableUnits) return itemUnits;
-  const allowed = new Set(availableUnits.split(",").map(u => u.trim()).filter(Boolean));
-  return itemUnits.filter(u => allowed.has(u));
-}
+import { resolveUnits, resolveSizes } from "@/lib/order-availability";
 
 interface OrderFormProps {
   availabilityItems: AvailabilityItemWithItem[];
@@ -239,7 +231,7 @@ export function OrderForm({
 
   /** Iterate every (unit?, size?) combination an item exposes, yielding its quantity key. */
   function* enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
-    const sizes = (ai.item as any).size ? (ai.item as any).size.split(", ").filter(Boolean) : [];
+    const sizes = resolveSizes(ai.item, (ai as any).available_sizes);
     const units = resolveUnits(ai.item, (ai as any).available_units);
     const hasMultiUnits = units.length > 1;
     const hasSizes = sizes.length > 0;

@@ -2,20 +2,10 @@
 
 import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
-import type { UnitType } from "@/types/database";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
-
-/** Resolve which units this availability row exposes to the chef.
- *  Falls back to the item-level unit_type list if the per-cycle override is null. */
-function resolveUnits(item: { unit_type: string }, availableUnits: string | null | undefined): UnitType[] {
-  const itemUnits = String(item.unit_type ?? "")
-    .split(",").map(u => u.trim()).filter(Boolean) as UnitType[];
-  if (!availableUnits) return itemUnits;
-  const allowed = new Set(availableUnits.split(",").map(u => u.trim()).filter(Boolean));
-  return itemUnits.filter(u => allowed.has(u));
-}
+import { resolveUnits, resolveSizes, resolveColors } from "@/lib/order-availability";
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
@@ -112,8 +102,11 @@ export function ItemRow({
   const isLimited = status === "limited";
   const maxQty = isLimited ? (limited_qty ?? Infinity) : Infinity;
 
-  const sizes = (item as any).size ? (item as any).size.split(", ").filter(Boolean) : [];
-  const colors = (item as any).color ? (item as any).color.split(", ").filter(Boolean) : [];
+  // Sizes/colors/units are filtered by this cycle's per-availability overrides
+  // (available_sizes / available_colors / available_units). A null override means
+  // "all of the item's master options"; a subset restricts what the chef can pick.
+  const sizes = resolveSizes(item, (availabilityItem as any).available_sizes);
+  const colors = resolveColors(item, (availabilityItem as any).available_colors);
   const units = resolveUnits(item, (availabilityItem as any).available_units);
   const hasSizes = sizes.length > 0;
   const hasMultiUnits = units.length > 1;
