@@ -62,11 +62,11 @@ export function LostReasonModal({ open, trayCount, onClose, onConfirm }: Props) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-xl"
+        className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
