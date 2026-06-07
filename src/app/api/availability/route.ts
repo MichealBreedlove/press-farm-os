@@ -111,6 +111,55 @@ export async function POST(request: Request) {
     );
   }
 
+  // Keep the item-level menu flags in step with per-restaurant availability.
+  // The chef order forms gate the Events, Press Bar, and Regular menus by
+  // global boolean flags on `items` (is_event_item / is_press_bar_item /
+  // show_in_regular_menu) — NOT by availability_items rows. So an item marked
+  // "available" for Events or Press Bar here would still never appear on those
+  // menus unless the matching flag is on. Mirror the toggle: when an item is
+  // made available/limited for a restaurant, ensure that restaurant's menu flag
+  // is set. Additive only — we never clear a flag, because the per-date row
+  // status already hides an item when it's unavailable, and the flag is global
+  // across all dates (clearing it would yank the item off every other date).
+  const { data: restaurantRow } = await adminClient
+    .from("restaurants")
+    .select("slug, name")
+    .eq("id", restaurant_id)
+    .single();
+
+  const slug = String(restaurantRow?.slug ?? "").toLowerCase();
+  const rName = String(restaurantRow?.name ?? "").toLowerCase();
+
+  // Resolve which menu flag this restaurant exposes. Check Press Bar before
+  // Press, since "Press Bar" also contains "press".
+  let flagColumn: "is_event_item" | "is_press_bar_item" | "show_in_regular_menu" | null = null;
+  if (slug === "events" || rName.includes("event")) {
+    flagColumn = "is_event_item";
+  } else if (slug === "press-bar" || rName.includes("bar")) {
+    flagColumn = "is_press_bar_item";
+  } else if (slug === "press" || slug === "understudy" || rName.includes("press") || rName.includes("under")) {
+    flagColumn = "show_in_regular_menu";
+  }
+
+  if (flagColumn) {
+    const onItemIds = items
+      .filter((it) => it.status === "available" || it.status === "limited")
+      .map((it) => it.item_id);
+    if (onItemIds.length > 0) {
+      // .eq(flagColumn, false) so we only touch items that actually need it,
+      // avoiding needless updated_at churn across the catalog on every save.
+      const { error: flagError } = await adminClient
+        .from("items")
+        .update({ [flagColumn]: true, updated_at: new Date().toISOString() })
+        .in("id", onItemIds)
+        .eq(flagColumn, false);
+      if (flagError) {
+        // Non-fatal — availability saved; the flag sync is best-effort.
+        console.error("Sync menu flag error:", flagError);
+      }
+    }
+  }
+
   // Set ordering_open = true on the delivery date
   const { error: dateError } = await adminClient
     .from("delivery_dates")
