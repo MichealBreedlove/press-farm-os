@@ -137,44 +137,81 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
     deliveryByRestaurant.set(d.restaurant_id, { id: d.id, status: d.status });
   }
 
-  let createdCount = 0;
+  // Orders that actually have resolved (picked OR shorted) lines — only
+  // these need a deliveries row.
+  const ordersWithResolved = (orders as any[])
+    .map((order) => ({
+      order,
+      restaurantId: order.restaurant_id as string,
+      resolvedLines: (order.order_items ?? []).filter(
+        (oi: any) => oi.picked_at || oi.is_shorted,
+      ),
+    }))
+    .filter((o) => o.resolvedLines.length > 0);
+  if (ordersWithResolved.length === 0) return 0;
 
-  for (const order of orders as any[]) {
-    const restaurantId = order.restaurant_id as string;
-    const resolvedLines = (order.order_items ?? []).filter(
-      (oi: any) => oi.picked_at || oi.is_shorted,
-    );
-    if (resolvedLines.length === 0) continue;
-
-    // Get-or-create the deliveries row for this restaurant on this date
-    let delivery = deliveryByRestaurant.get(restaurantId);
-    if (!delivery) {
-      const { data: newDelivery, error: delErr } = await admin
-        .from("deliveries")
-        .insert({
+  // Batch-create any missing deliveries rows in one insert (was one
+  // round-trip per restaurant).
+  const missingRestaurantIds = Array.from(
+    new Set(
+      ordersWithResolved
+        .map((o) => o.restaurantId)
+        .filter((rid) => !deliveryByRestaurant.has(rid)),
+    ),
+  );
+  if (missingRestaurantIds.length > 0) {
+    const { data: newDeliveries, error: delErr } = await admin
+      .from("deliveries")
+      .insert(
+        missingRestaurantIds.map((rid) => ({
           delivery_date: date,
-          restaurant_id: restaurantId,
+          restaurant_id: rid,
           status: "logged",
-        })
-        .select("id, status")
-        .single();
-      if (delErr || !newDelivery) {
-        console.error("[send-to-receiver] failed to create delivery row:", delErr);
-        continue;
-      }
-      delivery = { id: newDelivery.id, status: newDelivery.status };
-      deliveryByRestaurant.set(restaurantId, delivery);
+        })),
+      )
+      .select("id, restaurant_id, status");
+    if (delErr) {
+      console.error("[send-to-receiver] failed to create delivery rows:", delErr);
     }
+    for (const d of (newDeliveries ?? []) as Array<{ id: string; restaurant_id: string; status: string }>) {
+      deliveryByRestaurant.set(d.restaurant_id, { id: d.id, status: d.status });
+    }
+  }
+
+  // Pull existing delivery_items for ALL relevant deliveries in one query
+  // to dedupe (was one round-trip per delivery).
+  const deliveryIds = ordersWithResolved
+    .map((o) => deliveryByRestaurant.get(o.restaurantId)?.id)
+    .filter(Boolean) as string[];
+  const { data: existingLines } = deliveryIds.length > 0
+    ? await admin
+        .from("delivery_items")
+        .select("delivery_id, item_id, unit")
+        .in("delivery_id", deliveryIds)
+    : { data: [] as any[] };
+  const existingKeysByDelivery = new Map<string, Set<string>>();
+  for (const l of (existingLines ?? []) as any[]) {
+    let set = existingKeysByDelivery.get(l.delivery_id);
+    if (!set) {
+      set = new Set<string>();
+      existingKeysByDelivery.set(l.delivery_id, set);
+    }
+    set.add(`${l.item_id}|${(l.unit ?? "").toLowerCase()}`);
+  }
+
+  let createdCount = 0;
+  const allRowsToInsert: any[] = [];
+
+  for (const { restaurantId, resolvedLines } of ordersWithResolved) {
+    const delivery = deliveryByRestaurant.get(restaurantId);
+    if (!delivery) continue; // batch insert failed for this restaurant
     if (delivery.status === "finalized") continue;
 
-    // Pull existing delivery_items for this delivery to dedupe
-    const { data: existingLines } = await admin
-      .from("delivery_items")
-      .select("item_id, unit")
-      .eq("delivery_id", delivery.id);
-    const existingKeys = new Set<string>(
-      (existingLines ?? []).map((l: any) => `${l.item_id}|${(l.unit ?? "").toLowerCase()}`),
-    );
+    let existingKeys = existingKeysByDelivery.get(delivery.id);
+    if (!existingKeys) {
+      existingKeys = new Set<string>();
+      existingKeysByDelivery.set(delivery.id, existingKeys);
+    }
 
     // Build the rows to insert, deduped against (item_id, unit)
     const rowsToInsert: any[] = [];
@@ -217,16 +254,18 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       existingKeys.add(key); // prevent intra-loop duplicates from multi-unit items
     }
 
-    if (rowsToInsert.length === 0) continue;
+    allRowsToInsert.push(...rowsToInsert);
+  }
 
+  if (allRowsToInsert.length > 0) {
     const { error: insertErr } = await admin
       .from("delivery_items")
-      .insert(rowsToInsert);
+      .insert(allRowsToInsert);
     if (insertErr) {
       console.error("[send-to-receiver] delivery_items insert failed:", insertErr);
-      continue;
+    } else {
+      createdCount = allRowsToInsert.length;
     }
-    createdCount += rowsToInsert.length;
   }
 
   return createdCount;

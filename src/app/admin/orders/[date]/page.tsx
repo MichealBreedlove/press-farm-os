@@ -29,57 +29,75 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
   const { date } = await params;
   const supabase = await createClient();
 
-  // Fetch orders with full item detail
-  const { data: ordersRaw } = await (supabase as any)
-    .from("orders")
-    .select(`
-      id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
-      restaurant:restaurants(id, name),
-      chef:profiles!orders_chef_id_fkey(id, full_name),
-      edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
-      order_items(
-        id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, menu_section, picked_at,
-        availability_item:availability_items(
-          id,
-          item:items(id, name, category, unit_type)
+  const admin = createAdminClient();
+
+  // All five queries are independent of each other — run them in parallel
+  // (this page is the daily pick-and-pack hot path; serially they cost
+  // ~5 round-trips).
+  const [
+    { data: ordersRaw },
+    { data: catalogRaw },
+    { data: deliveriesRaw },
+    { data: auditRaw },
+    { count: activeReceiverCount },
+  ] = await Promise.all([
+    // Orders with full item detail
+    (supabase as any)
+      .from("orders")
+      .select(`
+        id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
+        restaurant:restaurants(id, name),
+        chef:profiles!orders_chef_id_fkey(id, full_name),
+        edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
+        order_items(
+          id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, menu_section, picked_at,
+          availability_item:availability_items(
+            id,
+            item:items(id, name, category, unit_type)
+          )
         )
-      )
-    `)
-    .eq("delivery_date", date);
+      `)
+      .eq("delivery_date", date),
+    // Catalog for the AddExtraRow picker — non-archived items, lightweight
+    // columns only. Admin client so RLS doesn't filter by chef-restaurant linkage.
+    (admin as any)
+      .from("items")
+      .select("id, name, category, unit_type, default_price, unit_prices")
+      .eq("is_archived", false)
+      .order("name"),
+    // delivery_items for this date so we can surface "extras" admin has
+    // already added during pick-and-pack. An extra is a delivery_item whose
+    // item_id has no matching order_item on the same restaurant's order.
+    (admin as any)
+      .from("deliveries")
+      .select(`
+        id, restaurant_id, delivery_date,
+        delivery_items (
+          id, item_id, quantity, unit, unit_price,
+          items ( id, name, unit_type )
+        )
+      `)
+      .eq("delivery_date", date),
+    // Activity timeline rows for every order on this date (admin client =
+    // all restaurants). Grouped by order_id below for per-card rendering.
+    (admin as any)
+      .from("order_audit")
+      .select("id, order_id, restaurant_id, delivery_date, actor_id, actor_name, action, detail, created_at")
+      .eq("delivery_date", date)
+      .order("created_at", { ascending: false }),
+    // Active-receiver count — for the empty-state banner that surfaces the
+    // gap BEFORE pick-and-pack (so admin can invite a receiver before
+    // wasting time annotating shortages).
+    (admin as any)
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "receiver")
+      .eq("is_active", true),
+  ]);
 
   const orders: any[] = ordersRaw ?? [];
-
-  // Catalog for the AddExtraRow picker — non-archived items, lightweight columns only.
-  // Uses admin client so RLS doesn't filter by chef-restaurant linkage.
-  const admin = createAdminClient();
-  const { data: catalogRaw } = await (admin as any)
-    .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices")
-    .eq("is_archived", false)
-    .order("name");
   const catalogItems = catalogRaw ?? [];
 
-  // Fetch delivery_items for this date so we can surface "extras" admin has
-  // already added during pick-and-pack. An extra is a delivery_item whose
-  // item_id has no matching order_item on the same restaurant's order.
-  const { data: deliveriesRaw } = await (admin as any)
-    .from("deliveries")
-    .select(`
-      id, restaurant_id, delivery_date,
-      delivery_items (
-        id, item_id, quantity, unit, unit_price,
-        items ( id, name, unit_type )
-      )
-    `)
-    .eq("delivery_date", date);
-
-  // Activity timeline rows for every order on this date (admin client = all
-  // restaurants). Grouped by order_id below for per-card rendering.
-  const { data: auditRaw } = await (admin as any)
-    .from("order_audit")
-    .select("id, order_id, restaurant_id, delivery_date, actor_id, actor_name, action, detail, created_at")
-    .eq("delivery_date", date)
-    .order("created_at", { ascending: false });
   const auditByOrder = new Map<string, OrderAudit[]>();
   for (const row of (auditRaw ?? []) as OrderAudit[]) {
     if (!row.order_id) continue;
@@ -87,15 +105,6 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
     list.push(row);
     auditByOrder.set(row.order_id, list);
   }
-
-  // Active-receiver count — for the empty-state banner that surfaces the
-  // gap BEFORE pick-and-pack (so admin can invite a receiver before
-  // wasting time annotating shortages).
-  const { count: activeReceiverCount } = await (admin as any)
-    .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "receiver")
-    .eq("is_active", true);
 
   // Build a map: restaurant_id → list of "extras" (delivery_items not on the order)
   const extrasByRestaurant: Record<string, Array<{ id: string; itemName: string; quantity: number; unit: string }>> = {};

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
 import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
@@ -21,7 +21,9 @@ interface AdminOrdersPageProps {
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
   const { date: dateParam, status: statusFilter } = await searchParams;
   const supabase = await createClient();
-  const today = new Date().toISOString().split("T")[0];
+  // Farm-local today — UTC flips at 4–5pm Pacific and would skip "today"
+  // in the default-date pick during the evening ordering window.
+  const today = todayPacific();
 
   // If filtering by status (e.g., from dashboard "Pending Orders" card),
   // jump to the date of the first matching order
@@ -37,13 +39,21 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     if (firstMatch?.delivery_date) effectiveDateParam = firstMatch.delivery_date;
   }
 
-  // Fetch all delivery dates sorted ascending
-  const { data: allDates } = await (supabase as any)
-    .from("delivery_dates")
-    .select("id, date, ordering_open")
-    .order("date", { ascending: true });
+  // Delivery dates (drives the active-date pick below) and the restaurant
+  // list (independent) — fetched in parallel.
+  const [{ data: allDates }, { data: restaurantsRaw }] = await Promise.all([
+    (supabase as any)
+      .from("delivery_dates")
+      .select("id, date, ordering_open")
+      .order("date", { ascending: true }),
+    (supabase as any)
+      .from("restaurants")
+      .select("id, name")
+      .order("name", { ascending: true }),
+  ]);
 
   const dates: { id: string; date: string; ordering_open: boolean }[] = allDates ?? [];
+  const restaurants: { id: string; name: string }[] = restaurantsRaw ?? [];
 
   // Determine active date: param > status-derived > next upcoming > most recent
   let activeDate: string;
@@ -72,14 +82,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     .eq("delivery_date", activeDate);
 
   const orders: any[] = ordersRaw ?? [];
-
-  // Fetch restaurants to show cards even for restaurants with no order
-  const { data: restaurantsRaw } = await (supabase as any)
-    .from("restaurants")
-    .select("id, name")
-    .order("name", { ascending: true });
-
-  const restaurants: { id: string; name: string }[] = restaurantsRaw ?? [];
 
   // Count submitted vs fulfilled orders for the current date
   const submittedCount = orders.filter((o) => o.status === "submitted").length;
