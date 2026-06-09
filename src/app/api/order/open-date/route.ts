@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * POST /api/order/open-date
@@ -44,8 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "date required (YYYY-MM-DD)" }, { status: 400 });
   }
 
-  // Future-only — no back-dating off-schedule orders.
-  const today = new Date().toISOString().split("T")[0];
+  // Future-only — no back-dating off-schedule orders. Farm-local "today":
+  // UTC flips at 4–5pm Pacific, which would wrongly reject same-day opens
+  // during the evening ordering window.
+  const today = todayPacific();
   if (date < today) {
     return NextResponse.json({ error: "Date must be today or later" }, { status: 400 });
   }

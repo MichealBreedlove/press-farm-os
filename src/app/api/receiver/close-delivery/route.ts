@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
+
+/** Receiver dashboard date-picker window: ±7 days around farm-local today. */
+function withinReceiverWindow(deliveryDate: string | null | undefined): boolean {
+  if (!deliveryDate) return false;
+  const today = todayPacific();
+  const t = new Date(today + "T12:00:00").getTime();
+  const d = new Date(deliveryDate + "T12:00:00").getTime();
+  if (!Number.isFinite(d)) return false;
+  return Math.abs(d - t) <= 7 * 86400000;
+}
 
 /**
  * POST /api/receiver/close-delivery
@@ -49,6 +60,23 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Receivers may only close deliveries inside the dashboard's ±7-day
+  // window — service-role client below bypasses RLS, so without this any
+  // receiver could finalize (lock) historical financial records.
+  // Admins are unrestricted.
+  if (profile.role === "receiver") {
+    const { data: delivery } = await (admin as any)
+      .from("deliveries")
+      .select("id, delivery_date")
+      .eq("id", deliveryId)
+      .maybeSingle();
+    if (!delivery) return NextResponse.json({ error: "Delivery not found" }, { status: 404 });
+    if (!withinReceiverWindow(delivery.delivery_date)) {
+      return NextResponse.json({ error: "Delivery is outside the receiving window" }, { status: 403 });
+    }
+  }
+
   const { error } = await (admin as any)
     .from("deliveries")
     .update({

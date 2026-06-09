@@ -70,7 +70,19 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     }
     updates.unit_type = parts.join(",");
   }
-  if (body.default_price !== undefined) updates.default_price = body.default_price === null ? null : Number(body.default_price);
+  if (body.default_price !== undefined) {
+    if (body.default_price === null) {
+      updates.default_price = null;
+    } else {
+      const n = Number(body.default_price);
+      // Reject NaN/negative — a NaN here silently drops the item's lines
+      // from every revenue rollup downstream.
+      if (!Number.isFinite(n) || n < 0) {
+        return NextResponse.json({ error: "default_price must be a non-negative number" }, { status: 400 });
+      }
+      updates.default_price = n;
+    }
+  }
   if (body.unit_prices !== undefined) {
     const cleaned: Record<string, number> = {};
     if (body.unit_prices && typeof body.unit_prices === "object") {

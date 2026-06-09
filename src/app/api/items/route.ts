@@ -69,6 +69,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
   }
 
+  let cleanedDefaultPrice: number | null = null;
+  if (default_price !== undefined && default_price !== null) {
+    const n = Number(default_price);
+    if (!Number.isFinite(n) || n < 0) {
+      return NextResponse.json({ error: "default_price must be a non-negative number" }, { status: 400 });
+    }
+    cleanedDefaultPrice = n;
+  }
+
   // Sanitize unit_prices: only keep numeric entries for currently-selected units
   const cleanedUnitPrices: Record<string, number> = {};
   if (unit_prices && typeof unit_prices === "object") {
@@ -105,7 +114,7 @@ export async function POST(request: Request) {
       name: name.trim(),
       category,
       unit_type: unitParts.join(","),
-      default_price: default_price ?? null,
+      default_price: cleanedDefaultPrice,
       unit_prices: cleanedUnitPrices,
       chef_notes: chef_notes?.trim() ?? null,
       internal_notes: internal_notes?.trim() ?? null,

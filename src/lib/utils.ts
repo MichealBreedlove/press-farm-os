@@ -83,6 +83,16 @@ export function toISODate(date: Date): string {
 }
 
 /**
+ * Today's date (YYYY-MM-DD) in the farm's timezone (America/Los_Angeles).
+ * Use this instead of `new Date().toISOString().split("T")[0]` for any
+ * "is this date today/past/future" check — UTC flips to the next day at
+ * 4–5pm Pacific, exactly when chefs are ordering for tomorrow.
+ */
+export function todayPacific(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+}
+
+/**
  * Get month/year label for reporting.
  * @example formatMonthYear("2026-02-01") → "February 2026"
  */

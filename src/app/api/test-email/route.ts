@@ -30,8 +30,6 @@ export async function GET(request: Request) {
   // Diagnostic info
   const diagnostics = {
     has_resend_api_key: Boolean(process.env.RESEND_API_KEY),
-    api_key_prefix: process.env.RESEND_API_KEY?.slice(0, 6) ?? "(missing)",
-    api_key_length: process.env.RESEND_API_KEY?.length ?? 0,
     from_email_env: process.env.RESEND_FROM_EMAIL ?? "(not set)",
     from_email_constant: FROM_EMAIL,
     will_use_from: process.env.RESEND_FROM_EMAIL || FROM_EMAIL,

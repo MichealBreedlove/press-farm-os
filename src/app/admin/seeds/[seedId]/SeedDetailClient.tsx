@@ -245,8 +245,10 @@ export function SeedDetailClient({ seed, sowings, germTests, items, plantings }:
                       <span className="text-farm-muted font-normal">on {formatDate(sw.sown_on)}</span>
                     </p>
                     {sw.planting && (
+                      // No per-planting detail route exists — link to the
+                      // crop-plan timeline where the planting lives.
                       <Link
-                        href={`/admin/crop-plan/plantings/${sw.planting.id}`}
+                        href="/admin/crop-plan"
                         className="inline-flex text-xs text-farm-green hover:underline mt-0.5"
                       >
                         ↳ {sw.planting.crop_name}

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase/server";
@@ -60,7 +61,11 @@ export function validateApiKey(request: Request): NextResponse | null {
     ? authHeader.slice(7)
     : xApiKey;
 
-  if (!providedKey || providedKey !== apiKey) {
+  // Constant-time compare (length check first — timingSafeEqual throws on
+  // mismatched buffer lengths, and length isn't a useful oracle here).
+  const provided = Buffer.from(providedKey ?? "");
+  const expected = Buffer.from(apiKey);
+  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
     return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
   }
 
