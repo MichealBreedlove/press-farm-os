@@ -101,33 +101,44 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
   const pressId = orderedRestaurants[0]?.id;
 
-  // Build initial state: Press is source of truth. Each restaurant starts as a
-  // copy of Press's saved state. Existing per-restaurant data is intentionally
-  // overridden to give a clean unified starting point (decision 2026-05-16).
+  // Build initial state: each restaurant loads its OWN saved status, so
+  // per-restaurant chip edits survive a reload instead of being clobbered by
+  // a copy of Press's state on the next save. (The original 2026-05-16
+  // "copy Press to all" seeding predates the per-restaurant chips.) Press
+  // remains the fallback only where a restaurant has no row yet — e.g. an
+  // item published to Press before the other restaurants existed.
   const initialStatuses: RestaurantStatuses = useMemo(() => {
-    const pressByItem: Record<string, AvailabilityItem> = {};
+    const byRestaurantItem: Record<string, Record<string, AvailabilityItem>> = {};
     for (const a of availability) {
-      if (a.restaurant_id === pressId) pressByItem[a.item_id] = a;
+      (byRestaurantItem[a.restaurant_id] ??= {})[a.item_id] = a;
     }
+    const pressByItem = byRestaurantItem[pressId ?? ""] ?? {};
     const result: RestaurantStatuses = {};
     for (const r of orderedRestaurants) {
+      const own = byRestaurantItem[r.id] ?? {};
       const map: StatusMap = {};
       for (const item of items) {
-        map[item.id] = (pressByItem[item.id]?.status as AvailabilityStatus) ?? "unavailable";
+        map[item.id] =
+          ((own[item.id] ?? pressByItem[item.id])?.status as AvailabilityStatus) ?? "unavailable";
       }
       result[r.id] = map;
     }
     return result;
   }, [items, availability, orderedRestaurants, pressId]);
 
+  // Shared (cross-restaurant) fields seed from the Press row, falling back to
+  // any restaurant's row so an item saved without a Press row doesn't lose its
+  // sizes/colors/units/qty/notes on reload.
   const initialShared: SharedStates = useMemo(() => {
     const pressByItem: Record<string, AvailabilityItem> = {};
+    const anyByItem: Record<string, AvailabilityItem> = {};
     for (const a of availability) {
       if (a.restaurant_id === pressId) pressByItem[a.item_id] = a;
+      anyByItem[a.item_id] ??= a;
     }
     const result: SharedStates = {};
     for (const item of items) {
-      const e = pressByItem[item.id];
+      const e = pressByItem[item.id] ?? anyByItem[item.id];
       result[item.id] = {
         limited_qty: e?.limited_qty != null ? String(e.limited_qty) : "",
         cycle_notes: e?.cycle_notes ?? "",

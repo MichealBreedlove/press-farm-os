@@ -78,7 +78,7 @@ export default async function AdminAvailabilityEditorPage({
   // Fetch existing availability_items for this date across all restaurants
   const { data: rawAvailability, error: availError } = await supabase
     .from("availability_items")
-    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, created_at, updated_at")
+    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
     .eq("delivery_date", date);
   let availability: AvailabilityItem[] = rawAvailability ?? [];
   let inheritedFromDate: string | null = null;
@@ -104,7 +104,7 @@ export default async function AdminAvailabilityEditorPage({
       inheritedFromDate = priorDateRow.delivery_date;
       const { data: priorRows } = await supabase
         .from("availability_items")
-        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, created_at, updated_at")
+        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
         .eq("delivery_date", priorDateRow.delivery_date);
 
       // Remap delivery_date so the editor shows them as belonging to this date
