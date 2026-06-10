@@ -40,16 +40,16 @@ export function SowModal({ task, onClose }: { task: SowTask; onClose: () => void
         </p>
         <label className="block mt-4">
           <span className="block text-sm">Tray count</span>
-          <input type="number" className="input w-full" value={trayCount}
+          <input type="number" className="input-field" value={trayCount}
             onChange={(e) => setTrayCount(Number(e.target.value))} />
         </label>
         <label className="block mt-3">
           <span className="block text-sm">Seed lot (optional)</span>
-          <input className="input w-full" value={seedLot} onChange={(e) => setSeedLot(e.target.value)} />
+          <input className="input-field" value={seedLot} onChange={(e) => setSeedLot(e.target.value)} />
         </label>
         <label className="block mt-3">
           <span className="block text-sm">Notes</span>
-          <textarea className="input w-full" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <textarea className="input-field" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
         <div className="mt-4 flex gap-2">
           <button className="btn-primary" onClick={submit} disabled={isPending}>

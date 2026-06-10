@@ -5,6 +5,7 @@ import { OrderingToggle } from "./OrderingToggle";
 import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import Link from "next/link";
 import type { OrderStatus } from "@/types";
 
@@ -190,7 +191,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         })}
 
         {restaurants.length === 0 && (
-          <p className="text-center text-farm-muted text-sm py-8">No restaurants found.</p>
+          <EmptyState
+            flower="chive-blossom"
+            title="No restaurants found"
+            body="Once restaurants are set up, their orders for each delivery date appear here."
+            cta={{ label: "Manage users", href: "/admin/settings/users" }}
+          />
         )}
 
         {/* Actions */}

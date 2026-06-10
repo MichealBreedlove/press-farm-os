@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Mail, MailOpen, Archive, Sprout } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -142,21 +143,14 @@ export default async function InboxPage() {
 
       <div className="px-4 py-4 max-w-3xl mx-auto">
         {messages.length === 0 ? (
-          <div className="text-center py-16">
-            <img
-              src="/assets/pressfarm/flowers/bachelor-button.png"
-              alt=""
-              aria-hidden="true"
-              className="mx-auto h-24 w-auto mb-4 opacity-60"
-            />
-            <h3 className="text-base font-semibold text-farm-dark">No replies yet</h3>
-            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
-              When a chef replies to any Press Farm email, it lands here.
-            </p>
+          <EmptyState
+            title="No replies yet"
+            body="When a chef replies to any Press Farm email, it lands here."
+          >
             <p className="text-xs text-farm-muted/70 mt-3">
               Replies route to <code className="text-pf-master-gold">replies@pressfarm.io</code>.
             </p>
-          </div>
+          </EmptyState>
         ) : (
           <ul className="space-y-2">
             {messages.map((m) => {

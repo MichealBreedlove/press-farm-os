@@ -8,6 +8,7 @@ import { LogPastDelivery } from "./LogPastDelivery";
 import { GenerateDatesButton } from "./GenerateDatesButton";
 import { ViewToggle } from "./ViewToggle";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -215,9 +216,11 @@ export default async function AdminDeliveriesPage({
                   })}
               </div>
             ) : (
-              <p className="text-center text-farm-muted text-sm py-8">
-                No deliveries logged yet
-              </p>
+              <EmptyState
+                flower="calendula"
+                title="No deliveries logged yet"
+                body="Pick an upcoming date below to log your first delivery."
+              />
             )
           }
         />

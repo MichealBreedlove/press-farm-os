@@ -64,17 +64,17 @@ export function CropForm({ initial, items }: Props) {
         <legend className="text-sm font-semibold uppercase tracking-wide">Identity</legend>
         <label className="block">
           <span className="block text-sm">Name</span>
-          <input className="input w-full" value={form.name}
+          <input className="input-field" value={form.name}
             onChange={(e) => update("name", e.target.value)} required />
         </label>
         <label className="block">
           <span className="block text-sm">Variety (optional)</span>
-          <input className="input w-full" value={form.variety}
+          <input className="input-field" value={form.variety}
             onChange={(e) => update("variety", e.target.value)} />
         </label>
         <label className="block">
           <span className="block text-sm">Linked Item (optional)</span>
-          <select className="input w-full" value={form.item_id ?? ""}
+          <select className="input-field" value={form.item_id ?? ""}
             onChange={(e) => update("item_id", e.target.value || null)}>
             <option value="">— none —</option>
             {items.map((it) => <option key={it.id} value={it.id}>{it.name}</option>)}
@@ -86,19 +86,19 @@ export function CropForm({ initial, items }: Props) {
         <legend className="text-sm font-semibold uppercase tracking-wide">Seed</legend>
         <label className="block">
           <span className="block text-sm">Seed density (g/tray)</span>
-          <input type="number" step="0.1" className="input w-full"
+          <input type="number" step="0.1" className="input-field"
             value={form.seed_density_g_per_tray}
             onChange={(e) => update("seed_density_g_per_tray", Number(e.target.value))} required />
         </label>
         <label className="block">
           <span className="block text-sm">Presoak hours</span>
-          <input type="number" className="input w-full"
+          <input type="number" className="input-field"
             value={form.presoak_hours}
             onChange={(e) => update("presoak_hours", Number(e.target.value))} />
         </label>
         <label className="block">
           <span className="block text-sm">Presprout hours</span>
-          <input type="number" className="input w-full"
+          <input type="number" className="input-field"
             value={form.presprout_hours}
             onChange={(e) => update("presprout_hours", Number(e.target.value))} />
         </label>
@@ -113,20 +113,20 @@ export function CropForm({ initial, items }: Props) {
         <legend className="text-sm font-semibold uppercase tracking-wide">Growth</legend>
         <label className="block">
           <span className="block text-sm">Blackout days</span>
-          <input type="number" className="input w-full"
+          <input type="number" className="input-field"
             value={form.blackout_days}
             onChange={(e) => update("blackout_days", Number(e.target.value))} required />
         </label>
         <label className="block">
           <span className="block text-sm">Ideal harvest day (total days from sow)</span>
-          <input type="number" className="input w-full"
+          <input type="number" className="input-field"
             value={form.ideal_harvest_day}
             onChange={(e) => update("ideal_harvest_day", Number(e.target.value))} required />
         </label>
         <label className="block">
           <span className="block text-sm">Harvest stage</span>
           <select
-            className="input w-full"
+            className="input-field"
             value={form.harvest_stage}
             onChange={(e) => update("harvest_stage", e.target.value)}
           >
@@ -163,7 +163,7 @@ export function CropForm({ initial, items }: Props) {
                 type="number"
                 min="0"
                 step="0.5"
-                className="input w-full"
+                className="input-field"
                 value={form.yield_per_tray[u] ?? ""}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -184,7 +184,7 @@ export function CropForm({ initial, items }: Props) {
           <span className="block text-sm text-farm-muted">
             Legacy: oz per tray (only used by old reports — not the sow planner)
           </span>
-          <input type="number" step="0.1" className="input w-full"
+          <input type="number" step="0.1" className="input-field"
             value={form.expected_yield_oz_per_tray}
             onChange={(e) => update("expected_yield_oz_per_tray", Number(e.target.value))} />
         </label>
@@ -196,7 +196,7 @@ export function CropForm({ initial, items }: Props) {
         {form.is_continuous_harvest && (
           <label className="block">
             <span className="block text-sm">Productive life (days)</span>
-            <input type="number" className="input w-full"
+            <input type="number" className="input-field"
               value={form.productive_life_days ?? ""}
               onChange={(e) => update("productive_life_days", Number(e.target.value) || null)} />
           </label>
@@ -222,7 +222,7 @@ export function CropForm({ initial, items }: Props) {
 
       <label className="block">
         <span className="block text-sm">Notes</span>
-        <textarea className="input w-full" rows={3} value={form.notes}
+        <textarea className="input-field" rows={3} value={form.notes}
           onChange={(e) => update("notes", e.target.value)} />
       </label>
 

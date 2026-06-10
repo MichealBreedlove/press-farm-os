@@ -199,8 +199,8 @@ export default async function CropRevenueReportPage({ searchParams }: Props) {
         {rows.length === 0 ? (
           <p className="text-sm text-farm-muted py-8 text-center">No revenue recorded in this period.</p>
         ) : (
-          <div className="card-soft overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="card-soft overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm">
               <thead className="text-xs text-farm-muted uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-3 py-2">Crop</th>

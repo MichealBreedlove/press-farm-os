@@ -55,12 +55,12 @@ export function HarvestForm({
         <div className="mt-4 flex gap-2">
           <label className="block flex-1">
             <span className="block text-sm">Yield</span>
-            <input type="number" step="0.1" min="0" className="input w-full" value={quantity}
+            <input type="number" step="0.1" min="0" className="input-field" value={quantity}
               onChange={(e) => setQuantity(e.target.value)} autoFocus />
           </label>
           <label className="block w-28">
             <span className="block text-sm">Unit</span>
-            <select className="input w-full" value={unit}
+            <select className="input-field" value={unit}
               onChange={(e) => setUnit(e.target.value as YieldUnit)}>
               {unitOptions.map((u) => (
                 <option key={u} value={u}>{YIELD_UNIT_LABELS[u]}</option>
@@ -70,7 +70,7 @@ export function HarvestForm({
         </div>
         <label className="block mt-3">
           <span className="block text-sm">Assign to delivery (optional)</span>
-          <select className="input w-full" value={deliveryId} onChange={(e) => setDeliveryId(e.target.value)}>
+          <select className="input-field" value={deliveryId} onChange={(e) => setDeliveryId(e.target.value)}>
             <option value="">— none —</option>
             {deliveries.map((d) => (
               <option key={d.id} value={d.id}>
@@ -81,7 +81,7 @@ export function HarvestForm({
         </label>
         <label className="block mt-3">
           <span className="block text-sm">Notes</span>
-          <textarea className="input w-full" rows={2} value={notes}
+          <textarea className="input-field" rows={2} value={notes}
             onChange={(e) => setNotes(e.target.value)} />
         </label>
         <div className="mt-4 flex gap-2">

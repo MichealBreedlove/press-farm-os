@@ -70,20 +70,24 @@
            hover:bg-farm-green-dark hover:shadow-md
            active:scale-[0.98] active:shadow-sm
            transition-all duration-200
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 focus-visible:ring-offset-2
            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none;
   }
   .btn-secondary {
     @apply bg-white text-farm-green font-medium rounded-xl px-5 py-3
            border border-farm-green/60 hover:bg-farm-green-light hover:border-farm-green
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 focus-visible:ring-offset-2
            active:scale-[0.98] transition-all duration-200;
   }
   .btn-ghost {
     @apply text-farm-muted font-medium rounded-xl px-4 py-2
-           hover:bg-gray-100 active:bg-gray-200 transition-all duration-200;
+           hover:bg-gray-100 active:bg-gray-200 transition-all duration-200
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 focus-visible:ring-offset-2;
   }
   .btn-danger {
     @apply bg-red-50 text-red-600 font-medium rounded-xl px-4 py-2
-           border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-200;
+           border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-200
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2;
   }
 
   /* --- Form inputs — editorial farm aesthetic --- */
@@ -279,6 +283,10 @@
     @apply rounded-2xl p-5;
     background: #faf7f0;
     border: 1px solid rgba(13, 42, 30, 0.06);
+  }
+  /* Lighter card for stat strips / report tables — border only, no shadow */
+  .card-soft {
+    @apply bg-white rounded-xl border border-gray-100/80;
   }
 
   /* --- Status badges --- */
