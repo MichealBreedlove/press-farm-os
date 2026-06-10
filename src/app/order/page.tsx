@@ -5,6 +5,7 @@ import { formatDeliveryDate } from "@/lib/utils";
 import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import type { AvailabilityItemWithItem } from "@/types";
@@ -42,12 +43,11 @@ export default async function OrderPage({
   if (!restaurantUser?.restaurants) {
     return (
       <main className="min-h-screen bg-farm-cream flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-gray-500 text-sm">
-            No restaurant found for your account. Please contact Press Farm.
-          </p>
-        </div>
-      </main>
+        <EmptyState
+          flower="pansy"
+          title="No restaurant linked"
+          body="Your account isn't linked to a restaurant yet. Please contact Press Farm."
+        /></main>
     );
   }
 
@@ -162,12 +162,12 @@ export default async function OrderPage({
           <h1 className="page-title">Order</h1>
           <p className="text-base sm:text-sm font-semibold sm:font-medium text-white/90">{restaurant.name}</p>
         </header>
-        <div className="flex items-center justify-center h-64 px-4">
-          <p className="text-center text-gray-500 text-sm">
-            No upcoming delivery dates open for ordering.
-            <br />
-            Check back soon or contact Press Farm.
-          </p>
+        <div className="px-4">
+          <EmptyState
+            flower="squash-blossom"
+            title="Ordering is closed right now"
+            body="No upcoming delivery dates are open for ordering. Check back soon or contact Press Farm."
+          />
         </div>
       </main>
     );
