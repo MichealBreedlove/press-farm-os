@@ -191,42 +191,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Accountability: a brand-new order stamps chef_id = creator. An edit/merge
-  // of an existing order PRESERVES the original chef_id and instead records who
-  // last touched it (last_edited_by / last_edited_at).
-  //
-  // chef_id MUST be in the payload even on edit/merge: chef_id is NOT NULL with
-  // no default, and `INSERT ... ON CONFLICT DO UPDATE` validates NOT NULL on the
-  // candidate insert tuple *before* resolving the conflict — so omitting it
-  // raises a not-null violation and the upsert never reaches the UPDATE path.
-  // Re-supplying the existing chef_id keeps the stored value unchanged on
-  // conflict while satisfying the constraint on the insert attempt.
   const isNewOrder = !existingOrder;
-  const nowIso = new Date().toISOString();
-  const orderPayload: Record<string, unknown> = {
-    restaurant_id,
-    delivery_date,
-    status: "submitted",
-    freeform_notes: mergedNotes,
-    submitted_at: nowIso,
-    chef_id: isNewOrder ? user.id : (existingOrder.chef_id ?? user.id),
-    last_edited_by: user.id,
-    last_edited_at: nowIso,
-  };
-
-  const { data: order, error: orderError } = await (supabase
-    .from("orders") as any)
-    .upsert(orderPayload, {
-      onConflict: "restaurant_id,delivery_date",
-      ignoreDuplicates: false,
-    })
-    .select("id")
-    .single();
-
-  if (orderError || !order) {
-    console.error("Order upsert error:", orderError);
-    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
-  }
 
   // Fetch canonical availability rows scoped to THIS restaurant + date + not
   // unavailable. Don't trust client-supplied availability_item_ids — a
@@ -294,7 +259,6 @@ export async function POST(request: Request) {
       // lines store NULL (Press Bar never collides with the others).
       const menuSection = item.menu_section === "events" ? "events" : null;
       return {
-        order_id: order.id,
         availability_item_id: item.availability_item_id,
         quantity_requested: item.quantity,
         unit_price_at_order: resolvePrice(item.availability_item_id, chosenUnit),
@@ -315,45 +279,58 @@ export async function POST(request: Request) {
   let mergeAdded = 0;
   let mergeBumped = 0;
 
+  // Plan the writes, then apply them ATOMICALLY via the submit_order_with_items
+  // RPC (migration 066). Previously the order upsert and the item writes were
+  // separate statements — a failure between them left the order updated with
+  // stale/empty items, and an admin "Finish & Send" racing this request could
+  // be overwritten. The function re-checks the chef-editable statuses inside
+  // the transaction and raises ORDER_LOCKED if the order moved on.
+  let linesToInsert: typeof incomingLines = incomingLines;
+  let linesToUpdate: { id: string; quantity_requested: number }[] = [];
+
   if (isMerge) {
     // Merge: sum qty into matching existing lines (same availId+unit+size+color);
     // anything unmatched is appended. Existing untouched lines stay put.
     // (planOrderItemMerge is the unit-tested core — see src/lib/orders.ts.)
     const { data: existingItems } = await (supabase.from("order_items") as any)
       .select("id, availability_item_id, unit_type, size_label, color_key, menu_section, quantity_requested")
-      .eq("order_id", order.id);
+      .eq("order_id", existingOrder!.id);
 
     const { toInsert, toUpdate } = planOrderItemMerge(existingItems ?? [], incomingLines);
-
-    for (const upd of toUpdate) {
-      const { error: updErr } = await (supabase.from("order_items") as any)
-        .update({ quantity_requested: upd.quantity_requested })
-        .eq("id", upd.id);
-      if (updErr) {
-        console.error("Order items merge-update error:", updErr);
-        return NextResponse.json({ error: "Failed to merge order items" }, { status: 500 });
-      }
-    }
-    if (toInsert.length > 0) {
-      const { error: insErr } = await (supabase.from("order_items") as any).insert(toInsert);
-      if (insErr) {
-        console.error("Order items merge-insert error:", insErr);
-        return NextResponse.json({ error: "Failed to merge order items" }, { status: 500 });
-      }
-    }
+    linesToInsert = toInsert;
+    linesToUpdate = toUpdate;
     mergeAdded = toInsert.length;
     mergeBumped = toUpdate.length;
-  } else {
-    // Replace: explicit edit flow OR brand-new order. Wipe + reinsert.
-    await supabase.from("order_items").delete().eq("order_id", order.id);
-    if (incomingLines.length > 0) {
-      const { error: itemsError } = await (supabase.from("order_items") as any).insert(incomingLines);
-      if (itemsError) {
-        console.error("Order items insert error:", itemsError);
-        return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
-      }
-    }
   }
+
+  const { data: orderId, error: submitError } = await (supabase as any).rpc(
+    "submit_order_with_items",
+    {
+      p_restaurant_id: restaurant_id,
+      p_delivery_date: delivery_date,
+      p_freeform_notes: mergedNotes,
+      // chef_id: creator on a new order; the function preserves the stored
+      // value on conflict, so re-supplying the existing chef_id is just to
+      // satisfy NOT NULL on the candidate insert tuple.
+      p_chef_id: isNewOrder ? user.id : (existingOrder.chef_id ?? user.id),
+      p_last_edited_by: user.id,
+      p_replace: !isMerge,
+      p_lines: linesToInsert,
+      p_update_lines: linesToUpdate,
+    },
+  );
+
+  if (submitError || !orderId) {
+    if (String(submitError?.message ?? "").includes("ORDER_LOCKED")) {
+      return NextResponse.json(
+        { error: "This order has already moved past editing — contact Press Farm to make changes." },
+        { status: 409 },
+      );
+    }
+    console.error("Order submit RPC error:", submitError);
+    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
+  }
+  const order = { id: orderId as string };
 
   // Actor name snapshot — fetched once, reused for the audit row AND the email
   // summaries below so we don't double-query profiles.
