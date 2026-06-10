@@ -104,6 +104,12 @@ export async function POST(request: Request) {
       skipped.push({ row: rowNum, reason: `unparseable Amount "${amountRaw}"` });
       return;
     }
+    // Negative/zero expenses would silently inflate the P&L — accounting
+    // credits (refunds) aren't modeled; skip with a visible reason instead.
+    if (amount <= 0) {
+      skipped.push({ row: rowNum, reason: `non-positive Amount "${amountRaw}"` });
+      return;
+    }
 
     const categoryRaw = pick(raw, "Category", "category");
     // Normalize: title-case and check enum; default to "Other" if unknown

@@ -28,7 +28,8 @@ export default async function AdminEventRequestsPage() {
       "id, restaurant_id, chef_id, item_id, quantity, unit, needed_by_date, event_name, notes, status, admin_response, responded_at, event_group_id, created_at, restaurant:restaurants(id, name), chef:profiles!event_requests_chef_id_fkey(id, full_name), item:items(id, name, category, unit_type)",
     )
     .order("needed_by_date", { ascending: true })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(300); // soonest 300 — table grows forever, page shouldn't
 
   const rows = (rowsRaw ?? []).map((r: any) => ({
     id: r.id,

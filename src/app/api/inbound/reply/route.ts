@@ -167,6 +167,18 @@ export async function POST(req: NextRequest) {
       await extractItemRequests({ inboundMessageId: upserted.id });
     } catch (err) {
       console.error("[INBOUND] extraction crashed", err);
+      // Backstop: extractItemRequests marks 'failed' itself on handled
+      // errors, but a crash before its own handler would leave the row
+      // 'pending' forever (nothing retries it) — mark it failed so the
+      // inbox surfaces it for manual review.
+      await admin
+        .from("inbound_messages")
+        .update({
+          extraction_status: "failed",
+          extraction_error: err instanceof Error ? err.message : String(err),
+        })
+        .eq("id", upserted.id)
+        .eq("extraction_status", "pending");
     }
   }
 

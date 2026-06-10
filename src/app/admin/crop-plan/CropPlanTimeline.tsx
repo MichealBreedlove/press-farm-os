@@ -209,8 +209,13 @@ export function CropPlanTimeline({
 
               return (
                 <div key={cropName}>
-                  {/* Crop header row */}
-                  <div className="flex items-center hover:bg-farm-cream/40/50 cursor-pointer min-w-[600px]" onClick={() => toggleExpand(cropName)}>
+                  {/* Crop header row — a real button so it's keyboard-reachable */}
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    onClick={() => toggleExpand(cropName)}
+                    className="w-full text-left flex items-center hover:bg-farm-cream/40/50 cursor-pointer min-w-[600px]"
+                  >
                     <div className="w-24 sm:w-40 flex-shrink-0 px-3 py-2.5 flex items-center gap-2">
                       {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-farm-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-farm-muted" />}
                       <span className="text-xs font-medium text-farm-dark truncate">{cropName}</span>
@@ -258,7 +263,7 @@ export function CropPlanTimeline({
                     <div className="w-20 text-center py-2 border-l border-gray-50">
                       <span className="text-[10px] text-farm-muted">{cropPlantings.length} planting{cropPlantings.length !== 1 ? "s" : ""}</span>
                     </div>
-                  </div>
+                  </button>
 
                   {/* Expanded: individual plantings */}
                   {isExpanded && cropPlantings.map((p) => (

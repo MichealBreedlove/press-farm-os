@@ -13,7 +13,8 @@ export default async function AdminNotesPage() {
   const { data: notes } = await admin
     .from("farm_notes")
     .select("id, date, text, category")
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .limit(500); // newest 500 — table grows forever, page shouldn't
 
   return (
     <main className="pb-24">

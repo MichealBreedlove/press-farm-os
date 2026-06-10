@@ -93,6 +93,7 @@ export function TaskDraftCard({ draft }: Props) {
             <li key={idx} className="flex items-center gap-2">
               <select
                 value={item.task_type}
+                aria-label="Task type"
                 onChange={(e) =>
                   updateItem(idx, { task_type: e.target.value as InboxTaskDraftScheduleItem["task_type"] })
                 }
@@ -107,12 +108,14 @@ export function TaskDraftCard({ draft }: Props) {
               <input
                 type="text"
                 value={item.title}
+                aria-label="Task title"
                 onChange={(e) => updateItem(idx, { title: e.target.value })}
                 className="flex-1 text-xs px-2 py-1 border border-pf-master-gold/30 rounded"
               />
               <input
                 type="number"
                 value={item.offset_days_from_today}
+                aria-label="Days from today"
                 onChange={(e) =>
                   updateItem(idx, { offset_days_from_today: Number(e.target.value) || 0 })
                 }
