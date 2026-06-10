@@ -24,7 +24,8 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — 126 tests across 19 files in top-level `tests/` |
+| Tests | Vitest — 183 tests across 24 files in top-level `tests/` |
+| Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
 Local: `D:\LLM\LLM Projects\press-farm-os`
@@ -100,9 +101,10 @@ src/
   types/
     database.ts                  # DB types — covers ~18 of ~34 tables; the rest use `(supabase as any)` casts
     index.ts                     # App-level types + enriched join shapes
-tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 126 tests
+tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 183 tests
 scripts/
   optimize-images.mjs            # Idempotent brand-image downsizer (npm run optimize:images)
+  optimize-svg-logos.mjs         # Shrinks the base64 rasters EMBEDDED in logo SVGs (idempotent)
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
@@ -111,7 +113,9 @@ supabase/migrations/             # 001 → 064 (67 files; see table — numbers 
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **68 migration files, numbered 001 → 065** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **065** (064, the security-advisor fixes, is written but still pending Micheal running it). **Next migration number is 066.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **69 migration files, numbered 001 → 066** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **066** (064 confirmed applied — the live security advisors are clean; 066 was applied via the Supabase MCP on 2026-06-10). **Next migration number is 067.** Read latest first when scoping work.
+
+> **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
 | # | File | What it added |
 |---|------|---------------|
@@ -183,6 +187,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 063 | seed_puff_ball_marigold | Adds Puff Ball Marigold to catalog, published AVAILABLE |
 | 064 | security_advisor_fixes | `seeds_with_on_hand` → security_invoker; revoke `match_inbound_sender` from anon/authenticated; pin `slide_recurring_anchor` search_path (DDL-only, no code change) |
 | 065 | microgreen_demand_interval | `microgreen_demand.interval_weeks` (1=weekly default, 2=biweekly, …; anchored to `effective_from` or a fixed epoch) so demand can recur on a multi-week cadence; also drops the stale `target_oz > 0` CHECK that 047 left behind (it silently rejected unit-based inserts) |
+| 066 | submit_order_rpc | `submit_order_with_items()` — atomic order submission (order upsert + item replace/merge in one transaction, SECURITY INVOKER so chef RLS applies; raises `ORDER_LOCKED` if status moved past chef-editable). POST `/api/orders` calls it via `.rpc()` |
 
 ## Auth Model
 
@@ -192,7 +197,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 - `profiles` extends `auth.users` with `role` and `is_active`.
 - `restaurant_users` join table maps users to restaurants.
 - Service-role key (`createAdminClient`) is **server-only**. Never expose to browser.
-- **Open signup**: `/signup` + `/api/auth/signup` let anyone self-register against any restaurant (auto-confirmed). This is intentional per Micheal — do **not** lock it down without an explicit ask. Each API route still self-gates on `profiles.role`; there is no shared `requireAdmin()` helper yet, so the `getUser()` → fetch role → compare block is repeated across routes.
+- **Open signup**: `/signup` + `/api/auth/signup` let anyone self-register against any restaurant (auto-confirmed). This is intentional per Micheal — do **not** lock it down without an explicit ask. Each API route self-gates on `profiles.role` — most via the shared `requireAdmin()` helper in `src/lib/api-auth.ts`; a minority still inline the `getUser()` → fetch role → compare block.
 
 ## Key Business Rules
 
@@ -214,7 +219,7 @@ The brand is built out — **do not redesign without an explicit ask**.
 
 - **Logo**: mandala (color/mono/gold/black), circular seal, horizontal/stacked/wordmark, app icon. Live under `public/assets/pressfarm/logo/`.
 - **Flowers**: ~38 hand-illustrated botanicals at `public/assets/pressfarm/flowers/`. Auto-resolve via `src/lib/flower-images.ts`. Don't rename/delete files without checking `flowerImageForName()` callers and `FLOWER_NAME_MAP`. Legacy alias `"fairyvetch"` exists for the old Hairy Vetch misspelling.
-- **Image weights**: brand PNGs are downsized to 768px (flowers) / 1024px (logos) — originals were 2048–3000px (141MB → 47MB). Keep new assets web-sized; run `npm run optimize:images` (idempotent, in-place, preserves PNG + filename + alpha) after adding art. Logos stay PNG because some email clients can't render WebP.
+- **Image weights**: brand PNGs are downsized to 768px (flowers) / 1024px (logos) — originals were 2048–3000px (141MB → 47MB). Keep new assets web-sized; run `npm run optimize:images` (idempotent, in-place, preserves PNG + filename + alpha) after adding art. Logos stay PNG because some email clients can't render WebP. The logo **SVGs** embed the mandala as a base64 raster — `node scripts/optimize-svg-logos.mjs` (idempotent) caps those embedded rasters at 1024px (was 30MB across 8 files, now ~5MB); run it if new logo SVGs are added.
 - **Typography**: Bank Gothic LT (wordmark + tagline), Cormorant Garamond (display), Inter (body), JetBrains Mono (code).
 - **Tokens**: prefer `pf-*` (`--pf-master-blue`, `--pf-master-orange`, `--pf-master-violet`) for new work. `farm-green / farm-cream / farm-dark / farm-muted` are core legacy and still used everywhere — don't remove.
 - **Status palette**: blue-700/100 = info/update, amber-700/800 = soft warn, red-700/800 = error, farm-green = success. Match `badge-blue/gold/red/green` tone families. **No ad-hoc colors.**
@@ -236,6 +241,8 @@ SUPABASE_SERVICE_ROLE_KEY=        # server only, bypasses RLS
 RESEND_API_KEY=                   # server only
 NEXT_PUBLIC_APP_URL=              # https://pressfarm.io or localhost:3000
 RESEND_FROM_*                     # optional per-purpose sender overrides (orders/availability/digest/timesheet/noreply)
+NEXT_PUBLIC_SENTRY_DSN            # optional — Sentry error capture stays OFF until set
+SENTRY_ORG / SENTRY_PROJECT / SENTRY_AUTH_TOKEN  # optional — only for build-time source-map upload
 ```
 
 ## Conventions
@@ -247,8 +254,8 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **065** (064 written, pending run). (044/047/062 each already collide across two files — don't add to those numbers.)
-- The user does NOT have `supabase` CLI linked. After writing a migration, present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **067**. (044/047/062 each already collide across two files — don't add to those numbers.)
+- The user does NOT have `supabase` CLI linked. Apply migrations via the Supabase MCP (`apply_migration`, project `rxdfjaseilmjvcwamqyk`) when it's available in the session; otherwise present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
 
@@ -294,7 +301,8 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 - `/admin/foraging-calendar` — seasonal foraging reference.
 - Individual-account order accountability (`order_audit`, migration 058).
 - `/receiver` — destination-side unpack / check-in.
-- **126 Vitest tests** across 19 files in `tests/` — concentrated on the microgreens algorithm, forecasting, and tasks. (The financial core — orders, deliveries, pricing, reports — has no automated coverage yet.)
+- **183 Vitest tests** across 24 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, and the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate). (The route-level financial flows — deliveries logging, reports — still have no automated coverage.)
+- Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps).
 
 ## Open Follow-ups (Prioritized)
 
@@ -304,9 +312,10 @@ RESEND_FROM_*                     # optional per-purpose sender overrides (order
 **Audit follow-ups (codebase audit, 2026-06-01):**
 3. **Regenerate `src/types/database.ts`** from the live schema — it covers ~18 of ~34 tables, driving ~580 `(supabase as any)` casts. Pairs with extracting a `requireAdmin()` helper (the auth-check block is duplicated across ~87 routes).
 4. ~~Reports full-table JS aggregation~~ — **Largely done.** The big scan (`delivery_items`, 3.7k rows, fastest-growing) is now SQL via the `report_item_revenue` view (migration 065). The residual month/year rollup over `deliveries` (~403) + `farm_expenses` (~132) is intentionally left in JS — tiny bounded tables, and a new view would couple `main`'s auto-deploy to a manual migration for negligible gain. Revisit only if `deliveries` grows into the tens of thousands.
-5. **Unbounded list queries** — chef history, labor, notes select with no limit/date window on ever-growing tables.
+5. ~~Unbounded list queries~~ — **Done (2026-06-10).** Chef history was already paginated (`.range()`); labor caps at 1000; notes (500) and event-requests (300) now have limits. Items catalog stays unbounded on purpose — it's the full-catalog admin view (~300 rows).
 6. **Dead code** — 5 orphaned `components/shared/` files (`PageHeader`, `TopBar`, `EmptyState`, `status-badge.tsx`, `delivery-date-picker.tsx`); the reserved-but-unused `historicalDeliveryItems` path in the sow-plan flow.
-7. **Supabase advisors** — migration **064** fixes the three SQL findings (`seeds_with_on_hand` SECURITY DEFINER view, `match_inbound_sender` anon-executable, `slide_recurring_anchor` search_path); run it. Still manual: enable leaked-password protection in the Auth dashboard.
+7. ~~Supabase advisors~~ — **Done.** 064 is applied; the live security-advisor list is empty (verified 2026-06-10). Still manual: enable leaked-password protection in the Auth dashboard.
+8. **Activate Sentry** — create a free sentry.io project and set `NEXT_PUBLIC_SENTRY_DSN` in Vercel; the SDK is already wired and ships inert without it.
 
 Pack manager is descoped (Micheal 2026-05-15) — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.
 
