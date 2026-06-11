@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Press Farm — Strategic &amp; Financial Review 2026</title>
+<style>
+  @page {
+    size: letter;
+    margin: 22mm 18mm 20mm 18mm;
+    @bottom-left { content: "Press Farm — Strategic & Financial Review · June 2026"; font-family: Helvetica, Arial, sans-serif; font-size: 7pt; color: #8a8a8a; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Helvetica, Arial, sans-serif; font-size: 7pt; color: #8a8a8a; }
+  }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+
+  :root {}
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1f2430; font-size: 9.6pt; line-height: 1.5; margin: 0; }
+
+  /* ---------- Cover ---------- */
+  .cover { page: cover; height: 279mm; width: 216mm; background: #152a47; color: #fff; padding: 30mm 24mm; position: relative; page-break-after: always; }
+  .cover .rule { width: 64mm; height: 2.5pt; background: #d9962e; margin: 10mm 0 8mm; }
+  .cover .eyebrow { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; letter-spacing: 3.5px; text-transform: uppercase; color: #d9962e; }
+  .cover h1 { font-size: 30pt; font-weight: normal; line-height: 1.18; margin: 6mm 0 0; }
+  .cover .sub { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #b9c4d6; margin-top: 6mm; line-height: 1.6; }
+  .cover .meta { position: absolute; bottom: 26mm; left: 24mm; right: 24mm; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; color: #8fa0ba; border-top: 0.5pt solid #3a4f70; padding-top: 5mm; }
+  .cover .meta b { color: #dfe6f0; font-weight: 600; }
+  .kpis { display: flex; gap: 8mm; margin-top: 14mm; }
+  .kpi { flex: 1; border-left: 1.5pt solid #d9962e; padding-left: 5mm; }
+  .kpi .v { font-size: 19pt; color: #fff; font-family: Georgia, serif; }
+  .kpi .l { font-family: Helvetica, Arial, sans-serif; font-size: 7.5pt; letter-spacing: 1.5px; text-transform: uppercase; color: #8fa0ba; margin-top: 1.5mm; line-height: 1.45; }
+
+  /* ---------- Type system ---------- */
+  h2 { font-family: Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: 700; color: #152a47; margin: 0 0 4mm; padding-top: 2mm; }
+  h2 .num { color: #d9962e; margin-right: 3mm; }
+  h3 { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: 700; color: #152a47; margin: 6mm 0 2.5mm; }
+  p { margin: 0 0 3.2mm; text-align: justify; }
+  .section { page-break-before: always; }
+  .section-rule { height: 1.2pt; background: #152a47; margin-bottom: 6mm; }
+  .lead { font-size: 10.5pt; color: #2e3a52; }
+  b, strong { color: #152a47; }
+
+  .exhibit-label { font-family: Helvetica, Arial, sans-serif; font-size: 7.5pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #d9962e; margin: 6mm 0 1.5mm; }
+  .exhibit-title { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; font-weight: 700; color: #152a47; margin-bottom: 3mm; }
+
+  table { width: 100%; border-collapse: collapse; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; margin-bottom: 4mm; }
+  th { background: #152a47; color: #fff; font-weight: 600; text-align: left; padding: 2.2mm 3mm; font-size: 8pt; }
+  td { padding: 2mm 3mm; border-bottom: 0.5pt solid #d8dde6; vertical-align: top; }
+  tr:nth-child(even) td { background: #f4f6f9; }
+  .r { text-align: right; }
+  th.r { text-align: right; }
+  .hi td { background: #fdf3e3 !important; font-weight: 600; }
+  .total td { border-top: 1.2pt solid #152a47; font-weight: 700; background: #fff !important; }
+
+  .callout { background: #f4f6f9; border-left: 2.5pt solid #152a47; padding: 3.5mm 5mm; margin: 4mm 0; }
+  .callout.gold { border-left-color: #d9962e; background: #fdf6ea; }
+  .callout p { margin: 0; text-align: left; }
+  .callout .h { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #152a47; margin-bottom: 1.5mm; }
+
+  /* takeaway box on exec summary */
+  .sowhat { background: #152a47; color: #fff; padding: 5mm 6mm; margin: 5mm 0; }
+  .sowhat .h { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #d9962e; margin-bottom: 2mm; }
+  .sowhat p { color: #e7ecf4; margin: 0; text-align: left; }
+  .sowhat b { color: #fff; }
+
+  /* bar chart */
+  .chart { font-family: Helvetica, Arial, sans-serif; font-size: 7.8pt; margin: 3mm 0 5mm; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 1.3mm; }
+  .bar-row .lbl { width: 14mm; color: #4a566c; }
+  .bar-row .track { flex: 1; }
+  .bar-row .bar { display: block; height: 4.2mm; background: #6e87ab; }
+  .bar-row.peak .bar { background: #152a47; }
+  .bar-row.trough .bar { background: #c8d2e0; }
+  .bar-row .val { width: 18mm; text-align: right; color: #1f2430; padding-left: 2.5mm; white-space: nowrap; }
+
+  /* numbered findings */
+  .finding { display: flex; margin-bottom: 4mm; }
+  .finding .n { font-family: Georgia, serif; font-size: 17pt; color: #d9962e; width: 10mm; flex-shrink: 0; line-height: 1.1; }
+  .finding .t p { margin: 0; text-align: left; }
+
+  ul { margin: 0 0 3.5mm; padding-left: 5mm; }
+  li { margin-bottom: 1.6mm; }
+  .small { font-size: 8pt; color: #5a6478; }
+  .footnote { font-size: 7.2pt; color: #707a8d; border-top: 0.5pt solid #d8dde6; padding-top: 2mm; margin-top: 4mm; page-break-inside: avoid; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="eyebrow">Press Farm &nbsp;·&nbsp; Yountville, California</div>
+  <div class="rule"></div>
+  <h1>Strategic &amp; Financial Review</h1>
+  <div class="sub">Mid-Year 2026 Assessment, with Outlook to 2028<br>
+  Prepared from realized delivery data — Press Farm OS production database</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">+103%</div><div class="l">Revenue growth<br>Jan–May 2026 vs 2025</div></div>
+    <div class="kpi"><div class="v">~$122K</div><div class="l">Full-year 2026<br>base-case revenue</div></div>
+    <div class="kpi"><div class="v">96%</div><div class="l">Revenue from a<br>single account</div></div>
+    <div class="kpi"><div class="v">19%</div><div class="l">Cash input-cost ratio<br>trailing 24 months</div></div>
+  </div>
+
+  <div class="meta">
+    <b>Date:</b> June 11, 2026 &nbsp;&nbsp;|&nbsp;&nbsp; <b>Coverage:</b> July 2024 – June 2026 (24 months) &nbsp;&nbsp;|&nbsp;&nbsp; <b>Source of truth:</b> deliveries &amp; delivery_items (realized revenue), farm_expenses (cash inputs)
+  </div>
+</div>
+
+<!-- ============ EXEC SUMMARY ============ -->
+<h2>Executive Summary</h2>
+<div class="section-rule"></div>
+
+<p class="lead">Press Farm has moved from a side-of-the-plate herb supplier into a <b>structurally profitable, fast-growing specialty produce operation</b> with one anchor customer. Three findings define the situation:</p>
+
+<div class="finding"><div class="n">1</div><div class="t"><p><b>Growth is real and accelerating.</b> Realized revenue rose from $34.2K (half-year 2024) to $102.5K (full-year 2025). The first five months of 2026 delivered $42.3K — <b>up 103% on the same period last year</b>. This is not seasonal noise; it is a step-change in volume and price realization.</p></div></div>
+
+<div class="finding"><div class="n">2</div><div class="t"><p><b>The economics are unusually clean.</b> Across 24 months the farm booked ~$180.8K of revenue against ~$34.4K of cash inputs — a 19% input-cost ratio, of which nearly half is one-time equipment buildout. The constraint on the business is not cost; it is throughput and channel.</p></div></div>
+
+<div class="finding"><div class="n">3</div><div class="t"><p><b>The risk is concentration, not demand.</b> 96% of revenue comes from a single restaurant (Press), and 13% of all-time revenue comes from a single crop (Nasturtium). The franchise is healthy but fragile on two axes — one customer, one hero SKU.</p></div></div>
+
+<div class="sowhat">
+  <div class="h">The "So What"</div>
+  <p>2026 is on track to close at <b>~$120–125K (base case), roughly +20% on 2025</b>. The upside to a <b>$145K+ year and a $200K+ 2027</b> is available — but it is gated almost entirely by <b>channel diversification</b>, not by the farm's ability to grow product. The single highest-value move over the next 18 months is converting the second and third restaurant accounts from a rounding error into 25–30% of revenue.</p>
+</div>
+
+<div class="exhibit-label">Exhibit 1</div>
+<div class="exhibit-title">The growth curve — revenue per delivery is doing the work</div>
+<table>
+  <tr><th>Period</th><th class="r">Revenue</th><th class="r">Deliveries</th><th class="r">Avg / delivery</th></tr>
+  <tr><td>2024 (Jul–Dec, partial)</td><td class="r">$34,182</td><td class="r">115</td><td class="r">$297</td></tr>
+  <tr><td>2025 (full year)</td><td class="r">$102,501</td><td class="r">209</td><td class="r">$490</td></tr>
+  <tr class="hi"><td>2026 (Jan–Jun YTD)</td><td class="r">$44,122</td><td class="r">87</td><td class="r">$507</td></tr>
+</table>
+<p class="small">Delivery count roughly held flat year-over-year while revenue per delivery rose ~65% from 2024 to 2026. Growth is coming from basket value and price — more premium SKUs per drop — not from running the truck more often. That is the high-margin way to grow.</p>
+
+<!-- ============ SECTION 1 ============ -->
+<div class="section">
+<h2><span class="num">01</span>Situation Assessment</h2>
+<div class="section-rule"></div>
+
+<h3>1.1 &nbsp;Like-for-like proof point</h3>
+<p>Stripping out seasonality by comparing identical calendar windows:</p>
+
+<div class="exhibit-label">Exhibit 2</div>
+<div class="exhibit-title">January–May revenue, year-over-year</div>
+<table>
+  <tr><th>Window</th><th class="r">2025</th><th class="r">2026</th><th class="r">Change</th></tr>
+  <tr class="hi"><td>Jan–May revenue</td><td class="r">$20,850</td><td class="r">$42,279</td><td class="r">+103%</td></tr>
+</table>
+
+<p>A doubling on a clean like-for-like basis is the single most important fact in this review. Whatever changed between early 2025 and early 2026 — catalog depth, pricing discipline, the move off Excel onto the ordering system — <b>it worked, and it should be protected and pressed.</b></p>
+
+<h3>1.2 &nbsp;Cost structure</h3>
+
+<div class="exhibit-label">Exhibit 3</div>
+<div class="exhibit-title">Cash inputs, trailing 24 months</div>
+<table>
+  <tr><th>Category</th><th class="r">Spend</th><th class="r">Share</th><th>Character</th></tr>
+  <tr><td>Equipment</td><td class="r">$15,635</td><td class="r">45%</td><td>Largely one-time / capitalizable buildout</td></tr>
+  <tr><td>Seeds</td><td class="r">$9,051</td><td class="r">26%</td><td>Recurring biological input</td></tr>
+  <tr><td>Plants</td><td class="r">$3,511</td><td class="r">10%</td><td>Recurring</td></tr>
+  <tr><td>Soil</td><td class="r">$2,895</td><td class="r">8%</td><td>Recurring</td></tr>
+  <tr><td>Amendments / supplies / software / other</td><td class="r">$3,337</td><td class="r">10%</td><td>Mixed</td></tr>
+  <tr class="total"><td>Total cash inputs</td><td class="r">$34,429</td><td class="r">100%</td><td></td></tr>
+</table>
+
+<p>Recurring biological inputs run <b>~$650–900 per month</b>. Against revenue of $7–15K in peak months, <b>gross input margin in season exceeds 90%</b>. This is a land-and-labor business, not a materials business.</p>
+
+<div class="callout gold">
+  <div class="h">Data gap — flag for action</div>
+  <p>Labor and farmer pay are effectively <b>not captured in the system</b> (38.8 logged hours, $0 entered rates). True <i>net</i> margin therefore cannot be computed from the database; the ~$12K/quarter farmer-pay figure lives outside the data. <b>Recommendation: log labor for one full month</b> so the reporting stack can show real net, not just contribution.</p>
+</div>
+</div>
+
+<!-- ============ SECTION 2 ============ -->
+<div class="section">
+<h2><span class="num">02</span>Revenue Anatomy</h2>
+<div class="section-rule"></div>
+
+<h3>2.1 &nbsp;Customer concentration — the central risk</h3>
+
+<div class="exhibit-label">Exhibit 4</div>
+<div class="exhibit-title">Revenue by account, all-time</div>
+<table>
+  <tr><th>Restaurant</th><th class="r">Revenue</th><th class="r">Deliveries</th><th class="r">Share</th></tr>
+  <tr class="hi"><td>Press</td><td class="r">$174,271</td><td class="r">392</td><td class="r">96.4%</td></tr>
+  <tr><td>Under-Study</td><td class="r">$5,778</td><td class="r">16</td><td class="r">3.2%</td></tr>
+  <tr><td>Events</td><td class="r">$756</td><td class="r">3</td><td class="r">0.4%</td></tr>
+</table>
+
+<p>This is the headline risk. The business is, financially, <b>a single-account supplier</b>. Press is a strong, growing, loyal account — but the loss, relocation, or chef turnover of that one relationship would erase the franchise overnight. Under-Study exists in the system but has never been activated as a real channel.</p>
+
+<h3>2.2 &nbsp;Product concentration</h3>
+
+<div class="exhibit-label">Exhibit 5</div>
+<div class="exhibit-title">Revenue by category and hero SKUs</div>
+<table>
+  <tr><th>Category</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Share</th></tr>
+  <tr><td>Herbs &amp; leaves</td><td class="r">$69,102</td><td class="r">84,023</td><td class="r">38%</td></tr>
+  <tr><td>Fruit &amp; veg</td><td class="r">$61,619</td><td class="r">14,093</td><td class="r">34%</td></tr>
+  <tr><td>Flowers</td><td class="r">$40,019</td><td class="r">5,085</td><td class="r">22%</td></tr>
+  <tr><td>Microgreens</td><td class="r">$9,599</td><td class="r">744</td><td class="r">5%</td></tr>
+  <tr><td>Kits</td><td class="r">$466</td><td class="r">25</td><td class="r">&lt;1%</td></tr>
+</table>
+
+<p><b>Top SKUs:</b> Nasturtium <b>$23,751 (13% of the entire business)</b>, Carrots $17,138, Radish $9,745, Mustard Flowers $7,650, Squash $6,803, Basil $6,732, Tomatoes $6,198, Figs $5,312. The <b>top three crops account for 28% of all revenue.</b></p>
+
+<ul>
+  <li><b>Strength:</b> the farm has found genuine hero products. Nasturtium and edible flowers are exactly the high-margin, hard-to-source, chef-pull items a small farm should anchor on.</li>
+  <li><b>Fragility:</b> a Nasturtium crop failure, a pest year, or a chef rotating off the garnish is a 13% revenue event. Microgreens — the highest-controllability, weather-independent line — is only 5% of revenue despite a dedicated production module.</li>
+</ul>
+
+<h3>2.3 &nbsp;Seasonality</h3>
+
+<div class="exhibit-label">Exhibit 6</div>
+<div class="exhibit-title">Average monthly revenue, two-year basis</div>
+<div class="chart">
+  <div class="bar-row"><span class="lbl">Jan*</span><span class="track"><span class="bar" style="width:81%"></span></span><span class="val">$11.6K</span></div>
+  <div class="bar-row trough"><span class="lbl">Feb</span><span class="track"><span class="bar" style="width:26%"></span></span><span class="val">$3.8K</span></div>
+  <div class="bar-row trough"><span class="lbl">Mar</span><span class="track"><span class="bar" style="width:25%"></span></span><span class="val">$3.6K</span></div>
+  <div class="bar-row"><span class="lbl">Apr</span><span class="track"><span class="bar" style="width:38%"></span></span><span class="val">$5.5K</span></div>
+  <div class="bar-row"><span class="lbl">May</span><span class="track"><span class="bar" style="width:49%"></span></span><span class="val">$7.1K</span></div>
+  <div class="bar-row"><span class="lbl">Jun</span><span class="track"><span class="bar" style="width:28%"></span></span><span class="val">$4.0K</span></div>
+  <div class="bar-row"><span class="lbl">Jul</span><span class="track"><span class="bar" style="width:42%"></span></span><span class="val">$6.1K</span></div>
+  <div class="bar-row peak"><span class="lbl">Aug</span><span class="track"><span class="bar" style="width:90%"></span></span><span class="val">$13.0K</span></div>
+  <div class="bar-row peak"><span class="lbl">Sep</span><span class="track"><span class="bar" style="width:100%"></span></span><span class="val">$14.4K</span></div>
+  <div class="bar-row"><span class="lbl">Oct</span><span class="track"><span class="bar" style="width:60%"></span></span><span class="val">$8.7K</span></div>
+  <div class="bar-row"><span class="lbl">Nov</span><span class="track"><span class="bar" style="width:58%"></span></span><span class="val">$8.4K</span></div>
+  <div class="bar-row trough"><span class="lbl">Dec</span><span class="track"><span class="bar" style="width:30%"></span></span><span class="val">$4.3K</span></div>
+</div>
+<p class="small">* January is inflated by a historical data backfill; normalized, it behaves as a ~$5–6K shoulder month. Dark bars = peak; light bars = trough.</p>
+
+<p>The shape is unambiguous: <b>a strong Aug–Nov harvest season (~$45K of the year) and a soft Dec–Mar shoulder.</b> The strategic question every year is the same — how do you put revenue into the Dec–Mar trough? That is precisely what microgreens, value-added product, and protected production are for.</p>
+</div>
+
+<!-- ============ SECTION 3 ============ -->
+<div class="section">
+<h2><span class="num">03</span>Outlook — Rest of 2026</h2>
+<div class="section-rule"></div>
+
+<p>The farm is at the start of its strong half. H1 2026 has banked <b>$44.1K</b>; the Aug–Sep peak is still ahead. Three scenarios for full-year 2026, anchored on the 2025 H2 actual of $75.5K and demonstrated year-over-year momentum:</p>
+
+<div class="exhibit-label">Exhibit 7</div>
+<div class="exhibit-title">Full-year 2026 scenarios</div>
+<table>
+  <tr><th>Scenario</th><th>H2 2026 assumption</th><th class="r">FY 2026</th><th class="r">vs 2025</th></tr>
+  <tr><td><b>Bear</b></td><td>H2 softens to ~$62K (peak underperforms, weather)</td><td class="r">~$106K</td><td class="r">+4%</td></tr>
+  <tr class="hi"><td><b>Base</b></td><td>H2 ≈ 2025 + modest growth, ~$78K</td><td class="r">~$122K</td><td class="r">+19%</td></tr>
+  <tr><td><b>Bull</b></td><td>2026 momentum carries, H2 ~$100K</td><td class="r">~$144K</td><td class="r">+41%</td></tr>
+</table>
+
+<p>The bull case is genuinely reachable <b>if and only if the Aug–Sep peak is supplied to its full demand</b> — meaning the binding constraint this summer is production capacity and harvest labor, not orders. Plan crew and succession plantings now for the peak that is already visible.</p>
+
+<div class="callout">
+  <div class="h">Near-term watch items — next 90 days</div>
+  <p>· June is running light ($1.8K through the 11th). Normal shoulder, but confirm July succession plantings are in to hit the August ramp.<br>
+  · Protect the Nasturtium and flower lines — together 35% of revenue, and peak season is their season. A failure here is the single biggest miss available.<br>
+  · Activate Under-Study for real before peak. Even a few hundred dollars a week from a second account compounds into both revenue and de-risking.</p>
+</div>
+
+<h2 style="margin-top:8mm"><span class="num">04</span>Outlook — 2027 and Beyond</h2>
+<div class="section-rule"></div>
+
+<h3>4.1 &nbsp;The base trajectory</h3>
+<p>If the farm simply holds its current trajectory — same accounts, same catalog, continued price and basket maturation — <b>2027 lands around $135–155K</b> and growth naturally decelerates toward a single-account ceiling. You can only sell so much to one kitchen.</p>
+
+<h3>4.2 &nbsp;The three levers that change the slope</h3>
+<p>The difference between a $150K plateau and a $250K+ business is not farming harder. It is three structural moves, in priority order:</p>
+
+<p><b>Lever 1 — Channel diversification (highest value).</b> Moving from one active account to 3–4 is the unlock. The system is already built for it — multi-restaurant ordering, magic-link chef accounts, the Events channel, offer sheets. If Under-Study plus two new Napa Valley kitchens reach even half of Press's run-rate, that is <b>+$60–80K per year</b> and cuts single-account risk from 96% to ~50%. <b>This is the #1 recommendation of this review.</b></p>
+
+<p><b>Lever 2 — Fill the winter trough.</b> Dec–Mar averages ~$4K/month against an Aug–Sep ~$13–14K. Microgreens (weather-independent, already a built production module at only 5% of revenue) plus value-added/preserved product can realistically add <b>$3–5K/month of off-season revenue</b> — smoothing cash flow and repositioning the farm as a year-round supplier rather than a seasonal one.</p>
+
+<p><b>Lever 3 — Mix shift toward flowers &amp; micros.</b> Flowers already throw off $40K at the highest revenue-per-unit in the catalog (5,085 units → $40K, versus herbs' 84,023 units → $69K). Edible flowers and microgreens are where small acreage produces the most dollars per square foot and the most defensible chef pull. Tilting the crop plan another 5–10 points toward these categories raises revenue without more land.</p>
+
+<div class="exhibit-label">Exhibit 8</div>
+<div class="exhibit-title">Illustrative 2027–2028 path — targets tied to account math, not growth rates</div>
+<table>
+  <tr><th></th><th class="r">2026 (base)</th><th class="r">2027 (target)</th><th class="r">2028 (target)</th></tr>
+  <tr><td>Active restaurant accounts</td><td class="r">1.x</td><td class="r">3</td><td class="r">4–5</td></tr>
+  <tr class="hi"><td>Revenue</td><td class="r">~$122K</td><td class="r">~$185K</td><td class="r">~$260K</td></tr>
+  <tr><td>Single-account share</td><td class="r">~95%</td><td class="r">~60%</td><td class="r">~45%</td></tr>
+  <tr><td>Winter-month floor</td><td class="r">~$4K</td><td class="r">~$7K</td><td class="r">~$9K</td></tr>
+</table>
+<p class="small">Targets are deliberately tied to account count and product mix rather than a growth percentage — because that is the actual driver. Hit the account math and the revenue follows.</p>
+</div>
+
+<!-- ============ SECTION 5 ============ -->
+<div class="section">
+<h2><span class="num">05</span>Strategic Imperatives</h2>
+<div class="section-rule"></div>
+
+<div class="exhibit-label">Exhibit 9</div>
+<div class="exhibit-title">Five imperatives, ranked</div>
+<table>
+  <tr><th style="width:6mm">#</th><th>Imperative</th><th>Why it matters</th><th style="width:24mm">Horizon</th></tr>
+  <tr class="hi"><td>1</td><td><b>Sign and activate two new restaurant accounts</b></td><td>Breaks 96% single-account risk; largest revenue lever; system already supports it</td><td>Next 6 months</td></tr>
+  <tr><td>2</td><td><b>Supply the Aug–Sep peak to full demand</b></td><td>The bull-case $144K year is won or lost in 8 weeks; plan crew + succession now</td><td>This summer</td></tr>
+  <tr><td>3</td><td><b>Grow microgreens + flowers to ~35% of mix</b></td><td>Highest $/sq-ft, weather-independent, fills the winter trough</td><td>6–18 months</td></tr>
+  <tr><td>4</td><td><b>Log labor &amp; farmer pay in the system</b></td><td>Without it, net margin is invisible and pricing decisions fly blind</td><td>Immediate</td></tr>
+  <tr><td>5</td><td><b>De-risk the Nasturtium dependency</b></td><td>13% of revenue in one crop — add backup plantings / second flower heroes</td><td>This season</td></tr>
+</table>
+
+<h2 style="margin-top:6mm"><span class="num">06</span>Risks &amp; Watch-Outs</h2>
+<div class="section-rule"></div>
+
+<table>
+  <tr><th>Risk</th><th style="width:30mm">Severity</th><th>Mitigation</th></tr>
+  <tr class="hi"><td><b>Single-customer dependency</b> — 96% in one account</td><td>High / structural</td><td>Imperative 1. This is the risk that matters.</td></tr>
+  <tr><td><b>Single-crop dependency</b> — Nasturtium at 13%</td><td>Medium</td><td>Diversify hero SKUs; backup plantings</td></tr>
+  <tr><td><b>Key-person / chef turnover</b> — rotating chef staff at Press</td><td>Medium</td><td>The ordering system + order accountability already institutionalize the relationship; keep investing</td></tr>
+  <tr><td><b>Weather / biological</b> — concentrated in Aug–Nov window</td><td>Medium, seasonal</td><td>Microgreens and protected production are the hedge</td></tr>
+  <tr><td><b>Measurement blind spot</b> — labor uncaptured, net margin unknown</td><td>Low, fixable</td><td>Cheap to fix; valuable before any pricing or hiring decision</td></tr>
+</table>
+
+<div class="footnote">
+<b>Methodology &amp; notes.</b> Revenue = realized deliveries.total_value / delivery_items.line_total — the financial source of truth per business rules, not order intent. Figures exclude farmer pay/labor (not captured in the database). Coverage: July 2024 – June 11, 2026 (24 months); June 2026 partial. The January 2026 figure is inflated by a historical delivery backfill; normalized seasonality treats January as a ~$5–6K shoulder month. Forecasts are scenario estimates built on 2025 H2 actuals and observed year-over-year momentum — directional planning numbers, not guarantees. Input-cost ratios are cash inputs only; equipment (45% of spend) is largely one-time buildout. &nbsp;·&nbsp; Press Farm OS, Yountville, CA.
+</div>
+</div>
+
+</body>
+</html>
