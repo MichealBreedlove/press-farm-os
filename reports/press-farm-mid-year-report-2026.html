@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Press Farm — Mid-Year Report 2026</title>
+<style>
+  @page {
+    size: letter;
+    margin: 22mm 18mm 20mm 18mm;
+    @bottom-left { content: "Press Farm — Mid-Year Report · June 2026"; font-family: Helvetica, Arial, sans-serif; font-size: 7pt; color: #8a8a8a; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-family: Helvetica, Arial, sans-serif; font-size: 7pt; color: #8a8a8a; }
+  }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #1f2430; font-size: 9.6pt; line-height: 1.5; margin: 0; }
+
+  /* ---------- Cover ---------- */
+  .cover { page: cover; height: 279mm; width: 216mm; background: #152a47; color: #fff; padding: 28mm 24mm; position: relative; page-break-after: always; }
+  .cover .rule { width: 64mm; height: 2.5pt; background: #d9962e; margin: 9mm 0 7mm; }
+  .cover .eyebrow { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; letter-spacing: 3.5px; text-transform: uppercase; color: #d9962e; }
+  .cover h1 { font-size: 29pt; font-weight: normal; line-height: 1.16; margin: 6mm 0 0; }
+  .cover .sub { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #b9c4d6; margin-top: 5mm; line-height: 1.6; }
+  .cover .prepared { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #d9962e; margin-top: 7mm; letter-spacing: 0.5px; }
+  .cover .meta { position: absolute; bottom: 24mm; left: 24mm; right: 24mm; font-family: Helvetica, Arial, sans-serif; font-size: 8.3pt; color: #8fa0ba; border-top: 0.5pt solid #3a4f70; padding-top: 5mm; line-height: 1.6; }
+  .cover .meta b { color: #dfe6f0; font-weight: 600; }
+  .kpis { display: flex; gap: 7mm; margin-top: 13mm; }
+  .kpi { flex: 1; border-left: 1.5pt solid #d9962e; padding-left: 4.5mm; }
+  .kpi .v { font-size: 18pt; color: #fff; font-family: Georgia, serif; }
+  .kpi .l { font-family: Helvetica, Arial, sans-serif; font-size: 7.3pt; letter-spacing: 1.3px; text-transform: uppercase; color: #8fa0ba; margin-top: 1.5mm; line-height: 1.45; }
+
+  /* ---------- Type ---------- */
+  h2 { font-family: Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: 700; color: #152a47; margin: 0 0 4mm; padding-top: 2mm; }
+  h2 .num { color: #d9962e; margin-right: 3mm; }
+  h3 { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: 700; color: #152a47; margin: 6mm 0 2.5mm; }
+  p { margin: 0 0 3.2mm; text-align: justify; }
+  .section { page-break-before: always; }
+  .section-rule { height: 1.2pt; background: #152a47; margin-bottom: 6mm; }
+  .lead { font-size: 10.5pt; color: #2e3a52; }
+  b, strong { color: #152a47; }
+
+  .exhibit-label { font-family: Helvetica, Arial, sans-serif; font-size: 7.5pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #d9962e; margin: 6mm 0 1.5mm; }
+  .exhibit-title { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; font-weight: 700; color: #152a47; margin-bottom: 3mm; }
+
+  table { width: 100%; border-collapse: collapse; font-family: Helvetica, Arial, sans-serif; font-size: 8.5pt; margin-bottom: 4mm; }
+  th { background: #152a47; color: #fff; font-weight: 600; text-align: left; padding: 2.2mm 3mm; font-size: 8pt; }
+  td { padding: 2mm 3mm; border-bottom: 0.5pt solid #d8dde6; vertical-align: top; }
+  tr:nth-child(even) td { background: #f4f6f9; }
+  .r { text-align: right; }
+  th.r { text-align: right; }
+  .hi td { background: #fdf3e3 !important; font-weight: 600; }
+  .total td { border-top: 1.2pt solid #152a47; font-weight: 700; background: #fff !important; }
+  .yes { color: #2e6b3e; font-weight: 700; }
+  .no { color: #9c2b2b; font-weight: 700; }
+  .maybe { color: #b5781f; font-weight: 700; }
+
+  .callout { background: #f4f6f9; border-left: 2.5pt solid #152a47; padding: 3.5mm 5mm; margin: 4mm 0; }
+  .callout.gold { border-left-color: #d9962e; background: #fdf6ea; }
+  .callout p { margin: 0; text-align: left; }
+  .callout .h { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #152a47; margin-bottom: 1.5mm; }
+
+  .sowhat { background: #152a47; color: #fff; padding: 5mm 6mm; margin: 5mm 0; }
+  .sowhat .h { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #d9962e; margin-bottom: 2mm; }
+  .sowhat p { color: #e7ecf4; margin: 0; text-align: left; }
+  .sowhat b { color: #fff; }
+
+  .chart { font-family: Helvetica, Arial, sans-serif; font-size: 7.8pt; margin: 3mm 0 5mm; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 1.3mm; }
+  .bar-row .lbl { width: 14mm; color: #4a566c; }
+  .bar-row .track { flex: 1; }
+  .bar-row .bar { display: block; height: 4.2mm; background: #6e87ab; }
+  .bar-row.peak .bar { background: #152a47; }
+  .bar-row.trough .bar { background: #c8d2e0; }
+  .bar-row .val { width: 18mm; text-align: right; color: #1f2430; padding-left: 2.5mm; white-space: nowrap; }
+
+  .finding { display: flex; margin-bottom: 4mm; }
+  .finding .n { font-family: Georgia, serif; font-size: 17pt; color: #d9962e; width: 10mm; flex-shrink: 0; line-height: 1.1; }
+  .finding .t p { margin: 0; text-align: left; }
+
+  ul { margin: 0 0 3.5mm; padding-left: 5mm; }
+  li { margin-bottom: 1.6mm; }
+  .small { font-size: 8pt; color: #5a6478; }
+  .footnote { font-size: 7.2pt; color: #707a8d; border-top: 0.5pt solid #d8dde6; padding-top: 2mm; margin-top: 4mm; page-break-inside: avoid; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="eyebrow">Press Farm &nbsp;·&nbsp; Yountville, California</div>
+  <div class="rule"></div>
+  <h1>Mid-Year Report</h1>
+  <div class="sub">Six-Month Review, Full-Year Outlook<br>&amp; the Acreage Question</div>
+  <div class="prepared">Prepared for the Fall Planting Meeting with Chef Philip Tessier</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">$48.7K</div><div class="l">Revenue, last six months<br>(Dec '25 – May '26)</div></div>
+    <div class="kpi"><div class="v">91</div><div class="l">Deliveries<br>in the half-year</div></div>
+    <div class="kpi"><div class="v">~$200K</div><div class="l">Revenue per acre,<br>annualized (half-acre)</div></div>
+    <div class="kpi"><div class="v">Carrots</div><div class="l">#1 crop — 28% of<br>half-year revenue</div></div>
+  </div>
+
+  <div class="meta">
+    <b>Date:</b> June 11, 2026 &nbsp;|&nbsp; <b>Half-year window:</b> December 2025 – May 2026 &nbsp;|&nbsp; <b>Context:</b> July 2024 – present (full operating history)<br>
+    <b>Source of truth:</b> realized deliveries &amp; delivery line items (Press Farm OS). Figures are revenue billed, not order intent.
+  </div>
+</div>
+
+<!-- ============ EXEC SUMMARY ============ -->
+<h2>The Half-Year at a Glance</h2>
+<div class="section-rule"></div>
+
+<p class="lead">Press Farm is a half-acre specialty garden in Yountville supplying Chef Philip Tessier's kitchens. This report covers the <b>last six months (December 2025 – May 2026)</b>, sets them against the farm's full history, looks ahead to the rest of 2026 and the years beyond, and answers the question on the table for the fall planting meeting: <b>does adding acreage help the farm, or not?</b></p>
+
+<div class="finding"><div class="n">1</div><div class="t"><p><b>The half-year delivered $48.7K across 91 deliveries</b> — a healthy winter-and-spring run, carried by a standout January ($19.8K) on the back of a big carrot harvest. The farm enters its strong season (August–November) with momentum.</p></div></div>
+
+<div class="finding"><div class="n">2</div><div class="t"><p><b>The land is already working at an elite intensity.</b> A half-acre is producing a trailing-twelve-month run rate near $124K — roughly <b>$200K+ per acre</b>, several times typical specialty-crop benchmarks. The farm is not under-using its ground.</p></div></div>
+
+<div class="finding"><div class="n">3</div><div class="t"><p><b>The binding constraint is labor and harvest capacity, not land.</b> One grower plus a weekly helper is near the management ceiling of the current half-acre. That single fact is the key to the acreage decision below.</p></div></div>
+
+<div class="sowhat">
+  <div class="h">The Bottom Line for the Planting Meeting</div>
+  <p>Adding raw acreage "on spec" would mostly add weeding and waste, because the farm sells nearly everything it can pick and the limit is hands, not dirt. But <b>targeted</b> expansion — a dedicated winter root/brassica block to deepen the proven January pull, planted into leased winery-adjacent ground and staffed by the incoming second hire — pays for itself in under a season. <b>Expand by crop and by demand, not by the acre.</b></p>
+</div>
+
+<!-- ============ SECTION 1 ============ -->
+<div class="section">
+<h2><span class="num">01</span>The Last Six Months in Review</h2>
+<div class="section-rule"></div>
+
+<div class="exhibit-label">Exhibit 1</div>
+<div class="exhibit-title">Monthly revenue, December 2025 – May 2026</div>
+<table>
+  <tr><th>Month</th><th class="r">Deliveries</th><th class="r">Revenue</th></tr>
+  <tr><td>December 2025</td><td class="r">12</td><td class="r">$6,412</td></tr>
+  <tr class="hi"><td>January 2026</td><td class="r">17</td><td class="r">$19,831</td></tr>
+  <tr><td>February 2026</td><td class="r">10</td><td class="r">$5,911</td></tr>
+  <tr><td>March 2026</td><td class="r">10</td><td class="r">$3,685</td></tr>
+  <tr><td>April 2026</td><td class="r">17</td><td class="r">$5,504</td></tr>
+  <tr><td>May 2026</td><td class="r">25</td><td class="r">$7,350</td></tr>
+  <tr class="total"><td>Six-month total</td><td class="r">91</td><td class="r">$48,691</td></tr>
+</table>
+
+<p><b>January is the story of the half-year.</b> A large winter carrot harvest drove a $19.8K month — Carrots alone were $12.3K of it (3,500+ units). This is not a data quirk; it is a real, repeatable winter cash crop, and it is the single most important planting signal in this report. May's 25 deliveries also show the spring cadence picking back up heading into summer.</p>
+
+<h3>1.1 &nbsp;What the kitchen pulled</h3>
+
+<div class="exhibit-label">Exhibit 2</div>
+<div class="exhibit-title">Revenue by category, last six months</div>
+<table>
+  <tr><th>Category</th><th class="r">Revenue</th><th class="r">Share</th></tr>
+  <tr><td>Fruit &amp; vegetables</td><td class="r">$20,160</td><td class="r">41%</td></tr>
+  <tr><td>Herbs &amp; leaves</td><td class="r">$13,364</td><td class="r">27%</td></tr>
+  <tr><td>Flowers</td><td class="r">$13,030</td><td class="r">27%</td></tr>
+  <tr><td>Microgreens</td><td class="r">$1,701</td><td class="r">4%</td></tr>
+  <tr><td>Kits</td><td class="r">$436</td><td class="r">1%</td></tr>
+  <tr class="total"><td>Total</td><td class="r">$48,691</td><td class="r">100%</td></tr>
+</table>
+
+<div class="exhibit-label">Exhibit 3</div>
+<div class="exhibit-title">Top crops, last six months — these are your proven winter/spring sellers</div>
+<table>
+  <tr><th>Crop</th><th class="r">Revenue</th><th class="r">Share of half-year</th></tr>
+  <tr class="hi"><td>Carrots</td><td class="r">$13,636</td><td class="r">28%</td></tr>
+  <tr><td>Radish</td><td class="r">$5,325</td><td class="r">11%</td></tr>
+  <tr><td>Nasturtium (leaf)</td><td class="r">$4,838</td><td class="r">10%</td></tr>
+  <tr><td>Mustard Flowers</td><td class="r">$3,442</td><td class="r">7%</td></tr>
+  <tr><td>Turnip</td><td class="r">$1,800</td><td class="r">4%</td></tr>
+  <tr><td>Fava</td><td class="r">$1,464</td><td class="r">3%</td></tr>
+  <tr><td>Kale</td><td class="r">$1,400</td><td class="r">3%</td></tr>
+  <tr><td>Nasturtium Flowers · Cauliflower · Lettuce · Alyssum · Citrus · Bay · Yuzu · Fava Leaf</td><td class="r">$5,000+</td><td class="r">combined</td></tr>
+</table>
+<p class="small">The top three crops — Carrots, Radish, Nasturtium — were nearly half of the half-year's revenue. This is the menu the kitchen actually reached for through winter and spring, and it is the clearest possible guide to what should go in the ground this fall.</p>
+
+<h3>1.2 &nbsp;What it cost</h3>
+<p>Cash inputs for the six months were <b>$10,243</b> — but $5,074 of that was equipment (one-time buildout), leaving roughly <b>$3,600 in recurring biological inputs</b> (seed, soil, plants, amendments) against $48.7K of revenue. In-season margin on what the farm grows remains above 90%. The economics are not the problem; capacity is.</p>
+
+<div class="callout gold">
+  <div class="h">A note on labor in the numbers</div>
+  <p>Labor and grower pay are not yet captured in the system, so these figures are contribution, not fully-loaded net. The fix is cheap — log hours for one month — and it matters before any decision to hire or expand, because labor is precisely the lever this report turns on.</p>
+</div>
+</div>
+
+<!-- ============ SECTION 2: PRESS & UNDER-STUDY ============ -->
+<div class="section">
+<h2><span class="num">02</span>Two Houses, One Garden</h2>
+<div class="section-rule"></div>
+
+<p class="lead">Press Farm has supplied <b>both Press and Under-Study since Under-Study opened.</b> Because deliveries to the two houses have always been booked together under one account, the system cannot yet split how much produce flows to each kitchen — it has been kept, correctly, as one combined relationship.</p>
+
+<div class="callout">
+  <div class="h">Correcting an earlier read</div>
+  <p>An earlier draft of this analysis treated the farm as a "single-account" operation with concentration risk. That was a bookkeeping artifact, not reality. The farm has served two restaurants all along — the revenue simply wasn't tagged by house. The relationship is a <b>two-venue partnership</b>, and it is a strength, not a fragility.</p>
+</div>
+
+<p>The one practical gap this creates is planning: without a per-house split, the farm can't yet see whether Press and Under-Study want different things, or how fast each is growing. That matters directly for fall planting — if the two kitchens pull different crops or volumes, the garden should be planted to serve both menus deliberately.</p>
+
+<div class="exhibit-label">Recommendation</div>
+<div class="exhibit-title">Start tagging deliveries by house this fall</div>
+<p>Going forward, mark each delivery as Press or Under-Study (the system already supports both as separate restaurants). Within one season this produces a clean per-house demand picture — what each kitchen orders, when, and how much — so the crop plan can be built around two menus instead of an estimate. No back-fixing of history is needed; the split simply starts now.</p>
+</div>
+
+<!-- ============ SECTION 3: THE LONGER ARC ============ -->
+<div class="section">
+<h2><span class="num">03</span>The Longer Arc — Where the Farm Has Been</h2>
+<div class="section-rule"></div>
+
+<p>The half-year sits inside a clear multi-year climb. The farm has grown from a part-year operation into a six-figure run rate in two years.</p>
+
+<div class="exhibit-label">Exhibit 4</div>
+<div class="exhibit-title">Revenue by year</div>
+<table>
+  <tr><th>Year</th><th class="r">Revenue</th><th class="r">Deliveries</th><th>Note</th></tr>
+  <tr><td>2024 (Jul–Dec)</td><td class="r">$34,182</td><td class="r">115</td><td>First half-year of records</td></tr>
+  <tr><td>2025 (full year)</td><td class="r">$102,501</td><td class="r">209</td><td>First six-figure year</td></tr>
+  <tr class="hi"><td>2026 (Jan–Jun, partial)</td><td class="r">$44,122</td><td class="r">87</td><td>Tracking ahead of 2025 pace</td></tr>
+  <tr class="total"><td>Trailing 12 months</td><td class="r">~$124,000</td><td class="r">—</td><td>Current run rate</td></tr>
+</table>
+
+<p>Two things stand out. First, <b>revenue per delivery has risen ~65%</b> since 2024 — the farm is earning more per drop through premium specialty crops, not by running the truck more often. Second, the year has a strong, dependable shape.</p>
+
+<div class="exhibit-label">Exhibit 5</div>
+<div class="exhibit-title">The shape of the year — average monthly revenue, two-year basis</div>
+<div class="chart">
+  <div class="bar-row"><span class="lbl">Jan</span><span class="track"><span class="bar" style="width:81%"></span></span><span class="val">$11.6K</span></div>
+  <div class="bar-row trough"><span class="lbl">Feb</span><span class="track"><span class="bar" style="width:26%"></span></span><span class="val">$3.8K</span></div>
+  <div class="bar-row trough"><span class="lbl">Mar</span><span class="track"><span class="bar" style="width:25%"></span></span><span class="val">$3.6K</span></div>
+  <div class="bar-row"><span class="lbl">Apr</span><span class="track"><span class="bar" style="width:38%"></span></span><span class="val">$5.5K</span></div>
+  <div class="bar-row"><span class="lbl">May</span><span class="track"><span class="bar" style="width:49%"></span></span><span class="val">$7.1K</span></div>
+  <div class="bar-row"><span class="lbl">Jun</span><span class="track"><span class="bar" style="width:28%"></span></span><span class="val">$4.0K</span></div>
+  <div class="bar-row"><span class="lbl">Jul</span><span class="track"><span class="bar" style="width:42%"></span></span><span class="val">$6.1K</span></div>
+  <div class="bar-row peak"><span class="lbl">Aug</span><span class="track"><span class="bar" style="width:90%"></span></span><span class="val">$13.0K</span></div>
+  <div class="bar-row peak"><span class="lbl">Sep</span><span class="track"><span class="bar" style="width:100%"></span></span><span class="val">$14.4K</span></div>
+  <div class="bar-row"><span class="lbl">Oct</span><span class="track"><span class="bar" style="width:60%"></span></span><span class="val">$8.7K</span></div>
+  <div class="bar-row"><span class="lbl">Nov</span><span class="track"><span class="bar" style="width:58%"></span></span><span class="val">$8.4K</span></div>
+  <div class="bar-row trough"><span class="lbl">Dec</span><span class="track"><span class="bar" style="width:30%"></span></span><span class="val">$4.3K</span></div>
+</div>
+<p class="small">Dark = peak, light = trough. Two revenue mountains: a summer/early-fall peak (Aug–Sep, ~$45K of the year across Aug–Nov) and a winter carrot peak (January). The soft spots are February–March and December.</p>
+
+<p>The strategic read is simple: <b>the farm already knows when its money comes in.</b> The opportunity is to defend the two peaks (don't run short at the August–September top) and to keep feeding the January carrot peak — which is exactly what fall planting decides.</p>
+</div>
+
+<!-- ============ SECTION 4: REST OF 2026 ============ -->
+<div class="section">
+<h2><span class="num">04</span>The Rest of 2026</h2>
+<div class="section-rule"></div>
+
+<p>The farm has banked $44.1K through mid-June and is walking into its biggest months. Three scenarios for the full year, anchored on last year's strong second half ($75.5K) and current momentum:</p>
+
+<div class="exhibit-label">Exhibit 6</div>
+<div class="exhibit-title">Full-year 2026 scenarios</div>
+<table>
+  <tr><th>Scenario</th><th>Assumption for Jul–Dec</th><th class="r">Full-year 2026</th><th class="r">vs 2025</th></tr>
+  <tr><td><b>Conservative</b></td><td>Peak underperforms / weather softens</td><td class="r">~$106K</td><td class="r">+4%</td></tr>
+  <tr class="hi"><td><b>Most likely</b></td><td>Second half near 2025 with modest growth</td><td class="r">~$122K</td><td class="r">+19%</td></tr>
+  <tr><td><b>Strong</b></td><td>Peak fully supplied, momentum carries</td><td class="r">~$144K</td><td class="r">+41%</td></tr>
+</table>
+
+<p>The difference between "most likely" and "strong" is almost entirely <b>whether the August–September peak gets picked and delivered to full demand.</b> That is a labor-and-planting question, not a sales question — the orders are there in peak season; the limit is hands and harvest-ready crops. <b>That is what this fall's planting and the second hire are for.</b></p>
+
+<div class="callout">
+  <div class="h">What to plant this fall — straight from the data</div>
+  <p>The crops that carried the last six months <i>are</i> the fall planting list: <b>carrots</b> (the January engine — plant generously and in succession), <b>radish &amp; turnip</b> (fast winter cash), <b>brassicas</b> — cauliflower, broccoli, kale, <b>favas</b> (corn-field rotation), winter <b>lettuce</b>, and the cool-season flowers the kitchen pulls year-round — <b>nasturtium, mustard flower, alyssum</b>. Citrus and yuzu from the orchard round out winter. Plant what already sells before planting anything speculative.</p>
+</div>
+</div>
+
+<!-- ============ SECTION 5: THE ACREAGE QUESTION ============ -->
+<div class="section">
+<h2><span class="num">05</span>The Acreage Question</h2>
+<div class="section-rule"></div>
+
+<p class="lead">Should Press Farm grow beyond its half-acre? The honest answer depends entirely on <i>how</i> — and the data points to a clear yes-with-conditions.</p>
+
+<h3>5.1 &nbsp;The farm today</h3>
+<p>The half-acre is laid out in defined blocks — the corn field (8 rows, corn and fava), the tomato field (22 rows), the field beside the corn (14 rows), the orchard (17 rows), the passionfruit field (15 rows), plus permanent flower rows along the back and sides. Roughly 75+ production rows at 25′ × 30″, worked by one grower with a weekly helper for weeding.</p>
+
+<div class="sowhat">
+  <div class="h">The number that frames everything</div>
+  <p>A half-acre is producing a <b>~$124K trailing-twelve-month run rate — about $200,000+ per acre.</b> Typical California specialty-vegetable ground grosses a fraction of that. Intensive market gardens reach $50–100K per acre. Press Farm is running at <b>two to four times</b> that, because it grows high-value garnish and specialty crops for a fine-dining kitchen. The land is not the underused asset.</p>
+</div>
+
+<h3>5.2 &nbsp;Where more acreage helps — and where it doesn't</h3>
+
+<div class="exhibit-label">Exhibit 7</div>
+<div class="exhibit-title">The acreage decision matrix</div>
+<table>
+  <tr><th>Expansion type</th><th>Demand-backed?</th><th class="r">Verdict</th></tr>
+  <tr class="hi"><td><b>Winter root &amp; brassica block</b><br><span class="small">carrots, radish, turnip, cauliflower, kale</span></td><td>Yes — proven Jan–Mar pull, storable, fills the winter trough</td><td class="r"><span class="yes">Strong yes</span></td></tr>
+  <tr><td><b>Peak-season flower &amp; herb block</b><br><span class="small">nasturtium, marigold, mustard, basil</span></td><td>Yes at the Aug–Sep peak — but only if harvest labor is covered</td><td class="r"><span class="maybe">Yes, if staffed</span></td></tr>
+  <tr><td><b>Perennial expansion</b><br><span class="small">more orchard, figs, yuzu, passionfruit</span></td><td>Long payback (years), but on proven sellers</td><td class="r"><span class="maybe">Selective</span></td></tr>
+  <tr><td><b>Generic acreage "on spec"</b><br><span class="small">more ground ahead of demand</span></td><td>No — the farm is labor- and demand-limited, not land-limited</td><td class="r"><span class="no">No</span></td></tr>
+</table>
+
+<p>The logic is the same in every row: <b>acreage pays when it is matched to a crop the kitchen already buys and to hands that can harvest it.</b> Acreage added ahead of demand simply converts a 90%-margin crop into weeding hours and compost.</p>
+
+<h3>5.3 &nbsp;An illustrative incremental block</h3>
+<p>To make it concrete — one new ~10-row winter block of carrots and brassicas on leased winery-adjacent ground, succession-planted:</p>
+
+<div class="exhibit-label">Exhibit 8</div>
+<div class="exhibit-title">One added winter block — illustrative economics</div>
+<table>
+  <tr><th>Line</th><th class="r">Estimate</th></tr>
+  <tr><td>Incremental revenue / year <span class="small">(benchmarked to current carrot &amp; root sell-through)</span></td><td class="r">$4,000 – $7,000</td></tr>
+  <tr><td>Recurring inputs <span class="small">(seed, amendment)</span></td><td class="r">($300 – $500)</td></tr>
+  <tr><td>Incremental labor <span class="small">(absorbed by the second hire)</span></td><td class="r">variable</td></tr>
+  <tr class="total"><td>Contribution / year, per block</td><td class="r">$3,500 – $6,000</td></tr>
+</table>
+<p class="small">Illustrative, not a guarantee — and realized only if the kitchen pulls the crop. The payback on land prep and irrigation for a cheaply-leased block is under one season. Stack two or three such blocks and the math compounds; the ceiling is harvest labor, not land cost.</p>
+
+<h3>5.4 &nbsp;The real gate: labor, then land</h3>
+<p>Two facts from the ground decide this. First, <b>land may be available through neighboring wineries</b> — so ground is not the scarce input. Second, <b>the farm is run by one grower with a Friday helper, and a second hire is already in process.</b> That hire — not the dirt — is the true unlock. With a second pair of hands, a targeted winter block and a fully-harvested peak both become reachable. Without it, more acreage would stretch one person past the breaking point and revenue would leak as unharvested crop.</p>
+
+<div class="callout gold">
+  <div class="h">The acreage verdict</div>
+  <p><b>Lease, don't buy; expand by the block, not the acre; and let the second hire — not the land — set the pace.</b> A dedicated winter carrot/brassica block is the highest-confidence first move: it deepens the proven January peak, stores well, and fills the farm's softest season. Hold off on generic acreage until labor is in place and a per-house demand picture exists.</p>
+</div>
+</div>
+
+<!-- ============ SECTION 6: YEARS TO COME ============ -->
+<div class="section">
+<h2><span class="num">06</span>The Years to Come</h2>
+<div class="section-rule"></div>
+
+<p>Growth from here is gated by labor and demand, so these targets are deliberately tied to <b>crew, growing blocks, and how deliberately the two houses are served</b> — not to a growth percentage. Hit the inputs and the revenue follows.</p>
+
+<div class="exhibit-label">Exhibit 9</div>
+<div class="exhibit-title">Illustrative path, 2026–2028</div>
+<table>
+  <tr><th>Driver</th><th class="r">2026 (base)</th><th class="r">2027 (target)</th><th class="r">2028 (target)</th></tr>
+  <tr><td>Growing area</td><td class="r">0.5 acre</td><td class="r">0.5 acre + 1 leased block</td><td class="r">~0.75 acre equiv.</td></tr>
+  <tr><td>Crew</td><td class="r">Grower + Fri. helper</td><td class="r">Grower + 1 full hire</td><td class="r">Grower + 1 + seasonal</td></tr>
+  <tr><td>Houses served (tracked)</td><td class="r">2, blended</td><td class="r">2, split by house</td><td class="r">2 + events / selective new</td></tr>
+  <tr class="hi"><td>Revenue</td><td class="r">~$122K</td><td class="r">~$150K</td><td class="r">~$185K</td></tr>
+  <tr><td>Winter-month floor</td><td class="r">~$5K</td><td class="r">~$8K</td><td class="r">~$11K</td></tr>
+</table>
+<p class="small">Conservative by design: each step up assumes labor is in place first. The winter-block strategy does double duty — it raises the annual total and lifts the farm's softest months, smoothing cash flow and making Press Farm a steadier year-round supplier to both kitchens.</p>
+
+<h2 style="margin-top:8mm"><span class="num">07</span>Recommendations</h2>
+<div class="section-rule"></div>
+
+<div class="exhibit-label">Exhibit 10</div>
+<div class="exhibit-title">What to do, in order</div>
+<table>
+  <tr><th style="width:6mm">#</th><th>Action</th><th style="width:24mm">Horizon</th></tr>
+  <tr class="hi"><td>1</td><td><b>Plant the proven sellers this fall</b> — carrots in succession (the January engine), radish, turnip, brassicas, favas, cool-season flowers. Plant what sells before anything speculative.</td><td>This meeting</td></tr>
+  <tr><td>2</td><td><b>Land the second hire</b> — it is the true constraint on both the peak harvest and any expansion.</td><td>Now</td></tr>
+  <tr><td>3</td><td><b>Add one leased winter block</b> for carrots/brassicas once the hire is in — highest-confidence expansion, fills the trough.</td><td>Fall–Winter</td></tr>
+  <tr><td>4</td><td><b>Tag deliveries by house</b> (Press vs Under-Study) starting now, to build a per-kitchen demand picture for next year's plan.</td><td>This fall</td></tr>
+  <tr><td>5</td><td><b>Log labor hours</b> for one month so the next report shows true net, not just contribution.</td><td>Immediate</td></tr>
+  <tr><td>6</td><td><b>Defend the Aug–Sep peak</b> — plan crew and succession plantings now so nothing goes unpicked at the top of the season.</td><td>Summer</td></tr>
+</table>
+
+<div class="footnote">
+<b>Methodology &amp; notes.</b> Revenue = realized deliveries and delivery line items (the financial source of truth), not order intent. Figures exclude grower pay and labor, which are not yet captured in the system, so totals are contribution rather than fully-loaded net. Half-year window: December 2025 – May 2026 (six complete months); full history begins July 2024. Press and Under-Study deliveries have historically been booked as one combined account and cannot yet be split by house. Per-acre figures annualize the trailing-twelve-month run rate over the stated half-acre. Forecasts and the incremental-block economics are scenario estimates for planning, built on observed sell-through and seasonality — directional, not guarantees; actuals depend on weather, labor, and kitchen demand. &nbsp;·&nbsp; Press Farm OS, Yountville, CA.
+</div>
+</div>
+
+</body>
+</html>
