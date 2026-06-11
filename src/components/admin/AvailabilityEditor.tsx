@@ -312,6 +312,27 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   function handleSave() {
     setSaveError(null);
     setSaveSuccess(false);
+
+    // Save publishes EVERY restaurant, and items without a toggle default to
+    // unavailable — so a restaurant the admin never got to silently goes out
+    // with an empty list and its chefs can't order (2026-06-10 incident:
+    // Press published 277/277 unavailable). Make that explicit before saving.
+    const emptyRestaurants = orderedRestaurants.filter((r) => {
+      const statusMap = statuses[r.id] ?? {};
+      return !items.some((item) => {
+        const s = statusMap[item.id] ?? "unavailable";
+        return s === "available" || s === "limited";
+      });
+    });
+    if (emptyRestaurants.length > 0) {
+      const names = emptyRestaurants.map((r) => r.name).join(", ");
+      const ok = window.confirm(
+        `${names} ${emptyRestaurants.length === 1 ? "has" : "have"} no available or limited items for this date. ` +
+          `Saving publishes an empty list — chefs at ${emptyRestaurants.length === 1 ? "this restaurant" : "these restaurants"} won't be able to order anything. Save anyway?`,
+      );
+      if (!ok) return;
+    }
+
     startSaving(async () => {
       try {
         const failures: string[] = [];

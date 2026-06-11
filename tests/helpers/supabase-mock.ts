@@ -21,8 +21,11 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
 
   const builder = (table: string) => {
     const filterFns: Array<(r: Row) => boolean> = [];
-    let pendingOp: "select" | "insert" | "update" | "delete" = "select";
+    let pendingOp: "select" | "insert" | "update" | "delete" | "upsert" = "select";
     let pendingPayload: Row | Row[] | null = null;
+    let pendingUpsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
+    let orderBy: { col: string; ascending: boolean } | null = null;
+    let limitN: number | null = null;
 
     function execute(): Row[] {
       if (!data[table]) data[table] = [];
@@ -33,6 +36,25 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
         data[table] = [...data[table], ...inserted];
         calls.push({ table, op: "insert", payload: inserted });
         return inserted;
+      }
+
+      if (pendingOp === "upsert") {
+        const list = Array.isArray(pendingPayload) ? pendingPayload : [pendingPayload!];
+        const conflictCols = (pendingUpsertOpts.onConflict ?? "id").split(",").map((c) => c.trim());
+        const results: Row[] = [];
+        for (const r of list) {
+          const existing = data[table].find((e) => conflictCols.every((c) => e[c] === r[c]));
+          if (existing) {
+            if (!pendingUpsertOpts.ignoreDuplicates) Object.assign(existing, r);
+            results.push(existing);
+          } else {
+            const inserted = { id: crypto.randomUUID(), ...r };
+            data[table].push(inserted);
+            results.push(inserted);
+          }
+        }
+        calls.push({ table, op: "upsert", payload: list });
+        return results;
       }
 
       if (pendingOp === "update") {
@@ -50,7 +72,17 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
       }
 
       // default: select
-      return data[table].filter((r) => filterFns.every((fn) => fn(r)));
+      let rows = data[table].filter((r) => filterFns.every((fn) => fn(r)));
+      if (orderBy) {
+        const { col, ascending } = orderBy;
+        rows = [...rows].sort((a, b) => {
+          if (a[col] === b[col]) return 0;
+          const cmp = a[col] < b[col] ? -1 : 1;
+          return ascending ? cmp : -cmp;
+        });
+      }
+      if (limitN !== null) rows = rows.slice(0, limitN);
+      return rows;
     }
 
     const api: any = {
@@ -69,8 +101,26 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
         pendingOp = "delete";
         return api;
       }),
+      upsert: vi.fn((payload: Row | Row[], opts: { onConflict?: string; ignoreDuplicates?: boolean } = {}) => {
+        pendingOp = "upsert";
+        pendingPayload = payload;
+        pendingUpsertOpts = opts;
+        return api;
+      }),
       eq: vi.fn((col: string, val: any) => {
         filterFns.push((r) => r[col] === val);
+        return api;
+      }),
+      neq: vi.fn((col: string, val: any) => {
+        filterFns.push((r) => r[col] !== val);
+        return api;
+      }),
+      lt: vi.fn((col: string, val: any) => {
+        filterFns.push((r) => r[col] < val);
+        return api;
+      }),
+      gt: vi.fn((col: string, val: any) => {
+        filterFns.push((r) => r[col] > val);
         return api;
       }),
       in: vi.fn((col: string, vals: any[]) => {
@@ -85,8 +135,14 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
         filterFns.push((r) => r[col] <= val);
         return api;
       }),
-      order: vi.fn(() => api),
-      limit: vi.fn(() => api),
+      order: vi.fn((col: string, opts: { ascending?: boolean } = {}) => {
+        orderBy = { col, ascending: opts.ascending !== false };
+        return api;
+      }),
+      limit: vi.fn((n: number) => {
+        limitN = n;
+        return api;
+      }),
       single: vi.fn(async () => {
         const result = execute();
         return { data: result[0] ?? null, error: result[0] ? null : { code: "PGRST116" } };

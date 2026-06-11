@@ -35,6 +35,11 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
           const v = parseInt(e.target.value) || 0;
           onChange(Math.max(0, Math.min(v, maxQty)));
         }}
+        // Desktop browsers increment a focused number input on scroll-wheel,
+        // so scrolling the (long) order form silently changes quantities —
+        // chefs ended up with items they never tapped. Blur on wheel so the
+        // scroll goes to the page instead.
+        onWheel={(e) => (e.target as HTMLInputElement).blur()}
         disabled={disabled}
         className="w-14 h-11 text-center text-sm font-semibold text-farm-dark border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
         placeholder="0"

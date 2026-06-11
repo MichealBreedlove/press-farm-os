@@ -87,32 +87,45 @@ export default async function AdminAvailabilityEditorPage({
     console.error("Error fetching availability:", availError);
   }
 
-  // Persistent availability: if this date has zero rows, pre-fill from the most
-  // recent prior date with availability (per restaurant). Admin still needs to
-  // hit Save to persist, but the form shows what they had last time.
-  if (availability.length === 0) {
-    // Find most recent prior date with availability data
+  // Persistent availability: pre-fill each restaurant that has zero rows for
+  // this date from ITS most recent prior date. Admin still needs to hit Save
+  // to persist, but the form shows what they had last time.
+  //
+  // This must be per-restaurant, not all-or-nothing: a chef page view can
+  // materialize rows for one restaurant days early, after which an
+  // all-or-nothing check sees "rows exist" and skips carry-over for the
+  // OTHERS — they then seed all-unavailable in the editor and one Save
+  // publishes them that way (2026-06-10 incident: Press went out 277/277
+  // unavailable because Press Bar + Under-Study already had rows).
+  const restaurantsWithRows = new Set(availability.map((a) => a.restaurant_id));
+  const missingRestaurants = restaurants.filter((r) => !restaurantsWithRows.has(r.id));
+
+  for (const r of missingRestaurants) {
     const { data: priorDateRow } = await supabase
       .from("availability_items")
       .select("delivery_date")
+      .eq("restaurant_id", r.id)
       .lt("delivery_date", date)
       .order("delivery_date", { ascending: false })
       .limit(1)
       .single() as any;
 
-    if (priorDateRow?.delivery_date) {
-      inheritedFromDate = priorDateRow.delivery_date;
-      const { data: priorRows } = await supabase
-        .from("availability_items")
-        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
-        .eq("delivery_date", priorDateRow.delivery_date);
+    if (!priorDateRow?.delivery_date) continue;
 
-      // Remap delivery_date so the editor shows them as belonging to this date
-      availability = (priorRows ?? []).map((r: any) => ({
-        ...r,
+    inheritedFromDate = priorDateRow.delivery_date;
+    const { data: priorRows } = await supabase
+      .from("availability_items")
+      .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
+      .eq("delivery_date", priorDateRow.delivery_date)
+      .eq("restaurant_id", r.id);
+
+    // Remap delivery_date so the editor shows them as belonging to this date
+    availability = availability.concat(
+      (priorRows ?? []).map((r2: any) => ({
+        ...r2,
         delivery_date: date,
-      }));
-    }
+      })),
+    );
   }
 
   const pageTitle = formatPageTitle(date);

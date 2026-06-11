@@ -210,8 +210,15 @@ export async function POST(request: Request) {
   const validIdSet = new Set((availItems ?? []).map((a: any) => a.id));
   const tamperedIds = submittedIds.filter((id: string) => !validIdSet.has(id));
   if (tamperedIds.length > 0) {
+    // Most often this is a STALE cart, not tampering: the chef loaded the
+    // form, the admin republished availability (changing/removing rows),
+    // and the cart's availability IDs no longer match this date. Tell the
+    // chef how to recover instead of leaving them stuck (2026-06-10 incident).
     return NextResponse.json(
-      { error: "One or more items are not available for this restaurant/date" },
+      {
+        error:
+          "The availability list changed since you loaded the order form, so some items in your cart are no longer valid. Please go back to the order page, refresh, and re-add your items.",
+      },
       { status: 400 },
     );
   }

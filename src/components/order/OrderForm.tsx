@@ -103,11 +103,14 @@ export function OrderForm({
         const unit = it.unitType as string | undefined;
         const size = it.sizeLabel as string | null | undefined;
         const ai = availabilityItems.find((a) => a.id === aiId);
-        const itemUnits = String(ai?.item?.unit_type ?? "")
-          .split(",")
-          .map((u: string) => u.trim())
-          .filter(Boolean);
-        const hasMulti = itemUnits.length > 1;
+        // The saved line references an availability row that's no longer on
+        // this form (admin republished between save and restore). Restoring
+        // it would park an invisible quantity under a dead key — drop it.
+        if (!ai) continue;
+        // Match enumerateKeys(): multi-unit is decided from the resolved
+        // (availability-overridden) unit list, not the raw item.unit_type,
+        // or the restored key won't line up with the keys the form renders.
+        const hasMulti = resolveUnits(ai.item, (ai as any).available_units).length > 1;
         let key: string;
         if (hasMulti && size && unit) key = `${aiId}__unit:${unit}__${size}`;
         else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;

@@ -64,6 +64,24 @@ export async function fetchAvailabilityWithRollover(
     };
   }
 
+  // The hideUnavailable filter can make a PUBLISHED date look empty when the
+  // admin marked everything unavailable. Rolling over in that case resurrects
+  // a list the admin explicitly turned off — the chef then builds an order
+  // whose availability IDs belong to a prior date and submit rejects it
+  // (incident 2026-06-10: Press published all-unavailable for 06-11). Only
+  // roll over when the date has NO rows at all for this restaurant.
+  if (hideUnavailable) {
+    const { data: anyRows } = await supabase
+      .from("availability_items")
+      .select("id")
+      .eq("delivery_date", deliveryDate)
+      .eq("restaurant_id", restaurantId)
+      .limit(1);
+    if ((anyRows ?? []).length > 0) {
+      return { data: [], sourceDate: deliveryDate, isInherited: false };
+    }
+  }
+
   // No data for this date — find the most recent prior date with availability
   const { data: priorDates } = await supabase
     .from("availability_items")
@@ -89,12 +107,18 @@ export async function fetchAvailabilityWithRollover(
   const { data: priorData } = await priorQuery;
 
   // Map: replace delivery_date with the requested one so the data appears as
-  // if it belongs to this delivery (chef sees it as "their" availability)
-  const remapped = (priorData ?? []).map((row: any) => ({
-    ...row,
-    delivery_date: deliveryDate,
-    _inheritedFrom: sourceDate,
-  }));
+  // if it belongs to this delivery (chef sees it as "their" availability).
+  // Archived items are dropped — the chef page filters them from display
+  // anyway, but if they survive into materializeRollover they become real
+  // rows that ride the rollover forward date after date, and can leave a
+  // date looking "published" while showing chefs nothing.
+  const remapped = (priorData ?? [])
+    .filter((row: any) => !(withItem && row.item?.is_archived))
+    .map((row: any) => ({
+      ...row,
+      delivery_date: deliveryDate,
+      _inheritedFrom: sourceDate,
+    }));
 
   return {
     data: remapped,
@@ -123,6 +147,9 @@ export async function materializeRollover(
   sourceRows: any[],
   targetDeliveryDate: string,
 ): Promise<void> {
+  // Never materialize archived items — they can't be ordered or displayed,
+  // and once written they propagate to every later date via rollover.
+  sourceRows = sourceRows.filter((r) => !r.item?.is_archived);
   if (sourceRows.length === 0) return;
 
   const rowsToInsert = sourceRows.map((r) => ({
