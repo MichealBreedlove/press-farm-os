@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate, todayPacific } from "@/lib/utils";
+import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -64,6 +65,7 @@ export default async function OrderPage({
   let initialQuantities: Record<string, number> = {};
   let initialColors: Record<string, string[]> = {};
   let initialEventChecked: Record<string, boolean> = {};
+  let initialSplitOpen: Record<string, boolean> = {};
   let initialNotes = "";
   let targetDate: string | null = null;
 
@@ -83,6 +85,14 @@ export default async function OrderPage({
     if (existingOrder && ["submitted", "draft"].includes(existingOrder.status)) {
       targetDate = existingOrder.delivery_date;
       initialNotes = existingOrder.freeform_notes ?? "";
+      // Pre-pass: an item with BOTH regular and events lines hydrates as a
+      // SPLIT (events lines under prefixed event-portion keys); an item with
+      // ONLY events lines hydrates as the whole-item "For an event" checkmark.
+      const aiIdsWithRegular = new Set<string>();
+      for (const oi of existingOrder.order_items ?? []) {
+        const aiId = oi.availability_items?.id;
+        if (aiId && oi.menu_section !== "events") aiIdsWithRegular.add(aiId);
+      }
       for (const oi of existingOrder.order_items ?? []) {
         const ai = oi.availability_items;
         const aiId = ai?.id;
@@ -105,10 +115,16 @@ export default async function OrderPage({
         } else {
           key = aiId;
         }
-        // Events lines hydrate with the item's "For an event" checkmark set —
-        // the form renders one merged menu now; Regular vs Events is a
-        // per-item flag, not a separate section with prefixed keys.
-        if (oi.menu_section === "events") initialEventChecked[aiId] = true;
+        if (oi.menu_section === "events") {
+          if (aiIdsWithRegular.has(aiId)) {
+            // Split line — the event portion lives under the prefixed keys.
+            key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+            initialSplitOpen[aiId] = true;
+          } else {
+            // Whole item was for the event — hydrate as the checkmark.
+            initialEventChecked[aiId] = true;
+          }
+        }
 
         initialQuantities[key] = (initialQuantities[key] ?? 0) + Number(oi.quantity_requested ?? 0);
         if (oi.color_key) {
@@ -147,6 +163,7 @@ export default async function OrderPage({
     initialQuantities = {};
     initialColors = {};
     initialEventChecked = {};
+    initialSplitOpen = {};
     initialNotes = "";
     const { data: nextDate } = await supabase
       .from("delivery_dates")
@@ -245,6 +262,7 @@ export default async function OrderPage({
         initialQuantities={isEditing ? initialQuantities : undefined}
         initialColors={isEditing ? initialColors : undefined}
         initialEventChecked={isEditing ? initialEventChecked : undefined}
+        initialSplitOpen={isEditing ? initialSplitOpen : undefined}
         initialNotes={isEditing ? initialNotes : undefined}
         editingOrderId={isEditing ? editOrderId : undefined}
       />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
+import { CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
@@ -22,15 +22,18 @@ interface OrderFormProps {
   initialColors?: Record<string, string[]>;
   /** Per-availability-item "For an event" checkmark, hydrated when editing. */
   initialEventChecked?: Record<string, boolean>;
+  /** Items whose regular/event split is open (event-portion quantities live
+   *  under EVENT_MENU_KEY_PREFIX keys), hydrated when editing. */
+  initialSplitOpen?: Record<string, boolean>;
   initialNotes?: string;
   editingOrderId?: string;
 }
 
 /** Which menu a line was placed under. The chef form renders one merged list;
  *  'events' is set by the per-item "For an event" checkmark (automatic for
- *  events-only items) and persists to order_items.menu_section. 'press_bar'
- *  lines never collide with the others, so they persist as NULL (same as
- *  'regular'). */
+ *  events-only items) or by the event portion of a split line, and persists
+ *  to order_items.menu_section. 'press_bar' lines never collide with the
+ *  others, so they persist as NULL (same as 'regular'). */
 export type MenuSection = "regular" | "events" | "press_bar";
 
 export interface OrderFormData {
@@ -65,6 +68,7 @@ export function OrderForm({
   initialQuantities = {},
   initialColors = {},
   initialEventChecked = {},
+  initialSplitOpen = {},
   initialNotes = "",
   editingOrderId,
 }: OrderFormProps) {
@@ -73,6 +77,7 @@ export function OrderForm({
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
   const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
+  const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
 
@@ -104,6 +109,14 @@ export function OrderForm({
       const restoredQuantities: Record<string, number> = {};
       const restoredColors: Record<string, string[]> = {};
       const restoredEventChecked: Record<string, boolean> = {};
+      const restoredSplitOpen: Record<string, boolean> = {};
+      // Pre-pass: an item with BOTH regular and events lines was split —
+      // its events lines restore under prefixed event-portion keys. An item
+      // with ONLY events lines restores as the whole-item checkmark.
+      const aiIdsWithRegular = new Set<string>();
+      for (const it of saved.items ?? []) {
+        if (it.menuSection !== "events") aiIdsWithRegular.add(it.availabilityItemId as string);
+      }
       for (const it of saved.items ?? []) {
         const aiId = it.availabilityItemId as string;
         const unit = it.unitType as string | undefined;
@@ -122,10 +135,16 @@ export function OrderForm({
         else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
         else if (size) key = `${aiId}__${size}`;
         else key = aiId;
-        // Events lines restore as the same quantity key with the item's
-        // "For an event" checkmark set — Regular vs Events is a per-item
-        // flag now, not a separate section with prefixed keys.
-        if (it.menuSection === "events") restoredEventChecked[aiId] = true;
+        if (it.menuSection === "events") {
+          if (aiIdsWithRegular.has(aiId)) {
+            // Split line — event portion lives under the prefixed keys.
+            key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+            restoredSplitOpen[aiId] = true;
+          } else {
+            // Whole item was for the event — restore as the checkmark.
+            restoredEventChecked[aiId] = true;
+          }
+        }
         restoredQuantities[key] = (restoredQuantities[key] ?? 0) + Number(it.quantity ?? 0);
         if (it.colorKey) {
           restoredColors[key] = String(it.colorKey).split(",").filter(Boolean);
@@ -139,6 +158,9 @@ export function OrderForm({
       }
       if (Object.keys(restoredEventChecked).length > 0) {
         setEventChecked(restoredEventChecked);
+      }
+      if (Object.keys(restoredSplitOpen).length > 0) {
+        setSplitOpen(restoredSplitOpen);
       }
       if (typeof saved.freeformNotes === "string") {
         setFreeformNotes(saved.freeformNotes);
@@ -172,10 +194,20 @@ export function OrderForm({
   // order_items.menu_section, migration 057, exactly as before). Items
   // flagged ONLY for events (show_in_regular_menu = false) still show in the
   // list, badged EVENTS, and always submit as events.
+  //
+  // A both-menus item can also be SPLIT: the main row keeps the regular
+  // portion (plain keys) and an "Event portion" sub-row appears whose
+  // quantity/color/note keys all derive from a prefixed clone id, so the two
+  // portions stay independent and submit as two separate order lines.
   const isEventFlagged = (ai: AvailabilityItemWithItem): boolean =>
     Boolean((ai.item as any).is_event_item);
   const isEventOnly = (ai: AvailabilityItemWithItem): boolean =>
     isEventFlagged(ai) && (ai.item as any).show_in_regular_menu === false;
+
+  const asEventKeyAi = (ai: AvailabilityItemWithItem): AvailabilityItemWithItem =>
+    ({ ...ai, id: `${EVENT_MENU_KEY_PREFIX}${ai.id}` });
+  const realAvailId = (id: string): string =>
+    id.startsWith(EVENT_MENU_KEY_PREFIX) ? id.slice(EVENT_MENU_KEY_PREFIX.length) : id;
 
   // The DB column may not exist on rows fetched before migration 030 has
   // run; treat undefined/null show_in_regular_menu as true to keep those
@@ -189,19 +221,49 @@ export function OrderForm({
         (ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai),
       );
 
-  // Every item the chef can order, computed from the UNFILTERED catalog so
-  // search never drops an in-progress quantity. Which section a line submits
-  // under is resolved at review time from the event checkmark.
-  const orderedSources: AvailabilityItemWithItem[] = isPressBarChef
-    ? allAvailable.filter((ai) => (ai.item as any).is_press_bar_item)
-    : allAvailable.filter(
-        (ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai),
-      );
-
+  // While a split is open the main row is always the regular portion — the
+  // whole-item checkmark is suppressed (the event portion is the sub-row).
   const sectionFor = (ai: AvailabilityItemWithItem): MenuSection => {
     if (isPressBarChef) return "press_bar";
-    return isEventOnly(ai) || eventChecked[ai.id] ? "events" : "regular";
+    if (isEventOnly(ai)) return "events";
+    return eventChecked[ai.id] && !splitOpen[ai.id] ? "events" : "regular";
   };
+
+  // Flat list of every (item, section) pair the chef can order, computed from
+  // the UNFILTERED catalog so search never drops an in-progress quantity.
+  // Split-open items contribute a second, event-portion source whose clone id
+  // makes its keys diverge from the regular portion's.
+  type KeyedSource = { ai: AvailabilityItemWithItem; section: MenuSection };
+  const orderedSources: KeyedSource[] = isPressBarChef
+    ? allAvailable
+        .filter((ai) => (ai.item as any).is_press_bar_item)
+        .map((ai) => ({ ai, section: "press_bar" as const }))
+    : allAvailable
+        .filter((ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai))
+        .flatMap((ai) => {
+          const sources: KeyedSource[] = [{ ai, section: sectionFor(ai) }];
+          if (splitOpen[ai.id]) sources.push({ ai: asEventKeyAi(ai), section: "events" });
+          return sources;
+        });
+
+  function openSplit(id: string) {
+    // The main row becomes the regular portion; the event side now lives on
+    // the sub-row, so drop any whole-item event mark.
+    setEventChecked((prev) => ({ ...prev, [id]: false }));
+    setSplitOpen((prev) => ({ ...prev, [id]: true }));
+  }
+
+  function closeSplit(id: string) {
+    // Clear the event portion's quantities/colors/note so nothing invisible
+    // stays in the order after the sub-row disappears.
+    const prefix = `${EVENT_MENU_KEY_PREFIX}${id}`;
+    const dropPrefixed = <T,>(map: Record<string, T>): Record<string, T> =>
+      Object.fromEntries(Object.entries(map).filter(([k]) => !k.startsWith(prefix)));
+    setQuantities(dropPrefixed);
+    setItemColors(dropPrefixed);
+    setItemNotes(dropPrefixed);
+    setSplitOpen((prev) => ({ ...prev, [id]: false }));
+  }
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
@@ -250,14 +312,14 @@ export function OrderForm({
     }
   }
 
-  // Check if any item has quantity > 0 (across ALL items, not just searched)
-  const hasAnyOrdered = orderedSources.some((ai) => {
+  // Check if any item has quantity > 0 (across ALL items + portions, not just searched)
+  const hasAnyOrdered = orderedSources.some(({ ai }) => {
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) return true;
     return false;
   });
 
   // Total order lines with quantity > 0
-  const orderedCount = orderedSources.reduce((count, ai) => {
+  const orderedCount = orderedSources.reduce((count, { ai }) => {
     let n = 0;
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) n++;
     return count + n;
@@ -266,8 +328,9 @@ export function OrderForm({
   function handleReview() {
     const orderedItems: OrderFormData["items"] = [];
 
-    for (const ai of orderedSources) {
-      const section = sectionFor(ai);
+    // A split item appears as two sources (regular + event portion) and so
+    // produces two distinct lines for the same availability item.
+    for (const { ai, section } of orderedSources) {
       const itemNote = itemNotes[ai.id] ?? "";
 
       for (const { key, unit, size } of enumerateKeys(ai)) {
@@ -299,7 +362,7 @@ export function OrderForm({
         );
 
         orderedItems.push({
-          availabilityItemId: ai.id,
+          availabilityItemId: realAvailId(ai.id),
           itemName,
           unitType: unitForOrder,
           sizeLabel: size ?? null,
@@ -384,7 +447,8 @@ export function OrderForm({
                   <p className="text-xs text-farm-muted mb-3 px-1 leading-relaxed">
                     Hosting an event? Items marked{" "}
                     <span className="text-pf-master-violet font-medium">EVENTS</span> can be
-                    checked &ldquo;For an event&rdquo; once you add a quantity.
+                    checked &ldquo;For an event&rdquo; once you add a quantity — or split
+                    into separate regular and event portions.
                   </p>
                 )}
                 {CATEGORY_ORDER.map((cat) => {
@@ -405,6 +469,9 @@ export function OrderForm({
                       onEventToggle={(id, checked) =>
                         setEventChecked((prev) => ({ ...prev, [id]: checked }))
                       }
+                      splitOpen={splitOpen}
+                      onOpenSplit={openSplit}
+                      onCloseSplit={closeSplit}
                     />
                   );
                 })}

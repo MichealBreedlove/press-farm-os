@@ -8,6 +8,21 @@
 import type { ItemCategory, UnitType, AvailabilityStatus, OrderStatus, DeliveryStatus } from "@/types";
 
 // ============================================
+// Order-form quantity keys
+// ============================================
+
+/**
+ * Prefix for the "event portion" quantity keys of a SPLIT order line. The
+ * chef form renders one merged menu; an item flagged for both the regular
+ * and events menus can be split into a regular portion (plain keys) and an
+ * event portion (keys prefixed with this), which submit as two separate
+ * order lines. The event portion persists as
+ * order_items.menu_section = 'events' (migration 057) so the split
+ * round-trips through edit + merge.
+ */
+export const EVENT_MENU_KEY_PREFIX = "evt::";
+
+// ============================================
 // Item Categories
 // ============================================
 

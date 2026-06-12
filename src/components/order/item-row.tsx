@@ -20,6 +20,12 @@ interface ItemRowProps {
    *  when onEventToggle is provided (i.e. not the Press Bar section). */
   eventChecked?: boolean;
   onEventToggle?: (id: string, checked: boolean) => void;
+  /** True when this row IS the event portion of a split — it always submits
+   *  as events, so the badge/checkmark/split controls are suppressed. */
+  isEventCopy?: boolean;
+  /** Whether the regular/event split is open for this item. */
+  splitOpen?: boolean;
+  onOpenSplit?: (id: string) => void;
 }
 
 function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
@@ -107,6 +113,9 @@ export function ItemRow({
   onColorChange,
   eventChecked = false,
   onEventToggle,
+  isEventCopy = false,
+  splitOpen = false,
+  onOpenSplit,
 }: ItemRowProps) {
   const { item, status, limited_qty, cycle_notes } = availabilityItem;
   const isUnavailable = status === "unavailable";
@@ -115,10 +124,13 @@ export function ItemRow({
 
   // Events checkmark — replaces the old separate "Events Menu" section.
   // Event-only items (not on the regular menu) always submit as events, so
-  // their checkmark renders pre-checked and locked.
-  const isEventFlagged = Boolean((item as any).is_event_item) && !!onEventToggle;
+  // their checkmark renders pre-checked and locked. The event portion of a
+  // split is implicitly events — no badge/checkmark on that copy.
+  const isEventFlagged = Boolean((item as any).is_event_item) && !!onEventToggle && !isEventCopy;
   const isEventOnly = isEventFlagged && (item as any).show_in_regular_menu === false;
   const isEventChecked = isEventOnly || eventChecked;
+  // Both-menus items can split into independent regular + event portions.
+  const canSplit = isEventFlagged && !isEventOnly && !!onOpenSplit;
 
   // Sizes/colors/units are filtered by this cycle's per-availability overrides
   // (available_sizes / available_colors / available_units). A null override means
@@ -390,33 +402,52 @@ export function ItemRow({
         </div>
       )}
 
-      {/* "For an event" checkmark — shown once something is ordered */}
+      {/* "For an event" checkmark + split affordance — shown once something
+          is ordered. While a split is open the whole-item checkmark hides:
+          the main row is the regular portion, the sub-row below is events. */}
       {isEventFlagged && totalQty > 0 && !isUnavailable && (
-        <div className="mt-2">
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={isEventChecked}
-            disabled={isEventOnly}
-            onClick={() => onEventToggle?.(availabilityItem.id, !isEventChecked)}
-            className={cn(
-              "inline-flex items-center gap-2 text-xs px-3 py-1.5 min-h-[44px] rounded-full transition-colors",
-              isEventChecked
-                ? "bg-pf-master-violet text-white"
-                : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]",
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "w-4 h-4 rounded border flex items-center justify-center text-[10px] leading-none",
-                isEventChecked ? "border-white/70" : "border-pf-master-violet/50",
-              )}
-            >
-              {isEventChecked ? "✓" : ""}
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          {splitOpen ? (
+            <span className="text-xs text-farm-muted py-1.5">
+              Regular portion — event portion below
             </span>
-            For an event{isEventOnly ? " (events-only item)" : ""}
-          </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={isEventChecked}
+                disabled={isEventOnly}
+                onClick={() => onEventToggle?.(availabilityItem.id, !isEventChecked)}
+                className={cn(
+                  "inline-flex items-center gap-2 text-xs px-3 py-1.5 min-h-[44px] rounded-full transition-colors",
+                  isEventChecked
+                    ? "bg-pf-master-violet text-white"
+                    : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "w-4 h-4 rounded border flex items-center justify-center text-[10px] leading-none",
+                    isEventChecked ? "border-white/70" : "border-pf-master-violet/50",
+                  )}
+                >
+                  {isEventChecked ? "✓" : ""}
+                </span>
+                For an event{isEventOnly ? " (events-only item)" : ""}
+              </button>
+              {canSplit && (
+                <button
+                  type="button"
+                  onClick={() => onOpenSplit?.(availabilityItem.id)}
+                  className="text-xs text-pf-master-violet/80 hover:text-pf-master-violet underline underline-offset-2 min-h-[44px] px-2"
+                >
+                  Split: regular + event
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 
