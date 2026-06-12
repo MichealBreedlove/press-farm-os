@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
+import { CATEGORY_ORDER, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
@@ -20,14 +20,17 @@ interface OrderFormProps {
   initialQuantities?: Record<string, number>;
   /** Per-(quantity-key) color selections, hydrated when editing an existing order. */
   initialColors?: Record<string, string[]>;
+  /** Per-availability-item "For an event" checkmark, hydrated when editing. */
+  initialEventChecked?: Record<string, boolean>;
   initialNotes?: string;
   editingOrderId?: string;
 }
 
-/** Which order-form section a line was placed in. Drives the quantity-key
- *  prefix and persists to order_items.menu_section so Regular vs Events stay
- *  separate. 'press_bar' lines never collide with the others, so they persist
- *  as NULL (same as 'regular'). */
+/** Which menu a line was placed under. The chef form renders one merged list;
+ *  'events' is set by the per-item "For an event" checkmark (automatic for
+ *  events-only items) and persists to order_items.menu_section. 'press_bar'
+ *  lines never collide with the others, so they persist as NULL (same as
+ *  'regular'). */
 export type MenuSection = "regular" | "events" | "press_bar";
 
 export interface OrderFormData {
@@ -61,6 +64,7 @@ export function OrderForm({
   deliveryDateFormatted,
   initialQuantities = {},
   initialColors = {},
+  initialEventChecked = {},
   initialNotes = "",
   editingOrderId,
 }: OrderFormProps) {
@@ -68,6 +72,7 @@ export function OrderForm({
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
+  const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
 
@@ -98,6 +103,7 @@ export function OrderForm({
       // (availabilityItemId, unit, size).
       const restoredQuantities: Record<string, number> = {};
       const restoredColors: Record<string, string[]> = {};
+      const restoredEventChecked: Record<string, boolean> = {};
       for (const it of saved.items ?? []) {
         const aiId = it.availabilityItemId as string;
         const unit = it.unitType as string | undefined;
@@ -116,9 +122,10 @@ export function OrderForm({
         else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
         else if (size) key = `${aiId}__${size}`;
         else key = aiId;
-        // Events-section lines live under a prefixed key so they stay
-        // independent of the Regular-section line for the same item.
-        if (it.menuSection === "events") key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+        // Events lines restore as the same quantity key with the item's
+        // "For an event" checkmark set — Regular vs Events is a per-item
+        // flag now, not a separate section with prefixed keys.
+        if (it.menuSection === "events") restoredEventChecked[aiId] = true;
         restoredQuantities[key] = (restoredQuantities[key] ?? 0) + Number(it.quantity ?? 0);
         if (it.colorKey) {
           restoredColors[key] = String(it.colorKey).split(",").filter(Boolean);
@@ -129,6 +136,9 @@ export function OrderForm({
       }
       if (Object.keys(restoredColors).length > 0) {
         setItemColors(restoredColors);
+      }
+      if (Object.keys(restoredEventChecked).length > 0) {
+        setEventChecked(restoredEventChecked);
       }
       if (typeof saved.freeformNotes === "string") {
         setFreeformNotes(saved.freeformNotes);
@@ -148,58 +158,50 @@ export function OrderForm({
     : allAvailable;
 
   // Restaurant-scoped section visibility:
-  //   • Press Bar login → only the Press Bar section (no Regular, no Events).
-  //   • Press / Under-Study → Regular + Events, Press Bar hidden (those
-  //     items go to the bartender, not the kitchen).
+  //   • Press Bar login → only the Press Bar section.
+  //   • Press / Under-Study → the merged menu (regular + event items),
+  //     Press Bar hidden (those items go to the bartender, not the kitchen).
   // Match by lowercased name so "Press Bar" / "press bar" / a future
   // capitalization tweak still all route to the same gate.
   const isPressBarChef = restaurantName.trim().toLowerCase() === "press bar";
 
-  // An item flagged for both the Regular and Events menus renders in BOTH
-  // sections. To keep the two quantities independent (and submit them as two
-  // separate order lines) the Events-section copy is keyed under a prefixed
-  // synthetic id. Every quantity/color/note key in ItemRow derives from
-  // `ai.id`, so cloning the row with a prefixed id is all it takes — no
-  // changes needed downstream of here.
-  const asEventKeyAi = (ai: AvailabilityItemWithItem): AvailabilityItemWithItem =>
-    ({ ...ai, id: `${EVENT_MENU_KEY_PREFIX}${ai.id}` });
-  const realAvailId = (id: string): string =>
-    id.startsWith(EVENT_MENU_KEY_PREFIX) ? id.slice(EVENT_MENU_KEY_PREFIX.length) : id;
+  // Event items no longer render in a separate "Events Menu" section — every
+  // item appears ONCE in the merged menu list, and items flagged
+  // is_event_item carry a per-item "For an event" checkmark instead. Checked
+  // lines submit with menuSection 'events' (persisting to
+  // order_items.menu_section, migration 057, exactly as before). Items
+  // flagged ONLY for events (show_in_regular_menu = false) still show in the
+  // list, badged EVENTS, and always submit as events.
+  const isEventFlagged = (ai: AvailabilityItemWithItem): boolean =>
+    Boolean((ai.item as any).is_event_item);
+  const isEventOnly = (ai: AvailabilityItemWithItem): boolean =>
+    isEventFlagged(ai) && (ai.item as any).show_in_regular_menu === false;
 
-  // Independent menu visibility — each section asks "is the item flagged
-  // for this menu?" with no cross-menu exclusion. An item with all three
-  // flags appears in all three sections; an item with only Events flagged
-  // shows only in the Events Menu section. The implicit-Regular default
-  // is now driven by show_in_regular_menu (column added in migration 030
-  // with default true, so existing items behave as before).
-  //
   // The DB column may not exist on rows fetched before migration 030 has
-  // run; treat undefined/null as true to keep those items in Regular.
+  // run; treat undefined/null show_in_regular_menu as true to keep those
+  // items in the menu.
   const pressBarItems = isPressBarChef
     ? visibleItems.filter((ai) => (ai.item as any).is_press_bar_item)
     : [];
-  const eventItems = isPressBarChef
+  const menuItems = isPressBarChef
     ? []
-    : visibleItems.filter((ai) => (ai.item as any).is_event_item).map(asEventKeyAi);
-  const regularItems = isPressBarChef
-    ? []
-    : visibleItems.filter((ai) => (ai.item as any).show_in_regular_menu !== false);
+    : visibleItems.filter(
+        (ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai),
+      );
 
-  // Flat list of every (item, section) pair the chef can order, computed from
-  // the UNFILTERED catalog so search never drops an in-progress quantity.
-  // Mirrors the section membership above; the Events copy carries the prefixed
-  // id so its keys diverge from the Regular copy's.
-  type KeyedSource = { ai: AvailabilityItemWithItem; section: MenuSection };
-  const orderedSources: KeyedSource[] = isPressBarChef
-    ? allAvailable
-        .filter((ai) => (ai.item as any).is_press_bar_item)
-        .map((ai) => ({ ai, section: "press_bar" as const }))
-    : allAvailable.flatMap((ai) => {
-        const sources: KeyedSource[] = [];
-        if ((ai.item as any).show_in_regular_menu !== false) sources.push({ ai, section: "regular" });
-        if ((ai.item as any).is_event_item) sources.push({ ai: asEventKeyAi(ai), section: "events" });
-        return sources;
-      });
+  // Every item the chef can order, computed from the UNFILTERED catalog so
+  // search never drops an in-progress quantity. Which section a line submits
+  // under is resolved at review time from the event checkmark.
+  const orderedSources: AvailabilityItemWithItem[] = isPressBarChef
+    ? allAvailable.filter((ai) => (ai.item as any).is_press_bar_item)
+    : allAvailable.filter(
+        (ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai),
+      );
+
+  const sectionFor = (ai: AvailabilityItemWithItem): MenuSection => {
+    if (isPressBarChef) return "press_bar";
+    return isEventOnly(ai) || eventChecked[ai.id] ? "events" : "regular";
+  };
 
   function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
     return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
@@ -218,8 +220,7 @@ export function OrderForm({
     );
   }
 
-  const regularByCategory = groupByCategory(regularItems);
-  const eventsByCategory = groupByCategory(eventItems);
+  const menuByCategory = groupByCategory(menuItems);
   const pressBarByCategory = groupByCategory(pressBarItems);
 
   const isSearching = search.trim().length > 0;
@@ -249,14 +250,14 @@ export function OrderForm({
     }
   }
 
-  // Check if any item has quantity > 0 (across ALL items + sections, not just searched)
-  const hasAnyOrdered = orderedSources.some(({ ai }) => {
+  // Check if any item has quantity > 0 (across ALL items, not just searched)
+  const hasAnyOrdered = orderedSources.some((ai) => {
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) return true;
     return false;
   });
 
   // Total order lines with quantity > 0
-  const orderedCount = orderedSources.reduce((count, { ai }) => {
+  const orderedCount = orderedSources.reduce((count, ai) => {
     let n = 0;
     for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) n++;
     return count + n;
@@ -265,9 +266,8 @@ export function OrderForm({
   function handleReview() {
     const orderedItems: OrderFormData["items"] = [];
 
-    // Iterate every (item, section) pair so an item ordered under both the
-    // Regular and Events menus produces two distinct lines.
-    for (const { ai, section } of orderedSources) {
+    for (const ai of orderedSources) {
+      const section = sectionFor(ai);
       const itemNote = itemNotes[ai.id] ?? "";
 
       for (const { key, unit, size } of enumerateKeys(ai)) {
@@ -299,7 +299,7 @@ export function OrderForm({
         );
 
         orderedItems.push({
-          availabilityItemId: realAvailId(ai.id),
+          availabilityItemId: ai.id,
           itemName,
           unitType: unitForOrder,
           sizeLabel: size ?? null,
@@ -377,23 +377,22 @@ export function OrderForm({
           </div>
         ) : (
           <>
-            {/* ── REGULAR MENU ──────────────────────────────────── */}
-            {regularItems.length > 0 && (
+            {/* ── MENU (Regular + Events merged) ────────────────── */}
+            {menuItems.length > 0 && (
               <>
-                {(eventItems.length > 0 || pressBarItems.length > 0) && (
-                  <div className="flex items-baseline justify-between mt-1 mb-3 px-1">
-                    <p className="font-display text-lg text-farm-dark">Regular Menu</p>
-                    <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
-                      {regularItems.length} item{regularItems.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
+                {menuItems.some(isEventFlagged) && (
+                  <p className="text-xs text-farm-muted mb-3 px-1 leading-relaxed">
+                    Hosting an event? Items marked{" "}
+                    <span className="text-pf-master-violet font-medium">EVENTS</span> can be
+                    checked &ldquo;For an event&rdquo; once you add a quantity.
+                  </p>
                 )}
                 {CATEGORY_ORDER.map((cat) => {
-                  const catItems = regularByCategory[cat];
+                  const catItems = menuByCategory[cat];
                   if (catItems.length === 0) return null;
                   return (
                     <CategorySection
-                      key={`reg-${cat}`}
+                      key={`menu-${cat}`}
                       category={cat}
                       items={catItems}
                       quantities={quantities}
@@ -402,43 +401,10 @@ export function OrderForm({
                       onQuantityChange={handleQuantityChange}
                       onNoteChange={handleNoteChange}
                       onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
-                    />
-                  );
-                })}
-              </>
-            )}
-
-            {/* ── EVENTS MENU ───────────────────────────────────── */}
-            {eventItems.length > 0 && (
-              <>
-                <div className="mt-8 mb-3 pt-5 border-t border-pf-master-violet/20">
-                  <div className="flex items-baseline justify-between px-1">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-2 h-2 rounded-full bg-pf-master-violet" aria-hidden="true" />
-                      <p className="font-display text-lg text-farm-dark">Events Menu</p>
-                    </div>
-                    <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
-                      {eventItems.length} item{eventItems.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <p className="text-xs text-farm-muted mt-1.5 px-1 leading-relaxed">
-                    Special-occasion items — only order these if you&apos;re hosting an event on this delivery date.
-                  </p>
-                </div>
-                {CATEGORY_ORDER.map((cat) => {
-                  const catItems = eventsByCategory[cat];
-                  if (catItems.length === 0) return null;
-                  return (
-                    <CategorySection
-                      key={`evt-${cat}`}
-                      category={cat}
-                      items={catItems}
-                      quantities={quantities}
-                      itemNotes={itemNotes}
-                      itemColors={itemColors}
-                      onQuantityChange={handleQuantityChange}
-                      onNoteChange={handleNoteChange}
-                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                      eventChecked={eventChecked}
+                      onEventToggle={(id, checked) =>
+                        setEventChecked((prev) => ({ ...prev, [id]: checked }))
+                      }
                     />
                   );
                 })}

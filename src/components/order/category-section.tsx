@@ -16,6 +16,10 @@ interface CategorySectionProps {
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
   onColorChange: (key: string, colors: string[]) => void;
+  /** Per-item "For an event" checkmark state, keyed by availability id.
+   *  Omitted for the Press Bar section, where event marking doesn't apply. */
+  eventChecked?: Record<string, boolean>;
+  onEventToggle?: (id: string, checked: boolean) => void;
 }
 
 export function CategorySection({
@@ -27,6 +31,8 @@ export function CategorySection({
   onQuantityChange,
   onNoteChange,
   onColorChange,
+  eventChecked,
+  onEventToggle,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -74,6 +80,8 @@ export function CategorySection({
               onQuantityChange={onQuantityChange}
               onNoteChange={onNoteChange}
               onColorChange={onColorChange}
+              eventChecked={eventChecked?.[item.id] ?? false}
+              onEventToggle={onEventToggle}
             />
           ))}
         </div>

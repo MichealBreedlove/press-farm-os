@@ -16,6 +16,10 @@ interface ItemRowProps {
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
   onColorChange: (key: string, colors: string[]) => void;
+  /** Whether this item's lines are marked "For an event". Only meaningful
+   *  when onEventToggle is provided (i.e. not the Press Bar section). */
+  eventChecked?: boolean;
+  onEventToggle?: (id: string, checked: boolean) => void;
 }
 
 function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
@@ -101,11 +105,20 @@ export function ItemRow({
   onQuantityChange,
   onNoteChange,
   onColorChange,
+  eventChecked = false,
+  onEventToggle,
 }: ItemRowProps) {
   const { item, status, limited_qty, cycle_notes } = availabilityItem;
   const isUnavailable = status === "unavailable";
   const isLimited = status === "limited";
   const maxQty = isLimited ? (limited_qty ?? Infinity) : Infinity;
+
+  // Events checkmark — replaces the old separate "Events Menu" section.
+  // Event-only items (not on the regular menu) always submit as events, so
+  // their checkmark renders pre-checked and locked.
+  const isEventFlagged = Boolean((item as any).is_event_item) && !!onEventToggle;
+  const isEventOnly = isEventFlagged && (item as any).show_in_regular_menu === false;
+  const isEventChecked = isEventOnly || eventChecked;
 
   // Sizes/colors/units are filtered by this cycle's per-availability overrides
   // (available_sizes / available_colors / available_units). A null override means
@@ -193,6 +206,11 @@ export function ItemRow({
                 ? `${units.length} containers`
                 : `${UNIT_LABELS[units[0]] ?? (units[0] ?? "").toUpperCase()} container`}
             </span>
+            {isEventFlagged && (
+              <span className="text-[10px] bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded flex-shrink-0">
+                EVENTS
+              </span>
+            )}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
             {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
@@ -369,6 +387,36 @@ export function ItemRow({
               Hide sizes
             </button>
           )}
+        </div>
+      )}
+
+      {/* "For an event" checkmark — shown once something is ordered */}
+      {isEventFlagged && totalQty > 0 && !isUnavailable && (
+        <div className="mt-2">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={isEventChecked}
+            disabled={isEventOnly}
+            onClick={() => onEventToggle?.(availabilityItem.id, !isEventChecked)}
+            className={cn(
+              "inline-flex items-center gap-2 text-xs px-3 py-1.5 min-h-[44px] rounded-full transition-colors",
+              isEventChecked
+                ? "bg-pf-master-violet text-white"
+                : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]",
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className={cn(
+                "w-4 h-4 rounded border flex items-center justify-center text-[10px] leading-none",
+                isEventChecked ? "border-white/70" : "border-pf-master-violet/50",
+              )}
+            >
+              {isEventChecked ? "✓" : ""}
+            </span>
+            For an event{isEventOnly ? " (events-only item)" : ""}
+          </button>
         </div>
       )}
 

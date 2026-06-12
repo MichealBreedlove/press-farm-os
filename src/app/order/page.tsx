@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate, todayPacific } from "@/lib/utils";
-import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -64,6 +63,7 @@ export default async function OrderPage({
   // and the multi-unit/size selection state would silently reset.
   let initialQuantities: Record<string, number> = {};
   let initialColors: Record<string, string[]> = {};
+  let initialEventChecked: Record<string, boolean> = {};
   let initialNotes = "";
   let targetDate: string | null = null;
 
@@ -105,10 +105,10 @@ export default async function OrderPage({
         } else {
           key = aiId;
         }
-        // Events-section lines hydrate under the prefixed key so the form
-        // renders them in the Events Menu copy, independent of any Regular
-        // line for the same item.
-        if (oi.menu_section === "events") key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+        // Events lines hydrate with the item's "For an event" checkmark set —
+        // the form renders one merged menu now; Regular vs Events is a
+        // per-item flag, not a separate section with prefixed keys.
+        if (oi.menu_section === "events") initialEventChecked[aiId] = true;
 
         initialQuantities[key] = (initialQuantities[key] ?? 0) + Number(oi.quantity_requested ?? 0);
         if (oi.color_key) {
@@ -146,6 +146,7 @@ export default async function OrderPage({
     // Fall back to next open date (edit date closed or not editing)
     initialQuantities = {};
     initialColors = {};
+    initialEventChecked = {};
     initialNotes = "";
     const { data: nextDate } = await supabase
       .from("delivery_dates")
@@ -243,6 +244,7 @@ export default async function OrderPage({
         deliveryDateFormatted={deliveryDateFormatted}
         initialQuantities={isEditing ? initialQuantities : undefined}
         initialColors={isEditing ? initialColors : undefined}
+        initialEventChecked={isEditing ? initialEventChecked : undefined}
         initialNotes={isEditing ? initialNotes : undefined}
         editingOrderId={isEditing ? editOrderId : undefined}
       />
