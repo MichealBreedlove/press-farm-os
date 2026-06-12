@@ -214,6 +214,29 @@ export async function POST(request: Request) {
     // form, the admin republished availability (changing/removing rows),
     // and the cart's availability IDs no longer match this date. Tell the
     // chef how to recover instead of leaving them stuck (2026-06-10 incident).
+    //
+    // Best case the rows still exist but were flipped to unavailable mid-
+    // session — then name the exact items so the chef removes just those
+    // instead of rebuilding the whole order.
+    const { data: unavailRows } = await (supabase.from("availability_items") as any)
+      .select("id, item:items(name)")
+      .eq("restaurant_id", restaurant_id)
+      .eq("delivery_date", delivery_date)
+      .eq("status", "unavailable")
+      .in("id", tamperedIds);
+    const unavailableNames: string[] = (unavailRows ?? [])
+      .map((r: any) => r.item?.name)
+      .filter(Boolean);
+    if (unavailableNames.length === tamperedIds.length) {
+      return NextResponse.json(
+        {
+          error: `No longer available for this delivery: ${unavailableNames.join(", ")}. Go back, remove ${
+            unavailableNames.length === 1 ? "that item" : "those items"
+          }, and resubmit — the rest of your order is fine.`,
+        },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(
       {
         error:

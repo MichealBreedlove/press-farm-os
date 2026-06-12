@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
@@ -52,7 +52,10 @@ export default async function OrderPage({
   }
 
   const restaurant = restaurantUser.restaurants;
-  const today = new Date().toISOString().split("T")[0];
+  // Farm-local "today" — UTC rolls over at 4–5pm Pacific, right when chefs
+  // order for tomorrow; the UTC date made the next-open-date fallback skip
+  // a still-open same-day date in the evening window.
+  const today = todayPacific();
 
   // If editing, fetch the existing order to get its delivery date and quantities.
   // We also pull unit_type/size_label/color_key so the hydrated quantity keys
@@ -218,7 +221,7 @@ export default async function OrderPage({
       {/* Off-schedule order affordance — sits just below the header so
           it's visible without crowding. Only shown when not editing. */}
       {!isEditing && (
-        <PickCustomDateLink currentDate={deliveryDate.date} />
+        <PickCustomDateLink key={deliveryDate.date} currentDate={deliveryDate.date} />
       )}
 
       <div className="px-4 pt-4">
@@ -228,7 +231,11 @@ export default async function OrderPage({
         />
       </div>
 
+      {/* Keyed by date: /order?date=X navigations reuse this page instance,
+          so without the key the form carries the previous date's quantity
+          state (keyed by that date's availability IDs) across the switch. */}
       <OrderForm
+        key={deliveryDate.date}
         availabilityItems={availabilityItems}
         restaurantId={restaurant.id}
         restaurantName={restaurant.name}

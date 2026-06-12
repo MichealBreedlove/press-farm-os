@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * Subtle "order for a different date" affordance below the chef order
@@ -18,8 +19,25 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
   const [date, setDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const navStarted = useRef(false);
 
-  const today = new Date().toISOString().split("T")[0];
+  // Farm-local "today" — UTC flips to tomorrow at 4–5pm Pacific, exactly the
+  // evening ordering window, which made the picker grey out today's date.
+  const today = todayPacific();
+
+  // /order?date=X is a same-route navigation, so this component instance
+  // survives it with its state intact. Close the modal once the transition
+  // lands — without this the dialog sat on "Opening…" forever and Cancel
+  // was disabled, hard-sticking the chef until a page reload.
+  useEffect(() => {
+    if (navStarted.current && !isPending) {
+      navStarted.current = false;
+      setOpen(false);
+      setSubmitting(false);
+      setDate("");
+    }
+  }, [isPending]);
 
   async function confirm() {
     if (!date) {
@@ -44,9 +62,14 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
         setSubmitting(false);
         return;
       }
-      // Server component will refetch with the new date param.
-      router.push(`/order?date=${date}`);
-      router.refresh();
+      // Server component will refetch with the new date param. Track the
+      // navigation as a transition so the effect above can close the modal
+      // when the new page data is actually in.
+      navStarted.current = true;
+      startTransition(() => {
+        router.push(`/order?date=${date}`);
+        router.refresh();
+      });
     } catch (err: any) {
       setError(err?.message ?? "Network error");
       setSubmitting(false);
@@ -98,19 +121,25 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setOpen(false); setError(null); }}
-                disabled={submitting}
-                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40 disabled:opacity-50"
+                onClick={() => {
+                  // Always-available escape hatch — never disable Cancel,
+                  // even mid-submit, or a slow request traps the chef.
+                  navStarted.current = false;
+                  setOpen(false);
+                  setError(null);
+                  setSubmitting(false);
+                }}
+                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirm}
-                disabled={submitting || !date}
+                disabled={submitting || isPending || !date}
                 className="px-4 min-h-[40px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-green-dark disabled:opacity-50"
               >
-                {submitting ? "Opening…" : "Switch date"}
+                {submitting || isPending ? "Opening…" : "Switch date"}
               </button>
             </div>
           </div>
