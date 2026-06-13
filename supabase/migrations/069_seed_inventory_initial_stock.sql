@@ -90,7 +90,7 @@ BEGIN
     ('Lettuce','herbs_leaves','Salanova Red Gem',1,'packet',NULL,NULL,NULL,NULL),
     ('Lettuce','herbs_leaves','Salanova Red Butter',0.5,'packet',NULL,NULL,NULL,NULL),
     ('Lettuce','herbs_leaves','Lettuce Mix',1,'packet',NULL,NULL,NULL,NULL),
-    ('Lettuce','herbs_leaves','Summertime',1,'packet',NULL,NULL,NULL,'Crop/variety uncertain'),
+    ('Thyme','flowers','Summer',1,'packet',NULL,NULL,NULL,NULL),
     -- Tomatoes
     ('Tomatoes','fruit_veg','Yellow Currant',1,'oz',NULL,NULL,NULL,NULL),
     ('Tomatoes','fruit_veg','Red Currant',1,'oz',NULL,NULL,NULL,NULL),
@@ -105,7 +105,7 @@ BEGIN
     ('Onion','fruit_veg','Walla Walla Sweet',1,'packet',NULL,NULL,NULL,NULL),
     ('Scallions','fruit_veg','Tokyo Long White (Bunching)',1,'lb','True Leaf Market',52.06,'2026-06-12',NULL),
     -- Cucumbers
-    ('Cucumbers','fruit_veg','Cork',30,'seeds',NULL,NULL,NULL,'Variety name uncertain'),
+    ('Cucumbers','fruit_veg','Quirk',30,'seeds',NULL,NULL,NULL,NULL),
     ('Cucumbers','fruit_veg','Quick Snack',100,'seeds',NULL,NULL,NULL,NULL),
     ('Cucamelons','fruit_veg','Mexican Sour Gherkin',1,'packet',NULL,NULL,NULL,NULL),
     -- Basil / tulsi
@@ -132,7 +132,7 @@ BEGIN
     ('Fava - Beans','fruit_veg','Broad Bean (Bread Bean)',5,'lb',NULL,NULL,NULL,NULL),
     -- Turnip
     ('Turnip','fruit_veg','Hakurei',1,'cup',NULL,NULL,NULL,NULL),
-    ('Turnip','fruit_veg','Shogoin',1,'packet',NULL,NULL,NULL,'Name uncertain ("Shogha Guards Mark 8")'),
+    ('Beets','fruit_veg','Shioga Guardsmark',1,'packet',NULL,NULL,NULL,NULL),
     ('Turnip','fruit_veg','Hirosaki Red',1,'packet',NULL,NULL,NULL,NULL),
     ('Turnip','fruit_veg','Golden Globe',1,'packet',NULL,NULL,NULL,NULL),
     -- Eggplant
@@ -150,7 +150,7 @@ BEGIN
     -- Bok choy
     ('Bok Choy','fruit_veg','Little Shanghai',1,'packet',NULL,NULL,NULL,NULL),
     -- Chervil
-    ('Chervil','micros_leaves','Sherville',1,'packet',NULL,NULL,NULL,'Variety name uncertain'),
+    ('Chervil','micros_leaves','Chervil',1,'packet',NULL,NULL,NULL,NULL),
     -- Cosmos
     ('Cosmos','flowers','Double Click Mix',1,'packet',NULL,NULL,NULL,NULL),
     ('Cosmos','flowers','Orange',1,'packet',NULL,NULL,NULL,NULL),
