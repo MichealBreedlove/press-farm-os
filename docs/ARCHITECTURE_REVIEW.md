@@ -347,10 +347,8 @@ Start with the highest-risk mutating routes (`orders`, `availability`,
 adds a runtime dependency, and (b) replacing the hand-rolled checks changes the
 exact 400 messages/shapes clients receive — again a behaviour change. Worth doing
 as a deliberate validation-contract pass, not folded into a quality-only refactor.
-**Rate-limiting** `contact`/`auth/signup` is a genuine gap, but doing it correctly
-needs a durable store (Upstash/Redis) — an in-memory limiter is per-instance on
-Vercel, so it's both ineffective and capable of rejecting legitimate bursts. It
-needs an infra decision, not a code-only change.
+**Rate-limiting** `contact`/`auth/signup` — **✅ DONE (see §5.9)**. The zod
+portion remains deferred; the rate-limiting gap is now closed with Upstash Redis.
 
 ### 4.8 Extract the order-key builder — **✅ DONE (see §5.8)**
 Move `enumerateKeys`/`qtyKey` into `lib/order-keys.ts` (single source, unit
@@ -437,8 +435,17 @@ errors, **191/191 tests pass**, production build succeeds).
    draft loader from the raw item — a pre-existing difference preserved exactly).
    +10 unit tests locking the key format.
 
-**Deliberately deferred** (would change client-visible behaviour or need infra,
-so out of scope for a no-functionality-change refactor): §4.6 response-shape
-standardization and §4.7 zod/rate-limiting — see those sections for rationale.
+9. **Rate-limiting on public endpoints (part of §4.7).** Added
+   `src/lib/ratelimit.ts` (Upstash Redis over HTTP via `@upstash/ratelimit` +
+   `@upstash/redis`) and gated the two unauthenticated routes by client IP:
+   `/api/contact` (5 / 10 min) and `/api/auth/signup` (10 / hour). **Fail-open
+   and fully inert until `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
+   are set in Vercel** — so it ships dormant (prod behaviour unchanged on
+   deploy) and never blocks a signup if Upstash is unreachable. 429s reuse the
+   routes' existing `{ error }` shape.
+
+**Deliberately deferred** (would change client-visible behaviour, so out of
+scope for a no-functionality-change refactor): §4.6 response-shape
+standardization and the **zod** half of §4.7 — see those sections for rationale.
 
 Test count went 191 → **205** across these passes; tsc/lint/build green throughout.

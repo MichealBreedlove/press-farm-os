@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/ratelimit";
 
 /**
  * POST /api/auth/signup — Public chef self-signup.
@@ -12,6 +13,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * places orders for flowers/branches and other event items.
  */
 export async function POST(request: Request) {
+  // Public endpoint — cap account-creation bursts per IP (10 per hour, enough
+  // for a kitchen onboarding staff from one address, but not a bot flood).
+  // Inert until the UPSTASH_* env vars are set; fail-open if the limiter errors.
+  const rl = await rateLimit(request, { name: "signup", limit: 10, windowSeconds: 3600 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many sign-up attempts — please wait a while and try again." },
+      { status: 429 },
+    );
+  }
+
   let body: { email?: string; password?: string; full_name?: string; restaurant_id?: string };
   try {
     body = await request.json();

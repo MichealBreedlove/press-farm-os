@@ -243,6 +243,8 @@ NEXT_PUBLIC_APP_URL=              # https://pressfarm.io or localhost:3000
 RESEND_FROM_*                     # optional per-purpose sender overrides (orders/availability/digest/timesheet/noreply)
 NEXT_PUBLIC_SENTRY_DSN            # optional — Sentry error capture stays OFF until set
 SENTRY_ORG / SENTRY_PROJECT / SENTRY_AUTH_TOKEN  # optional — only for build-time source-map upload
+UPSTASH_REDIS_REST_URL           # optional — rate limiting for /api/contact + /api/auth/signup
+UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + inert until then (src/lib/ratelimit.ts)
 ```
 
 ## Conventions

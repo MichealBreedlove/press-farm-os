@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ADMIN_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import { safeResendSend } from "@/lib/resend/client";
+import { rateLimit } from "@/lib/ratelimit";
 
 /**
  * POST /api/contact — public chef-inquiry form on /about.
@@ -14,6 +15,16 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clip = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 export async function POST(request: Request) {
+  // Public endpoint — cap bursts per IP (5 per 10 min). Inert until the
+  // UPSTASH_* env vars are set; fail-open if the limiter errors.
+  const rl = await rateLimit(request, { name: "contact", limit: 5, windowSeconds: 600 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Too many messages — please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+
   let body: any;
   try {
     body = await request.json();
