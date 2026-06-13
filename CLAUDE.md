@@ -113,7 +113,7 @@ supabase/migrations/             # 001 → 064 (67 files; see table — numbers 
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **69 migration files, numbered 001 → 066** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **066** (064 confirmed applied — the live security advisors are clean; 066 was applied via the Supabase MCP on 2026-06-10). **Next migration number is 067.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **71 migration files, numbered 001 → 068** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **068** (064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP). **Next migration number is 069.** Read latest first when scoping work.
 
 > **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
@@ -188,6 +188,8 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 064 | security_advisor_fixes | `seeds_with_on_hand` → security_invoker; revoke `match_inbound_sender` from anon/authenticated; pin `slide_recurring_anchor` search_path (DDL-only, no code change) |
 | 065 | microgreen_demand_interval | `microgreen_demand.interval_weeks` (1=weekly default, 2=biweekly, …; anchored to `effective_from` or a fixed epoch) so demand can recur on a multi-week cadence; also drops the stale `target_oz > 0` CHECK that 047 left behind (it silently rejected unit-based inserts) |
 | 066 | submit_order_rpc | `submit_order_with_items()` — atomic order submission (order upsert + item replace/merge in one transaction, SECURITY INVOKER so chef RLS applies; raises `ORDER_LOCKED` if status moved past chef-editable). POST `/api/orders` calls it via `.rpc()` |
+| 067 | order_idempotency_and_submitted_at | Adds `orders.last_submission_token` + a `p_idempotency_key` arg to `submit_order_with_items()` (drops the 8-arg 066 overload): a retry carrying the same token is a no-op, so a lost-response retry can't re-merge and double an order. Also fixes 066 clobbering `submitted_at` on every edit — `ON CONFLICT` now `COALESCE`s it so the original submission time survives (edits live in `last_edited_*`) |
+| 068 | submit_order_ordering_open_guard | `submit_order_with_items()` re-checks `delivery_dates.ordering_open` inside the transaction (raises `ORDERING_CLOSED`), closing the TOCTOU window where an admin closing the date between the route's JS pre-check and the write could still let a submission land. Signature unchanged from 067 (CREATE OR REPLACE) |
 
 ## Auth Model
 

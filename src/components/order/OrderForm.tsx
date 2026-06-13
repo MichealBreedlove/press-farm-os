@@ -58,6 +58,10 @@ export interface OrderFormData {
   }[];
   freeformNotes: string;
   editingOrderId?: string;
+  /** Idempotency token minted when the chef enters review. Reused across
+   *  retries of the same submission so a lost-response retry can't double the
+   *  order; a fresh Review pass mints a new token (a genuine new submission). */
+  idempotencyKey: string;
 }
 
 export function OrderForm({
@@ -372,6 +376,12 @@ export function OrderForm({
       items: orderedItems,
       freeformNotes,
       editingOrderId,
+      // New token per Review pass. The review page reuses it across submit
+      // retries; only a fresh trip through this form mints a new one.
+      idempotencyKey:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     };
 
     sessionStorage.setItem("press_farm_order", JSON.stringify(formData));

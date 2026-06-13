@@ -78,6 +78,12 @@ export async function POST(request: Request) {
      *  into the existing order (matching availId+unit+size+color sums qty;
      *  unmatched lines are appended). */
     editing_order_id?: string | null;
+    /** Per-review-session idempotency token. The client mints one token when
+     *  the chef enters review and reuses it across retries (e.g. a lost
+     *  response on a flaky connection). A repeat POST carrying the same token
+     *  as the existing order is a no-op — without it, a merge-mode retry would
+     *  silently double every quantity. */
+    idempotency_key?: string | null;
   };
 
   try {
@@ -86,7 +92,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { restaurant_id, delivery_date, items, freeform_notes, editing_order_id } = body;
+  const { restaurant_id, delivery_date, items, freeform_notes, editing_order_id, idempotency_key } = body;
 
   if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
     return NextResponse.json(
@@ -106,6 +112,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid item data' }, { status: 400 });
   }
 
+  // Reject an empty submission outright. Only positive-quantity lines are ever
+  // persisted (the qty>0 filter below), so a body with no positive line would
+  // otherwise create a phantom 'submitted' order with zero items and fire two
+  // empty notification emails. Clearing an order is a distinct action, not a
+  // silent empty submit.
+  const orderedInput = items.filter((i: any) => Number(i.quantity) > 0);
+  if (orderedInput.length === 0) {
+    return NextResponse.json(
+      { error: "Add at least one item before submitting." },
+      { status: 400 },
+    );
+  }
+
   // Fix 1: Verify user belongs to this restaurant
   const { data: restaurantMembership } = await supabase
     .from('restaurant_users')
@@ -116,6 +135,26 @@ export async function POST(request: Request) {
 
   if (!restaurantMembership) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // Fetch the existing order up front so the idempotency short-circuit can run
+  // BEFORE the ordering-open and status gates below. A retry of an
+  // already-committed submission must report success even if an admin closed
+  // the date or advanced the order in the meantime — the original write landed
+  // while everything was open. (The submit RPC orders these same checks the
+  // same way.)
+  const { data: existingOrder } = await (supabase.from("orders") as any)
+    .select("id, status, chef_id, last_submission_token")
+    .eq("restaurant_id", restaurant_id)
+    .eq("delivery_date", delivery_date)
+    .maybeSingle();
+
+  // Idempotency: a retry of a submission that already committed (e.g. the
+  // response was lost on a flaky connection). The same token on the existing
+  // order means this exact submission already landed — return success without
+  // re-merging (which doubles quantities) or re-notifying.
+  if (existingOrder && idempotency_key && existingOrder.last_submission_token === idempotency_key) {
+    return NextResponse.json({ data: { orderId: existingOrder.id }, error: null }, { status: 200 });
   }
 
   // Verify delivery date is still open
@@ -136,11 +175,6 @@ export async function POST(request: Request) {
   // chef-editable states. Otherwise a chef could overwrite an order that
   // admin already started picking, fulfilled, or cancelled — including
   // racing with a "Finish & Send" that just emailed the receiver.
-  const { data: existingOrder } = await (supabase.from("orders") as any)
-    .select("id, status, chef_id")
-    .eq("restaurant_id", restaurant_id)
-    .eq("delivery_date", delivery_date)
-    .maybeSingle();
   if (existingOrder && !["draft", "submitted"].includes(existingOrder.status)) {
     return NextResponse.json(
       {
@@ -181,7 +215,10 @@ export async function POST(request: Request) {
   // a different date, or an unavailable item. We require every submitted ID
   // to round-trip through this scoped fetch. Pull unit_type so we can
   // backfill the per-line unit when the client omits it (legacy callers).
-  const submittedIds = items.map((i: any) => i.availability_item_id);
+  // Validate only the lines we'll actually persist (qty>0). Building this from
+  // the raw items would let a stray zero-quantity line referencing a
+  // now-unavailable item fail the whole submission with "no longer available".
+  const submittedIds = orderedInput.map((i: any) => i.availability_item_id);
   const { data: availItems } = await (supabase.from("availability_items") as any)
     .select("id, item:items(default_price, unit_prices, unit_type)")
     .eq("restaurant_id", restaurant_id)
@@ -329,13 +366,23 @@ export async function POST(request: Request) {
       p_replace: !isMerge,
       p_lines: linesToInsert,
       p_update_lines: linesToUpdate,
+      p_idempotency_key: idempotency_key ?? null,
     },
   );
 
   if (submitError || !orderId) {
-    if (String(submitError?.message ?? "").includes("ORDER_LOCKED")) {
+    const msg = String(submitError?.message ?? "");
+    if (msg.includes("ORDER_LOCKED")) {
       return NextResponse.json(
         { error: "This order has already moved past editing — contact Press Farm to make changes." },
+        { status: 409 },
+      );
+    }
+    // The date was closed between the route's pre-check and the write
+    // (concurrent admin close). Same response as the pre-check above.
+    if (msg.includes("ORDERING_CLOSED")) {
+      return NextResponse.json(
+        { error: "Ordering is closed for this delivery date" },
         { status: 409 },
       );
     }

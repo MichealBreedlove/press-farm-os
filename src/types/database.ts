@@ -1607,6 +1607,7 @@ export type Database = {
           id: string
           last_edited_at: string | null
           last_edited_by: string | null
+          last_submission_token: string | null
           restaurant_id: string
           status: string
           submitted_at: string | null
@@ -1622,6 +1623,7 @@ export type Database = {
           id?: string
           last_edited_at?: string | null
           last_edited_by?: string | null
+          last_submission_token?: string | null
           restaurant_id: string
           status?: string
           submitted_at?: string | null
@@ -1637,6 +1639,7 @@ export type Database = {
           id?: string
           last_edited_at?: string | null
           last_edited_by?: string | null
+          last_submission_token?: string | null
           restaurant_id?: string
           status?: string
           submitted_at?: string | null

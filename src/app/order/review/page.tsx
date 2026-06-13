@@ -60,7 +60,7 @@ export default function OrderReviewPage() {
     );
   }
 
-  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId } = orderData;
+  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId, idempotencyKey } = orderData;
   const isEditing = !!editingOrderId;
 
   async function handleSubmit() {
@@ -90,6 +90,9 @@ export default function OrderReviewPage() {
           // (sums qty for matching lines, appends new ones) instead of
           // wiping the prior order.
           editing_order_id: editingOrderId ?? null,
+          // Same token across retries of THIS submission — makes a lost-
+          // response retry a no-op instead of doubling the order.
+          idempotency_key: idempotencyKey ?? null,
         }),
       });
 
