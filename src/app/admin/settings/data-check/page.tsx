@@ -3,10 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { EditorialHero } from "@/components/shared/EditorialHero";
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatCurrency } from "@/lib/utils";
 
 /**
  * /admin/settings/data-check — Data completeness dashboard

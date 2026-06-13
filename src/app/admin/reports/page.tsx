@@ -31,7 +31,7 @@ export default async function AdminReportsPage() {
       .select("date, amount, category")
       .order("date", { ascending: true }),
 
-    (admin as any)
+    admin
       .from("report_item_revenue")
       .select("*")
       .order("total_revenue", { ascending: false })

@@ -2315,6 +2315,28 @@ export type Database = {
         }
         Relationships: []
       }
+      report_item_revenue: {
+        // Migration 065 — per-item revenue/qty rolled up in SQL (GROUP BY) so
+        // the reports pages read ~hundreds of rows instead of the full
+        // delivery_items history. See supabase/migrations/065_*.sql.
+        Row: {
+          item_id: string | null
+          name: string | null
+          category: string | null
+          unit_type: string | null
+          total_revenue: number | null
+          total_qty: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seeds_with_on_hand: {
         Row: {
           cost: number | null

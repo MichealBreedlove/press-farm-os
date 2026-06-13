@@ -9,10 +9,7 @@ import { GenerateDatesButton } from "./GenerateDatesButton";
 import { ViewToggle } from "./ViewToggle";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatCurrency } from "@/lib/utils";
 
 function formatDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", {

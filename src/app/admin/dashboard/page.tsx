@@ -9,16 +9,13 @@ import { SEEDS_ENABLED } from "@/lib/constants";
 import { listTodayTasks } from "@/lib/tasks/queries";
 import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
 import type { FarmTask } from "@/types/database";
+import { formatCurrencyWhole } from "@/lib/utils";
 
 interface DashCard {
   href: string;
   title: string;
   description: string;
   flower: string; // brand flower illustration filename (without .png)
-}
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
 // Force the page to re-render on every request so the random KPI flowers
@@ -292,13 +289,13 @@ export default async function AdminDashboardPage() {
                   <Link href={`/admin/deliveries?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
                     <img src={`/assets/pressfarm/flowers/${revFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
                     <p className="text-xs text-farm-muted relative">{monthName} Revenue</p>
-                    <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrency(monthRevenue)}</p>
+                    <p className="text-2xl font-bold text-farm-green mt-1 relative">{formatCurrencyWhole(monthRevenue)}</p>
                     <p className="text-[10px] text-farm-muted mt-1 relative">{(monthDeliveries ?? []).length} deliveries</p>
                   </Link>
                   <Link href={`/admin/expenses?month=${currentMonth}`} className="card-interactive p-4 relative overflow-hidden">
                     <img src={`/assets/pressfarm/flowers/${expFlower}.png`} alt="" aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 w-24 h-24 opacity-25 pointer-events-none" />
                     <p className="text-xs text-farm-muted relative">{monthName} Expenses</p>
-                    <p className="text-2xl font-bold text-pf-master-orange mt-1 relative">{formatCurrency(monthExpenseTotal)}</p>
+                    <p className="text-2xl font-bold text-pf-master-orange mt-1 relative">{formatCurrencyWhole(monthExpenseTotal)}</p>
                     <p className="text-[10px] text-farm-muted mt-1 relative">{(monthExpenses ?? []).length} entries</p>
                   </Link>
                   <Link href="/admin/orders?status=submitted" className="card-interactive p-4 relative overflow-hidden">

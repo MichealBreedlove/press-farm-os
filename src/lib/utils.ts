@@ -36,13 +36,28 @@ export function formatDateShort(dateStr: string): string {
 }
 
 /**
- * Format currency for display.
+ * Format currency for display (cents precision).
  * @example formatCurrency(1234.5) → "$1,234.50"
  */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+  }).format(amount);
+}
+
+/**
+ * Format currency rounded to whole dollars — the dashboard / report convention
+ * where cents are noise. Byte-identical to the `maximumFractionDigits: 0`
+ * formatter that was previously redefined as a local `fmt()` in ~half a dozen
+ * report and dashboard files.
+ * @example formatCurrencyWhole(1234.5) → "$1,235"
+ */
+export function formatCurrencyWhole(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

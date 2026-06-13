@@ -3,13 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import FinalizeButton from "../FinalizeButton";
+import { formatCurrency } from "@/lib/utils";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
-}
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
 function formatDate(d: string) {

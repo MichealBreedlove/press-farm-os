@@ -4,10 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatCurrency } from "@/lib/utils";
 
 function formatDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-US", {

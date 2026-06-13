@@ -95,7 +95,7 @@ export default async function AdminExecutiveReportsPage() {
 
       // Per-item revenue/qty, pre-aggregated in SQL (migration 065) — one row
       // per item instead of the full delivery_items history.
-      (admin as any).from("report_item_revenue").select("*"),
+      admin.from("report_item_revenue").select("*"),
     ]);
 
   // ---- Monthly revenue map ----
@@ -212,10 +212,11 @@ export default async function AdminExecutiveReportsPage() {
   > = {};
 
   for (const r of itemRevenueRows ?? []) {
+    if (!r.item_id) continue; // GROUP BY key; never null in practice
     itemAgg[r.item_id] = {
-      name: r.name,
-      category: r.category,
-      unit: r.unit_type,
+      name: r.name ?? "",
+      category: r.category ?? "",
+      unit: r.unit_type ?? "",
       total_revenue: Number(r.total_revenue ?? 0),
       total_qty: Number(r.total_qty ?? 0),
     };

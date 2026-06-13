@@ -12,14 +12,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-
-function fmt(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-}
-
-function fmtFull(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatCurrencyWhole as fmt, formatCurrency as fmtFull } from "@/lib/utils";
 
 function monthLabel(m: string) {
   const [y, mo] = m.split("-").map(Number);

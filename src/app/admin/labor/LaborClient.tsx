@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Send } from "lucide-react";
+import { formatCurrencyWhole as fmt } from "@/lib/utils";
 
 interface LaborEntry {
   id: string;
@@ -151,10 +152,6 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   const workers = Array.from(new Set(entries.map(e => e.worker_name)));
 
   const monthLabel = today.toLocaleDateString("en-US", { month: "short" });
-
-  function fmt(n: number) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-  }
 
   async function handleSendTimesheet() {
     setSending(true);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 type Tab = "export" | "import";
 
@@ -35,10 +36,6 @@ interface Props {
   totalCount: number;
   totalAmount: number;
   latestDate: string | null;
-}
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
 export function ExpensesDataClient({ totalCount, totalAmount, latestDate }: Props) {

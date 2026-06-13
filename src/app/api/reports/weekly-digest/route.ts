@@ -5,10 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
 import { getAnthropicClient } from "@/lib/anthropic/client";
 import WeeklyDigest from "@/emails/weekly-digest";
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
+import { formatCurrency } from "@/lib/utils";
 
 function formatDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-US", {
