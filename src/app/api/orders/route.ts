@@ -385,9 +385,18 @@ export async function POST(request: Request) {
   );
 
   if (submitError || !orderId) {
-    if (String(submitError?.message ?? "").includes("ORDER_LOCKED")) {
+    const msg = String(submitError?.message ?? "");
+    if (msg.includes("ORDER_LOCKED")) {
       return NextResponse.json(
         { error: "This order has already moved past editing — contact Press Farm to make changes." },
+        { status: 409 },
+      );
+    }
+    // The date was closed between the route's pre-check and the write
+    // (concurrent admin close). Same response as the pre-check above.
+    if (msg.includes("ORDERING_CLOSED")) {
+      return NextResponse.json(
+        { error: "Ordering is closed for this delivery date" },
         { status: 409 },
       );
     }
