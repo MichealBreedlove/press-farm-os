@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sumByKey } from "@/lib/reports/aggregate";
 
 /**
  * GET /api/reports/income?year=2026&quarter=1
@@ -58,18 +59,17 @@ export async function GET(request: Request) {
     if (monthMap[m]) monthMap[m].expenses += e.amount ?? 0;
   }
 
-  // By restaurant
-  const byRestaurant: Record<string, number> = {};
-  for (const d of deliveries ?? []) {
-    const name = (d.restaurants as any)?.name ?? "Unknown";
-    byRestaurant[name] = (byRestaurant[name] ?? 0) + (d.total_value ?? 0);
-  }
-
-  // Expenses by category
-  const byExpenseCategory: Record<string, number> = {};
-  for (const e of expenses ?? []) {
-    byExpenseCategory[e.category] = (byExpenseCategory[e.category] ?? 0) + e.amount;
-  }
+  // By restaurant + expenses by category — shared rollup in lib/reports/aggregate.
+  const byRestaurant = sumByKey(
+    deliveries ?? [],
+    (d) => (d.restaurants as any)?.name ?? "Unknown",
+    (d) => d.total_value ?? 0,
+  );
+  const byExpenseCategory = sumByKey(
+    expenses ?? [],
+    (e) => e.category,
+    (e) => e.amount,
+  );
 
   const totalRevenue = (deliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
   const totalExpenses = (expenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);

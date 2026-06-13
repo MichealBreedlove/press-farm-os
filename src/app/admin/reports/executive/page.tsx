@@ -83,12 +83,12 @@ export default async function AdminExecutiveReportsPage() {
 
   const [{ data: deliveries }, { data: expenses }, { data: itemRevenueRows }] =
     await Promise.all([
-      (admin as any)
+      admin
         .from("deliveries")
         .select("delivery_date, total_value, restaurant_id, status, restaurants(name)")
         .order("delivery_date", { ascending: true }),
 
-      (admin as any)
+      admin
         .from("farm_expenses")
         .select("date, amount, category")
         .order("date", { ascending: true }),

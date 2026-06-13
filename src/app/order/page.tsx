@@ -8,6 +8,7 @@ import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
+import { buildOrderKey } from "@/lib/order-keys";
 import type { AvailabilityItemWithItem } from "@/types";
 
 /**
@@ -105,16 +106,11 @@ export default async function OrderPage({
 
         // Mirror the key shapes OrderForm.enumerateKeys() yields so the
         // hydrated quantities land on the same keys the form computes.
-        let key: string;
-        if (hasMultiUnits && persistedSize && persistedUnit) {
-          key = `${aiId}__unit:${persistedUnit}__${persistedSize}`;
-        } else if (hasMultiUnits && persistedUnit) {
-          key = `${aiId}__unit:${persistedUnit}`;
-        } else if (persistedSize) {
-          key = `${aiId}__${persistedSize}`;
-        } else {
-          key = aiId;
-        }
+        let key = buildOrderKey(aiId, {
+          unit: persistedUnit,
+          size: persistedSize,
+          hasMultiUnits,
+        });
         if (oi.menu_section === "events") {
           if (aiIdsWithRegular.has(aiId)) {
             // Split line — the event portion lives under the prefixed keys.

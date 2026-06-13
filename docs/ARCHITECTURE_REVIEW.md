@@ -311,35 +311,48 @@ export type ItemWithMenuFlags = Item & {
 and thread it through `AvailabilityItemWithItem` so `OrderForm`/`item-row` drop
 their casts. (These columns already exist on the rows — this is type-only.)
 
-### 4.3 A typed join helper for report queries
+### 4.3 A typed join helper for report queries — **✅ DONE (see §5.5)**
 The `(admin as any).from("deliveries").select("…restaurants(name)")` casts are
 all the same shape. A tiny typed wrapper (or regenerating `database.ts` from the
 live schema via the Supabase MCP `generate_typescript_types`) removes them and
 the downstream `(d.restaurants as any)?.name`. Regeneration also retires the
 hand-written `EventRequest` in `index.ts`.
 
-### 4.4 Fix the `availability/notify` N+1 **[check-in — chef email]**
+### 4.4 Fix the `availability/notify` N+1 — **✅ DONE (see §5.6)**
 Replace the per-chef `getUserById` loop with a single paginated
 `admin.auth.admin.listUsers()` into an `id→email` map, then one pass. Must
 preserve "every active chef emailed" (handle pagination), which is why it's a
 check-in rather than an autonomous change.
 
-### 4.5 DRY the report aggregation
+### 4.5 DRY the report aggregation — **✅ DONE (see §5.7)**
 Extract the month/restaurant rollup (§2.1c) into one
 `lib/reports/aggregateByMonth.ts` pure function shared by the three callers, with
 unit tests. When `deliveries` outgrows JS aggregation, swap the function body for
 a SQL view (the 065 precedent) without touching call sites.
 
-### 4.6 Standardize API responses
+### 4.6 Standardize API responses — **⏸ DELIBERATELY DEFERRED**
 Adopt the already-defined `ApiResponse<T>` (`index.ts:115`) via thin
 `ok(data)` / `fail(msg, status)` helpers; migrate routes opportunistically.
+**Not applied:** the existing success bodies (`{ items }`, `{ deliveries }`,
+`{ data }`, `{ ok: true }`) are part of each route's client contract — the
+`fetch().then(r => r.json()).items` call sites depend on the exact key. Rewriting
+them to a single shape is by definition a client-visible behaviour change, which
+violates this engagement's "no functionality change" constraint. The
+`ApiResponse<T>` type stays available for *new* routes to adopt; a full migration
+should be its own coordinated change (update each route + its callers together).
 
-### 4.7 Introduce zod at the route boundary
+### 4.7 Introduce zod at the route boundary — **⏸ DELIBERATELY DEFERRED**
 Start with the highest-risk mutating routes (`orders`, `availability`,
-`deliveries`); colocate schemas in `lib/validators/`. Replaces ad-hoc checks and
-gives inferred types for free. Add rate limiting to `contact` + `auth/signup`.
+`deliveries`); colocate schemas in `lib/validators/`. **Not applied:** (a) it
+adds a runtime dependency, and (b) replacing the hand-rolled checks changes the
+exact 400 messages/shapes clients receive — again a behaviour change. Worth doing
+as a deliberate validation-contract pass, not folded into a quality-only refactor.
+**Rate-limiting** `contact`/`auth/signup` is a genuine gap, but doing it correctly
+needs a durable store (Upstash/Redis) — an in-memory limiter is per-instance on
+Vercel, so it's both ineffective and capable of rejecting legitimate bursts. It
+needs an infra decision, not a code-only change.
 
-### 4.8 Extract the order-key builder
+### 4.8 Extract the order-key builder — **✅ DONE (see §5.8)**
 Move `enumerateKeys`/`qtyKey` into `lib/order-keys.ts` (single source, unit
 tested) so the OrderForm/item-row key formats can never drift.
 
@@ -386,8 +399,6 @@ errors, **191/191 tests pass**, production build succeeds).
    `profile.role` to scope the query, not just gate). Net −161 lines; tsc/lint/
    tests/build all green.
 
-The remaining §4 items are left as recommendations, not applied.
-
 4. **Item menu-flag casts (§4.2).** Investigation showed the columns
    (`is_event_item`, `show_in_regular_menu`, `is_press_bar_item`, `image_url`,
    `season_status`, `available_sizes/colors/units`) are already on the `items` /
@@ -397,3 +408,37 @@ The remaining §4 items are left as recommendations, not applied.
    `category-section.tsx` (the props were already typed `AvailabilityItemWithItem`).
    No new types needed; the order path is now cast-free. tsc/lint/tests/build
    green.
+
+5. **Report join casts (§4.3).** `api/reports/income/route.ts` already ran the
+   `restaurants(name)` join on the *typed* admin client, proving the cast was
+   unnecessary — removed the `(admin as any).from("deliveries"/"farm_expenses")`
+   casts from `admin/reports/page.tsx` and `reports/executive/page.tsx`. (The
+   consistent `(d.restaurants as any)?.name` join-shape access is kept; even the
+   already-typed routes use it.) tsc clean.
+
+6. **`availability/notify` N+1 (§4.4).** Replaced the per-chef
+   `admin.auth.admin.getUserById()` loop with a single paginated
+   `listUsers({ perPage: 200 })` pass into an `id→email` map. Same emails, same
+   skip logic, same order — N round-trips → 1 (or a handful at scale).
+
+7. **Report aggregation DRY (§4.5).** Extracted `lib/reports/aggregate.ts`
+   (`sumByKey` + `rollupByMonth`) with the restaurant-name fallback as a
+   caller-supplied callback, so each site keeps its exact semantics
+   (`?? restaurant_id` vs `?? "Unknown"`). Rewired `api/reports/monthly`,
+   `api/reports/income` (its `byRestaurant`/`byExpenseCategory`), and
+   `admin/reports/page.tsx` onto it. Output is byte-identical; +4 unit tests.
+
+8. **Order-key builder (§4.8).** Extracted `lib/order-keys.ts`
+   (`buildOrderKey` + `enumerateOrderKeys`) — the single source of truth for the
+   `${availId}__unit:${unit}__${size}` conventions — and routed all five
+   previously-duplicated construction sites (`OrderForm` ×2, `item-row` ×3,
+   `category-section`, `order/page`) through it. Whether an item is multi-unit
+   stays the caller's call (the form resolves it from the per-cycle override; the
+   draft loader from the raw item — a pre-existing difference preserved exactly).
+   +10 unit tests locking the key format.
+
+**Deliberately deferred** (would change client-visible behaviour or need infra,
+so out of scope for a no-functionality-change refactor): §4.6 response-shape
+standardization and §4.7 zod/rate-limiting — see those sections for rationale.
+
+Test count went 191 → **205** across these passes; tsc/lint/build green throughout.

@@ -6,6 +6,7 @@ import { CATEGORY_LABELS, EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { ItemRow } from "./item-row";
 import { cn } from "@/lib/utils";
 import { resolveSizes } from "@/lib/order-availability";
+import { buildOrderKey } from "@/lib/order-keys";
 
 interface CategorySectionProps {
   category: ItemCategory;
@@ -47,7 +48,7 @@ export function CategorySection({
   const orderedCount = items.filter((i) => {
     if ((quantities[i.id] ?? 0) > 0) return true;
     const sizes = resolveSizes(i.item, i.available_sizes);
-    return sizes.some((s: string) => (quantities[`${i.id}__${s}`] ?? 0) > 0);
+    return sizes.some((s: string) => (quantities[buildOrderKey(i.id, { size: s })] ?? 0) > 0);
   }).length;
 
   return (

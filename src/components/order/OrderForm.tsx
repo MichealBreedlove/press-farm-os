@@ -10,6 +10,7 @@ import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import type { UnitType } from "@/types/database";
 import { resolveUnits, resolveSizes } from "@/lib/order-availability";
+import { buildOrderKey, enumerateOrderKeys } from "@/lib/order-keys";
 
 interface OrderFormProps {
   availabilityItems: AvailabilityItemWithItem[];
@@ -130,11 +131,7 @@ export function OrderForm({
         // (availability-overridden) unit list, not the raw item.unit_type,
         // or the restored key won't line up with the keys the form renders.
         const hasMulti = resolveUnits(ai.item, ai.available_units).length > 1;
-        let key: string;
-        if (hasMulti && size && unit) key = `${aiId}__unit:${unit}__${size}`;
-        else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
-        else if (size) key = `${aiId}__${size}`;
-        else key = aiId;
+        let key = buildOrderKey(aiId, { unit, size, hasMultiUnits: hasMulti });
         if (it.menuSection === "events") {
           if (aiIdsWithRegular.has(aiId)) {
             // Split line — event portion lives under the prefixed keys.
@@ -296,20 +293,12 @@ export function OrderForm({
   }
 
   /** Iterate every (unit?, size?) combination an item exposes, yielding its quantity key. */
-  function* enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
-    const sizes = resolveSizes(ai.item, ai.available_sizes);
-    const units = resolveUnits(ai.item, ai.available_units);
-    const hasMultiUnits = units.length > 1;
-    const hasSizes = sizes.length > 0;
-    if (hasMultiUnits && hasSizes) {
-      for (const u of units) for (const s of sizes) yield { key: `${ai.id}__unit:${u}__${s}`, unit: u, size: s };
-    } else if (hasMultiUnits) {
-      for (const u of units) yield { key: `${ai.id}__unit:${u}`, unit: u };
-    } else if (hasSizes) {
-      for (const s of sizes) yield { key: `${ai.id}__${s}`, size: s };
-    } else {
-      yield { key: ai.id };
-    }
+  function enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
+    return enumerateOrderKeys(
+      ai.id,
+      resolveUnits(ai.item, ai.available_units),
+      resolveSizes(ai.item, ai.available_sizes),
+    );
   }
 
   // Check if any item has quantity > 0 (across ALL items + portions, not just searched)

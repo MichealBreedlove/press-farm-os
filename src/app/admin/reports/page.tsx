@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { rollupByMonth } from "@/lib/reports/aggregate";
 
 const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
@@ -21,12 +22,12 @@ export default async function AdminReportsPage() {
   // see migration 065 — so we transfer ~hundreds of item rows, not the full
   // delivery_items history).
   const [{ data: deliveries }, { data: expenses }, { data: topItemRows }] = await Promise.all([
-    (admin as any)
+    admin
       .from("deliveries")
       .select("delivery_date, total_value, restaurant_id, status, restaurants(name)")
       .order("delivery_date", { ascending: true }),
 
-    (admin as any)
+    admin
       .from("farm_expenses")
       .select("date, amount, category")
       .order("date", { ascending: true }),
@@ -38,40 +39,20 @@ export default async function AdminReportsPage() {
       .limit(15),
   ]);
 
-  // Aggregate monthly data (all time)
-  const monthMap: Record<string, {
-    month: string;
-    label: string;
-    total_value: number;
-    total_expenses: number;
-    by_restaurant: Record<string, number>;
-  }> = {};
-
-  for (const d of deliveries ?? []) {
-    const m = d.delivery_date.slice(0, 7);
-    if (!monthMap[m]) {
-      const [y, mo] = m.split("-").map(Number);
-      const label = new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-      monthMap[m] = { month: m, label, total_value: 0, total_expenses: 0, by_restaurant: {} };
-    }
-    monthMap[m].total_value += d.total_value ?? 0;
-    const rName = (d.restaurants as any)?.name ?? "Unknown";
-    monthMap[m].by_restaurant[rName] = (monthMap[m].by_restaurant[rName] ?? 0) + (d.total_value ?? 0);
-  }
-
-  for (const e of expenses ?? []) {
-    const m = e.date.slice(0, 7);
-    if (!monthMap[m]) {
-      const [y, mo] = m.split("-").map(Number);
-      const label = new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-      monthMap[m] = { month: m, label, total_value: 0, total_expenses: 0, by_restaurant: {} };
-    }
-    monthMap[m].total_expenses += e.amount ?? 0;
-  }
+  // Aggregate monthly data (all time) — shared rollup in lib/reports/aggregate.
+  const monthMap = rollupByMonth(
+    deliveries ?? [],
+    expenses ?? [],
+    (d) => (d.restaurants as any)?.name ?? "Unknown",
+  );
 
   const allMonthlyData = Object.values(monthMap)
     .sort((a, b) => a.month.localeCompare(b.month))
-    .map((m) => ({ ...m, net_value: m.total_value - m.total_expenses }));
+    .map((m) => {
+      const [y, mo] = m.month.split("-").map(Number);
+      const label = new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+      return { ...m, label, net_value: m.total_value - m.total_expenses };
+    });
 
   // Year-over-year annual summaries
   const yearMap: Record<string, { revenue: number; expenses: number }> = {};

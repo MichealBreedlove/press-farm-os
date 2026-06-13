@@ -53,9 +53,21 @@ export async function POST(request: Request) {
   const formattedDate = formatDeliveryDate(delivery_date);
   let emailsSent = 0;
 
+  // Resolve every chef's email in a single paginated pass instead of one
+  // admin.getUserById() per chef (the old N+1). Supabase Auth's listUsers
+  // paginates; loop until a short page signals the end.
+  const emailById = new Map<string, string>();
+  for (let page = 1; ; page++) {
+    const { data: list } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    const users = list?.users ?? [];
+    for (const u of users) {
+      if (u.email) emailById.set(u.id, u.email);
+    }
+    if (users.length < 200) break;
+  }
+
   for (const chefProfile of profiles ?? []) {
-    const { data: authUser } = await admin.auth.admin.getUserById(chefProfile.id);
-    const email = authUser?.user?.email;
+    const email = emailById.get(chefProfile.id);
     if (!email) continue;
 
     const ru = (restaurantUsers ?? []).find((r: any) => r.user_id === chefProfile.id);

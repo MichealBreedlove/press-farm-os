@@ -6,6 +6,7 @@ import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 import { resolveUnits, resolveSizes, resolveColors } from "@/lib/order-availability";
+import { buildOrderKey } from "@/lib/order-keys";
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
@@ -149,10 +150,7 @@ export function ItemRow({
    *  - single unit, no sizes: `${availId}`                       (legacy)
    */
   function qtyKey(unit?: string, size?: string): string {
-    let k = availabilityItem.id;
-    if (unit && hasMultiUnits) k += `__unit:${unit}`;
-    if (size) k += `__${size}`;
-    return k;
+    return buildOrderKey(availabilityItem.id, { unit, size, hasMultiUnits });
   }
 
   const totalQty = (() => {
@@ -163,7 +161,7 @@ export function ItemRow({
       return units.reduce((sum, u) => sum + (quantities[qtyKey(u)] ?? 0), 0);
     }
     if (hasSizes) {
-      return sizes.reduce((sum: number, s: string) => sum + (quantities[`${availabilityItem.id}__${s}`] ?? 0), 0);
+      return sizes.reduce((sum: number, s: string) => sum + (quantities[buildOrderKey(availabilityItem.id, { size: s })] ?? 0), 0);
     }
     return quantities[availabilityItem.id] ?? 0;
   })();
@@ -373,7 +371,7 @@ export function ItemRow({
       {!hasMultiUnits && hasSizes && showSizes && (
         <div className="mt-2 ml-0 space-y-1.5">
           {sizes.map((size: string) => {
-            const key = `${availabilityItem.id}__${size}`;
+            const key = buildOrderKey(availabilityItem.id, { size });
             const sizeQty = quantities[key] ?? 0;
             const sizeColors = itemColors[key] ?? [];
             return (
