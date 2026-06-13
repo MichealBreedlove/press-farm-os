@@ -155,6 +155,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // Fetch the existing order up front so the idempotency short-circuit can run
+  // BEFORE the ordering-open and status gates below. A retry of an
+  // already-committed submission must report success even if an admin closed
+  // the date or advanced the order in the meantime — the original write landed
+  // while everything was open. (The submit RPC orders these same checks the
+  // same way.)
+  const { data: existingOrder } = await (supabase.from("orders") as any)
+    .select("id, status, chef_id, last_submission_token")
+    .eq("restaurant_id", restaurant_id)
+    .eq("delivery_date", delivery_date)
+    .maybeSingle();
+
+  // Idempotency: a retry of a submission that already committed (e.g. the
+  // response was lost on a flaky connection). The same token on the existing
+  // order means this exact submission already landed — return success without
+  // re-merging (which doubles quantities) or re-notifying.
+  if (existingOrder && idempotency_key && existingOrder.last_submission_token === idempotency_key) {
+    return NextResponse.json({ data: { orderId: existingOrder.id }, error: null }, { status: 200 });
+  }
+
   // Verify delivery date is still open
   const { data: deliveryDate } = await supabase
     .from("delivery_dates")
@@ -173,22 +193,6 @@ export async function POST(request: Request) {
   // chef-editable states. Otherwise a chef could overwrite an order that
   // admin already started picking, fulfilled, or cancelled — including
   // racing with a "Finish & Send" that just emailed the receiver.
-  const { data: existingOrder } = await (supabase.from("orders") as any)
-    .select("id, status, chef_id, last_submission_token")
-    .eq("restaurant_id", restaurant_id)
-    .eq("delivery_date", delivery_date)
-    .maybeSingle();
-
-  // Idempotency: a retry of a submission that already committed (e.g. the
-  // response was lost on a flaky connection). The same token on the existing
-  // order means this exact submission already landed — return success without
-  // re-merging (which doubles quantities) or re-notifying. Checked BEFORE the
-  // status lock so a retry that races an admin advancing the order still
-  // reports success rather than the "moved past editing" 409.
-  if (existingOrder && idempotency_key && existingOrder.last_submission_token === idempotency_key) {
-    return NextResponse.json({ data: { orderId: existingOrder.id }, error: null }, { status: 200 });
-  }
-
   if (existingOrder && !["draft", "submitted"].includes(existingOrder.status)) {
     return NextResponse.json(
       {
