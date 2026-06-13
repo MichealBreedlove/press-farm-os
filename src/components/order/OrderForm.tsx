@@ -129,7 +129,7 @@ export function OrderForm({
         // Match enumerateKeys(): multi-unit is decided from the resolved
         // (availability-overridden) unit list, not the raw item.unit_type,
         // or the restored key won't line up with the keys the form renders.
-        const hasMulti = resolveUnits(ai.item, (ai as any).available_units).length > 1;
+        const hasMulti = resolveUnits(ai.item, ai.available_units).length > 1;
         let key: string;
         if (hasMulti && size && unit) key = `${aiId}__unit:${unit}__${size}`;
         else if (hasMulti && unit) key = `${aiId}__unit:${unit}`;
@@ -200,9 +200,9 @@ export function OrderForm({
   // quantity/color/note keys all derive from a prefixed clone id, so the two
   // portions stay independent and submit as two separate order lines.
   const isEventFlagged = (ai: AvailabilityItemWithItem): boolean =>
-    Boolean((ai.item as any).is_event_item);
+    Boolean(ai.item.is_event_item);
   const isEventOnly = (ai: AvailabilityItemWithItem): boolean =>
-    isEventFlagged(ai) && (ai.item as any).show_in_regular_menu === false;
+    isEventFlagged(ai) && ai.item.show_in_regular_menu === false;
 
   const asEventKeyAi = (ai: AvailabilityItemWithItem): AvailabilityItemWithItem =>
     ({ ...ai, id: `${EVENT_MENU_KEY_PREFIX}${ai.id}` });
@@ -213,12 +213,12 @@ export function OrderForm({
   // run; treat undefined/null show_in_regular_menu as true to keep those
   // items in the menu.
   const pressBarItems = isPressBarChef
-    ? visibleItems.filter((ai) => (ai.item as any).is_press_bar_item)
+    ? visibleItems.filter((ai) => ai.item.is_press_bar_item)
     : [];
   const menuItems = isPressBarChef
     ? []
     : visibleItems.filter(
-        (ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai),
+        (ai) => ai.item.show_in_regular_menu !== false || isEventFlagged(ai),
       );
 
   // While a split is open the main row is always the regular portion — the
@@ -236,10 +236,10 @@ export function OrderForm({
   type KeyedSource = { ai: AvailabilityItemWithItem; section: MenuSection };
   const orderedSources: KeyedSource[] = isPressBarChef
     ? allAvailable
-        .filter((ai) => (ai.item as any).is_press_bar_item)
+        .filter((ai) => ai.item.is_press_bar_item)
         .map((ai) => ({ ai, section: "press_bar" as const }))
     : allAvailable
-        .filter((ai) => (ai.item as any).show_in_regular_menu !== false || isEventFlagged(ai))
+        .filter((ai) => ai.item.show_in_regular_menu !== false || isEventFlagged(ai))
         .flatMap((ai) => {
           const sources: KeyedSource[] = [{ ai, section: sectionFor(ai) }];
           if (splitOpen[ai.id]) sources.push({ ai: asEventKeyAi(ai), section: "events" });
@@ -297,8 +297,8 @@ export function OrderForm({
 
   /** Iterate every (unit?, size?) combination an item exposes, yielding its quantity key. */
   function* enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
-    const sizes = resolveSizes(ai.item, (ai as any).available_sizes);
-    const units = resolveUnits(ai.item, (ai as any).available_units);
+    const sizes = resolveSizes(ai.item, ai.available_sizes);
+    const units = resolveUnits(ai.item, ai.available_units);
     const hasMultiUnits = units.length > 1;
     const hasSizes = sizes.length > 0;
     if (hasMultiUnits && hasSizes) {

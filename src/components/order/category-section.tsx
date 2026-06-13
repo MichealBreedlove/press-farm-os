@@ -46,7 +46,7 @@ export function CategorySection({
 
   const orderedCount = items.filter((i) => {
     if ((quantities[i.id] ?? 0) > 0) return true;
-    const sizes = resolveSizes(i.item, (i as any).available_sizes);
+    const sizes = resolveSizes(i.item, i.available_sizes);
     return sizes.some((s: string) => (quantities[`${i.id}__${s}`] ?? 0) > 0);
   }).length;
 

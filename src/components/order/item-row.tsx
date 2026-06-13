@@ -126,8 +126,8 @@ export function ItemRow({
   // Event-only items (not on the regular menu) always submit as events, so
   // their checkmark renders pre-checked and locked. The event portion of a
   // split is implicitly events — no badge/checkmark on that copy.
-  const isEventFlagged = Boolean((item as any).is_event_item) && !!onEventToggle && !isEventCopy;
-  const isEventOnly = isEventFlagged && (item as any).show_in_regular_menu === false;
+  const isEventFlagged = Boolean(item.is_event_item) && !!onEventToggle && !isEventCopy;
+  const isEventOnly = isEventFlagged && item.show_in_regular_menu === false;
   const isEventChecked = isEventOnly || eventChecked;
   // Both-menus items can split into independent regular + event portions.
   const canSplit = isEventFlagged && !isEventOnly && !!onOpenSplit;
@@ -135,9 +135,9 @@ export function ItemRow({
   // Sizes/colors/units are filtered by this cycle's per-availability overrides
   // (available_sizes / available_colors / available_units). A null override means
   // "all of the item's master options"; a subset restricts what the chef can pick.
-  const sizes = resolveSizes(item, (availabilityItem as any).available_sizes);
-  const colors = resolveColors(item, (availabilityItem as any).available_colors);
-  const units = resolveUnits(item, (availabilityItem as any).available_units);
+  const sizes = resolveSizes(item, availabilityItem.available_sizes);
+  const colors = resolveColors(item, availabilityItem.available_colors);
+  const units = resolveUnits(item, availabilityItem.available_units);
   const hasSizes = sizes.length > 0;
   const hasMultiUnits = units.length > 1;
 
@@ -180,7 +180,7 @@ export function ItemRow({
       <div className="flex items-center gap-3">
         {/* Photo — admin-set photo, auto-matched brand flower, or wreath placeholder */}
         {(() => {
-          const imgUrl = getItemImageUrl({ name: item.name, image_url: (item as any).image_url });
+          const imgUrl = getItemImageUrl({ name: item.name, image_url: item.image_url });
           const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
           if (imgUrl) {
             return (
@@ -224,8 +224,8 @@ export function ItemRow({
               </span>
             )}
             {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
-            {(item as any).season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
-            {(item as any).season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
+            {item.season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
+            {item.season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
             {totalQty > 0 && hasSizes && (
               <span className="text-xs font-semibold text-farm-green flex-shrink-0">({totalQty} total)</span>
             )}

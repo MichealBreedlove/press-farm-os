@@ -296,7 +296,7 @@ user-contextual routes to `requireUser`. Mechanical, one route at a time, each
 verified by the existing tests + manual smoke. **Net: −~40 duplicated blocks,
 one audit point for the 401/403 contract.**
 
-### 4.2 Type item menu-flags; kill the `(item as any)` cluster
+### 4.2 Type the item menu flags — **✅ DONE (see §5.4)**
 Add to `src/types/index.ts`:
 ```ts
 export type ItemWithMenuFlags = Item & {
@@ -387,3 +387,13 @@ errors, **191/191 tests pass**, production build succeeds).
    tests/build all green.
 
 The remaining §4 items are left as recommendations, not applied.
+
+4. **Item menu-flag casts (§4.2).** Investigation showed the columns
+   (`is_event_item`, `show_in_regular_menu`, `is_press_bar_item`, `image_url`,
+   `season_status`, `available_sizes/colors/units`) are already on the `items` /
+   `availability_items` rows in `database.ts` — so the `(item as any)` /
+   `(ai as any)` casts in the order components were simply **stale**. Removed all
+   **18** of them across `OrderForm.tsx`, `item-row.tsx`, and
+   `category-section.tsx` (the props were already typed `AvailabilityItemWithItem`).
+   No new types needed; the order path is now cast-free. tsc/lint/tests/build
+   green.
