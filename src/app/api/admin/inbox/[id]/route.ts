@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractItemRequests } from "@/lib/extraction/item-requests";
+import { requireAdmin } from "@/lib/api-auth";
 
 const VALID_ACTIONS = ["mark_read", "mark_unread", "archive", "reextract"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
@@ -23,19 +24,8 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const body = (await req.json().catch(() => ({}))) as { action?: string };
   const action = body.action as Action;

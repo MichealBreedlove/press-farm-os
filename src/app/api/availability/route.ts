@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Profile } from "@/types";
+import { requireRole } from "@/lib/api-auth";
 
 /**
  * POST /api/availability — Publish availability for a delivery date
@@ -14,25 +14,8 @@ import type { Profile } from "@/types";
 export async function POST(request: Request) {
   const supabase = (await createClient()) as any;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Verify admin role
-  const { data: profileRaw } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .single();
-  const profile = profileRaw as Pick<Profile, "role" | "is_active"> | null;
-
-  if (!profile || profile.role !== "admin" || !profile.is_active) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireRole(supabase, ["admin"], { requireActive: true });
+  if (!auth.ok) return auth.response;
 
   let body: {
     restaurant_id: string;

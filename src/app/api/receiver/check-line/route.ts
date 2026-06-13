@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireRole } from "@/lib/api-auth";
 import { todayPacific } from "@/lib/utils";
 
 /** Receiver dashboard date-picker window: ±7 days around farm-local today. */
@@ -25,17 +26,9 @@ function withinReceiverWindow(deliveryDate: string | null | undefined): boolean 
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || (profile.role !== "receiver" && profile.role !== "admin")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireRole(supabase, ["receiver", "admin"]);
+  if (!auth.ok) return auth.response;
+  const role = auth.role;
 
   let body: { kind?: string; id?: string; received?: boolean };
   try {
@@ -62,7 +55,7 @@ export async function POST(request: Request) {
   // this route runs on the service-role client, so without this check any
   // receiver account could rewrite received-status on historical records.
   // Admins are unrestricted (they use the same route while testing).
-  if (profile.role === "receiver") {
+  if (role === "receiver") {
     const parentSelect = kind === "order_item"
       ? "id, order:orders(delivery_date)"
       : "id, delivery:deliveries(delivery_date, status)";

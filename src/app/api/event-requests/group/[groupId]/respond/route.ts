@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { acceptEventRequest, type AcceptedLine } from "@/lib/event-requests/accept";
 import { sendEventRequestAcceptedEmail } from "@/lib/email";
+import { requireAdmin } from "@/lib/api-auth";
 
 type Params = Promise<{ groupId: string }>;
 
@@ -26,19 +27,9 @@ interface PostBody {
  */
 export async function POST(request: Request, { params }: { params: Params }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if ((profile as any)?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   let body: PostBody;
   try {

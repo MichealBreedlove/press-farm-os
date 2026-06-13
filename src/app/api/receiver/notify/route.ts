@@ -3,6 +3,7 @@ import React from "react";
 import { render } from "@react-email/render";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/api-auth";
 import { formatDeliveryDate } from "@/lib/utils";
 import ReceiverDaily from "@/emails/receiver-daily";
 import {
@@ -24,14 +25,8 @@ export const maxDuration = 30;
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const url = new URL(request.url);
   const date = url.searchParams.get("date") ?? "";
@@ -83,7 +78,7 @@ export async function GET(request: Request) {
 
   const html = await render(
     ReceiverDaily({
-      receiverName: profile.role === "admin" ? "Admin (preview)" : "Receiver",
+      receiverName: "Admin (preview)",
       deliveryDate: formatDeliveryDate(date),
       restaurants: blocks,
     }) as React.ReactElement,
@@ -120,14 +115,9 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   let body: { delivery_date: string; mark_fulfilled?: boolean };
   try { body = await request.json(); }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
@@ -37,14 +38,9 @@ import PartnerReport from "@/emails/partner-report";
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const url = new URL(request.url);
   const to = url.searchParams.get("to") ?? user.email ?? "";

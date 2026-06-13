@@ -267,8 +267,8 @@ loop is reimplemented in `app/admin/reports/page.tsx:50-70`,
 > Ordered by value ÷ risk. Items marked **[check-in]** touch auth / chef-email /
 > financial math and per repo rules must be approved before applying.
 
-### 4.1 Finish the auth-gate consolidation **[check-in — auth]**
-Extend `api-auth.ts` so the 42 inliners collapse to one line each:
+### 4.1 Finish the auth-gate consolidation — **✅ DONE (see §5.3)**
+Extend `api-auth.ts` so the inliners collapse to one line each:
 
 ```ts
 // src/lib/api-auth.ts
@@ -368,4 +368,22 @@ errors, **191/191 tests pass**, production build succeeds).
    guard + `?? ""` coalescing — behaviour-identical (the GROUP BY key and
    `items.name/category` are never null in practice) but now type-safe.
 
-Everything in §4 is left as a recommendation, not applied.
+3. **Auth-gate consolidation (§4.1).** Extended `src/lib/api-auth.ts` with
+   `requireUser()` (session-only) and `requireRole(supabase, roles, { requireActive })`,
+   and refactored the existing `requireAdmin()` to delegate to
+   `requireRole(["admin"])` — so the 71 existing callers are unchanged. Migrated
+   **22 route files** off the inlined `getUser() → fetch role → compare` block:
+   admin-only routes → `requireAdmin`; `availability/{route,toggle,duplicate}`
+   (which also gate on `is_active`) → `requireRole(["admin"], { requireActive: true })`;
+   `receiver/{check-line,close-delivery}` → `requireRole(["receiver","admin"])`;
+   `photos`/`suggestions`/`orders` POST (session-only) → `requireUser`. Behaviour
+   is preserved exactly — same allow/deny decision, same 401/403 shape, the
+   `is_active` checks and receiver/admin role sets kept, and the receiver routes'
+   downstream `profile.role` branch now reads the helper's returned `role`.
+   **Four inliners were intentionally left**: `test-email` (bespoke error
+   strings), `orders/[orderId]` + `orders/[orderId]/shortage` (reuse the profile
+   fetch's `full_name` as the audit actor), and `event-requests/route` GET (uses
+   `profile.role` to scope the query, not just gate). Net −161 lines; tsc/lint/
+   tests/build all green.
+
+The remaining §4 items are left as recommendations, not applied.

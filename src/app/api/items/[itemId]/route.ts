@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/api-auth";
 import { ITEM_CATEGORIES, UNIT_TYPES } from "@/lib/constants";
 
 const VALID_CATEGORIES = ITEM_CATEGORIES.map((c) => c.value);
@@ -13,12 +14,8 @@ type Params = Promise<{ itemId: string }>;
  */
 export async function GET(_req: Request, { params }: { params: Params }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", user.id).single();
-  if ((profile as any)?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   const { itemId } = await params;
   const admin = createAdminClient();
@@ -39,12 +36,8 @@ export async function GET(_req: Request, { params }: { params: Params }) {
  */
 export async function PATCH(request: Request, { params }: { params: Params }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", user.id).single();
-  if ((profile as any)?.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireAdmin(supabase);
+  if (!auth.ok) return auth.response;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); }

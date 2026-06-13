@@ -5,15 +5,78 @@ import type { createClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
+/** Roles stored on `profiles.role`. */
+export type Role = "admin" | "receiver" | "chef";
+
 export type AdminAuthResult =
   | { ok: true; user: User }
   | { ok: false; response: NextResponse };
+
+export type UserAuthResult =
+  | { ok: true; user: User }
+  | { ok: false; response: NextResponse };
+
+export type RoleAuthResult =
+  | { ok: true; user: User; role: Role }
+  | { ok: false; response: NextResponse };
+
+const unauthorized = () =>
+  NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+const forbidden = () =>
+  NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+/**
+ * Just requires an authenticated session — no role gate. For routes that key
+ * off `user.id` or membership rather than a role (e.g. chef-facing mutations,
+ * service-role reads scoped to the caller).
+ *
+ *   const supabase = await createClient();
+ *   const auth = await requireUser(supabase);
+ *   if (!auth.ok) return auth.response;
+ *   const user = auth.user;
+ */
+export async function requireUser(supabase: SupabaseServerClient): Promise<UserAuthResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, response: unauthorized() };
+  return { ok: true, user };
+}
+
+/**
+ * Session + role gate. Returns 401 (no session) or 403 (role not in `roles`,
+ * or — when `requireActive` is set — the profile is inactive). The single
+ * source of truth behind {@link requireAdmin}; use directly for multi-role
+ * routes (e.g. `requireRole(supabase, ["receiver", "admin"])`).
+ */
+export async function requireRole(
+  supabase: SupabaseServerClient,
+  roles: ReadonlyArray<Role>,
+  opts: { requireActive?: boolean } = {},
+): Promise<RoleAuthResult> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, response: unauthorized() };
+
+  const { data: profile } = await (supabase as any)
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .single();
+  const role = (profile as any)?.role as Role | undefined;
+  if (!role || !roles.includes(role) || (opts.requireActive && !(profile as any)?.is_active)) {
+    return { ok: false, response: forbidden() };
+  }
+
+  return { ok: true, user, role };
+}
 
 /**
  * Session-based admin gate for API routes.
  *
  * Replaces the getUser() → fetch `profiles.role` → compare block that was
- * duplicated across ~86 routes. Pass the request-scoped server client
+ * duplicated across dozens of routes. Pass the request-scoped server client
  * (`await createClient()`); on success returns the authenticated `user`, on
  * failure a ready-to-return 401 (no session) or 403 (not admin) response:
  *
@@ -23,23 +86,9 @@ export type AdminAuthResult =
  *   // ...auth.user.id is the admin
  */
 export async function requireAdmin(supabase: SupabaseServerClient): Promise<AdminAuthResult> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { ok: false, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if ((profile as any)?.role !== "admin") {
-    return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { ok: true, user };
+  const auth = await requireRole(supabase, ["admin"]);
+  if (!auth.ok) return auth;
+  return { ok: true, user: auth.user };
 }
 
 /**

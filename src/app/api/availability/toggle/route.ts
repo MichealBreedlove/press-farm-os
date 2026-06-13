@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/types";
+import { requireRole } from "@/lib/api-auth";
 
 /**
  * PATCH /api/availability/toggle — Toggle ordering_open on a delivery date (admin only)
@@ -11,24 +11,8 @@ import type { Profile } from "@/types";
 export async function PATCH(request: Request) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Verify admin
-  const { data: profileRaw } = await supabase
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .single();
-  const profile = profileRaw as Pick<Profile, "role" | "is_active"> | null;
-  if (!profile || profile.role !== "admin" || !profile.is_active) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const auth = await requireRole(supabase, ["admin"], { requireActive: true });
+  if (!auth.ok) return auth.response;
 
   let body: { delivery_date_id: string; ordering_open: boolean };
   try {
