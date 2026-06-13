@@ -216,9 +216,9 @@ BEGIN
     -- Zinnias / yarrow / violas
     ('Zinnias','flowers','Mixed Colors',20,'packets',NULL,NULL,NULL,NULL),
     ('Yarrow','flowers','Unknown Color',1,'packet',NULL,NULL,NULL,NULL),
-    ('Violas','flowers','Sorbet Formula Mix',250,'seeds','Johnny''s Selected Seeds',9.75,NULL,NULL),
-    ('Violas','flowers','Penny Peach Jump-up',250,'seeds','Johnny''s Selected Seeds',9.75,NULL,NULL),
-    ('Violas','flowers','Sorbet XP Deep Orange',250,'seeds','Johnny''s Selected Seeds',9.75,NULL,NULL),
+    ('Violas','flowers','Sorbet Formula Mix',250,'seeds','Johnny''s Selected Seeds',9.75,'2026-06-12',NULL),
+    ('Violas','flowers','Penny Peach Jump-up',250,'seeds','Johnny''s Selected Seeds',9.75,'2026-06-12',NULL),
+    ('Violas','flowers','Sorbet XP Deep Orange',250,'seeds','Johnny''s Selected Seeds',9.75,'2026-06-12',NULL),
     -- Malabar spinach
     ('Malabar Spinach','micros_leaves','Red',1,'packet',NULL,NULL,NULL,NULL),
     -- Sorghum (new item)
@@ -245,7 +245,7 @@ BEGIN
     ('Beans','fruit_veg','Cannellini',7.7,'oz',NULL,NULL,NULL,NULL),
     -- Cover crop
     ('Cover Crop','flowers','Seed Mix',59,'oz',NULL,NULL,NULL,'3 lb 11 oz'),
-    ('Cover Crop','flowers','Yellow Mustard',5,'lb','Johnny''s Selected Seeds',25.75,NULL,NULL),
+    ('Cover Crop','flowers','Yellow Mustard',5,'lb','Johnny''s Selected Seeds',25.75,'2026-06-12',NULL),
     -- Fenugreek (new item)
     ('Fenugreek','herbs_leaves','Fenugreek',1,'packet',NULL,NULL,NULL,NULL)
   ) AS v(iname, icat, variety, qty, unit, supplier, cost, pdate, notes)
