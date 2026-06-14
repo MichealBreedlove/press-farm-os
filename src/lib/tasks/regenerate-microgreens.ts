@@ -132,10 +132,8 @@ export async function regenerateMicrogreensTasks(
   const today = todayIso(now);
   const horizonDate = new Date(now.getTime() + PLAN_HORIZON_DAYS * 24 * 3600 * 1000);
   const horizonIso = todayIso(horizonDate);
-  const lookbackStart = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-  const lookbackIso = todayIso(lookbackStart);
 
-  const [crops, demand, batches, trays, deliveryDates, history] = await Promise.all([
+  const [crops, demand, batches, trays, deliveryDates] = await Promise.all([
     (admin as any).from("microgreen_crops").select("*").eq("is_active", true),
     (admin as any).from("microgreen_demand").select("*"),
     (admin as any).from("microgreen_batches").select("*"),
@@ -145,19 +143,7 @@ export async function regenerateMicrogreensTasks(
       .select("date")
       .gte("date", today)
       .lte("date", horizonIso),
-    (admin as any)
-      .from("delivery_items")
-      .select("item_id, quantity_oz, deliveries!inner(delivery_date)")
-      .gte("deliveries.delivery_date", lookbackIso),
   ]);
-
-  const historicalDeliveryItems = (history.data ?? [])
-    .map((row: any) => ({
-      item_id: row.item_id,
-      quantity_oz: Number(row.quantity_oz ?? 0),
-      delivery_date: row.deliveries?.delivery_date,
-    }))
-    .filter((r: any) => r.delivery_date);
 
   const plan = computeSowPlan({
     crops: crops.data ?? [],
@@ -165,7 +151,6 @@ export async function regenerateMicrogreensTasks(
     batches: batches.data ?? [],
     trays: trays.data ?? [],
     deliveryDates: (deliveryDates.data ?? []).map((d: any) => d.date),
-    historicalDeliveryItems,
     now,
   });
 

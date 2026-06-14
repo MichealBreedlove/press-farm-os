@@ -13,10 +13,6 @@ export type SowPlanInput = {
   batches: MicrogreenBatch[];
   trays: MicrogreenTray[];
   deliveryDates: string[]; // future ISO dates within horizon
-  // Reserved: callers assemble this from historical delivery_items, but the
-  // current algorithm does not consume it. Optional so call sites type-check
-  // without forcing a runtime change. Safe to drop here + at call sites later.
-  historicalDeliveryItems?: { item_id: string; quantity_oz: number; delivery_date: string }[];
   now: Date;
 };
 
