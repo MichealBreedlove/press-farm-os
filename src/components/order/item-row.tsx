@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AvailabilityItemWithItem } from "@/types";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 import { resolveUnits, resolveSizes, resolveColors } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
@@ -35,7 +36,7 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
   return (
     <div className="flex items-center gap-1 flex-shrink-0">
       <button type="button" onClick={() => onChange(Math.max(0, value - 1))} disabled={disabled || value <= 0}
-        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
         aria-label={`Decrease ${label}`}>&minus;</button>
       <input
         type="number"
@@ -52,12 +53,12 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
         // scroll goes to the page instead.
         onWheel={(e) => (e.target as HTMLInputElement).blur()}
         disabled={disabled}
-        className="w-14 h-11 text-center text-sm font-semibold text-farm-dark border border-farm-dark/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-farm-green"
+        className="w-14 h-11 text-center text-base font-semibold tabular-nums text-farm-dark border border-farm-dark/10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
         placeholder="0"
         aria-label={`Quantity for ${label}`}
       />
       <button type="button" onClick={() => onChange(Math.min(maxQty, value + 1))} disabled={disabled || value >= maxQty}
-        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors"
+        className="w-11 h-11 rounded-full bg-farm-cream/60 text-farm-muted/90 flex items-center justify-center text-xl font-light disabled:opacity-30 active:bg-gray-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
         aria-label={`Increase ${label}`}>+</button>
     </div>
   );
@@ -92,7 +93,7 @@ function ColorPicker({
               onToggle(next);
             }}
             aria-pressed={isSelected}
-            className={`text-xs px-3 py-1.5 min-h-[32px] rounded-full transition-colors ${
+            className={`text-xs px-3 py-2 min-h-[44px] rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
               isSelected
                 ? "bg-pf-master-violet text-white"
                 : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]"
@@ -210,7 +211,7 @@ export function ItemRow({
         {/* Item info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm text-farm-dark">{item.name}</span>
+            <span className="font-medium text-base text-farm-dark">{item.name}</span>
             <span className="text-xs text-farm-muted flex-shrink-0">
               {hasMultiUnits
                 ? `${units.length} containers`
@@ -221,11 +222,11 @@ export function ItemRow({
                 EVENTS
               </span>
             )}
-            {isLimited && <span className="badge-gold flex-shrink-0">LIMITED</span>}
+            {isLimited && <StatusBadge status="limited" label="Limited" className="flex-shrink-0" />}
             {item.season_status === "ending_soon" && <span className="badge-orange flex-shrink-0">ENDING SOON</span>}
             {item.season_status === "coming_soon" && <span className="badge-blue flex-shrink-0">COMING SOON</span>}
             {totalQty > 0 && hasSizes && (
-              <span className="text-xs font-semibold text-farm-green flex-shrink-0">({totalQty} total)</span>
+              <span className="text-xs font-semibold text-farm-green flex-shrink-0 tabular-nums">({totalQty} total)</span>
             )}
           </div>
           {cycle_notes && <p className="text-xs text-farm-muted italic mt-0.5 truncate">{cycle_notes}</p>}

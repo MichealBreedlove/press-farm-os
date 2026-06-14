@@ -426,7 +426,7 @@ export function OrderForm({
           )}
         </div>
         {orderedCount > 0 && (
-          <p className="text-xs text-farm-green mt-1.5 px-1">
+          <p className="text-xs text-farm-green mt-1.5 px-1 tabular-nums">
             {orderedCount} item{orderedCount !== 1 ? "s" : ""} in your order
           </p>
         )}

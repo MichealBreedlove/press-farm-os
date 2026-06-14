@@ -448,7 +448,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             type="button"
             onClick={() => selectRestaurant(null)}
             aria-pressed={!restaurantSelected}
-            className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[40px] ${
+            className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
               !restaurantSelected
                 ? "bg-farm-dark text-white border-farm-dark"
                 : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -464,7 +464,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => selectRestaurant(r.id)}
                 aria-pressed={active}
-                className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[40px] ${
+                className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active
                     ? "bg-farm-green text-white border-farm-green"
                     : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -492,7 +492,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => setFilterStatus(st)}
                 aria-pressed={active}
-                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[34px] ${
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
                 }`}
               >
@@ -630,7 +630,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                                   onClick={() =>
                                     setStatusForRestaurant(r.id, item.id, nextStatus(status))
                                   }
-                                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-md border transition-colors min-h-[28px] ${chipClasses(status)}`}
+                                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${chipClasses(status)}`}
                                   aria-label={`${r.name}: ${STATUS_LABELS[status]}`}
                                   title={`${r.name}: ${STATUS_LABELS[status]}`}
                                 >
