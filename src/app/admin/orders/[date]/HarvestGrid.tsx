@@ -56,7 +56,7 @@ export function HarvestGrid({
   containers: HarvestGridContainer[];
 }) {
   // Dynamic grid template: Item | Container | (per-restaurant cols) | Total
-  const gridTemplate = `1fr auto ${"auto ".repeat(restaurants.length)}auto`.trim();
+  const gridTemplate = `minmax(9rem,1fr) auto ${"auto ".repeat(restaurants.length)}auto`.trim();
 
   return (
     <section className="space-y-4">
@@ -86,6 +86,11 @@ export function HarvestGrid({
             {CATEGORY_LABELS[key] ?? key}
           </h2>
 
+          {/* Horizontal-scroll wrapper: on a 375px phone the item name +
+              per-restaurant columns would crush together (Item was given a
+              9rem floor), so scroll the grid instead of truncating. Print
+              ignores the overflow and shows the full table on paper. */}
+          <div className="overflow-x-auto -mx-1 px-1">
           {/* Column headers — Container column is critical during harvest
               because chefs order different sizes per item (LG sunflowers,
               SM mint, etc.) and the harvester needs to grab the right
@@ -134,6 +139,7 @@ export function HarvestGrid({
                 </span>
               </div>
             ))}
+          </div>
           </div>
         </div>
       ))}
