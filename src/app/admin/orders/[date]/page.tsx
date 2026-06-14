@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, cn } from "@/lib/utils";
+import { laneStyle } from "@/lib/lanes";
+import { LaneBadge } from "@/components/shared/LaneBadge";
 import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
 import { FulfillButton } from "./FulfillButton";
 import { DeleteOrderButton } from "./DeleteOrderButton";
@@ -357,11 +359,12 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           const resolved = progress.picked + progress.shorted;
 
           return (
-            <section key={order.id} className="card overflow-hidden">
+            <section key={order.id} className={cn("card overflow-hidden border-l-2", laneStyle(order.restaurant?.name).border)}>
               {/* Restaurant header */}
               <div className="px-4 py-3 border-b border-farm-dark/5 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-semibold text-farm-dark">
+                  <LaneBadge name={order.restaurant?.name ?? "Restaurant"} className="mb-1" />
+                  <h2 className={cn("text-lg leading-tight text-farm-dark", laneStyle(order.restaurant?.name).nameClass)}>
                     {order.restaurant?.name ?? "Restaurant"}
                   </h2>
                   <p className="text-xs text-farm-muted mt-0.5">

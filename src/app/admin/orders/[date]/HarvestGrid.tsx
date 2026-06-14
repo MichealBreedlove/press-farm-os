@@ -1,4 +1,5 @@
-import { formatQty } from "@/lib/utils";
+import { formatQty, cn } from "@/lib/utils";
+import { laneStyle } from "@/lib/lanes";
 import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
 import type { ItemCategory, UnitType } from "@/types";
 
@@ -96,7 +97,8 @@ export function HarvestGrid({
             <span>Item</span>
             <span className="w-12 sm:w-16 text-center">Cont.</span>
             {restaurants.map((r) => (
-              <span key={r.id} className="w-9 sm:w-12 text-right" title={r.name}>
+              <span key={r.id} className="w-9 sm:w-12 inline-flex items-center justify-end gap-1" title={r.name}>
+                <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", laneStyle(r.name).dot)} aria-hidden="true" />
                 {shortCode(r.name)}
               </span>
             ))}

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getItemImageUrl } from "@/lib/flower-images";
+import { laneStyle } from "@/lib/lanes";
+import { cn } from "@/lib/utils";
 
 type Status = "ready" | "short" | "pending" | "extra";
 /** Which DB table backs a line — drives the check-line API call. */
@@ -411,10 +413,13 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
   const eventLines = block.lines.filter((l) => l.isEvent);
 
   return (
-    <div className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm overflow-hidden">
+    <div className={cn("bg-white rounded-2xl border border-farm-dark/5 border-l-2 shadow-sm overflow-hidden", laneStyle(block.name).border)}>
       <div className="px-5 py-4 border-b border-farm-dark/5 bg-gradient-to-br from-farm-green/5 to-farm-cream/30">
         <div className="flex items-baseline justify-between">
-          <p className="font-display text-lg text-farm-dark">{block.name}</p>
+          <span className="flex items-center gap-2 min-w-0">
+            <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", laneStyle(block.name).dot)} aria-hidden="true" />
+            <p className={cn("text-lg text-farm-dark truncate", laneStyle(block.name).nameClass)}>{block.name}</p>
+          </span>
           <p className="text-[10px] tracking-[0.18em] uppercase text-farm-muted">
             {checkedCount}/{totalCount} verified
             {block.hasDelivery ? "" : " · awaiting delivery"}

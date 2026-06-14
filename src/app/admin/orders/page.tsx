@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate, todayPacific } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific, cn } from "@/lib/utils";
+import { laneStyle } from "@/lib/lanes";
 import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
 import { RestaurantWordmark } from "@/components/shared/RestaurantWordmark";
@@ -119,11 +120,14 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             return (
               <div
                 key={restaurant.id}
-                className="card p-4"
+                className={cn("card p-4 border-l-2", laneStyle(restaurant.name).border)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3><RestaurantWordmark name={restaurant.name} size="md" /></h3>
+                    <h3 className="flex items-center gap-2">
+                      <span className={cn("w-2 h-2 rounded-full flex-shrink-0", laneStyle(restaurant.name).dot)} aria-hidden="true" />
+                      <RestaurantWordmark name={restaurant.name} size="md" />
+                    </h3>
                     <p className="text-sm text-farm-muted mt-0.5">Awaiting order</p>
                   </div>
                   <span className="badge-gray">
@@ -153,11 +157,14 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             <Link
               key={restaurant.id}
               href={`/admin/orders/${activeDate}`}
-              className="block card-interactive p-4"
+              className={cn("block card-interactive p-4 border-l-2", laneStyle(restaurant.name).border)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3><RestaurantWordmark name={restaurant.name} size="md" /></h3>
+                  <h3 className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full flex-shrink-0", laneStyle(restaurant.name).dot)} aria-hidden="true" />
+                    <RestaurantWordmark name={restaurant.name} size="md" />
+                  </h3>
                   <p className="text-sm text-farm-muted mt-0.5">
                     {order.chef?.full_name ?? "Chef"} ·{" "}
                     {order.submitted_at
