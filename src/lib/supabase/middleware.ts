@@ -46,7 +46,11 @@ export async function updateSession(request: NextRequest) {
   // /api/inbound/* receives webhooks from Resend Inbound for chef email replies
   // (route at /api/inbound/reply). Each request is signature-verified inside
   // the handler — Resend can't authenticate via Supabase cookies.
-  const publicPaths = ["/login", "/signup", "/api/auth/signup", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound"];
+  // /api/contact is the public inquiry form on /about (prospective chefs aren't
+  // signed in); it self-protects via a honeypot, length caps + IP rate limiting.
+  // /api/cron/* is invoked by Vercel Cron with a Bearer CRON_SECRET (no Supabase
+  // cookie) and fail-closes inside the handler, so it must bypass the redirect.
+  const publicPaths = ["/login", "/signup", "/api/auth/signup", "/api/contact", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound", "/api/cron"];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {
