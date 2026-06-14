@@ -26,9 +26,22 @@ const limiterCache = new Map<string, Ratelimit>();
 
 function getRedis(): Redis | null {
   if (redisClient !== undefined) return redisClient;
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  redisClient = url && token ? new Redis({ url, token }) : null;
+  // Accept either naming convention: the Upstash-native vars, or the
+  // Vercel-KV vars that the Vercel↔Upstash Marketplace integration injects
+  // (KV_REST_API_*). Both carry the same REST URL + token.
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+  if (url && token) {
+    redisClient = new Redis({ url, token });
+  } else {
+    // Names only (never values) so a naming mismatch is diagnosable from logs.
+    const present = Object.keys(process.env).filter((k) => /UPSTASH|KV_|REDIS/.test(k));
+    console.warn(
+      `[ratelimit] no REST credentials found — limiter inert (fail-open). ` +
+        `Redis-ish env keys present: ${present.join(", ") || "(none)"}`,
+    );
+    redisClient = null;
+  }
   return redisClient;
 }
 
