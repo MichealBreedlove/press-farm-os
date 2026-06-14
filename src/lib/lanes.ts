@@ -46,8 +46,8 @@ const LANES: Record<string, LaneBase> = {
   },
   understudy: {
     key: "understudy",
-    dot: "bg-pf-master-orange",
-    border: "border-pf-master-orange",
+    dot: "bg-[#1C7C50]",
+    border: "border-[#1C7C50]",
     nameClass: US_NAME,
     labelClass: US_LABEL,
   },
