@@ -184,7 +184,7 @@ export function ItemRow({
           if (imgUrl) {
             return (
               <div className={cn(
-                "w-24 h-24 rounded-lg overflow-hidden flex-shrink-0",
+                "w-16 h-16 rounded-lg overflow-hidden flex-shrink-0",
                 isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-farm-cream/60"
               )}>
                 <img
@@ -197,12 +197,12 @@ export function ItemRow({
             );
           }
           return (
-            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
               <img
                 src={PLACEHOLDER_WREATH}
                 alt=""
                 aria-hidden="true"
-                className="w-14 h-14 object-contain opacity-25"
+                className="w-10 h-10 object-contain opacity-25"
               />
             </div>
           );
@@ -249,7 +249,7 @@ export function ItemRow({
           {colors.length > 0 && totalQty === 0 && (
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {colors.map((c: string) => (
-                <span key={c} className="text-[10px] bg-pf-master-violet/5 text-pf-master-violet/70 px-1.5 py-0.5 rounded">{c}</span>
+                <span key={c} className="text-[10px] bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded">{c}</span>
               ))}
             </div>
           )}
@@ -459,7 +459,7 @@ export function ItemRow({
             onChange={(e) => onNoteChange(availabilityItem.id, e.target.value)}
             placeholder="Add a note..."
             maxLength={200}
-            className="w-full text-sm border border-farm-dark/10 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder-gray-300"
+            className="w-full text-base border border-farm-dark/10 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder:text-farm-muted/70"
           />
         </div>
       )}
