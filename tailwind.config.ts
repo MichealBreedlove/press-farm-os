@@ -5,6 +5,10 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // src/lib holds shared class maps (e.g. lanes.ts) — scan it too so
+    // classes that live ONLY here (like the Under-Study arbitrary green)
+    // are generated instead of purged.
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
