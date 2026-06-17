@@ -37,9 +37,14 @@ export default async function OrderPage({
   // Get chef's restaurant
   const { data: restaurantUser } = await supabase
     .from("restaurant_users")
-    .select("restaurant_id, restaurants(id, name)")
+    .select("restaurant_id, restaurants(id, name, slug)")
     .eq("user_id", user.id)
     .single() as any;
+
+  // The Events team orders through their own system, not the chef form.
+  if (restaurantUser?.restaurants?.slug === "events") {
+    redirect("/events/order");
+  }
 
   if (!restaurantUser?.restaurants) {
     return (

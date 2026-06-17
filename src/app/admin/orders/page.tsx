@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
 import Link from "next/link";
+import { Fragment } from "react";
 import type { OrderStatus } from "@/types";
 
 interface AdminOrdersPageProps {
@@ -76,6 +77,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
     .from("orders")
     .select(`
       id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
+      event_date, event_name,
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
       edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
@@ -114,9 +116,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-4">
         {restaurants.map((restaurant) => {
-          const order = orders.find((o) => o.restaurant?.id === restaurant.id);
+          // A restaurant can have MORE than one order for a date only for the
+          // Events team — they place a separate order per event (migration 070).
+          // Every other restaurant is capped at one by the partial unique index.
+          const rOrders = orders.filter((o) => o.restaurant?.id === restaurant.id);
 
-          if (!order) {
+          if (rOrders.length === 0) {
             return (
               <div
                 key={restaurant.id}
@@ -138,62 +143,74 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             );
           }
 
-          const itemCount = order.order_items?.length ?? 0;
-          const shortedCount = order.order_items?.filter((i: any) => i.is_shorted).length ?? 0;
-
-          // Show "last edited by X" only when someone other than the original
-          // creator touched it (individual accountability across staff).
-          const editedByName = order.edited_by?.full_name ?? null;
-          const showEdited =
-            editedByName && order.last_edited_by && order.last_edited_by !== order.chef?.id;
-          const editedTime = order.last_edited_at
-            ? new Date(order.last_edited_at).toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "2-digit",
-              })
-            : null;
-
           return (
-            <Link
-              key={restaurant.id}
-              href={`/admin/orders/${activeDate}`}
-              className={cn("block card-interactive p-4 border-l-2", laneStyle(restaurant.name).border)}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="flex items-center gap-2">
-                    <span className={cn("w-2 h-2 rounded-full flex-shrink-0", laneStyle(restaurant.name).dot)} aria-hidden="true" />
-                    <RestaurantWordmark name={restaurant.name} size="md" />
-                  </h3>
-                  <p className="text-sm text-farm-muted mt-0.5">
-                    {order.chef?.full_name ?? "Chef"} ·{" "}
-                    {order.submitted_at
-                      ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })
-                      : "Not submitted"}
-                  </p>
-                  {showEdited && (
-                    <p className="text-xs text-farm-muted/80 mt-0.5">
-                      last edited by {editedByName}
-                      {editedTime && <> at {editedTime}</>}
-                    </p>
-                  )}
-                </div>
-                <StatusPill status={order.status as OrderStatus} />
-              </div>
+            <Fragment key={restaurant.id}>
+              {rOrders.map((order) => {
+                const itemCount = order.order_items?.length ?? 0;
+                const shortedCount = order.order_items?.filter((i: any) => i.is_shorted).length ?? 0;
 
-              <div className="flex gap-4 mt-3 text-sm text-farm-muted">
-                <span>{itemCount} {itemCount === 1 ? "item" : "items"}</span>
-                {shortedCount > 0 && (
-                  <span className="text-orange-600">{shortedCount} shorted</span>
-                )}
-                {order.freeform_notes && (
-                  <span className="text-farm-green">Has notes</span>
-                )}
-              </div>
-            </Link>
+                // Show "last edited by X" only when someone other than the original
+                // creator touched it (individual accountability across staff).
+                const editedByName = order.edited_by?.full_name ?? null;
+                const showEdited =
+                  editedByName && order.last_edited_by && order.last_edited_by !== order.chef?.id;
+                const editedTime = order.last_edited_at
+                  ? new Date(order.last_edited_at).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : null;
+
+                return (
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${activeDate}`}
+                    className={cn("block card-interactive p-4 border-l-2", laneStyle(restaurant.name).border)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="flex items-center gap-2">
+                          <span className={cn("w-2 h-2 rounded-full flex-shrink-0", laneStyle(restaurant.name).dot)} aria-hidden="true" />
+                          <RestaurantWordmark name={restaurant.name} size="md" />
+                        </h3>
+                        {order.event_name && (
+                          <p className="text-sm text-pf-master-violet font-medium mt-0.5">
+                            {order.event_name}
+                            {order.event_date ? ` · event ${formatDeliveryDate(order.event_date)}` : ""}
+                          </p>
+                        )}
+                        <p className="text-sm text-farm-muted mt-0.5">
+                          {order.chef?.full_name ?? "Chef"} ·{" "}
+                          {order.submitted_at
+                            ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })
+                            : "Not submitted"}
+                        </p>
+                        {showEdited && (
+                          <p className="text-xs text-farm-muted/80 mt-0.5">
+                            last edited by {editedByName}
+                            {editedTime && <> at {editedTime}</>}
+                          </p>
+                        )}
+                      </div>
+                      <StatusPill status={order.status as OrderStatus} />
+                    </div>
+
+                    <div className="flex gap-4 mt-3 text-sm text-farm-muted">
+                      <span>{itemCount} {itemCount === 1 ? "item" : "items"}</span>
+                      {shortedCount > 0 && (
+                        <span className="text-orange-600">{shortedCount} shorted</span>
+                      )}
+                      {order.freeform_notes && (
+                        <span className="text-farm-green">Has notes</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </Fragment>
           );
         })}
 
