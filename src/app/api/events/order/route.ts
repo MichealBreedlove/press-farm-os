@@ -90,6 +90,15 @@ export async function POST(request: Request) {
     );
   }
 
+  // What the event is, when it is, and when it's delivered are all required.
+  const eventLabel = (event_name ?? "").trim();
+  if (!eventLabel) {
+    return NextResponse.json(
+      { error: "Tell us what the event is (event name is required)." },
+      { status: 400 },
+    );
+  }
+
   const today = todayPacific();
   if (event_date < today) {
     return NextResponse.json(
@@ -162,7 +171,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build the canonical line shape the submit RPC expects.
+  // Build each order_items line, freezing the per-unit price.
   const lines = ordered.map((i) => {
     const info = availInfo.get(i.availability_item_id);
     const unit = (i.unit_type ?? null) || info?.firstUnit || null;
@@ -180,61 +189,67 @@ export async function POST(request: Request) {
 
   // Compose the notes so the event context is visible everywhere the order
   // shows (the admin dashboard already renders freeform_notes); the structured
-  // event_date / event_name columns are stamped separately below.
-  const eventLabel = (event_name ?? "").trim();
-  const eventLine = `Event${eventLabel ? `: ${eventLabel}` : ""} — ${event_date}`;
+  // event_date / event_name columns are stored on the row too.
+  const eventLine = `Event: ${eventLabel} — ${event_date}`;
   const userNote = (freeform_notes ?? "").trim();
   const composedNotes = userNote ? `${eventLine}\n\n${userNote}` : eventLine;
 
-  // Atomic order upsert + item replace via the shared submit RPC (SECURITY
-  // INVOKER — the Events account's RLS applies, exactly as a chef's would). We
-  // always REPLACE: one order per delivery date for the Events restaurant.
-  const { data: orderId, error: submitError } = await (supabase as any).rpc(
-    "submit_order_with_items",
-    {
-      p_restaurant_id: restaurantId,
-      p_delivery_date: delivery_date,
-      p_freeform_notes: composedNotes,
-      p_chef_id: user.id,
-      p_last_edited_by: user.id,
-      p_replace: true,
-      p_lines: lines,
-      p_update_lines: [],
-      p_idempotency_key: idempotency_key ?? null,
-    },
-  );
+  // Events orders are NOT one-per-delivery-date: each submission is its own
+  // order so two events delivering the same day stay separate (migration 070
+  // makes the orders uniqueness partial — chef orders only). So we INSERT a
+  // fresh order every time rather than upserting through the chef RPC. Writes
+  // go through the service-role client; the route already authenticated the
+  // Events account and derived the restaurant server-side.
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
 
-  if (submitError || !orderId) {
-    const msg = String(submitError?.message ?? "");
-    if (msg.includes("ORDERING_CLOSED")) {
-      return NextResponse.json(
-        { error: "Ordering is closed for this delivery date." },
-        { status: 409 },
-      );
+  // Idempotency: a retry carrying the same token must not create a second
+  // order. Tokens are unique per submission (the client mints a new one each
+  // time), so a prior order with this token means the write already landed.
+  if (idempotency_key) {
+    const { data: dupe } = await (admin as any)
+      .from("orders")
+      .select("id")
+      .eq("restaurant_id", restaurantId)
+      .eq("last_submission_token", idempotency_key)
+      .maybeSingle();
+    if (dupe?.id) {
+      return NextResponse.json({ data: { orderId: dupe.id }, error: null }, { status: 200 });
     }
-    if (msg.includes("ORDER_LOCKED")) {
-      return NextResponse.json(
-        {
-          error:
-            "This delivery date's order has already moved past editing — contact Press Farm.",
-        },
-        { status: 409 },
-      );
-    }
-    console.error("Events order submit RPC error:", submitError);
-    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
   }
 
-  // Stamp the structured event columns. Done with the service-role client so it
-  // never trips on RLS for these admin-facing columns; the order itself was
-  // already created/owned under the Events account above.
-  const admin = createAdminClient();
-  const { error: stampError } = await (admin as any)
+  const { data: inserted, error: insertError } = await (admin as any)
     .from("orders")
-    .update({ event_date, event_name: eventLabel || null })
-    .eq("id", orderId);
-  if (stampError) {
-    console.error("Events order event-date stamp error:", stampError);
+    .insert({
+      restaurant_id: restaurantId,
+      chef_id: user.id,
+      delivery_date,
+      status: "submitted",
+      freeform_notes: composedNotes,
+      submitted_at: now,
+      last_edited_by: user.id,
+      last_edited_at: now,
+      last_submission_token: idempotency_key ?? null,
+      event_date,
+      event_name: eventLabel,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !inserted?.id) {
+    console.error("Events order insert error:", insertError);
+    return NextResponse.json({ error: "Failed to save order" }, { status: 500 });
+  }
+  const orderId: string = inserted.id;
+
+  const { error: itemsError } = await (admin as any)
+    .from("order_items")
+    .insert(lines.map((l) => ({ ...l, order_id: orderId })));
+  if (itemsError) {
+    // Roll back the just-created order so we never leave an empty event order.
+    await (admin as any).from("orders").delete().eq("id", orderId);
+    console.error("Events order items insert error:", itemsError);
+    return NextResponse.json({ error: "Failed to save order items" }, { status: 500 });
   }
 
   // Accountability + admin notification — both best-effort, never fail the order.

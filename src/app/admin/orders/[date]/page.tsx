@@ -48,6 +48,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       .from("orders")
       .select(`
         id, delivery_date, status, freeform_notes, submitted_at, last_edited_by, last_edited_at,
+        event_date, event_name,
         restaurant:restaurants(id, name),
         chef:profiles!orders_chef_id_fkey(id, full_name),
         edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
@@ -367,6 +368,12 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   <h2 className={cn("text-lg leading-tight text-farm-dark", laneStyle(order.restaurant?.name).nameClass)}>
                     {order.restaurant?.name ?? "Restaurant"}
                   </h2>
+                  {order.event_name && (
+                    <p className="text-sm text-pf-master-violet font-medium mt-0.5">
+                      {order.event_name}
+                      {order.event_date ? ` · event ${formatDeliveryDate(order.event_date)}` : ""}
+                    </p>
+                  )}
                   <p className="text-xs text-farm-muted mt-0.5">
                     {order.chef?.full_name ?? "Chef"} ·{" "}
                     {order.submitted_at

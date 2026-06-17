@@ -107,6 +107,7 @@ export function EventOrderClient({
   async function handleSubmit() {
     setError(null);
     setSuccess(null);
+    if (!eventName.trim()) return setError("Enter the event name.");
     if (!eventDate) return setError("Pick the event date.");
     if (eventDate < today) return setError("The event date must be today or later.");
     if (!selectedDeliveryDate) return setError("Pick a delivery date.");
@@ -168,8 +169,21 @@ export function EventOrderClient({
         <div>
           <h3 className="text-sm font-semibold text-farm-dark">Event details</h3>
           <p className="text-xs text-farm-muted mt-0.5">
-            Tell us when the event is and when you need the items delivered.
+            Tell us what the event is, when it is, and when you need the items delivered.
           </p>
+        </div>
+
+        <div>
+          <label className="block text-xs text-farm-muted mb-1">Event name</label>
+          <input
+            type="text"
+            value={eventName}
+            required
+            onChange={(e) => setEventName(e.target.value)}
+            className="input-field"
+            placeholder="Wine club dinner, private party, etc."
+          />
+          <p className="text-[11px] text-farm-muted/80 mt-1">What the event is.</p>
         </div>
 
         <div>
@@ -182,17 +196,6 @@ export function EventOrderClient({
             className="input-field"
           />
           <p className="text-[11px] text-farm-muted/80 mt-1">The day of the event itself.</p>
-        </div>
-
-        <div>
-          <label className="block text-xs text-farm-muted mb-1">Event name (optional)</label>
-          <input
-            type="text"
-            value={eventName}
-            onChange={(e) => setEventName(e.target.value)}
-            className="input-field"
-            placeholder="Wine club dinner, private party, etc."
-          />
         </div>
 
         <hr className="border-farm-dark/10" />
