@@ -67,14 +67,15 @@ export default async function AdminDashboardPage() {
     admin.from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
     admin.from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
     admin.from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
-    // Off-schedule orders: any active order whose linked delivery_date
-    // has day_of_week='custom' (anything not Thu/Sat/Mon, or an ad-hoc
-    // date the chef opened from the order page). Limited to 20 most
-    // recent — banner shows them all but caps the query for safety.
+    // Off-schedule orders: any order still needing attention whose linked
+    // delivery_date has day_of_week='custom' (anything not Thu/Sat/Mon, or
+    // an ad-hoc date the chef opened from the order page). Once fulfilled
+    // the order drops off the banner. Limited to 20 most recent — banner
+    // shows them all but caps the query for safety.
     admin
       .from("orders")
       .select("id, delivery_date, status, restaurant:restaurants(name), delivery_dates!inner(day_of_week)")
-      .in("status", ["submitted", "in_progress", "fulfilled"])
+      .in("status", ["submitted", "in_progress"])
       .eq("delivery_dates.day_of_week", "custom")
       .order("delivery_date", { ascending: true })
       .limit(20),
@@ -232,9 +233,8 @@ export default async function AdminDashboardPage() {
         />
 
         {/* Off-schedule orders banner — flagged when a chef ordered for
-            a date outside the standard Thu/Sat/Mon schedule. Stays
-            visible until those orders are fulfilled and the date
-            falls out of the active set. */}
+            a date outside the standard Thu/Sat/Mon schedule. Drops off
+            once the order is fulfilled (the query excludes fulfilled). */}
         {offScheduleOrders && offScheduleOrders.length > 0 && (
           <section className="bg-red-50 border-2 border-red-300 rounded-2xl px-5 py-4 shadow-sm">
             <div className="flex items-start gap-3">

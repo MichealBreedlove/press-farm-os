@@ -29,5 +29,14 @@ export default async function RootPage() {
   if (role === "admin") redirect("/admin/dashboard");
   if (role === "receiver") redirect("/receiver");
 
+  // The Events team has its own ordering system. Route the shared Events
+  // account (restaurant slug 'events') there instead of the chef order form.
+  const { data: membership } = (await (supabase as any)
+    .from("restaurant_users")
+    .select("restaurants(slug)")
+    .eq("user_id", user.id)
+    .single()) as any;
+  if (membership?.restaurants?.slug === "events") redirect("/events/order");
+
   redirect("/order");
 }
