@@ -43,6 +43,13 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   // The temporary password to surface ONCE after create / generated reset.
   const [tempCredential, setTempCredential] = useState<{ email: string; password: string; label: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  // Edit-details panel state.
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ full_name: "", role: "chef", restaurant_id: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  // Two-step delete confirmation.
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function copyToClipboard(text: string) {
     try {
@@ -151,6 +158,68 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       setError(err.message);
     } finally {
       setResetting(false);
+    }
+  }
+
+  function openEdit(u: UserRow) {
+    // Only one inline panel at a time.
+    setEditUserId(u.id);
+    setResetUserId(null);
+    setDeleteConfirmId(null);
+    setError(null);
+    const currentRid =
+      restaurants.find((r) => u.restaurants.includes(r.name))?.id ?? restaurants[0]?.id ?? "";
+    setEditForm({
+      full_name: u.full_name ?? "",
+      role: u.role === "receiver" ? "receiver" : "chef",
+      restaurant_id: currentRid,
+    });
+  }
+
+  async function handleSaveEdit(u: UserRow) {
+    if (!editForm.full_name.trim()) { setError("Name can't be empty"); return; }
+    if (editForm.role === "chef" && !editForm.restaurant_id) { setError("Pick a restaurant for this chef"); return; }
+    setSavingEdit(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const payload: Record<string, string> = {
+        full_name: editForm.full_name.trim(),
+        role: editForm.role,
+      };
+      if (editForm.role === "chef") payload.restaurant_id = editForm.restaurant_id;
+      const res = await fetch(`/api/users/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to save changes");
+      setSuccess(`Updated ${editForm.full_name.trim()}`);
+      setEditUserId(null);
+      startTransition(() => router.refresh());
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function handleDelete(u: UserRow) {
+    setDeletingId(u.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Failed to delete account");
+      setSuccess(`Deleted ${u.full_name ?? u.email}`);
+      setDeleteConfirmId(null);
+      startTransition(() => router.refresh());
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -410,6 +479,12 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               {u.id !== currentUserId && (
                 <div className="mt-3 pt-3 border-t border-farm-dark/5 flex flex-wrap items-center gap-2">
                   <button
+                    onClick={() => (editUserId === u.id ? setEditUserId(null) : openEdit(u))}
+                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+                  >
+                    {editUserId === u.id ? "Cancel" : "Edit"}
+                  </button>
+                  <button
                     onClick={() => handleSendWelcome(u)}
                     disabled={welcomingId === u.id}
                     className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-green border border-farm-green/30 hover:bg-farm-green-light disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
@@ -421,6 +496,8 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                     onClick={() => {
                       setResetUserId(resetUserId === u.id ? null : u.id);
                       setNewPassword("");
+                      setEditUserId(null);
+                      setDeleteConfirmId(null);
                       setError(null);
                     }}
                     className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
@@ -433,6 +510,98 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                     className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ml-auto"
                   >
                     {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteConfirmId(deleteConfirmId === u.id ? null : u.id);
+                      setEditUserId(null);
+                      setResetUserId(null);
+                      setError(null);
+                    }}
+                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                  >
+                    {deleteConfirmId === u.id ? "Cancel" : "Delete"}
+                  </button>
+                </div>
+              )}
+
+              {/* Edit-details panel */}
+              {editUserId === u.id && (
+                <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-3">
+                  <div>
+                    <label className="block text-xs text-farm-muted mb-1">Full name</label>
+                    <input
+                      type="text"
+                      value={editForm.full_name}
+                      onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                      className="input-field"
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-farm-muted mb-1">Role</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm((f) => ({ ...f, role: "chef" }))}
+                        className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                          editForm.role === "chef"
+                            ? "bg-farm-green text-white border-farm-green"
+                            : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
+                        }`}
+                      >
+                        Chef
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm((f) => ({ ...f, role: "receiver" }))}
+                        className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                          editForm.role === "receiver"
+                            ? "bg-pf-master-violet text-white border-pf-master-violet"
+                            : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-violet/30"
+                        }`}
+                      >
+                        Receiver
+                      </button>
+                    </div>
+                  </div>
+                  {editForm.role === "chef" && (
+                    <div>
+                      <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
+                      <select
+                        value={editForm.restaurant_id}
+                        onChange={(e) => setEditForm((f) => ({ ...f, restaurant_id: e.target.value }))}
+                        className="input-field"
+                      >
+                        {restaurants.map((r) => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleSaveEdit(u)}
+                    disabled={savingEdit}
+                    className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
+                  >
+                    {savingEdit ? "Saving…" : "Save changes"}
+                  </button>
+                </div>
+              )}
+
+              {/* Delete confirmation */}
+              {deleteConfirmId === u.id && (
+                <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 flex items-center gap-3 flex-wrap">
+                  <p className="text-xs text-red-700 flex-1 min-w-[150px] leading-relaxed">
+                    Permanently delete {u.full_name ?? "this account"}? This can&apos;t be undone.
+                    Accounts with order history can&apos;t be deleted — deactivate those instead.
+                  </p>
+                  <button
+                    onClick={() => handleDelete(u)}
+                    disabled={deletingId === u.id}
+                    className="btn-danger min-h-[44px] px-4 text-xs font-medium disabled:opacity-50"
+                  >
+                    {deletingId === u.id ? "Deleting…" : "Yes, delete"}
                   </button>
                 </div>
               )}
