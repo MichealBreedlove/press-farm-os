@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { LaneBadge } from "@/components/shared/LaneBadge";
 
 interface UserRow {
   id: string;
@@ -211,13 +212,13 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         onClick={() => { setShowInvite((v) => !v); setError(null); }}
         className={showInvite ? "btn-ghost w-full text-sm" : "btn-primary w-full text-sm"}
       >
-        {showInvite ? "Cancel" : "+ Add Chef"}
+        {showInvite ? "Cancel" : "+ Add User"}
       </button>
 
       {/* Create-account form */}
       {showInvite && (
         <form onSubmit={handleInvite} className="card p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-farm-dark">Add Chef</h3>
+          <h3 className="text-sm font-semibold text-farm-dark">Add User</h3>
           <div>
             <label className="block text-xs text-farm-muted mb-1">Full Name</label>
             <input
@@ -384,52 +385,57 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                 u.is_active ? "border-farm-dark/5" : "border-farm-dark/5 opacity-50"
               }`}
             >
-              <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
-                  {isSharedAccount(u.email) && <SharedTag />}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
+                    {isSharedAccount(u.email) && <SharedTag />}
+                  </div>
+                  <p className="text-xs text-farm-muted truncate">{u.email}</p>
+                  {u.restaurants.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      {u.restaurants.map((r) => (
+                        <LaneBadge key={r} name={r} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs text-farm-muted truncate">{u.email}</p>
-                {u.restaurants.length > 0 && (
-                  <p className="text-xs text-farm-muted mt-0.5">{u.restaurants.join(", ")}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={u.is_active ? "badge-green" : "badge-gray"}>
+                <span className={`${u.is_active ? "badge-green" : "badge-gray"} flex-shrink-0`}>
                   {u.is_active ? "Active" : "Inactive"}
                 </span>
-                {u.id !== currentUserId && (
-                  <>
-                    <button
-                      onClick={() => handleSendWelcome(u)}
-                      disabled={welcomingId === u.id}
-                      className="min-h-[44px] px-3 flex items-center justify-center text-xs text-farm-green hover:bg-farm-green-light rounded-lg disabled:opacity-50 transition-colors"
-                      title="Send welcome email (points to /login — no password embedded)"
-                    >
-                      {welcomingId === u.id ? "Sending…" : "📧 Welcome"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setResetUserId(resetUserId === u.id ? null : u.id);
-                        setNewPassword("");
-                        setError(null);
-                      }}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-farm-muted hover:text-farm-dark/80"
-                    >
-                      {resetUserId === u.id ? "Cancel" : "Reset Pw"}
-                    </button>
-                    <button
-                      onClick={() => handleToggle(u)}
-                      disabled={toggling === u.id || isPending}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xs text-farm-muted hover:text-farm-dark/80 disabled:opacity-50"
-                    >
-                      {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
-                    </button>
-                  </>
-                )}
               </div>
-              </div>
+
+              {/* Account actions — own row so they never crush the name/email
+                  on a phone; each control is a tap-safe ≥44px button. */}
+              {u.id !== currentUserId && (
+                <div className="mt-3 pt-3 border-t border-farm-dark/5 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleSendWelcome(u)}
+                    disabled={welcomingId === u.id}
+                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-green border border-farm-green/30 hover:bg-farm-green-light disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+                    title="Send welcome email (points to /login — no password embedded)"
+                  >
+                    {welcomingId === u.id ? "Sending…" : "Send welcome"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setResetUserId(resetUserId === u.id ? null : u.id);
+                      setNewPassword("");
+                      setError(null);
+                    }}
+                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+                  >
+                    {resetUserId === u.id ? "Cancel" : "Reset password"}
+                  </button>
+                  <button
+                    onClick={() => handleToggle(u)}
+                    disabled={toggling === u.id || isPending}
+                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ml-auto"
+                  >
+                    {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
+              )}
               {resetUserId === u.id && (
                 <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-2">
                   <div className="flex gap-2">
