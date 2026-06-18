@@ -7,6 +7,8 @@ export interface HarvestGridRow {
   itemId: string;
   name: string;
   unit: UnitType;
+  /** Specific variety/color the chef requested (e.g. "Chocolate, Spearmint"); null if none. */
+  colorKey?: string | null;
   /** restaurantId → qty (for the restaurants that placed orders this date) */
   qtyByRestaurant: Record<string, number>;
   total: number;
@@ -113,11 +115,18 @@ export function HarvestGrid({
           <div className="space-y-0.5">
             {rows.map((row) => (
               <div
-                key={`${row.itemId}-${row.unit}`}
+                key={`${row.itemId}-${row.unit}-${row.colorKey ?? ""}`}
                 className="grid gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
                 style={{ gridTemplateColumns: gridTemplate }}
               >
-                <span className="text-sm text-farm-dark truncate">{row.name}</span>
+                <span className="text-sm text-farm-dark truncate">
+                  {row.name}
+                  {row.colorKey && (
+                    <span className="text-pf-master-violet font-medium">
+                      {" "}· {row.colorKey.split(",").map((c) => c.trim()).filter(Boolean).join(", ")}
+                    </span>
+                  )}
+                </span>
                 <span className="w-12 sm:w-16 text-center">
                   <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-farm-green/15 text-farm-green tabular-nums">
                     {(UNIT_LABELS[row.unit] ?? row.unit).toString().toUpperCase()}
