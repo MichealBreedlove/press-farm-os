@@ -54,7 +54,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         chef:profiles!orders_chef_id_fkey(id, full_name),
         edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
         order_items(
-          id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, menu_section, picked_at,
+          id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, color_key, menu_section, picked_at,
           availability_item:availability_items(
             id,
             item:items(id, name, category, unit_type)
@@ -185,7 +185,12 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       const qty = oi.is_shorted ? Number(oi.quantity_fulfilled ?? 0) : Number(oi.quantity_requested ?? 0);
       if (qty <= 0 || !restaurantId) continue;
 
-      const key = `${item.id}|${lineUnit}`;
+      // Specific variety/color the chef picked (e.g. "Chocolate" mint,
+      // "Spearmint"). Part of the harvest key so different varieties of the
+      // same crop stay on their own rows — you pick each one separately.
+      const colorKey = (oi.color_key ?? "").trim();
+
+      const key = `${item.id}|${lineUnit}|${colorKey}`;
       let row = itemMap.get(key);
       if (!row) {
         row = {
@@ -193,6 +198,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
           name: item.name,
           category: (item.category ?? "other") as ItemCategory,
           unit: lineUnit,
+          colorKey: colorKey || null,
           qtyByRestaurant: {},
           total: 0,
         };
@@ -486,6 +492,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                                   .filter(Boolean)[0] ||
                                 "",
                               sizeLabel: oi.size_label ?? null,
+                              colorKey: oi.color_key ?? null,
                               isEvent: oi.menu_section === "events",
                               quantityRequested: oi.quantity_requested,
                               quantityFulfilled: oi.quantity_fulfilled,
