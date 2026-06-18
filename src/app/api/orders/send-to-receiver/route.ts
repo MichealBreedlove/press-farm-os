@@ -197,6 +197,16 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
         .in("delivery_id", deliveryIds)
     : { data: [] as any[] };
   const existingKeysByDelivery = new Map<string, Set<string>>();
+  // Item+unit groups that already have a SIZE-LESS delivery row. Such rows
+  // predate the per-size fix (the old code collapsed every size of an item+unit
+  // into one size-less row). Their key won't match a sized line's key, so
+  // without a guard a re-send would add per-size rows ALONGSIDE the legacy row
+  // and double-count. We treat a size-less row as already covering that
+  // item+unit and skip auto-materializing sized rows for it. (Items that have
+  // no sizes at all also store a size-less row, but their order lines are
+  // size-less too and dedupe exactly — so they're unaffected.)
+  const sizelessGroupByDelivery = new Map<string, Set<string>>();
+  const groupKey = (itemId: string, unit: string) => `${itemId}|${(unit ?? "").toLowerCase()}`;
   for (const l of (existingLines ?? []) as any[]) {
     let set = existingKeysByDelivery.get(l.delivery_id);
     if (!set) {
@@ -204,6 +214,14 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       existingKeysByDelivery.set(l.delivery_id, set);
     }
     set.add(dedupKey(l.item_id, l.unit, l.size_label));
+    if ((l.size_label ?? "").trim() === "") {
+      let g = sizelessGroupByDelivery.get(l.delivery_id);
+      if (!g) {
+        g = new Set<string>();
+        sizelessGroupByDelivery.set(l.delivery_id, g);
+      }
+      g.add(groupKey(l.item_id, l.unit));
+    }
   }
 
   let createdCount = 0;
@@ -219,6 +237,7 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       existingKeys = new Set<string>();
       existingKeysByDelivery.set(delivery.id, existingKeys);
     }
+    const sizelessGroups = sizelessGroupByDelivery.get(delivery.id) ?? new Set<string>();
 
     // Build the rows to insert, deduped against (item_id, unit, size)
     const rowsToInsert: any[] = [];
@@ -231,6 +250,10 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       if (!VALID_UNITS.has(lineUnit)) continue;
 
       const sizeLabel: string | null = oi.size_label ?? null;
+      // Guard: a legacy size-less row already covers this item+unit. Skip the
+      // sized line rather than create a duplicate that double-counts. (Size-less
+      // lines fall through to the exact-key dedupe below.)
+      if ((sizeLabel ?? "").trim() !== "" && sizelessGroups.has(groupKey(item.id, lineUnit))) continue;
       const key = dedupKey(item.id, lineUnit, sizeLabel);
       if (existingKeys.has(key)) continue;
 
