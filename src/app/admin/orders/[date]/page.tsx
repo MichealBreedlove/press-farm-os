@@ -16,6 +16,7 @@ import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { OrderActivity } from "@/components/shared/OrderActivity";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import type { ItemCategory, OrderStatus, UnitType, OrderAudit } from "@/types";
 
 interface AdminOrdersByDatePageProps {
@@ -521,7 +522,16 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                 ) : (
                   <span />
                 )}
-                <DeleteOrderButton orderId={order.id} restaurantName={order.restaurant?.name ?? "this"} />
+                <div className="flex items-center gap-4">
+                  <Link
+                    href={`/admin/orders/${date}/${order.id}/edit`}
+                    className="flex items-center gap-1.5 text-xs text-pf-master-blue hover:text-pf-master-blue/80 transition-colors min-h-0"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </Link>
+                  <DeleteOrderButton orderId={order.id} restaurantName={order.restaurant?.name ?? "this"} />
+                </div>
               </div>
 
               {/* Activity timeline — who placed/edited/shorted/fulfilled, when. */}

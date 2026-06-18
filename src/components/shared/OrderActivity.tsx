@@ -42,6 +42,24 @@ function dotClass(action: string): string {
 
 function actionLabel(action: string, detail: Record<string, unknown> | null): string {
   const base = ACTION_LABELS[action as OrderAuditAction] ?? action;
+  // Admin moved the order to a different delivery date.
+  if (action === "edited" && detail && typeof detail.moved_to === "string") {
+    return `${base} — moved to ${detail.moved_to}`;
+  }
+  if (
+    action === "merged" &&
+    detail &&
+    typeof detail.merged_into === "string" &&
+    typeof detail.moved_from === "string"
+  ) {
+    const added = (detail.added as number) ?? 0;
+    const bumped = (detail.bumped as number) ?? 0;
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} new`);
+    if (bumped > 0) parts.push(`${bumped} updated`);
+    const suffix = parts.length > 0 ? ` (${parts.join(", ")})` : "";
+    return `Merged from ${detail.moved_from}${suffix}`;
+  }
   if (action === "merged" && detail && typeof detail.added === "number") {
     const added = detail.added as number;
     const bumped = (detail.bumped as number) ?? 0;
