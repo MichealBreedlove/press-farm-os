@@ -103,7 +103,7 @@ export default async function AdminOrderEditPage({ params }: PageProps) {
   const deliveryDates = Array.from(dateSet.values()).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <main className="min-h-screen bg-farm-cream pb-24">
+    <main className="min-h-screen bg-farm-cream pb-44">
       <EditorialHero
         eyebrow={order.restaurant?.name ?? "Order"}
         title="Edit Order"

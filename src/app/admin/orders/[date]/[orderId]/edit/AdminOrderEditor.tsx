@@ -359,8 +359,11 @@ export function AdminOrderEditor({
 
       {error && <p className="text-sm text-red-700">{error}</p>}
 
-      {/* Sticky save bar */}
-      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-farm-dark/10 px-4 py-3 z-30">
+      {/* Sticky save bar — sits just above the admin bottom-nav (h-16 + safe area). */}
+      <div
+        className="fixed left-0 right-0 bg-white/95 backdrop-blur border-t border-farm-dark/10 px-4 py-3 z-40"
+        style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+      >
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             type="button"
