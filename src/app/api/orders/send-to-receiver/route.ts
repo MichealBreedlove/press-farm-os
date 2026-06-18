@@ -116,7 +116,7 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       id, restaurant_id, delivery_date,
       order_items(
         id, quantity_requested, quantity_fulfilled, is_shorted,
-        unit_type, unit_price_at_order, picked_at,
+        unit_type, size_label, unit_price_at_order, picked_at,
         availability_item:availability_items(
           item:items(id, name, unit_type, default_price, unit_prices)
         )
@@ -183,10 +183,17 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
   const deliveryIds = ordersWithResolved
     .map((o) => deliveryByRestaurant.get(o.restaurantId)?.id)
     .filter(Boolean) as string[];
+  // Dedup key includes size so different sizes of the same item+unit
+  // (e.g. Nasturtium "Palm" vs "Dime - Nickel") each get their OWN
+  // delivery_items row. Keying by item+unit alone collapsed them into one
+  // row, which dropped the other sizes from the financial paper trail AND
+  // made them read as "short" on the receiver dashboard.
+  const dedupKey = (itemId: string, unit: string, size: string | null) =>
+    `${itemId}|${(unit ?? "").toLowerCase()}|${(size ?? "").trim().toLowerCase()}`;
   const { data: existingLines } = deliveryIds.length > 0
     ? await admin
         .from("delivery_items")
-        .select("delivery_id, item_id, unit")
+        .select("delivery_id, item_id, unit, size_label")
         .in("delivery_id", deliveryIds)
     : { data: [] as any[] };
   const existingKeysByDelivery = new Map<string, Set<string>>();
@@ -196,7 +203,7 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       set = new Set<string>();
       existingKeysByDelivery.set(l.delivery_id, set);
     }
-    set.add(`${l.item_id}|${(l.unit ?? "").toLowerCase()}`);
+    set.add(dedupKey(l.item_id, l.unit, l.size_label));
   }
 
   let createdCount = 0;
@@ -213,7 +220,7 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
       existingKeysByDelivery.set(delivery.id, existingKeys);
     }
 
-    // Build the rows to insert, deduped against (item_id, unit)
+    // Build the rows to insert, deduped against (item_id, unit, size)
     const rowsToInsert: any[] = [];
     for (const oi of resolvedLines) {
       const item = oi.availability_item?.item;
@@ -223,7 +230,8 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
         (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea");
       if (!VALID_UNITS.has(lineUnit)) continue;
 
-      const key = `${item.id}|${lineUnit}`;
+      const sizeLabel: string | null = oi.size_label ?? null;
+      const key = dedupKey(item.id, lineUnit, sizeLabel);
       if (existingKeys.has(key)) continue;
 
       const qty = oi.is_shorted
@@ -249,9 +257,10 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
         item_id: item.id,
         quantity: qty,
         unit: lineUnit,
+        size_label: sizeLabel,
         unit_price: unitPrice,
       });
-      existingKeys.add(key); // prevent intra-loop duplicates from multi-unit items
+      existingKeys.add(key); // prevent intra-loop duplicates from multi-unit/size items
     }
 
     allRowsToInsert.push(...rowsToInsert);
