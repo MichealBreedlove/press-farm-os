@@ -112,6 +112,14 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         subtitle={orderSummary}
         flower="squash-blossom"
         backHref="/admin/dashboard"
+        accessory={
+          <Link
+            href="/admin/orders/explorer"
+            className="text-xs font-medium text-farm-green border border-farm-green/30 rounded-lg px-3 py-2 hover:bg-farm-green/5 whitespace-nowrap"
+          >
+            Explorer
+          </Link>
+        }
       />
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-4">
