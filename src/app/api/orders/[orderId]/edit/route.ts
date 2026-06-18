@@ -126,7 +126,7 @@ export async function PUT(
   if (newItemIds.length > 0) {
     const { data: items } = await (admin as any)
       .from("items")
-      .select("id, unit_type, default_price, unit_prices")
+      .select("id, unit_type, default_price, unit_prices, size_prices")
       .in("id", newItemIds);
     for (const it of items ?? []) itemInfo.set(it.id, it);
   }
@@ -246,8 +246,10 @@ export async function PUT(
         {
           unitPrices: (info.unit_prices ?? {}) as Record<string, number>,
           defaultPrice: typeof info.default_price === "number" ? info.default_price : null,
+          sizePrices: (info.size_prices ?? null) as Record<string, number> | null,
         },
         unit,
+        nl.size_label ?? null,
       ),
     });
   }

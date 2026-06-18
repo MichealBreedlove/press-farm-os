@@ -153,14 +153,25 @@ export function parseUnits(unitType: string | null | undefined): string[] {
 }
 
 /**
- * Resolve the price an item charges for a particular unit.
- * Lookup order: items.unit_prices[unit] → items.default_price → null.
+ * Resolve the price an item charges for a particular unit (and optional size).
+ * Lookup order: items.size_prices[size] → items.unit_prices[unit] →
+ * items.default_price → null. A size price is the most specific tier (e.g.
+ * Nasturtium "Palm"); items without a matching size_prices entry resolve by
+ * unit exactly as before.
  */
 export function priceForUnit(
-  item: { default_price?: number | null; unit_prices?: Record<string, number> | null },
+  item: {
+    default_price?: number | null;
+    unit_prices?: Record<string, number> | null;
+    size_prices?: Record<string, number> | null;
+  },
   unit: string | null | undefined,
+  size?: string | null | undefined,
 ): number | null {
   const u = (unit ?? "").trim();
+  const s = (size ?? "").trim();
+  const sizeMap = item.size_prices ?? null;
+  if (s && sizeMap && typeof sizeMap[s] === "number") return sizeMap[s];
   const map = item.unit_prices ?? null;
   if (u && map && typeof map[u] === "number") return map[u];
   return item.default_price ?? null;

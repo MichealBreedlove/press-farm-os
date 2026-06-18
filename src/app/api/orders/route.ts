@@ -220,7 +220,7 @@ export async function POST(request: Request) {
   // now-unavailable item fail the whole submission with "no longer available".
   const submittedIds = orderedInput.map((i: any) => i.availability_item_id);
   const { data: availItems } = await (supabase.from("availability_items") as any)
-    .select("id, item:items(default_price, unit_prices, unit_type)")
+    .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
     .eq("restaurant_id", restaurant_id)
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable")
@@ -272,7 +272,12 @@ export async function POST(request: Request) {
   // price.
   const availInfoMap = new Map<
     string,
-    { unitPrices: Record<string, number>; defaultPrice: number | null; firstUnit: string | null }
+    {
+      unitPrices: Record<string, number>;
+      defaultPrice: number | null;
+      sizePrices: Record<string, number> | null;
+      firstUnit: string | null;
+    }
   >(
     (availItems ?? []).map((a: any) => [
       a.id,
@@ -280,18 +285,19 @@ export async function POST(request: Request) {
         unitPrices: (a.item?.unit_prices ?? {}) as Record<string, number>,
         defaultPrice:
           typeof a.item?.default_price === "number" ? a.item.default_price : null,
+        sizePrices: (a.item?.size_prices ?? null) as Record<string, number> | null,
         firstUnit: String(a.item?.unit_type ?? "").split(",")[0]?.trim() || null,
       },
     ]),
   );
 
-  // Resolve the price for a given availability+unit. Precedence:
-  // unit_prices[unit] → default_price → 0. Defaulting to 0 (instead of null)
-  // keeps the line in the COALESCE(SUM(line_total)) revenue rollup; a NULL
-  // line_total would silently disappear from totals. (resolveOrderUnitPrice
-  // is the unit-tested core — see src/lib/pricing.ts.)
-  function resolvePrice(availId: string, unit: string | null): number {
-    return resolveOrderUnitPrice(availInfoMap.get(availId), unit);
+  // Resolve the price for a given availability+unit+size. Precedence:
+  // size_prices[size] → unit_prices[unit] → default_price → 0. Defaulting to 0
+  // (instead of null) keeps the line in the COALESCE(SUM(line_total)) revenue
+  // rollup; a NULL line_total would silently disappear from totals.
+  // (resolveOrderUnitPrice is the unit-tested core — see src/lib/pricing.ts.)
+  function resolvePrice(availId: string, unit: string | null, size: string | null): number {
+    return resolveOrderUnitPrice(availInfoMap.get(availId), unit, size);
   }
 
   // Build the canonical line shape for incoming items. Persist the
@@ -310,7 +316,7 @@ export async function POST(request: Request) {
       return {
         availability_item_id: item.availability_item_id,
         quantity_requested: item.quantity,
-        unit_price_at_order: resolvePrice(item.availability_item_id, chosenUnit),
+        unit_price_at_order: resolvePrice(item.availability_item_id, chosenUnit, item.size_label ?? null),
         unit_type: chosenUnit,
         size_label: item.size_label ?? null,
         color_key: item.color_key ?? null,

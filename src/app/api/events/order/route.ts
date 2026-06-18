@@ -140,7 +140,7 @@ export async function POST(request: Request) {
   const submittedIds = ordered.map((i) => i.availability_item_id);
   const { data: availItems } = await (supabase as any)
     .from("availability_items")
-    .select("id, item:items(default_price, unit_prices, unit_type)")
+    .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
     .eq("restaurant_id", restaurantId)
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable")
@@ -148,13 +148,19 @@ export async function POST(request: Request) {
 
   const availInfo = new Map<
     string,
-    { unitPrices: Record<string, number>; defaultPrice: number | null; firstUnit: string | null }
+    {
+      unitPrices: Record<string, number>;
+      defaultPrice: number | null;
+      sizePrices: Record<string, number> | null;
+      firstUnit: string | null;
+    }
   >(
     (availItems ?? []).map((a: any) => [
       a.id,
       {
         unitPrices: (a.item?.unit_prices ?? {}) as Record<string, number>,
         defaultPrice: typeof a.item?.default_price === "number" ? a.item.default_price : null,
+        sizePrices: (a.item?.size_prices ?? null) as Record<string, number> | null,
         firstUnit: String(a.item?.unit_type ?? "").split(",")[0]?.trim() || null,
       },
     ]),
@@ -178,7 +184,7 @@ export async function POST(request: Request) {
     return {
       availability_item_id: i.availability_item_id,
       quantity_requested: i.quantity,
-      unit_price_at_order: resolveOrderUnitPrice(info, unit),
+      unit_price_at_order: resolveOrderUnitPrice(info, unit, i.size_label ?? null),
       unit_type: unit,
       size_label: i.size_label ?? null,
       color_key: i.color_key ?? null,

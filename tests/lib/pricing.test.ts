@@ -47,4 +47,31 @@ describe("resolveOrderUnitPrice", () => {
     const malformed = { unitPrices: { lg: "12" as unknown as number }, defaultPrice: 5 };
     expect(resolveOrderUnitPrice(malformed, "lg")).toBe(5);
   });
+
+  describe("per-size pricing (size_prices)", () => {
+    // Nasturtium: one unit (ea) at $0.40, but "Palm" leaves are $1 each.
+    const nasturtium = { unitPrices: { ea: 0.4 }, defaultPrice: 0.4, sizePrices: { Palm: 1 } };
+
+    it("prefers the size price over the per-unit price", () => {
+      expect(resolveOrderUnitPrice(nasturtium, "ea", "Palm")).toBe(1);
+    });
+
+    it("falls through to the per-unit price for a size with no override", () => {
+      expect(resolveOrderUnitPrice(nasturtium, "ea", "Dime - Nickel")).toBe(0.4);
+      expect(resolveOrderUnitPrice(nasturtium, "ea", null)).toBe(0.4);
+      expect(resolveOrderUnitPrice(nasturtium, "ea", undefined)).toBe(0.4);
+    });
+
+    it("trims the size label before matching", () => {
+      expect(resolveOrderUnitPrice(nasturtium, "ea", "  Palm  ")).toBe(1);
+    });
+
+    it("ignores size_prices when absent (every other item is unaffected)", () => {
+      expect(resolveOrderUnitPrice(info({ ea: 0.4 }, 0.4), "ea", "Palm")).toBe(0.4);
+    });
+
+    it("treats a size price of exactly 0 as a real price", () => {
+      expect(resolveOrderUnitPrice({ unitPrices: { ea: 0.4 }, defaultPrice: 0.4, sizePrices: { Comp: 0 } }, "ea", "Comp")).toBe(0);
+    });
+  });
 });

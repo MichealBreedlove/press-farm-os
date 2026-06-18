@@ -118,7 +118,7 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
         id, quantity_requested, quantity_fulfilled, is_shorted,
         unit_type, size_label, unit_price_at_order, picked_at,
         availability_item:availability_items(
-          item:items(id, name, unit_type, default_price, unit_prices)
+          item:items(id, name, unit_type, default_price, unit_prices, size_prices)
         )
       )
     `)
@@ -241,13 +241,19 @@ async function materializeDeliveryItems(admin: any, date: string): Promise<numbe
 
       // Prefer the price stamped on the order line (locks the price as
       // of order time, even if the catalog changes later). Otherwise fall
-      // back to the catalog's per-unit override for the chosen unit, then
-      // the catalog default, then 0.
+      // back to the catalog price: size override for this size, then per-unit
+      // override for the chosen unit, then the catalog default, then 0.
       const unitPricesMap = (item.unit_prices ?? {}) as Record<string, number>;
+      const sizePricesMap = (item.size_prices ?? {}) as Record<string, number>;
+      const sizeKey = (sizeLabel ?? "").trim();
       const fallbackPrice =
+        (sizeKey && typeof sizePricesMap[sizeKey] === "number"
+          ? sizePricesMap[sizeKey]
+          : null) ??
         (typeof unitPricesMap[lineUnit] === "number"
           ? unitPricesMap[lineUnit]
-          : null) ?? Number(item.default_price ?? 0);
+          : null) ??
+        Number(item.default_price ?? 0);
       const unitPrice = oi.unit_price_at_order != null
         ? Number(oi.unit_price_at_order)
         : fallbackPrice;
