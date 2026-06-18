@@ -140,11 +140,11 @@ export default async function OrderExplorerPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    period?: string;
-    restaurant?: string;
-    q?: string;
-    from?: string;
-    to?: string;
+    period?: string | string[];
+    restaurant?: string | string[];
+    q?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
   }>;
 }) {
   const supabase = await createClient();
@@ -154,6 +154,11 @@ export default async function OrderExplorerPage({
   if (!user) redirect("/login");
 
   const sp = await searchParams;
+  // searchParams values can be string | string[] (repeated keys) — always
+  // take the first so downstream string ops (.trim, comparisons) are safe.
+  const first = (v: string | string[] | undefined): string | undefined =>
+    Array.isArray(v) ? v[0] : v;
+  const periodRaw = first(sp.period);
   const period: PeriodKey = (
     [
       "this_week",
@@ -164,13 +169,14 @@ export default async function OrderExplorerPage({
       "last_year",
       "custom",
     ] as const
-  ).includes(sp.period as PeriodKey)
-    ? (sp.period as PeriodKey)
+  ).includes(periodRaw as PeriodKey)
+    ? (periodRaw as PeriodKey)
     : "this_month";
 
-  const { from, to } = resolvePeriod(period, sp.from, sp.to);
-  const restaurantFilter = sp.restaurant && sp.restaurant !== "all" ? sp.restaurant : null;
-  const query = (sp.q ?? "").trim();
+  const { from, to } = resolvePeriod(period, first(sp.from), first(sp.to));
+  const restaurantRaw = first(sp.restaurant);
+  const restaurantFilter = restaurantRaw && restaurantRaw !== "all" ? restaurantRaw : null;
+  const query = (first(sp.q) ?? "").trim();
   const queryLower = query.toLowerCase();
 
   const admin = createAdminClient();
@@ -299,8 +305,7 @@ export default async function OrderExplorerPage({
   const totalOrderedTimes = totalsSource.reduce((s, r) => s + r.orderIds.size, 0);
   const totalQtyOrdered = totalsSource.reduce((s, r) => s + r.qtyOrdered, 0);
 
-  // Build hidden-field set so period chips preserve the other filters.
-  const carry = { restaurant: sp.restaurant ?? "all", q: query, from, to };
+  const restaurantValue = restaurantRaw ?? "all";
 
   const periodKeys: Exclude<PeriodKey, "custom">[] = [
     "this_week",
@@ -339,9 +344,9 @@ export default async function OrderExplorerPage({
       <div className="px-4 py-5 space-y-6 max-w-3xl mx-auto">
         {/* ---- Filters ---- */}
         <form method="get" action="/admin/orders/explorer" className="space-y-3">
-          {/* Period chips (submit buttons preserve restaurant + search) */}
-          <input type="hidden" name="restaurant" value={carry.restaurant} />
-          <input type="hidden" name="q" value={carry.q} />
+          {/* Period chips — submit buttons. The restaurant select + search
+              input live in this same form, so any submit carries them; no
+              hidden duplicates (which produced array params that crashed). */}
           <div className="grid grid-cols-3 gap-1.5">
             {periodKeys.map((key) => (
               <button
@@ -364,7 +369,7 @@ export default async function OrderExplorerPage({
           <div className="flex flex-col sm:flex-row gap-2">
             <select
               name="restaurant"
-              defaultValue={carry.restaurant}
+              defaultValue={restaurantValue}
               className="input-field flex-1"
               aria-label="Restaurant"
             >
