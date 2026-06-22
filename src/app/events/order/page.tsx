@@ -4,7 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
+import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
 import { EventOrderClient } from "./EventOrderClient";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -95,6 +97,10 @@ export default async function EventOrderPage({
     );
   }
 
+  // Microgreens ready to cut in the greenhouse right now — surfaced so the
+  // events/bar team harvest from our trays instead of ordering from Meadowood.
+  const readyMicrogreens = await getReadyMicrogreens();
+
   return (
     <main className="pb-24 bg-farm-cream min-h-screen">
       <EditorialHero
@@ -103,7 +109,8 @@ export default async function EventOrderPage({
         subtitle="Pick the event date and the delivery date, then order from what's available."
         flower="marigold"
       />
-      <div className="px-4 py-6 max-w-2xl mx-auto">
+      <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">
+        <GreenhouseReadyBanner crops={readyMicrogreens} />
         {deliveryDates.length === 0 ? (
           <EmptyState
             flower="squash-blossom"

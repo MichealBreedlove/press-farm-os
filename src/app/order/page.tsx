@@ -9,7 +9,7 @@ import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
-import { computeReadyToHarvest, type ReadyHarvestCrop } from "@/lib/microgreens/readyToHarvest";
+import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
 import { buildOrderKey } from "@/lib/order-keys";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -233,30 +233,8 @@ export default async function OrderPage({
   const isEditing = editOrderId && targetDate === deliveryDate.date;
 
   // Microgreens ready to cut in the greenhouse right now — surfaced so chefs and
-  // the bar team harvest from our trays instead of ordering from Meadowood. The
-  // microgreen tables are admin-only RLS, so this reads through the service-role
-  // client. Best-effort: any failure leaves the banner empty, never blocking the
-  // order flow (mirrors the weather banner's silent-fail behavior).
-  let readyMicrogreens: ReadyHarvestCrop[] = [];
-  try {
-    const adminForGreenhouse = createAdminClient();
-    const [{ data: mgCrops }, { data: mgBatches }, { data: mgTrays }] = await Promise.all([
-      (adminForGreenhouse as any).from("microgreen_crops").select("*").eq("is_active", true),
-      (adminForGreenhouse as any).from("microgreen_batches").select("id, crop_id"),
-      (adminForGreenhouse as any)
-        .from("microgreen_trays")
-        .select("*")
-        .in("status", ["blackout", "light", "harvesting"]),
-    ]);
-    readyMicrogreens = computeReadyToHarvest({
-      crops: mgCrops ?? [],
-      batches: mgBatches ?? [],
-      trays: mgTrays ?? [],
-      now: new Date(),
-    });
-  } catch {
-    readyMicrogreens = [];
-  }
+  // the bar team harvest from our trays instead of ordering from Meadowood.
+  const readyMicrogreens = await getReadyMicrogreens();
 
   return (
     <main className="min-h-screen bg-farm-cream">
