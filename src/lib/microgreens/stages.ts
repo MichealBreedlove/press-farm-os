@@ -54,7 +54,10 @@ export function isReadyToHarvest(
   crop: MicrogreenCrop,
   now: Date,
 ): boolean {
-  if (crop.is_continuous_harvest && tray.status === "harvesting") return true;
+  // Any tray a grower has moved into 'harvesting' is ready to cut — this covers
+  // continuous crops AND single-cut trays the grower has confirmed at baby green
+  // (which now linger in 'harvesting' until the harvest is logged).
+  if (tray.status === "harvesting") return true;
 
   if (tray.status === "light" || (crop.keep_in_blackout && tray.status === "blackout")) {
     const elapsed = daysBetween(tray.sow_date, now);

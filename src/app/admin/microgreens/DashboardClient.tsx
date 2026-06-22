@@ -44,6 +44,13 @@ export function DashboardClient({
     if (res.ok) router.refresh();
   }
 
+  // "Mark ready" advances a light (or keep-in-blackout) tray into 'harvesting'
+  // without logging a yield — it surfaces the crop on the chef/bar order banner.
+  async function markReady(trayId: string) {
+    const res = await fetch(`/api/microgreens/trays/${trayId}/advance`, { method: "POST" });
+    if (res.ok) router.refresh();
+  }
+
   return (
     <>
       {overdueCount > 0 && (
@@ -131,8 +138,20 @@ export function DashboardClient({
               <TaskCard
                 key={i}
                 title={`Harvest ${t.tray.tray_label} (${t.crop.name})`}
-                subtitle={`day ${t.days_since_sow}${t.kind === "continuous-ongoing" ? " · continuous" : ""}`}
-                action={<button className="btn-primary" onClick={() => setHarvesting(t)}>Log harvest</button>}
+                subtitle={`day ${t.days_since_sow}${t.tray.status === "harvesting" ? " · marked ready" : ""}${t.kind === "continuous-ongoing" ? " · continuous" : ""}`}
+                action={
+                  <div className="flex flex-wrap gap-2">
+                    {t.tray.status !== "harvesting" && (
+                      <button
+                        className="px-4 py-2 text-sm rounded-lg border border-farm-green text-farm-green font-medium hover:bg-farm-green/5"
+                        onClick={() => markReady(t.tray.id)}
+                      >
+                        Mark ready
+                      </button>
+                    )}
+                    <button className="btn-primary" onClick={() => setHarvesting(t)}>Log harvest</button>
+                  </div>
+                }
               />
             ))}
           </div>

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { StageBadge } from "@/components/admin/microgreens/StageBadge";
 import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
+import { MarkReadyButton } from "@/components/admin/microgreens/MarkReadyButton";
 import { TrayActionsFooter } from "@/components/admin/microgreens/TrayActionsFooter";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
 import { HARVEST_STAGE_LABELS } from "@/lib/microgreens/constants";
@@ -59,6 +60,15 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         {crop && <StageTimeline current={tray.status} crop={crop} />}
+
+        {/* "Ready to harvest" = next stage is harvesting: a light tray, or a
+            blackout tray on a keep-in-blackout crop. The grower confirms baby
+            green here, which surfaces the crop on the chef/bar order banner. */}
+        {crop &&
+          (tray.status === "light" ||
+            (tray.status === "blackout" && crop.keep_in_blackout)) && (
+            <MarkReadyButton trayId={tray.id} />
+          )}
 
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide mb-2">

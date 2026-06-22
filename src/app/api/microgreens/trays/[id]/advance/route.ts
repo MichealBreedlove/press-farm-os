@@ -20,7 +20,10 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     .from("microgreen_crops").select("*").eq("id", batch.crop_id).maybeSingle();
 
   const newStatus = nextStatus(crop, tray.status);
-  if (!newStatus || newStatus === "harvesting" || newStatus === "terminated") {
+  // Advancing into 'harvesting' = "this tray is at baby green, ready to cut";
+  // it surfaces the crop on the chef/bar order banner. Terminating still has to
+  // go through the harvest endpoint so a yield gets logged.
+  if (!newStatus || newStatus === "terminated") {
     return NextResponse.json({ error: "Use harvest endpoint instead" }, { status: 400 });
   }
 
@@ -28,6 +31,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const updates: any = { status: newStatus };
   if (newStatus === "blackout") updates.blackout_start = today;
   if (newStatus === "light") updates.light_start = today;
+  if (newStatus === "harvesting") updates.harvesting_start = new Date().toISOString();
 
   const { data, error } = await (admin as any)
     .from("microgreen_trays")

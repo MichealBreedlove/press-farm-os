@@ -129,4 +129,9 @@ describe("isReadyToHarvest", () => {
     const tray = baseTray({ status: "harvesting" });
     expect(isReadyToHarvest(tray, crop, new Date("2026-05-17T08:00:00Z"))).toBe(true);
   });
+
+  it("single-cut tray marked into harvesting stays ready (so it lingers on the harvest list)", () => {
+    const tray = baseTray({ status: "harvesting", sow_date: "2026-05-15" });
+    expect(isReadyToHarvest(tray, baseCrop, new Date("2026-05-17T08:00:00Z"))).toBe(true);
+  });
 });

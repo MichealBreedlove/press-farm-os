@@ -4,10 +4,11 @@ import { computeReadyToHarvest, type ReadyHarvestCrop } from "./readyToHarvest";
 
 /**
  * Server-only loader for the chef-/bar-facing "Ready in the Greenhouse" banner.
- * The microgreen tables are admin-only RLS, so this reads through the
- * service-role client. Best-effort: any failure returns [] so the banner stays
- * empty and never blocks an order flow (mirrors the weather banner's silent
- * fail). Used by /order and /events/order.
+ * Only surfaces trays a grower has marked ready (status 'harvesting') — i.e.
+ * confirmed at baby green — never a day-count guess. The microgreen tables are
+ * admin-only RLS, so this reads through the service-role client. Best-effort:
+ * any failure returns [] so the banner stays empty and never blocks an order
+ * flow (mirrors the weather banner's silent fail). Used by /order + /events/order.
  */
 export async function getReadyMicrogreens(): Promise<ReadyHarvestCrop[]> {
   try {
@@ -18,13 +19,12 @@ export async function getReadyMicrogreens(): Promise<ReadyHarvestCrop[]> {
       (admin as any)
         .from("microgreen_trays")
         .select("*")
-        .in("status", ["blackout", "light", "harvesting"]),
+        .eq("status", "harvesting"),
     ]);
     return computeReadyToHarvest({
       crops: crops ?? [],
       batches: batches ?? [],
       trays: trays ?? [],
-      now: new Date(),
     });
   } catch {
     return [];
