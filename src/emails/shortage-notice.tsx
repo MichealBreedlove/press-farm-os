@@ -16,6 +16,8 @@ interface ShortageItem {
   fulfilledQty: number;
   unit: string;
   reason: string;
+  /** What was sent in place of this item, e.g. "Miracle" or "Miracle (2 BU)". */
+  replacement?: string | null;
 }
 
 interface ShortageNoticeProps {
@@ -66,8 +68,9 @@ export default function ShortageNotice({
 
               <Text style={styles.paragraph}>
                 Hello {chefName}, a few items on your <strong>{restaurantName}</strong> order
-                couldn&apos;t be fulfilled in full. Details below — all other items will arrive
-                as requested.
+                couldn&apos;t be fulfilled in full. Details below — where we had a close match
+                we sent a substitute, noted under the item. All other items will arrive as
+                requested.
               </Text>
 
               <table cellPadding="0" cellSpacing="0" border={0} style={{ width: "100%", borderCollapse: "collapse" as const, margin: "20px 0" }}>
@@ -79,6 +82,11 @@ export default function ShortageNotice({
                         <Text style={{ fontFamily: "inherit", fontSize: "12px", color: colors.textMuted, margin: "4px 0 0" }}>
                           {s.reason}
                         </Text>
+                        {s.replacement && (
+                          <Text style={{ fontFamily: "inherit", fontSize: "12px", fontWeight: 600, color: "#15803D", margin: "4px 0 0" }}>
+                            ↪ Sent instead: {s.replacement}
+                          </Text>
+                        )}
                       </td>
                       <td style={{ padding: "14px 0", borderBottom: i < shortages.length - 1 ? `1px solid ${colors.borderSoft}` : "none", textAlign: "right" as const, whiteSpace: "nowrap" as const }}>
                         <Text style={{ ...styles.itemQty, color: "#B45309" }}>
@@ -95,9 +103,9 @@ export default function ShortageNotice({
 
               <Text style={styles.paragraphMuted}>
                 We do our best to fulfill every order. When the field doesn&apos;t cooperate
-                — pests, weather, timing — we&apos;d rather give you accurate info than
-                substitute without asking. Reply to this email if you&apos;d like a
-                substitute or have questions.
+                — pests, weather, timing — we&apos;ll send the closest match we have on hand
+                and tell you exactly what it is. Reply to this email if a substitute
+                doesn&apos;t work for you or you have any questions.
               </Text>
             </Section>
           </div>

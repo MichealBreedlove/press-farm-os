@@ -46,6 +46,9 @@ export default async function OrderDetailPage({
         quantity_fulfilled,
         is_shorted,
         shortage_reason,
+        replacement_label,
+        replacement_quantity,
+        replacement_unit,
         unit_price_at_order,
         unit_type,
         size_label,
@@ -238,6 +241,17 @@ export default async function OrderDetailPage({
                       {isShorted && oi.shortage_reason && (
                         <p className="text-xs text-pf-master-orange mt-1 italic">
                           {oi.shortage_reason}
+                        </p>
+                      )}
+                      {isShorted && oi.replacement_label && (
+                        <p className="text-xs text-farm-green font-medium mt-1">
+                          ↪ Sent instead: {oi.replacement_label}
+                          {oi.replacement_quantity != null && (
+                            <span className="text-farm-muted font-normal">
+                              {" "}({Number(oi.replacement_quantity)}
+                              {oi.replacement_unit ? ` ${String(oi.replacement_unit).toUpperCase()}` : ""})
+                            </span>
+                          )}
                         </p>
                       )}
                     </div>

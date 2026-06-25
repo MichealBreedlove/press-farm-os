@@ -34,7 +34,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let body: { items: { order_item_id: string; quantity_fulfilled: number; shortage_reason: string | null; clear?: boolean }[] };
+  let body: {
+    items: {
+      order_item_id: string;
+      quantity_fulfilled: number;
+      shortage_reason: string | null;
+      clear?: boolean;
+      // Substitution — what was sent in place of this shorted line. All fields
+      // optional; pass `replacement: null` (or omit) to leave/clear it.
+      replacement?: {
+        item_id?: string | null;
+        label?: string | null;
+        quantity?: number | null;
+        unit?: string | null;
+      } | null;
+    }[];
+  };
   try {
     body = await request.json();
   } catch {
@@ -73,22 +88,39 @@ export async function PATCH(
   );
 
   // Track per-line outcome (marked vs cleared) for the audit trail below.
-  const lineOutcome = new Map<string, { cleared: boolean; reason: string | null }>();
+  const lineOutcome = new Map<string, { cleared: boolean; reason: string | null; replacementLabel: string | null }>();
 
   // Update each order item — auto-clear shortage if fulfilled >= requested or `clear` flag set
   const updates = await Promise.all(
-    items.map(({ order_item_id, quantity_fulfilled, shortage_reason, clear }) => {
+    items.map(({ order_item_id, quantity_fulfilled, shortage_reason, clear, replacement }) => {
       const requested = itemQtyMap.get(order_item_id) ?? Infinity;
       const shouldClear = clear || quantity_fulfilled >= requested;
+
+      // Resolve the substitution. Clearing a shortage clears the replacement
+      // too — a fulfilled line has nothing to substitute. The label is the
+      // chef-facing name; if a replacement item_id is given without an explicit
+      // label the caller is expected to also send the label (the UI does).
+      const rawLabel = replacement?.label?.trim() || null;
+      const hasReplacement = !shouldClear && Boolean(replacement?.item_id || rawLabel);
+      const replacementLabel = hasReplacement ? rawLabel : null;
+
       lineOutcome.set(order_item_id, {
         cleared: shouldClear,
         reason: shouldClear ? null : shortage_reason,
+        replacementLabel,
       });
       return (adminClient.from("order_items") as any)
         .update({
           is_shorted: !shouldClear,
           quantity_fulfilled: shouldClear ? requested : quantity_fulfilled,
           shortage_reason: shouldClear ? null : shortage_reason,
+          replacement_item_id: hasReplacement ? (replacement?.item_id ?? null) : null,
+          replacement_label: replacementLabel,
+          replacement_quantity:
+            hasReplacement && Number.isFinite(replacement?.quantity as number)
+              ? replacement?.quantity
+              : null,
+          replacement_unit: hasReplacement ? (replacement?.unit?.trim() || null) : null,
         })
         .eq("id", order_item_id)
         .eq("order_id", orderId);
@@ -115,6 +147,9 @@ export async function PATCH(
         quantity_fulfilled,
         is_shorted,
         shortage_reason,
+        replacement_label,
+        replacement_quantity,
+        replacement_unit,
         availability_item:availability_items(
           item:items(name, unit_type)
         )
@@ -140,12 +175,24 @@ export async function PATCH(
           const item = oi.availability_item?.item;
           // unit_type may be comma-separated; surface the first as the email's display unit
           const unit = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
+          // Substitution copy for the chef: "Miracle" or "Miracle (2 BU)".
+          const replacementLabel = (oi.replacement_label ?? "").trim();
+          let replacement: string | null = null;
+          if (replacementLabel) {
+            const rq = oi.replacement_quantity;
+            const ru = String(oi.replacement_unit ?? "").trim();
+            replacement =
+              rq != null && Number.isFinite(Number(rq))
+                ? `${replacementLabel} (${Number(rq)}${ru ? ` ${ru.toUpperCase()}` : ""})`
+                : replacementLabel;
+          }
           return {
             itemName: item?.name ?? "Unknown item",
             requestedQty: oi.quantity_requested,
             fulfilledQty: oi.quantity_fulfilled ?? 0,
             unit,
             reason: oi.shortage_reason ?? "",
+            replacement,
           };
         });
 
@@ -185,6 +232,7 @@ export async function PATCH(
           detail: {
             item: itemNameById.get(orderItemId) ?? "Unknown item",
             reason: outcome.reason,
+            ...(outcome.replacementLabel ? { replacement: outcome.replacementLabel } : {}),
           },
         }),
       ),

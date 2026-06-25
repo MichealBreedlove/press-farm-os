@@ -32,11 +32,11 @@ export async function POST(
   const { orderId } = await params;
   if (!orderId) return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
 
-  let body: { item_id: string; quantity: number; unit: string; unit_price?: number };
+  let body: { item_id: string; quantity: number; unit: string; unit_price?: number; bonus_note?: string | null };
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
 
-  const { item_id, quantity, unit, unit_price } = body;
+  const { item_id, quantity, unit, unit_price, bonus_note } = body;
   if (!item_id) return NextResponse.json({ error: "item_id required" }, { status: 400 });
   if (!Number.isFinite(quantity) || quantity <= 0) {
     return NextResponse.json({ error: "quantity must be > 0" }, { status: 400 });
@@ -101,7 +101,11 @@ export async function POST(
   }
 
   // 4. Insert the delivery_item — total_value is auto-recomputed via the
-  //    update_delivery_total trigger, line_total is a generated column
+  //    update_delivery_total trigger, line_total is a generated column.
+  //    is_bonus is set so the line is an explicit, durable "extra" — the
+  //    orders page surfaces extras by this flag rather than the old (fragile)
+  //    "item isn't on the order" heuristic, which silently hid any bonus of
+  //    something the chef had also ordered.
   const { data: line, error: lineErr } = await (admin as any)
     .from("delivery_items")
     .insert({
@@ -110,6 +114,8 @@ export async function POST(
       quantity,
       unit,
       unit_price: resolvedPrice,
+      is_bonus: true,
+      bonus_note: bonus_note?.trim() || null,
     })
     .select("id, quantity, unit, unit_price, line_total")
     .single();
