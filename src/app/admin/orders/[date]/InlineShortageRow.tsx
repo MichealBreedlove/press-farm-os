@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, X } from "lucide-react";
+import { AlertTriangle, Check, X, Repeat } from "lucide-react";
 import { formatQty } from "@/lib/utils";
 import { UNIT_LABELS } from "@/lib/constants";
 
@@ -23,17 +23,31 @@ interface OrderItemForRow {
   shortageReason: string | null;
   /** ISO timestamp when admin marked the line picked; null = not yet. */
   pickedAt?: string | null;
+  /** Substitution — what was sent in place of this shorted line, if any. */
+  replacementItemId?: string | null;
+  replacementLabel?: string | null;
+  replacementQuantity?: number | null;
+  replacementUnit?: string | null;
+}
+
+/** Lightweight catalog entry for the replacement picker. */
+export interface ReplacementOption {
+  id: string;
+  name: string;
+  unit_type: string;
 }
 
 interface Props {
   orderId: string;
   orderItem: OrderItemForRow;
   canEdit: boolean;
+  /** Full non-archived catalog so admin can pick a substitute for a shorted line. */
+  catalogItems: ReplacementOption[];
 }
 
 const QUICK_REASONS = ["Pest damage", "Weather", "Rotation gap", "Sold out", "Bolted"];
 
-export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
+export function InlineShortageRow({ orderId, orderItem, canEdit, catalogItems }: Props) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,6 +56,40 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
     String(orderItem.isShorted ? (orderItem.quantityFulfilled ?? 0) : orderItem.quantityRequested)
   );
   const [reason, setReason] = useState(orderItem.shortageReason ?? "");
+  // Substitution state — what was sent instead of this shorted item.
+  const [replItemId, setReplItemId] = useState<string | null>(orderItem.replacementItemId ?? null);
+  const [replLabel, setReplLabel] = useState(orderItem.replacementLabel ?? "");
+  const [replUnit, setReplUnit] = useState(orderItem.replacementUnit ?? "");
+  const [replQty, setReplQty] = useState(
+    orderItem.replacementQuantity != null ? String(orderItem.replacementQuantity) : ""
+  );
+  const [replSearch, setReplSearch] = useState("");
+
+  const replMatches = useMemo(() => {
+    const q = replSearch.toLowerCase().trim();
+    if (!q) return [];
+    return catalogItems
+      .filter((i) => i.name.toLowerCase().includes(q) && i.id !== replItemId)
+      .slice(0, 8);
+  }, [replSearch, catalogItems, replItemId]);
+
+  function pickReplacement(item: ReplacementOption) {
+    setReplItemId(item.id);
+    setReplLabel(item.name);
+    // Default the unit to the item's first declared container so the chef
+    // sees "Miracle (2 BU)" rather than a bare number.
+    const firstUnit = item.unit_type.split(",").map((u) => u.trim()).filter(Boolean)[0];
+    setReplUnit(firstUnit ?? "");
+    setReplSearch("");
+  }
+
+  function clearReplacement() {
+    setReplItemId(null);
+    setReplLabel("");
+    setReplUnit("");
+    setReplQty("");
+    setReplSearch("");
+  }
   // Optimistic local state for the pick checkbox so the tap feels
   // instant while the API round-trip happens. Reverts on error.
   const [pickedLocal, setPickedLocal] = useState<boolean>(Boolean(orderItem.pickedAt));
@@ -88,6 +136,16 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
               order_item_id: orderItem.id,
               quantity_fulfilled: opts.fulfilled,
               shortage_reason: opts.reason || "Supply limitation",
+              replacement: replLabel.trim()
+                ? {
+                    item_id: replItemId,
+                    label: replLabel.trim(),
+                    quantity: replQty.trim() && isFinite(parseFloat(replQty))
+                      ? parseFloat(replQty)
+                      : null,
+                    unit: replUnit.trim() || null,
+                  }
+                : null,
             },
           ],
         }),
@@ -125,6 +183,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
         }),
       });
       if (res.ok) {
+        clearReplacement();
         setExpanded(false);
         router.refresh();
       } else {
@@ -263,6 +322,18 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
           {isShorted && orderItem.shortageReason && !expanded && (
             <p className="text-xs text-orange-600 mt-0.5">{orderItem.shortageReason}</p>
           )}
+          {isShorted && orderItem.replacementLabel && !expanded && (
+            <p className="text-xs text-farm-green font-medium mt-0.5 flex items-center gap-1">
+              <Repeat className="w-3 h-3 flex-shrink-0" />
+              Sent instead: {orderItem.replacementLabel}
+              {orderItem.replacementQuantity != null && (
+                <span className="text-farm-muted font-normal">
+                  ({formatQty(orderItem.replacementQuantity)}
+                  {orderItem.replacementUnit ? ` ${orderItem.replacementUnit.toUpperCase()}` : ""})
+                </span>
+              )}
+            </p>
+          )}
         </div>
         <div className="text-right flex-shrink-0">
           {/* Container chip — distinct visual so the harvester can scan
@@ -350,6 +421,75 @@ export function InlineShortageRow({ orderId, orderItem, canEdit }: Props) {
             placeholder="Or type a reason..."
             className="w-full h-10 px-3 border border-orange-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-400 bg-white"
           />
+
+          {/* Substitution — what was sent instead. The chef's shortage email
+              surfaces this so they know what landed in place of the shorted
+              item. Optional: leave blank for a plain shortage. */}
+          <div className="pt-1 border-t border-orange-200/60">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Repeat className="w-3.5 h-3.5 text-farm-green" />
+              <span className="text-xs font-medium text-farm-dark">Replaced with</span>
+              <span className="text-[10px] text-farm-muted">optional</span>
+            </div>
+
+            {replLabel ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-farm-green/8 border border-farm-green/25 rounded-lg px-3 py-2">
+                  <span className="text-sm font-medium text-farm-dark flex-1 truncate">{replLabel}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    inputMode="decimal"
+                    value={replQty}
+                    onChange={(e) => setReplQty(e.target.value)}
+                    placeholder="Qty"
+                    className="w-14 h-8 px-2 border border-farm-green/30 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-farm-green"
+                  />
+                  {replUnit && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-farm-green">
+                      {replUnit}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={clearReplacement}
+                  className="min-h-[36px] min-w-[36px] flex items-center justify-center text-farm-muted hover:text-red-600"
+                  aria-label="Remove replacement"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="search"
+                  value={replSearch}
+                  onChange={(e) => setReplSearch(e.target.value)}
+                  placeholder="Search a substitute item…"
+                  className="w-full h-10 px-3 border border-farm-green/30 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-farm-green bg-white"
+                />
+                {replMatches.length > 0 && (
+                  <div className="absolute z-10 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-lg border border-farm-dark/10 bg-white shadow-lg divide-y divide-farm-dark/5">
+                    {replMatches.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => pickReplacement(item)}
+                        className="w-full px-3 py-2 text-left text-sm text-farm-dark hover:bg-farm-cream/50 min-h-[40px] flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">{item.name}</span>
+                        <span className="text-[10px] text-farm-muted uppercase tracking-wider flex-shrink-0">
+                          {item.unit_type.split(",").map((u) => u.trim().toUpperCase()).join(" · ")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {error && (
             <p className="text-xs text-red-600">{error}</p>

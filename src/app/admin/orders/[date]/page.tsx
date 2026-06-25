@@ -55,6 +55,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
         order_items(
           id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, color_key, menu_section, picked_at,
+          replacement_item_id, replacement_label, replacement_quantity, replacement_unit,
           availability_item:availability_items(
             id,
             item:items(id, name, category, unit_type)
@@ -77,7 +78,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       .select(`
         id, restaurant_id, delivery_date,
         delivery_items (
-          id, item_id, quantity, unit, unit_price,
+          id, item_id, quantity, unit, unit_price, is_bonus,
           items ( id, name, unit_type )
         )
       `)
@@ -117,8 +118,13 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
       (order.order_items ?? []).map((oi: any) => oi.availability_item?.item?.id).filter(Boolean),
     );
     const delivery = (deliveriesRaw ?? []).find((d: any) => d.restaurant_id === order.restaurant?.id);
+    // An "extra" is a delivery line flagged is_bonus (the explicit signal set
+    // by "Add Extra Item"). We also keep the legacy heuristic — a delivered
+    // item that isn't on the chef's order — so extras added before is_bonus
+    // was wired still surface. A bonus of an already-ordered item now shows
+    // because is_bonus catches it (the heuristic alone never would).
     const extras = (delivery?.delivery_items ?? [])
-      .filter((di: any) => di.items && !orderedItemIds.has(di.items.id))
+      .filter((di: any) => di.items && (di.is_bonus || !orderedItemIds.has(di.items.id)))
       .map((di: any) => ({
         id: di.id,
         itemName: di.items.name,
@@ -476,6 +482,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                             key={oi.id}
                             orderId={order.id}
                             canEdit={order.status !== "fulfilled" && order.status !== "cancelled"}
+                            catalogItems={catalogItems}
                             orderItem={{
                               id: oi.id,
                               itemName: item?.name ?? "Unknown item",
@@ -499,6 +506,10 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                               isShorted: oi.is_shorted,
                               shortageReason: oi.shortage_reason,
                               pickedAt: oi.picked_at ?? null,
+                              replacementItemId: oi.replacement_item_id ?? null,
+                              replacementLabel: oi.replacement_label ?? null,
+                              replacementQuantity: oi.replacement_quantity ?? null,
+                              replacementUnit: oi.replacement_unit ?? null,
                             }}
                           />
                         );

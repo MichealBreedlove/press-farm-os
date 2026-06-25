@@ -62,6 +62,8 @@ export interface ShortageEmailParams {
     fulfilledQty: number;
     unit: string;
     reason: string;
+    /** What was sent in place of this item, e.g. "Miracle" or "Miracle (2 BU)". */
+    replacement?: string | null;
   }[];
 }
 
@@ -217,7 +219,8 @@ export async function sendShortageEmail(params: ShortageEmailParams): Promise<vo
     `Shortages:`,
     ...shortages.map(
       (s) =>
-        `  ${s.itemName} — requested: ${s.requestedQty} ${s.unit}, fulfilled: ${s.fulfilledQty} ${s.unit}, reason: ${s.reason}`
+        `  ${s.itemName} — requested: ${s.requestedQty} ${s.unit}, fulfilled: ${s.fulfilledQty} ${s.unit}, reason: ${s.reason}` +
+        (s.replacement ? `, replaced with: ${s.replacement}` : "")
     ),
   ].join("\n");
 
