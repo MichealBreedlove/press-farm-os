@@ -64,10 +64,16 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
       {/* ── Row 1: KPI strip ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         <KpiCard
-          label={latest ? `FY${latest.year} Revenue` : "Revenue"}
-          value={latest ? fmtK(latest.revenue) : "—"}
-          sub={data.yoyGrowth !== null ? `${data.yoyGrowth >= 0 ? "+" : ""}${data.yoyGrowth.toFixed(0)}% YoY` : undefined}
+          label={latest ? `FY${latest.year} Delivery Rev` : "Delivery Rev"}
+          value={latest ? fmtK(latest.delivery_revenue) : "—"}
+          sub={data.yoyGrowth !== null ? `${data.yoyGrowth >= 0 ? "+" : ""}${data.yoyGrowth.toFixed(0)}% YoY` : "chef orders"}
           subColor={data.yoyGrowth && data.yoyGrowth >= 0 ? "text-green-600" : "text-red-500"}
+        />
+        <KpiCard
+          label="Production Value"
+          value={latest ? fmtK(latest.production_total) : "—"}
+          sub="self-harvest"
+          info
         />
         <KpiCard
           label="Net Income"
@@ -81,12 +87,6 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
           sub={productionPerAcre >= 100_000 ? "Above $100K target" : "Below $100K target"}
           subColor={productionPerAcre >= 100_000 ? "text-green-600" : "text-amber-600"}
           green
-        />
-        <KpiCard
-          label="Most Ordered"
-          value={data.topItemName}
-          sub="by quantity"
-          isText
         />
       </div>
 
@@ -110,25 +110,37 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
 }
 
 // ── KPI card ────────────────────────────────────────
-function KpiCard({ label, value, sub, subColor, dark, green, isText }: {
+function KpiCard({ label, value, sub, subColor, dark, green, info, isText }: {
   label: string; value: string; sub?: string; subColor?: string;
-  dark?: boolean; green?: boolean; isText?: boolean;
+  dark?: boolean; green?: boolean; info?: boolean; isText?: boolean;
 }) {
-  const bg = dark ? "bg-[#212326] text-white" : green ? "bg-farm-green text-white" : "bg-white border border-farm-dark/5";
+  const bg = dark
+    ? "bg-[#212326] text-white"
+    : green
+      ? "bg-farm-green text-white"
+      : info
+        ? "bg-blue-50 border border-blue-700/15"
+        : "bg-white border border-farm-dark/5";
+  const labelColor = dark ? "text-farm-muted" : green ? "text-green-200" : info ? "text-blue-700/70" : "text-farm-muted";
+  const valueColor = dark ? "text-[#F0B530]" : green ? "text-white" : info ? "text-blue-700" : "text-farm-dark";
   return (
     <div className={`rounded-lg px-3 py-2.5 ${bg} print:py-1.5 print:px-2`}>
-      <p className={`text-[9px] uppercase tracking-wider ${dark ? "text-farm-muted" : green ? "text-green-200" : "text-farm-muted"} print:text-[7px]`}>{label}</p>
-      <p className={`${isText ? "text-xs" : "text-lg"} font-bold leading-tight mt-0.5 ${dark ? "text-[#F0B530]" : green ? "text-white" : "text-farm-dark"} print:text-sm`}>{value}</p>
-      {sub && <p className={`text-[9px] mt-0.5 ${subColor ?? (dark ? "text-farm-muted" : "text-farm-muted")} print:text-[7px]`}>{sub}</p>}
+      <p className={`text-[9px] uppercase tracking-wider ${labelColor} print:text-[7px]`}>{label}</p>
+      <p className={`${isText ? "text-xs" : "text-lg"} font-bold leading-tight mt-0.5 ${valueColor} print:text-sm`}>{value}</p>
+      {sub && <p className={`text-[9px] mt-0.5 ${subColor ?? (info ? "text-blue-700/60" : "text-farm-muted")} print:text-[7px]`}>{sub}</p>}
     </div>
   );
 }
 
 // ── Compact P&L table ───────────────────────────────
 function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, ExecutiveData["annualSummaries"][0]> }) {
-  type Row = { label: string; key: keyof ExecutiveData["annualSummaries"][0]; isMoney: boolean; isPct: boolean; bold?: boolean; dark?: boolean };
+  type Row = { label: string; key: keyof ExecutiveData["annualSummaries"][0]; isMoney: boolean; isPct: boolean; bold?: boolean; dark?: boolean; info?: boolean; indent?: boolean };
   const rows: Row[] = [
-    { label: "Revenue", key: "revenue", isMoney: true, isPct: false, bold: true },
+    { label: "Delivery Revenue", key: "delivery_revenue", isMoney: true, isPct: false },
+    { label: "＋ Microgreens", key: "production_micro", isMoney: true, isPct: false, info: true, indent: true },
+    { label: "＋ Planter Boxes", key: "production_boxes", isMoney: true, isPct: false, info: true, indent: true },
+    { label: "Production Value", key: "production_total", isMoney: true, isPct: false, info: true, bold: true },
+    { label: "Total Revenue", key: "revenue", isMoney: true, isPct: false, bold: true },
     { label: "Expenses (COGS)", key: "expenses", isMoney: true, isPct: false },
     { label: "Gross Profit", key: "gross_profit", isMoney: true, isPct: false, bold: true },
     { label: "Gross Margin", key: "gross_margin", isMoney: false, isPct: true },
@@ -159,10 +171,10 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
         <div
           key={r.label}
           className={`grid px-3 py-1 border-b border-gray-50 last:border-0 items-center
-            ${r.dark ? "bg-[#212326] text-white" : r.bold ? "bg-green-50/40" : ""}`}
+            ${r.dark ? "bg-[#212326] text-white" : r.info ? "bg-blue-50/40" : r.bold ? "bg-green-50/40" : ""}`}
           style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}
         >
-          <span className={`${r.dark ? "text-farm-muted/60" : "text-farm-muted/90"} ${r.bold ? "font-semibold" : ""}`}>{r.label}</span>
+          <span className={`${r.dark ? "text-farm-muted/60" : r.info ? "text-blue-700/80" : "text-farm-muted/90"} ${r.bold ? "font-semibold" : ""} ${r.indent ? "pl-3" : ""}`}>{r.label}</span>
           {years.map((y) => {
             const s = byYear[y];
             if (!s) return <span key={y} className="text-right text-farm-muted/60">—</span>;
@@ -174,6 +186,7 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
             return (
               <span key={y} className={`text-right font-medium ${
                 r.dark ? (val < 0 ? "text-red-400" : "text-[#F0B530]")
+                : r.info ? "text-blue-700"
                 : isExp ? "text-red-600" : r.bold ? "text-green-700" : "text-farm-dark"
               }`}>
                 {isExp ? fmt(-val) : fmt(val)}

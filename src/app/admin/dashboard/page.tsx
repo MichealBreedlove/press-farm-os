@@ -145,6 +145,7 @@ export default async function AdminDashboardPage() {
       cards: [
         { href: "/admin/items", title: "Items", description: "Catalog & photos", flower: "nasturtium" },
         { href: "/admin/crop-plan", title: "Crop Plan", description: "Seasonal schedule", flower: "squash-bud" },
+        { href: "/admin/planter-boxes", title: "Planter Boxes", description: "Self-harvest production value", flower: "rosemary" },
         ...(SEEDS_ENABLED
           ? [{ href: "/admin/seeds", title: "Seeds", description: "On-hand inventory", flower: "calendula" }]
           : []),

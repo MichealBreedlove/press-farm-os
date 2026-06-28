@@ -2720,6 +2720,9 @@ export interface MicrogreenCrop {
   yield_per_tray: Record<string, number>;
   is_continuous_harvest: boolean;
   productive_life_days: number | null;
+  // Migration 069: flat production value per tray, accrued evenly over
+  // productive_life_days for the separate production-value report. NULL = untracked.
+  value_per_tray?: number | null;
   growing_medium: string[];
   preferred_medium: string | null;
   tray_size: string;
