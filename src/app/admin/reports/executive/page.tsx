@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { PrintButton } from "@/components/shared/PrintButton";
 import ExecutiveDashboard from "./ExecutiveDashboard";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { getProductionValue, byMonthToByYear } from "@/lib/production-value/server";
 
 const FARMER_PAY_PER_QUARTER = 12000;
 const FARM_ACRES = 0.5;
@@ -19,6 +20,13 @@ function calcFarmerPay(year: string, quartersWithData: Set<string>): number {
 
 export type AnnualSummary = {
   year: string;
+  /** Chef order/delivery revenue only (the clean per-chef number). */
+  delivery_revenue: number;
+  /** Self-harvest production value (migration 069), kept out of deliveries. */
+  production_micro: number;
+  production_boxes: number;
+  production_total: number;
+  /** Combined top-line = delivery_revenue + production_total. */
   revenue: number;
   expenses: number;
   gross_profit: number;
@@ -81,7 +89,7 @@ export default async function AdminExecutiveReportsPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: deliveries }, { data: expenses }, { data: itemRevenueRows }] =
+  const [{ data: deliveries }, { data: expenses }, { data: itemRevenueRows }, production] =
     await Promise.all([
       admin
         .from("deliveries")
@@ -96,7 +104,14 @@ export default async function AdminExecutiveReportsPage() {
       // Per-item revenue/qty, pre-aggregated in SQL (migration 065) — one row
       // per item instead of the full delivery_items history.
       admin.from("report_item_revenue").select("*"),
+
+      // Production value (migration 069) — self-harvest, separate from deliveries.
+      getProductionValue(),
     ]);
+
+  // Production value rolled up per year (microgreens + planter boxes).
+  const prodMicroByYear = byMonthToByYear(production.microByMonth);
+  const prodBoxByYear = byMonthToByYear(production.boxByMonth);
 
   // ---- Monthly revenue map ----
   const monthRevMap: Record<
@@ -146,11 +161,22 @@ export default async function AdminExecutiveReportsPage() {
   }
 
   const allYears = Array.from(
-    new Set([...Object.keys(yearRevMap), ...Object.keys(yearExpMap)])
+    new Set([
+      ...Object.keys(yearRevMap),
+      ...Object.keys(yearExpMap),
+      ...Object.keys(prodMicroByYear),
+      ...Object.keys(prodBoxByYear),
+    ])
   ).sort();
 
   const annualSummaries: AnnualSummary[] = allYears.map((year) => {
-    const revenue = yearRevMap[year] ?? 0;
+    const delivery_revenue = yearRevMap[year] ?? 0;
+    const production_micro = prodMicroByYear[year] ?? 0;
+    const production_boxes = prodBoxByYear[year] ?? 0;
+    const production_total = production_micro + production_boxes;
+    // Total revenue rolls production value into the top line (clearly broken
+    // out below); per-chef/delivery reports keep using delivery_revenue.
+    const revenue = delivery_revenue + production_total;
     const expenses = yearExpMap[year] ?? 0;
     const gross_profit = revenue - expenses;
     const farmer_pay = calcFarmerPay(year, quartersWithData);
@@ -161,6 +187,10 @@ export default async function AdminExecutiveReportsPage() {
     const net_margin = revenue > 0 ? net_income / revenue : 0;
     return {
       year,
+      delivery_revenue,
+      production_micro,
+      production_boxes,
+      production_total,
       revenue,
       expenses,
       gross_profit,

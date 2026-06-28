@@ -34,6 +34,7 @@ export function CropForm({ initial, items }: Props) {
     yield_per_tray: (initial?.yield_per_tray ?? {}) as Record<string, number>,
     is_continuous_harvest: initial?.is_continuous_harvest ?? false,
     productive_life_days: initial?.productive_life_days ?? null,
+    value_per_tray: initial?.value_per_tray ?? null,
     growing_medium: initial?.growing_medium ?? ["soil"],
     preferred_medium: initial?.preferred_medium ?? "soil",
     tray_size: initial?.tray_size ?? "10x20",
@@ -194,12 +195,26 @@ export function CropForm({ initial, items }: Props) {
           <span>Continuous harvest (nasturtium / wheatgrass second-cut)</span>
         </label>
         {form.is_continuous_harvest && (
-          <label className="block">
-            <span className="block text-sm">Productive life (days)</span>
-            <input type="number" className="input-field"
-              value={form.productive_life_days ?? ""}
-              onChange={(e) => update("productive_life_days", Number(e.target.value) || null)} />
-          </label>
+          <>
+            <label className="block">
+              <span className="block text-sm">Productive life (days)</span>
+              <input type="number" className="input-field"
+                value={form.productive_life_days ?? ""}
+                onChange={(e) => update("productive_life_days", Number(e.target.value) || null)} />
+            </label>
+            <label className="block">
+              <span className="block text-sm">Production value per tray ($)</span>
+              <input type="number" min="0" step="1" className="input-field"
+                value={form.value_per_tray ?? ""}
+                onChange={(e) => update("value_per_tray", Number(e.target.value) || null)}
+                placeholder="e.g. 1000" />
+              <p className="text-xs text-farm-muted mt-1">
+                Total farm value of one tray, accrued evenly across the productive life
+                above and split 75/25 Press/Under-Study. Leave blank to exclude from the
+                production-value report. Kept separate from chef order revenue.
+              </p>
+            </label>
+          </>
         )}
       </fieldset>
 

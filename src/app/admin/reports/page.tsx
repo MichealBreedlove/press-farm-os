@@ -156,6 +156,19 @@ export default async function AdminReportsPage() {
         </a>
 
         <a
+          href="/admin/reports/production-value"
+          className="card-interactive flex items-center justify-between px-4 py-4"
+        >
+          <div>
+            <p className="text-sm font-semibold text-farm-dark">Production Value</p>
+            <p className="text-xs text-farm-muted mt-0.5">Self-harvest value · microgreens + planter boxes · separate from orders</p>
+          </div>
+          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+
+        <a
           href="/admin/reports/labor-efficiency"
           className="card-interactive flex items-center justify-between px-4 py-4"
         >
