@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveOrderUnitPrice } from "@/lib/pricing";
 
 /**
  * GET /api/deliveries?month=2026-04
@@ -104,6 +105,35 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Enforce: no delivery line is ever saved at $0. A price of 0/blank — most
+  // often a bonus/extra line whose price field was cleared — is backfilled from
+  // the item's catalog price (unit_prices[unit] → default_price). Bonus items
+  // in particular must carry their real value, not $0, so they're tracked
+  // rather than silently dropped from revenue.
+  const needsPrice = items.filter((it) => !(it.unit_price > 0));
+  if (needsPrice.length > 0) {
+    const ids = [...new Set(needsPrice.map((it) => it.item_id))];
+    const { data: priceRows } = await (admin as any)
+      .from("items")
+      .select("id, unit_prices, default_price")
+      .in("id", ids);
+    const priceMap = new Map<string, any>(
+      ((priceRows ?? []) as any[]).map((r) => [r.id as string, r]),
+    );
+    for (const it of items) {
+      if (it.unit_price > 0) continue;
+      const row = priceMap.get(it.item_id);
+      if (!row) continue;
+      it.unit_price = resolveOrderUnitPrice(
+        {
+          unitPrices: (row.unit_prices ?? {}) as Record<string, number>,
+          defaultPrice: row.default_price != null ? Number(row.default_price) : null,
+        },
+        it.unit,
+      );
+    }
+  }
 
   // Upsert delivery record
   const { data: existing } = await admin
