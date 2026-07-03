@@ -1,0 +1,23 @@
+# Self-host / prod-parity run of Press Farm OS against the real Supabase
+# project. Usage:
+#   cp .env.example .env.local   # fill in real values
+#   docker compose up --build
+#
+# Cron jobs (vercel.json) are NOT run by this compose file — see
+# deploy/k8s/cronjobs.yaml for the self-host equivalent, or drive the
+# /api/cron/* + report endpoints from any external scheduler with
+# `Authorization: Bearer $CRON_SECRET`.
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    env_file:
+      - .env.local
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

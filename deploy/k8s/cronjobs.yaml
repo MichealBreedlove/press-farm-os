@@ -1,0 +1,274 @@
+# Self-host equivalent of vercel.json crons. Each job curls the same
+# endpoint Vercel Cron would hit, authenticated with CRON_SECRET (the
+# cron/report routes verify `Authorization: Bearer $CRON_SECRET`).
+#
+# Schedules mirror vercel.json exactly (UTC). If you edit one, edit both.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-weekly-digest
+spec:
+  schedule: "0 9 * * 1"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: /api/reports/weekly-digest
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-receiver-notify
+spec:
+  schedule: "0 14,15 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: /api/cron/receiver-notify
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-tasks-regenerate
+spec:
+  schedule: "0 9 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: /api/cron/tasks-regenerate
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-forecast-email
+spec:
+  schedule: "0 16 * * 3"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: /api/availability/forecast-email
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-partner-report-monthly
+spec:
+  schedule: "0 9 1 * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: "/api/reports/partner-report?type=monthly"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-partner-report-q1
+spec:
+  schedule: "0 23 31 3 *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: "/api/reports/partner-report?type=q1"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-partner-report-q2
+spec:
+  schedule: "0 23 30 6 *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: "/api/reports/partner-report?type=q2"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-partner-report-q3
+spec:
+  schedule: "0 23 30 9 *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: "/api/reports/partner-report?type=q3"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pf-partner-report-q4
+spec:
+  schedule: "0 23 31 12 *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: curl
+              image: curlimages/curl:8.10.1
+              envFrom:
+                - secretRef:
+                    name: press-farm-env
+              command: ["/bin/sh", "-c"]
+              args:
+                - >
+                  curl -fsS --max-time 120
+                  -H "Authorization: Bearer $CRON_SECRET"
+                  "http://press-farm-os$CRON_PATH"
+              env:
+                - name: CRON_PATH
+                  value: "/api/reports/partner-report?type=q4"

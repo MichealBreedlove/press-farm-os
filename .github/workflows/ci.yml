@@ -1,0 +1,84 @@
+# CI gate for Press Farm OS.
+#
+# Vercel auto-deploys every push to main, so main must never receive a
+# commit that fails typecheck/lint/tests/build. This workflow runs on PRs
+# (the gate) and on main pushes (the alarm — if this goes red, prod is
+# already building the same commit; fix forward immediately).
+#
+# The build step uses placeholder Supabase/Resend env: every data-fetching
+# page goes through cookies() and is rendered dynamically, so `next build`
+# never contacts the database. Anything that breaks that assumption should
+# fail here first, not on Vercel.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Placeholders — CI never talks to real services. Vercel injects the
+      # real values at deploy time from its own environment settings.
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-key
+      RESEND_API_KEY: re_ci_placeholder
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx next lint
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build
+
+  docker:
+    # Keeps the self-host escape hatch honest: the image must always build.
+    # Runs only when the container files change — day-to-day PRs skip it.
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect container-relevant changes
+        id: changed
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep -qE '^(Dockerfile|\.dockerignore|docker-compose\.yml|next\.config\.js|package(-lock)?\.json)$'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build image
+        if: steps.changed.outputs.run == 'true'
+        run: docker build -t press-farm-os:ci .

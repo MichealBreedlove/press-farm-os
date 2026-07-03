@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: press-farm-os
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m   # photo uploads
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [pressfarm.io]
+      secretName: pressfarm-io-tls
+  rules:
+    - host: pressfarm.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: press-farm-os
+                port:
+                  number: 80
