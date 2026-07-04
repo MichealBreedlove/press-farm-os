@@ -24,7 +24,7 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — 183 tests across 24 files in top-level `tests/` |
+| Tests | Vitest — 233 tests across 29 files in top-level `tests/` |
 | Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
@@ -99,21 +99,21 @@ src/
     constants.ts                 # Categories, units, sizes, statuses (single source of truth)
     utils.ts                     # Date / currency formatting
   types/
-    database.ts                  # DB types — covers ~18 of ~34 tables; the rest use `(supabase as any)` casts
+    database.ts                  # DB types — regenerated; covers 37 tables + 4 views. Remaining `(as any)` casts are legacy, not required
     index.ts                     # App-level types + enriched join shapes
-tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 183 tests
+tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 233 tests
 scripts/
   optimize-images.mjs            # Idempotent brand-image downsizer (npm run optimize:images)
   optimize-svg-logos.mjs         # Shrinks the base64 rasters EMBEDDED in logo SVGs (idempotent)
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 064 (67 files; see table — numbers 044/047/062 each used twice)
+supabase/migrations/             # 001 → 071 (75 files; see table — 044/047/062 used twice, 069 three times)
 ```
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **71 migration files, numbered 001 → 068** — numbers **044, 047, and 062 are each used by two different files** that both shipped (historical collisions; don't "fix" them). Last applied in prod: **068** (064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP). **Next migration number is 069.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **75 migration files, numbered 001 → 071** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions). **Next migration number is 072.** Read latest first when scoping work.
 
 > **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
@@ -190,6 +190,11 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 066 | submit_order_rpc | `submit_order_with_items()` — atomic order submission (order upsert + item replace/merge in one transaction, SECURITY INVOKER so chef RLS applies; raises `ORDER_LOCKED` if status moved past chef-editable). POST `/api/orders` calls it via `.rpc()` |
 | 067 | order_idempotency_and_submitted_at | Adds `orders.last_submission_token` + a `p_idempotency_key` arg to `submit_order_with_items()` (drops the 8-arg 066 overload): a retry carrying the same token is a no-op, so a lost-response retry can't re-merge and double an order. Also fixes 066 clobbering `submitted_at` on every edit — `ON CONFLICT` now `COALESCE`s it so the original submission time survives (edits live in `last_edited_*`) |
 | 068 | submit_order_ordering_open_guard | `submit_order_with_items()` re-checks `delivery_dates.ordering_open` inside the transaction (raises `ORDERING_CLOSED`), closing the TOCTOU window where an admin closing the date between the route's JS pre-check and the write could still let a submission land. Signature unchanged from 067 (CREATE OR REPLACE) |
+| 069 | item_size_prices | `items.size_prices` JSONB — per-SIZE pricing tier, most specific: size_prices[size] → unit_prices[unit] → default_price (collides with the other two 069s) |
+| 069 | order_event_date | `orders.event_date` + `orders.event_name` — Events-team orders carry the event's own date distinct from delivery_date |
+| 069 | production_value | `planter_boxes`, `planter_box_plantings`, `planter_box_activity` + `microgreen_crops.value_per_tray` — self-harvested production value stream, separate from `delivery_items` |
+| 070 | orders_multiple_event_orders_per_date | One-order-per-(restaurant, date) becomes a PARTIAL unique index — Events orders (event_date NOT NULL) may repeat per date; chef orders stay unique |
+| 071 | order_item_substitution | `order_items.replacement_item_id` FK + `replacement_label` / qty / unit — shortage substitution recorded on the shorted line |
 
 ## Auth Model
 
@@ -258,7 +263,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **069**. (044/047/062 each already collide across two files — don't add to those numbers.)
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **072**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers.)
 - The user does NOT have `supabase` CLI linked. Apply migrations via the Supabase MCP (`apply_migration`, project `rxdfjaseilmjvcwamqyk`) when it's available in the session; otherwise present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
@@ -305,7 +310,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - `/admin/foraging-calendar` — seasonal foraging reference.
 - Individual-account order accountability (`order_audit`, migration 058).
 - `/receiver` — destination-side unpack / check-in.
-- **183 Vitest tests** across 24 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, and the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate). (The route-level financial flows — deliveries logging, reports — still have no automated coverage.)
+- **233 Vitest tests** across 29 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, and the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate). (The route-level financial flows — deliveries logging, reports — still have no automated coverage.)
 - Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps).
 
 ## Open Follow-ups (Prioritized)
@@ -314,7 +319,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 2. **"Financial fixes" backlog** — placeholder for any pricing / margin / line-total bugs Micheal surfaces during use. No concrete items currently.
 
 **Audit follow-ups (codebase audit, 2026-06-01):**
-3. **Regenerate `src/types/database.ts`** from the live schema — it covers ~18 of ~34 tables, driving ~580 `(supabase as any)` casts. Pairs with extracting a `requireAdmin()` helper (the auth-check block is duplicated across ~87 routes).
+3. **Remove stale `(supabase as any)` / `(admin as any)` casts** — `database.ts` was regenerated (37 tables + 4 views) but ~248 casts remain, most on tables that ARE typed, silently discarding coverage. Only `planter_box_*` and `pack_inventory` genuinely lack types. Strip casts incrementally with `tsc` as the guard; don't write new ones. (The old requireAdmin-extraction half of this item is done — shared helper in `src/lib/api-auth.ts`, shadow copies removed 2026-07-04.)
 4. ~~Reports full-table JS aggregation~~ — **Largely done.** The big scan (`delivery_items`, 3.7k rows, fastest-growing) is now SQL via the `report_item_revenue` view (migration 065). The residual month/year rollup over `deliveries` (~403) + `farm_expenses` (~132) is intentionally left in JS — tiny bounded tables, and a new view would couple `main`'s auto-deploy to a manual migration for negligible gain. Revisit only if `deliveries` grows into the tens of thousands.
 5. ~~Unbounded list queries~~ — **Done (2026-06-10).** Chef history was already paginated (`.range()`); labor caps at 1000; notes (500) and event-requests (300) now have limits. Items catalog stays unbounded on purpose — it's the full-catalog admin view (~300 rows).
 6. ~~Dead code~~ — **Done (2026-06-14).** The `historicalDeliveryItems` reserved path is removed from `sowPlan` + both callers (dropped two unused `delivery_items` queries). The earlier "orphaned `components/shared/`" list was stale: `PageHeader` / `TopBar` / `status-badge.tsx` / `delivery-date-picker.tsx` were already deleted, and `EmptyState` is still imported in 4 files.
