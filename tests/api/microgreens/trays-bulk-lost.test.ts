@@ -99,9 +99,22 @@ describe("POST /api/microgreens/trays/bulk-lost", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 403 when not admin", async () => {
+  it("returns 401 when unauthenticated", async () => {
     const sb = makeSupabaseMock({});
     sb.auth.getUser = vi.fn(async () => ({ data: { user: null }, error: null })) as any;
+    (createAdminClient as any).mockReturnValue(sb);
+    (createClient as any).mockResolvedValue(sb);
+
+    const req = new Request("http://test/api/microgreens/trays/bulk-lost", {
+      method: "POST",
+      body: JSON.stringify({ tray_ids: ["t1"], lost_reason: "x" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when authenticated but not admin", async () => {
+    const sb = makeSupabaseMock({ profiles: [{ id: "test-admin", role: "chef" }] });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 

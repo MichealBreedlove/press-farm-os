@@ -9,7 +9,7 @@ import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import type { UnitType } from "@/types/database";
-import { resolveUnits, resolveSizes } from "@/lib/order-availability";
+import { resolveUnits, resolveSizes, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey, enumerateOrderKeys } from "@/lib/order-keys";
 
 interface OrderFormProps {
@@ -203,7 +203,7 @@ export function OrderForm({
   const isEventFlagged = (ai: AvailabilityItemWithItem): boolean =>
     Boolean(ai.item.is_event_item);
   const isEventOnly = (ai: AvailabilityItemWithItem): boolean =>
-    isEventFlagged(ai) && ai.item.show_in_regular_menu === false;
+    isEventOnlyItem(ai.item);
 
   const asEventKeyAi = (ai: AvailabilityItemWithItem): AvailabilityItemWithItem =>
     ({ ...ai, id: `${EVENT_MENU_KEY_PREFIX}${ai.id}` });

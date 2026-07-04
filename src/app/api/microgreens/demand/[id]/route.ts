@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if (!profile || profile.role !== "admin") return null;
-  return user;
-}
+import { requireAdmin } from "@/lib/api-auth";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
   const body = await req.json();
   const admin = createAdminClient();
   const { data, error } = await (admin as any)
@@ -27,7 +19,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  if (!(await requireAdmin())) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
   const admin = createAdminClient();
   const { error } = await (admin as any)
     .from("microgreen_demand")

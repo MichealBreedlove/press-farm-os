@@ -1,29 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SEED_STATUSES } from "@/lib/constants";
 
 const VALID_STATUSES = new Set<string>(SEED_STATUSES);
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if ((profile as any)?.role !== "admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user };
-}
 
 /**
  * GET /api/seeds?status=active&item_id=...
  * Returns seeds enriched with item name + on_hand computed column.
  */
 export async function GET(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get("status");
@@ -48,8 +37,8 @@ export async function GET(request: Request) {
  * Body: { item_id, variety, initial_quantity, quantity_unit, packed_for_year?, purchase_date?, supplier?, cost?, status?, notes? }
  */
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); }

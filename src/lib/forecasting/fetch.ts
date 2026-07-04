@@ -5,9 +5,12 @@
  * them. Server-only: uses the service-role admin client (bypasses RLS) the same
  * way /admin/forecast and /admin/crop-plan do.
  *
- * `(supabase as any)` casts are intentional per repo convention — generated
- * types lag the live schema and these tables are queried with the same pattern
- * elsewhere.
+ * NOTE on `(admin as any)` casts: these tables ARE covered by the generated
+ * `src/types/database.ts` now (the old "generated types lag the schema" reason
+ * no longer holds). The remaining casts exist only because the multi-line
+ * embedded-relation SELECT strings defeat supabase-js literal-type inference.
+ * Don't copy this pattern to new code — prefer typed queries and remove casts
+ * here opportunistically (see fetchSeasonalItems for the cast-free shape).
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -222,7 +225,7 @@ export async function fetchHistoricalDeliveries(
  */
 export async function fetchSeasonalItems(): Promise<SeasonalItemRow[]> {
   const admin = createAdminClient();
-  const { data, error } = await (admin as any)
+  const { data, error } = await admin
     .from("items")
     .select("id, name, category, seasonal_months")
     .eq("is_archived", false);
@@ -234,7 +237,7 @@ export async function fetchSeasonalItems(): Promise<SeasonalItemRow[]> {
   if (!data) return [];
 
   return data
-    .map((row: any) => ({
+    .map((row) => ({
       id: row.id,
       name: row.name,
       category: row.category,

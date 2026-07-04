@@ -31,7 +31,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session — don't call getUser() here to avoid security issues
+  // Refresh session AND validate it server-side. getUser() (not getSession())
+  // is deliberate: getSession() trusts the cookie payload without verifying
+  // the JWT against Supabase Auth, so a forged cookie would pass. The cost is
+  // one auth round-trip per matched request.
   const {
     data: { user },
   } = await supabase.auth.getUser();

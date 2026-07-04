@@ -45,9 +45,19 @@ describe("DELETE /api/microgreens/trays/[id]", () => {
     expect(sb._data.microgreen_trays).toHaveLength(1);
   });
 
-  it("returns 403 when not admin", async () => {
+  it("returns 401 when unauthenticated", async () => {
     const sb = makeSupabaseMock({});
     sb.auth.getUser = vi.fn(async () => ({ data: { user: null }, error: null })) as any;
+    (createAdminClient as any).mockReturnValue(sb);
+    (createClient as any).mockResolvedValue(sb);
+
+    const req = new Request("http://test/api/microgreens/trays/t1", { method: "DELETE" });
+    const res = await DELETE(req, { params: { id: "t1" } });
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when authenticated but not admin", async () => {
+    const sb = makeSupabaseMock({ profiles: [{ id: "test-admin", role: "chef" }] });
     (createAdminClient as any).mockReturnValue(sb);
     (createClient as any).mockResolvedValue(sb);
 

@@ -6,7 +6,7 @@ import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
-import { resolveUnits, resolveSizes, resolveColors } from "@/lib/order-availability";
+import { resolveUnits, resolveSizes, resolveColors, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
 
 interface ItemRowProps {
@@ -129,7 +129,7 @@ export function ItemRow({
   // their checkmark renders pre-checked and locked. The event portion of a
   // split is implicitly events — no badge/checkmark on that copy.
   const isEventFlagged = Boolean(item.is_event_item) && !!onEventToggle && !isEventCopy;
-  const isEventOnly = isEventFlagged && item.show_in_regular_menu === false;
+  const isEventOnly = isEventFlagged && isEventOnlyItem(item);
   const isEventChecked = isEventOnly || eventChecked;
   // Both-menus items can split into independent regular + event portions.
   const canSplit = isEventFlagged && !isEventOnly && !!onOpenSplit;

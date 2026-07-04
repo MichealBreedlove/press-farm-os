@@ -1,28 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type Params = Promise<{ seedId: string }>;
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await (supabase as any)
-    .from("profiles").select("role").eq("id", user.id).single();
-  if ((profile as any)?.role !== "admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user };
-}
 
 /**
  * POST /api/seeds/[seedId]/sowings
  * Body: { amount_used, planting_id?, sown_on?, notes? }
  */
 export async function POST(request: Request, { params }: { params: Params }) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   const { seedId } = await params;
   let body: Record<string, unknown>;

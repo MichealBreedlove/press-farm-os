@@ -24,6 +24,19 @@ export function filterAvailable<T extends string>(
   return master.filter((v) => allowed.has(v));
 }
 
+/** True when an item is flagged for the Events menu ONLY (is_event_item set,
+ *  show_in_regular_menu explicitly false). Event-only lines always submit with
+ *  menu_section 'events' and the receiver treats them as set-asides. Single
+ *  source for the rule — OrderForm, ItemRow, and ReceiverClient all consume it. */
+export function isEventOnlyItem(
+  item:
+    | { is_event_item?: boolean | null; show_in_regular_menu?: boolean | null }
+    | null
+    | undefined,
+): boolean {
+  return Boolean(item?.is_event_item) && item?.show_in_regular_menu === false;
+}
+
 /** Units this availability row exposes to the chef (per-cycle override ∩ item master). */
 export function resolveUnits(
   item: { unit_type: string },

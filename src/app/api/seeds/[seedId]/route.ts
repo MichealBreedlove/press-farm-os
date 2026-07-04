@@ -1,30 +1,19 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SEED_STATUSES } from "@/lib/constants";
 
 const VALID_STATUSES = new Set<string>(SEED_STATUSES);
 type Params = Promise<{ seedId: string }>;
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  const { data: profile } = await supabase
-    .from("profiles").select("role").eq("id", user.id).single();
-  if ((profile as any)?.role !== "admin") {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user };
-}
-
 /**
  * GET /api/seeds/[seedId]
  * Returns the seed with on_hand, sowing history, and germ test history.
  */
 export async function GET(_req: Request, { params }: { params: Params }) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   const { seedId } = await params;
   const admin = createAdminClient();
@@ -60,8 +49,8 @@ export async function GET(_req: Request, { params }: { params: Params }) {
  * Body: any subset of editable fields.
  */
 export async function PATCH(request: Request, { params }: { params: Params }) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); }
@@ -132,8 +121,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
  * PATCH status to 'discarded' to archive without losing history.
  */
 export async function DELETE(_req: Request, { params }: { params: Params }) {
-  const auth = await requireAdmin();
-  if ("error" in auth) return auth.error;
+  const auth = await requireAdmin(await createClient());
+  if (!auth.ok) return auth.response;
 
   const { seedId } = await params;
   const admin = createAdminClient();
