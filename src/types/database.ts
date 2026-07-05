@@ -217,6 +217,7 @@ export type Database = {
           quantity: number
           received_at: string | null
           size_label: string | null
+          source_tray_id: string | null
           unit: string
           unit_price: number
         }
@@ -231,6 +232,7 @@ export type Database = {
           quantity: number
           received_at?: string | null
           size_label?: string | null
+          source_tray_id?: string | null
           unit: string
           unit_price: number
         }
@@ -245,6 +247,7 @@ export type Database = {
           quantity?: number
           received_at?: string | null
           size_label?: string | null
+          source_tray_id?: string | null
           unit?: string
           unit_price?: number
         }
@@ -269,6 +272,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "most_ordered_items"
             referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "delivery_items_source_tray_id_fkey"
+            columns: ["source_tray_id"]
+            isOneToOne: false
+            referencedRelation: "microgreen_trays"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2397,6 +2407,18 @@ export type Database = {
           restaurant_id: string
           user_id: string
         }[]
+      }
+      terminate_tray_and_distribute: {
+        Args: {
+          p_tray_id: string
+          p_target_month: string
+          p_value_override?: number | null
+        }
+        Returns: Json
+      }
+      undo_tray_distribution: {
+        Args: { p_tray_id: string }
+        Returns: number
       }
     }
     Enums: {

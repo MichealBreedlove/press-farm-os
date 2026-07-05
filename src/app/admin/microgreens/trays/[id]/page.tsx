@@ -30,7 +30,21 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
     .eq("tray_id", id)
     .order("harvested_at", { ascending: false });
 
+  // Income lines this tray's termination distributed across deliveries.
+  const { data: distributed } = await (admin as any)
+    .from("delivery_items")
+    .select("line_total, delivery:deliveries(delivery_date)")
+    .eq("source_tray_id", id);
+  const distributedCount = (distributed ?? []).length;
+  const distributedTotal = (distributed ?? []).reduce(
+    (sum: number, r: any) => sum + Number(r.line_total ?? 0), 0,
+  );
+  const distributedMonth = distributed?.[0]?.delivery?.delivery_date?.slice(0, 7) ?? null;
+
   const crop = tray.batch?.crop;
+  // Default distribution month = when the tray was actually producing.
+  const producingMonth = (tray.harvesting_start ?? tray.sow_date ?? new Date().toISOString())
+    .slice(0, 7);
   const totalsByUnit: Record<string, number> = {};
   // Sum harvests per unit — mixing oz and LG/SM/EA into one number is meaningless.
   for (const h of harvests ?? []) {
@@ -95,11 +109,28 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
           <p className="text-sm text-red-700">Lost: {tray.lost_reason}</p>
         )}
 
+        {distributedCount > 0 && (
+          <p className="px-3 py-2 rounded-lg bg-blue-100 text-blue-700 text-sm">
+            Income distributed:{" "}
+            <strong>
+              {distributedTotal.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+            </strong>{" "}
+            across {distributedCount} deliveries
+            {distributedMonth ? ` in ${distributedMonth}` : ""}.
+          </p>
+        )}
+
         <TrayActionsFooter
           trayId={tray.id}
           trayLabel={tray.tray_label}
           status={tray.status}
           hasHarvests={(harvests ?? []).length > 0}
+          cropName={crop?.name ?? "This crop"}
+          isContinuous={Boolean(crop?.is_continuous_harvest)}
+          hasItemLink={Boolean(crop?.item_id)}
+          valuePerTray={crop?.value_per_tray != null ? Number(crop.value_per_tray) : null}
+          producingMonth={producingMonth}
+          distributedCount={distributedCount}
         />
       </div>
     </main>
