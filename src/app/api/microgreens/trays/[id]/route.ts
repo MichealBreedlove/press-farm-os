@@ -56,6 +56,21 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     );
   }
 
+  // Guard: no distributed income lines — deleting would orphan their provenance
+  // (the FK is ON DELETE SET NULL). Undo the distribution first.
+  const { data: distributed, error: distErr } = await (admin as any)
+    .from("delivery_items")
+    .select("id")
+    .eq("source_tray_id", params.id)
+    .limit(1);
+  if (distErr) return NextResponse.json({ error: distErr.message }, { status: 500 });
+  if ((distributed ?? []).length > 0) {
+    return NextResponse.json(
+      { error: "Tray has distributed income lines. Undo the distribution first." },
+      { status: 409 },
+    );
+  }
+
   const { error } = await (admin as any)
     .from("microgreen_trays").delete().eq("id", params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
