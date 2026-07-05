@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
+import { resolveOrderUnitPrice } from "@/lib/pricing";
 
 type Restaurant = { id: string; name: string };
 type Item = {
@@ -11,6 +12,10 @@ type Item = {
   category: string;
   unit_type: string;
   default_price: number | null;
+  /** Per-unit price overrides keyed by unit code (items.unit_prices). */
+  unit_prices?: Record<string, number> | null;
+  /** Per-size price overrides keyed by size label (items.size_prices) — most specific tier. */
+  size_prices?: Record<string, number> | null;
   /** Comma-separated size options (", "-joined free text), e.g. "Dime, Palm". */
   size?: string | null;
   is_archived?: boolean;
@@ -164,6 +169,26 @@ export default function DeliveryLogForm({
       setShowItemPicker(false);
       return;
     }
+    // unit_type may be "sm,lg" for multi-unit items; pick the first as the
+    // default. Admin can edit the unit field on the row before save if a
+    // different one is needed (the delivery_items CHECK constraint requires
+    // a single valid code).
+    const firstUnit =
+      String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
+    // Pre-fill the price with the canonical catalog precedence for that unit
+    // (unit_prices[unit] → default_price → 0; no size chosen yet, so the size
+    // tier can't apply). The old default_price-only pre-fill showed $0 for
+    // multi-unit items whose price lives in unit_prices. Admin can still
+    // edit the price on the row.
+    const prefillPrice = resolveOrderUnitPrice(
+      {
+        unitPrices: item.unit_prices ?? {},
+        defaultPrice: item.default_price,
+        sizePrices: item.size_prices ?? null,
+      },
+      firstUnit,
+      null,
+    );
     setLines((prev) => [
       ...prev,
       {
@@ -171,12 +196,8 @@ export default function DeliveryLogForm({
         name: item.name,
         category: item.category,
         quantity: "1",
-        // unit_type may be "sm,lg" for multi-unit items; pick the first as
-        // the default. Admin can edit the unit field on the row before save
-        // if a different one is needed (the delivery_items CHECK constraint
-        // requires a single valid code).
-        unit: String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea",
-        unit_price: String(item.default_price ?? 0),
+        unit: firstUnit,
+        unit_price: String(prefillPrice),
         size_label: "",
         is_bonus: false,
         bonus_note: "",

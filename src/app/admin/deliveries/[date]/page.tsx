@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import DeliveryLogForm from "./DeliveryLogForm";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { resolveOrderUnitPrice } from "@/lib/pricing";
 
 export default async function AdminDeliveryLogPage({
   params,
@@ -31,7 +32,7 @@ export default async function AdminDeliveryLogPage({
   // so admins don't see them when adding new lines.
   const { data: items } = await admin
     .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, size, is_archived")
+    .select("id, name, category, unit_type, default_price, unit_prices, size_prices, size, is_archived")
     .order("category")
     .order("name");
 
@@ -55,7 +56,7 @@ export default async function AdminDeliveryLogPage({
       order_items (
         quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type, size_label,
         availability_items (
-          item:items (id, name, unit_type, default_price, unit_prices)
+          item:items (id, name, unit_type, default_price, unit_prices, size_prices)
         )
       )
     `)
@@ -78,14 +79,21 @@ export default async function AdminDeliveryLogPage({
         .split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
       const chosenUnit = (oi.unit_type ?? "").trim() || firstUnit;
       // Resolve the pre-fill price: prefer the price stamped on the order
-      // line (locks the price as of order time, even if the catalog
-      // changes later), then the item's per-unit override for the chosen
-      // unit, then the catalog default, then 0.
-      const unitPricesMap = (item?.unit_prices ?? {}) as Record<string, number>;
-      const fallbackPrice =
-        (chosenUnit && typeof unitPricesMap[chosenUnit] === "number"
-          ? unitPricesMap[chosenUnit]
-          : null) ?? item?.default_price ?? 0;
+      // line (locks the price as of order time, even if the catalog changes
+      // later), then the canonical catalog precedence — size_prices[size] →
+      // unit_prices[unit] → default_price → 0 — via the same resolver the
+      // order-submit path uses. (The old hand-rolled fallback skipped the
+      // size tier, under-pricing size-priced items on legacy lines with no
+      // stamped price.)
+      const fallbackPrice = resolveOrderUnitPrice(
+        {
+          unitPrices: (item?.unit_prices ?? {}) as Record<string, number>,
+          defaultPrice: typeof item?.default_price === "number" ? item.default_price : null,
+          sizePrices: (item?.size_prices ?? null) as Record<string, number> | null,
+        },
+        chosenUnit,
+        oi.size_label ?? null,
+      );
       return {
         item_id: item?.id,
         quantity_ordered: oi.quantity_requested,
@@ -131,7 +139,14 @@ export default async function AdminDeliveryLogPage({
       <DeliveryLogForm
         date={date}
         restaurants={restaurants ?? []}
-        items={items ?? []}
+        items={(items ?? []).map((it) => ({
+          ...it,
+          // JSONB columns arrive as `Json`; the price maps are always
+          // {unit|size: number} objects in practice (enforced by the item
+          // editor), narrowed here at the server/client boundary.
+          unit_prices: (it.unit_prices ?? {}) as Record<string, number>,
+          size_prices: (it.size_prices ?? {}) as Record<string, number>,
+        }))}
         existingDeliveries={existingDeliveries ?? []}
         orders={orders ?? []}
       />

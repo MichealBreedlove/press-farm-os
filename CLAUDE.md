@@ -24,7 +24,7 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — 233 tests across 29 files in top-level `tests/` |
+| Tests | Vitest — 238 tests across 30 files in top-level `tests/` |
 | Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
@@ -101,7 +101,7 @@ src/
   types/
     database.ts                  # DB types — regenerated; covers 37 tables + 4 views. Remaining `(as any)` casts are legacy, not required
     index.ts                     # App-level types + enriched join shapes
-tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 233 tests
+tests/                           # Vitest suites (microgreens, forecasting, tasks, api) — 238 tests
 scripts/
   optimize-images.mjs            # Idempotent brand-image downsizer (npm run optimize:images)
   optimize-svg-logos.mjs         # Shrinks the base64 rasters EMBEDDED in logo SVGs (idempotent)
@@ -310,7 +310,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - `/admin/foraging-calendar` — seasonal foraging reference.
 - Individual-account order accountability (`order_audit`, migration 058).
 - `/receiver` — destination-side unpack / check-in.
-- **233 Vitest tests** across 29 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, and the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate). (The route-level financial flows — deliveries logging, reports — still have no automated coverage.)
+- **238 Vitest tests** across 30 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate), and the event-request accept flow. (The route-level financial flows — deliveries logging, reports — still have thin automated coverage.)
 - Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps).
 
 ## Open Follow-ups (Prioritized)

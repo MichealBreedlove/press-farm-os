@@ -893,6 +893,7 @@ export type Database = {
           seasonal_months: number[]
           show_in_regular_menu: boolean
           size: string | null
+          size_prices: Json
           soil_temp_min: number | null
           sort_order: number | null
           source: string | null
@@ -934,6 +935,7 @@ export type Database = {
           seasonal_months?: number[]
           show_in_regular_menu?: boolean
           size?: string | null
+          size_prices?: Json
           soil_temp_min?: number | null
           sort_order?: number | null
           source?: string | null
@@ -975,6 +977,7 @@ export type Database = {
           seasonal_months?: number[]
           show_in_regular_menu?: boolean
           size?: string | null
+          size_prices?: Json
           soil_temp_min?: number | null
           sort_order?: number | null
           source?: string | null

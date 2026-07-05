@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveOrderUnitPrice } from "@/lib/pricing";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -62,14 +63,25 @@ export async function acceptEventRequest(
   // 2. Resolve item for pricing + name.
   const { data: item } = await (admin as any)
     .from("items")
-    .select("id, name, unit_type, unit_prices, default_price")
+    .select("id, name, unit_type, unit_prices, default_price, size_prices")
     .eq("id", request.item_id)
     .single();
   if (!item) throw new Error("Item missing");
 
-  const unitPrices = (item.unit_prices ?? {}) as Record<string, number>;
-  const unitPrice =
-    Number(unitPrices[request.unit] ?? item.default_price ?? 0) || null;
+  // Same precedence + "0 is a real price" rule as the chef order-submit path
+  // (size tier is inert here — event requests carry no size — but included so
+  // this line can't drift if they ever do). The previous hand-rolled version
+  // skipped size_prices AND coerced a legitimate $0.00 price to NULL, which
+  // silently dropped the line from COALESCE(SUM(line_total)) revenue rollups.
+  const unitPrice = resolveOrderUnitPrice(
+    {
+      unitPrices: (item.unit_prices ?? {}) as Record<string, number>,
+      defaultPrice: typeof item.default_price === "number" ? item.default_price : null,
+      sizePrices: (item.size_prices ?? null) as Record<string, number> | null,
+    },
+    request.unit || null,
+    null,
+  );
 
   // 3. Upsert availability_items.
   const { data: existingAvail } = await (admin as any)

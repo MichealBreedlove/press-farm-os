@@ -22,7 +22,7 @@
 
 Press Farm OS is a **well-structured Next.js 14 App Router + Supabase**
 mobile-first ordering app (~65k LOC, 403 TS/TSX files, ~116 API routes,
-**233 passing tests**, 75 migrations through 071). The load-bearing order path
+**238 passing tests**, 75 migrations through 071). The load-bearing order path
 is genuinely production-grade: atomic submission via a Postgres RPC with
 idempotency tokens and in-transaction TOCTOU guards (migrations 066–068),
 pure unit-tested domain cores (`lib/orders.ts`, `lib/pricing.ts`,
@@ -130,10 +130,10 @@ service-role), EOM finalize, reports.
 
 ## 2. Critical problem areas (with evidence)
 
-Ranked by severity. ✅ = fixed in this pass (§5). 🔧 = ready patch below,
-needs Micheal's sign-off (financial behaviour). 📋 = roadmap (§4).
+Ranked by severity. ✅ = fixed in this pass (§5). 🔧→✅ = was held for sign-off, applied 2026-07-05 after Micheal approved. 📋 = roadmap (§4).
 
-### 2.1 🔧 P0 — `reports/top-items` date filter is a silent no-op
+
+### 2.1 🔧→✅ P0 — `reports/top-items` date filter is a silent no-op
 
 `src/app/api/reports/top-items/route.ts:32-33`:
 
@@ -169,7 +169,7 @@ Better still: point it at the `report_item_revenue` view (migration 065) like
 `/admin/reports` already does. Not applied — it changes report output, i.e.
 functionality.
 
-### 2.2 🔧 P0 — two pricing re-implementations skip the `size_prices` tier
+### 2.2 🔧→✅ P0 — two pricing re-implementations skip the `size_prices` tier
 
 The canonical precedence is `size_prices[size] → unit_prices[unit] →
 default_price → 0` (`src/lib/pricing.ts:33`, unit-tested; migration 069 added
@@ -334,7 +334,7 @@ including table rows for 069×3/070/071 and "next is 072".
 - **Pure, tested domain cores** — `planOrderItemMerge`, `resolveOrderUnitPrice`
   (0-is-a-real-price rule documented *and* enforced), `buildOrderKey`/
   `enumerateOrderKeys`, `resolveUnits/Sizes/Colors`, `sowPlan`, `rollupByMonth`.
-  233 tests run in 3s.
+  238 tests run in 3s.
 - **Anti-tamper availability round-trip** in the order route, with the
   stale-cart UX recovery naming exactly the unavailable items.
 - **Security hygiene** — HMAC-verified inbound webhook, fail-closed
@@ -450,7 +450,36 @@ build succeeds.
    follow-up #3 rewritten around the real remaining work (~248 stale casts,
    auth-helper half done).
 
-**Deliberately not applied** (functionality changes, per the engagement
-constraint + repo "check in first" rules): the three financial fixes in §4.1
-(patches included above), the event-accept RPC (§4.3, needs migration 072),
-and the RLS-second-layer migration (§4.4).
+**Deliberately not applied in the review pass** (functionality changes, per
+the engagement constraint + repo "check in first" rules): the three financial
+fixes in §4.1, the event-accept RPC (§4.3, needs migration 072), and the
+RLS-second-layer migration (§4.4).
+
+---
+
+## 6. Addendum — financial fixes applied 2026-07-05 (after sign-off)
+
+Micheal approved §4.1; all three fixes are now in:
+
+1. **`reports/top-items`** — `deliveries!inner` join + `!di.deliveries` guard,
+   so `start`/`end` actually bound the scan and the aggregation (§2.1).
+2. **`event-requests/accept.ts`** — pricing routed through
+   `resolveOrderUnitPrice` (adds the `size_prices` tier, inert today since
+   event requests carry no size) and the `|| null` coercion removed, so a
+   legitimate $0.00 — or an unpriced item — freezes as **0**, keeping the line
+   in `COALESCE(SUM(line_total))` rollups (§2.2). Locked by **5 new tests**
+   (`tests/api/event-requests/accept.test.ts`): full accept flow, unit-price
+   precedence, the $0-stays-0 regression, unpriced→0, and reuse of existing
+   date/availability/order rows — the accept flow's first coverage.
+3. **Delivery-log pricing** — the order→pre-fill fallback
+   (`admin/deliveries/[date]/page.tsx`) and the manual add-item pre-fill
+   (`DeliveryLogForm.tsx`) both use `resolveOrderUnitPrice`. The pre-fill
+   fallback now honours `size_prices[size_label]`; manual adds now honour
+   `unit_prices[firstUnit]` (previously `default_price ?? 0`, which showed $0
+   for multi-unit items priced only per-unit). The frozen
+   `unit_price_at_order` still wins when present, and the admin can still
+   edit any price before save.
+
+Enabler: `items.size_prices` (migration 069) was missing from the generated
+`database.ts` — added to Row/Insert/Update so the new code type-checks
+without casts. 238/238 tests, tsc, lint, and production build green.

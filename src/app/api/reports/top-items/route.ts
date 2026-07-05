@@ -20,13 +20,16 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  // Fetch delivery items with joins
+  // Fetch delivery items with joins. `deliveries!inner` is load-bearing: a
+  // filter on an embedded relation without !inner does NOT filter the parent
+  // rows in PostgREST — it only nulls the embed, so start/end were silently
+  // ignored and this endpoint returned all-time totals regardless of range.
   let query = admin
     .from("delivery_items")
     .select(`
       item_id, quantity, line_total,
       items ( id, name, category, unit_type ),
-      deliveries ( delivery_date )
+      deliveries!inner ( delivery_date )
     `);
 
   if (start) query = query.gte("deliveries.delivery_date", start);
@@ -47,7 +50,7 @@ export async function GET(request: Request) {
   }> = {};
 
   for (const di of data ?? []) {
-    if (!di.items) continue;
+    if (!di.items || !di.deliveries) continue;
     const id = di.item_id;
     if (!itemMap[id]) {
       itemMap[id] = {
