@@ -140,4 +140,5 @@ $function$;
 
 -- Data fix shipped with the applied migration (documented here, already live):
 --   microgreen_crops 'Nasturtium' → item_id = '51465d80-117d-44b3-b833-72e11fafd3cd',
---   value_per_tray = 1000.
+--   value_per_tray = 1000 (corrected to 500 on 2026-07-05 per Micheal — the
+--   live June 2026 distributions were redone at $500/tray, $3,000 total).
