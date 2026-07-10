@@ -24,6 +24,7 @@ export type Database = {
           available_colors: string | null
           available_sizes: string | null
           available_units: string | null
+          available_varieties: string | null
           created_at: string
           cycle_notes: string | null
           delivery_date: string
@@ -38,6 +39,7 @@ export type Database = {
           available_colors?: string | null
           available_sizes?: string | null
           available_units?: string | null
+          available_varieties?: string | null
           created_at?: string
           cycle_notes?: string | null
           delivery_date: string
@@ -52,6 +54,7 @@ export type Database = {
           available_colors?: string | null
           available_sizes?: string | null
           available_units?: string | null
+          available_varieties?: string | null
           created_at?: string
           cycle_notes?: string | null
           delivery_date?: string
@@ -1546,6 +1549,7 @@ export type Database = {
           unit_price_at_order: number | null
           unit_type: string | null
           updated_at: string
+          variety_key: string | null
         }
         Insert: {
           availability_item_id: string
@@ -1565,6 +1569,7 @@ export type Database = {
           unit_price_at_order?: number | null
           unit_type?: string | null
           updated_at?: string
+          variety_key?: string | null
         }
         Update: {
           availability_item_id?: string
@@ -1584,6 +1589,7 @@ export type Database = {
           unit_price_at_order?: number | null
           unit_type?: string | null
           updated_at?: string
+          variety_key?: string | null
         }
         Relationships: [
           {

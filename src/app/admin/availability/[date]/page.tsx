@@ -52,7 +52,7 @@ export default async function AdminAvailabilityEditorPage({
   // Fetch all non-archived items, ordered by sort_order + name
   const { data: rawItems, error: itemsError } = await supabase
     .from("items")
-    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, size, color, created_at, updated_at")
+    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, size, color, variety, created_at, updated_at")
     .eq("is_archived", false)
     .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name", { ascending: true });
@@ -78,7 +78,7 @@ export default async function AdminAvailabilityEditorPage({
   // Fetch existing availability_items for this date across all restaurants
   const { data: rawAvailability, error: availError } = await supabase
     .from("availability_items")
-    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
+    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
     .eq("delivery_date", date);
   let availability: AvailabilityItem[] = rawAvailability ?? [];
   let inheritedFromDate: string | null = null;
@@ -115,7 +115,7 @@ export default async function AdminAvailabilityEditorPage({
     inheritedFromDate = priorDateRow.delivery_date;
     const { data: priorRows } = await supabase
       .from("availability_items")
-      .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_units, created_at, updated_at")
+      .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
       .eq("delivery_date", priorDateRow.delivery_date)
       .eq("restaurant_id", r.id);
 

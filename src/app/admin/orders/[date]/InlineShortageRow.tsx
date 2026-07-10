@@ -13,8 +13,10 @@ interface OrderItemForRow {
   unitType: string;
   /** Per-line size label (e.g. "Tiny", "Bronze") if the chef picked one. */
   sizeLabel?: string | null;
-  /** Comma-separated variety/color the chef picked (e.g. "Chocolate, Spearmint"). */
+  /** Comma-separated colors the chef picked (e.g. "Red, Yellow"). */
   colorKey?: string | null;
+  /** Comma-separated varieties the chef picked (e.g. "Genovese, Thai"). */
+  varietyKey?: string | null;
   /** True when this line was ordered under the Events Menu (vs Regular). */
   isEvent?: boolean;
   quantityRequested: number;
@@ -307,6 +309,18 @@ export function InlineShortageRow({ orderId, orderItem, canEdit, catalogItems }:
               </span>
             )}
           </p>
+          {orderItem.varietyKey && (
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              {orderItem.varietyKey.split(",").map((v) => v.trim()).filter(Boolean).map((v) => (
+                <span
+                  key={v}
+                  className="text-[10px] bg-pf-master-blue/[0.08] text-pf-master-blue px-2 py-0.5 rounded-full"
+                >
+                  {v}
+                </span>
+              ))}
+            </div>
+          )}
           {orderItem.colorKey && (
             <div className="flex items-center gap-1 mt-1 flex-wrap">
               {orderItem.colorKey.split(",").map((c) => c.trim()).filter(Boolean).map((c) => (

@@ -45,7 +45,7 @@ src/
     admin/
       dashboard/                 # Admin home (weather widget, stats)
       items/                     # Catalog list + [itemId] detail (+ data/, photos/, audit/)
-      availability/              # /[date] editor: per-unit / size / color toggles (+ offer-sheet)
+      availability/              # /[date] editor: per-unit / size / color / variety toggles (+ offer-sheet)
       orders/                    # Dashboard + [date] detail + harvest list
       deliveries/                # Log + [date] detail + finalize (+ data/)
       expenses/                  # Farm expense log (+ data/)
@@ -84,7 +84,7 @@ src/
     auth/callback/               # Supabase auth redirect handler
   components/
     shared/                      # EditorialHero, FloralCorners, BottomNav, etc.
-    order/                       # Multi-unit + multi-size + multi-color order form
+    order/                       # Multi-unit + multi-size + multi-color + multi-variety order form
     admin/                       # OrderCard, AvailabilityEditor, HarvestList, microgreens/, seeds/, etc.
   emails/                        # React Email templates
   lib/
@@ -108,12 +108,12 @@ scripts/
 public/assets/pressfarm/
   logo/                          # Mandala (color/mono/gold/black), seal, lockups, app icon
   flowers/                       # ~38 hand-illustrated botanicals — used by flower-images.ts
-supabase/migrations/             # 001 → 071 (75 files; see table — 044/047/062 used twice, 069 three times)
+supabase/migrations/             # 001 → 072 (76 files; see table — 044/047/062 used twice, 069 three times)
 ```
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **75 migration files, numbered 001 → 071** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions). **Next migration number is 072.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **76 migration files, numbered 001 → 072** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions); 072 (variety selection) applied via the Supabase MCP. **Next migration number is 073.** Read latest first when scoping work.
 
 > **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
@@ -195,6 +195,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 069 | production_value | `planter_boxes`, `planter_box_plantings`, `planter_box_activity` + `microgreen_crops.value_per_tray` — self-harvested production value stream, separate from `delivery_items` |
 | 070 | orders_multiple_event_orders_per_date | One-order-per-(restaurant, date) becomes a PARTIAL unique index — Events orders (event_date NOT NULL) may repeat per date; chef orders stay unique |
 | 071 | order_item_substitution | `order_items.replacement_item_id` FK + `replacement_label` / qty / unit — shortage substitution recorded on the shorted line |
+| 072 | variety_selection | `availability_items.available_varieties` + `order_items.variety_key` — varieties become a selectable dimension like sizes/colors (admin per-cycle toggle → chef picker → line-level key through harvest/receiver/history); `submit_order_with_items()` learns the new column (signature unchanged from 070) |
 
 ## Auth Model
 
@@ -237,7 +238,7 @@ The brand is built out — **do not redesign without an explicit ask**.
 - **EditorialHero** (`src/components/shared/EditorialHero.tsx`) — magazine-cover hero block on most admin pages. Pass `eyebrow / title / subtitle / flower / backHref`. Use this for any new resource page.
 - **FloralCorners** — global subtle decorative flower corners.
 - **Per-resource Import/Export pages** at `/admin/{resource}/data` (items, expenses, deliveries). Pattern: server-component + EditorialHero + stat strip + tab switcher (Export | Import) + drop zone + preview/result cards. CSV is the round-trip format; `id` or `name` is the upsert key. `items-csv` auto-detects KEY-tab XLSX, `deliveries-csv` auto-detects DELIVERY TRACKER XLSX. Legacy `/admin/settings/import` is **deleted** — never recreate.
-- **Order form** (`src/components/order/`) — multi-unit + multi-size + multi-color, key conventions above.
+- **Order form** (`src/components/order/`) — multi-unit + multi-size + multi-color + multi-variety, key conventions above. Colors and varieties are multi-select per line (stored as `order_items.color_key` / `variety_key`), NOT part of the quantity key.
 
 ## Environment Variables
 
@@ -263,7 +264,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **072**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers.)
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **073**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers.)
 - The user does NOT have `supabase` CLI linked. Apply migrations via the Supabase MCP (`apply_migration`, project `rxdfjaseilmjvcwamqyk`) when it's available in the session; otherwise present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
@@ -284,7 +285,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 ## What's Currently Shipping
 
 - Auth: admin email+pw + chef magic link.
-- Chef order portal (list / review / confirmed) with multi-unit + size + color.
+- Chef order portal (list / review / confirmed) with multi-unit + size + color + variety.
 - Chef order history.
 - Admin dashboard with weather widget.
 - Item catalog list + detail with multi-unit and per-unit pricing.

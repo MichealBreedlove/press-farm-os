@@ -21,6 +21,8 @@ interface OrderFormProps {
   initialQuantities?: Record<string, number>;
   /** Per-(quantity-key) color selections, hydrated when editing an existing order. */
   initialColors?: Record<string, string[]>;
+  /** Per-(quantity-key) variety selections, hydrated when editing an existing order. */
+  initialVarieties?: Record<string, string[]>;
   /** Per-availability-item "For an event" checkmark, hydrated when editing. */
   initialEventChecked?: Record<string, boolean>;
   /** Items whose regular/event split is open (event-portion quantities live
@@ -50,6 +52,8 @@ export interface OrderFormData {
     sizeLabel: string | null;
     /** Comma-separated colors selected for this line ("red,blue"). null when none. */
     colorKey: string | null;
+    /** Comma-separated varieties selected for this line ("Genovese,Thai"). null when none. */
+    varietyKey: string | null;
     /** Order-form section this line came from. */
     menuSection: MenuSection;
     quantity: number;
@@ -72,6 +76,7 @@ export function OrderForm({
   deliveryDateFormatted,
   initialQuantities = {},
   initialColors = {},
+  initialVarieties = {},
   initialEventChecked = {},
   initialSplitOpen = {},
   initialNotes = "",
@@ -81,6 +86,7 @@ export function OrderForm({
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
+  const [itemVarieties, setItemVarieties] = useState<Record<string, string[]>>(initialVarieties);
   const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
   const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
@@ -113,6 +119,7 @@ export function OrderForm({
       // (availabilityItemId, unit, size).
       const restoredQuantities: Record<string, number> = {};
       const restoredColors: Record<string, string[]> = {};
+      const restoredVarieties: Record<string, string[]> = {};
       const restoredEventChecked: Record<string, boolean> = {};
       const restoredSplitOpen: Record<string, boolean> = {};
       // Pre-pass: an item with BOTH regular and events lines was split —
@@ -150,12 +157,18 @@ export function OrderForm({
         if (it.colorKey) {
           restoredColors[key] = String(it.colorKey).split(",").filter(Boolean);
         }
+        if (it.varietyKey) {
+          restoredVarieties[key] = String(it.varietyKey).split(",").filter(Boolean);
+        }
       }
       if (Object.keys(restoredQuantities).length > 0) {
         setQuantities(restoredQuantities);
       }
       if (Object.keys(restoredColors).length > 0) {
         setItemColors(restoredColors);
+      }
+      if (Object.keys(restoredVarieties).length > 0) {
+        setItemVarieties(restoredVarieties);
       }
       if (Object.keys(restoredEventChecked).length > 0) {
         setEventChecked(restoredEventChecked);
@@ -262,6 +275,7 @@ export function OrderForm({
       Object.fromEntries(Object.entries(map).filter(([k]) => !k.startsWith(prefix)));
     setQuantities(dropPrefixed);
     setItemColors(dropPrefixed);
+    setItemVarieties(dropPrefixed);
     setItemNotes(dropPrefixed);
     setSplitOpen((prev) => ({ ...prev, [id]: false }));
   }
@@ -335,14 +349,17 @@ export function OrderForm({
         const suffixParts = [unitLabel, size, section === "events" ? "Events" : null].filter(Boolean) as string[];
         const itemName = suffixParts.length > 0 ? `${ai.item.name} (${suffixParts.join(" · ")})` : ai.item.name;
 
-        // Colors live at the same key as the qty
+        // Colors/varieties live at the same key as the qty
         const colors = itemColors[key] ?? [];
         const colorKey = colors.length > 0 ? colors.join(",") : null;
-        // Keep the human-readable color note in itemNote for backwards-compat
-        // displays; the structured colorKey field is what receiver/edit
-        // hydration round-trips through.
+        const lineVarieties = itemVarieties[key] ?? [];
+        const varietyKey = lineVarieties.length > 0 ? lineVarieties.join(",") : null;
+        // Keep the human-readable color/variety note in itemNote for
+        // backwards-compat displays; the structured colorKey/varietyKey
+        // fields are what receiver/edit hydration round-trips through.
         const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
-        const note = [colorNote, itemNote].filter(Boolean).join(" | ");
+        const varietyNote = lineVarieties.length > 0 ? `Variety: ${lineVarieties.join(", ")}` : "";
+        const note = [varietyNote, colorNote, itemNote].filter(Boolean).join(" | ");
 
         // Persist the specific unit chosen (or fall back to whatever's on the item)
         const unitForOrder = unit ?? (String(ai.item.unit_type).split(",")[0]?.trim() || ai.item.unit_type);
@@ -365,6 +382,7 @@ export function OrderForm({
           unitType: unitForOrder,
           sizeLabel: size ?? null,
           colorKey,
+          varietyKey,
           menuSection: section,
           quantity: qty,
           unitPrice,
@@ -466,9 +484,11 @@ export function OrderForm({
                       quantities={quantities}
                       itemNotes={itemNotes}
                       itemColors={itemColors}
+                      itemVarieties={itemVarieties}
                       onQuantityChange={handleQuantityChange}
                       onNoteChange={handleNoteChange}
                       onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                      onVarietyChange={(key, varieties) => setItemVarieties((prev) => ({ ...prev, [key]: varieties }))}
                       eventChecked={eventChecked}
                       onEventToggle={(id, checked) =>
                         setEventChecked((prev) => ({ ...prev, [id]: checked }))
@@ -510,9 +530,11 @@ export function OrderForm({
                       quantities={quantities}
                       itemNotes={itemNotes}
                       itemColors={itemColors}
+                      itemVarieties={itemVarieties}
                       onQuantityChange={handleQuantityChange}
                       onNoteChange={handleNoteChange}
                       onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
+                      onVarietyChange={(key, varieties) => setItemVarieties((prev) => ({ ...prev, [key]: varieties }))}
                     />
                   );
                 })}

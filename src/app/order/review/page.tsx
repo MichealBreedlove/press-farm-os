@@ -82,6 +82,7 @@ export default function OrderReviewPage() {
             unit_type: item.unitType,
             size_label: item.sizeLabel,
             color_key: item.colorKey,
+            variety_key: item.varietyKey,
             menu_section: item.menuSection,
           })),
           freeform_notes: freeformNotes || undefined,
@@ -146,7 +147,7 @@ export default function OrderReviewPage() {
               const flowerSrc = flowerImageForName(item.itemName);
               // Composite React key — chefs can order multiple sizes/colors of
               // the same availability_item_id; bare id alone collides.
-              const liKey = `${item.availabilityItemId}__${item.unitType}__${item.sizeLabel ?? ""}__${item.colorKey ?? ""}__${idx}`;
+              const liKey = `${item.availabilityItemId}__${item.unitType}__${item.sizeLabel ?? ""}__${item.colorKey ?? ""}__${item.varietyKey ?? ""}__${idx}`;
               return (
                 <li key={liKey} className="px-4 py-3">
                   <div className="flex items-start gap-3">
@@ -161,6 +162,15 @@ export default function OrderReviewPage() {
                         {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
                         {item.sizeLabel ? ` · ${item.sizeLabel}` : ""}
                       </p>
+                      {item.varietyKey && (
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {item.varietyKey.split(",").map((v) => v.trim()).filter(Boolean).map((v) => (
+                            <span key={v} className="text-[10px] bg-pf-master-blue/[0.08] text-pf-master-blue px-2 py-0.5 rounded-full">
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       {item.colorKey && (
                         <div className="flex items-center gap-1 mt-1 flex-wrap">
                           {item.colorKey.split(",").map((c) => c.trim()).filter(Boolean).map((c) => (

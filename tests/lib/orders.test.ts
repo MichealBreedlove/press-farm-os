@@ -7,10 +7,10 @@ import { orderLineKey, planOrderItemMerge, type ExistingOrderLine } from "@/lib/
  */
 describe("orderLineKey", () => {
   it("normalizes null/undefined discriminators to empty strings", () => {
-    expect(orderLineKey({ availability_item_id: "a", quantity_requested: 1 })).toBe("a||||");
+    expect(orderLineKey({ availability_item_id: "a", quantity_requested: 1 })).toBe("a|||||");
     expect(
       orderLineKey({ availability_item_id: "a", unit_type: "lg", size_label: null, quantity_requested: 1 }),
-    ).toBe("a|lg|||");
+    ).toBe("a|lg||||");
   });
 
   it("distinguishes lines that differ on any discriminator", () => {
@@ -18,6 +18,9 @@ describe("orderLineKey", () => {
     expect(orderLineKey({ ...base, unit_type: "sm" })).not.toBe(orderLineKey({ ...base, unit_type: "lg" }));
     expect(orderLineKey({ ...base, size_label: "S" })).not.toBe(orderLineKey({ ...base, size_label: "L" }));
     expect(orderLineKey({ ...base, color_key: "red" })).not.toBe(orderLineKey({ ...base, color_key: "blue" }));
+    expect(orderLineKey({ ...base, variety_key: "Genovese" })).not.toBe(
+      orderLineKey({ ...base, variety_key: "Thai" }),
+    );
     expect(orderLineKey({ ...base, menu_section: "events" })).not.toBe(orderLineKey(base));
   });
 });
@@ -74,6 +77,18 @@ describe("planOrderItemMerge", () => {
     const incoming = [{ availability_item_id: "a", quantity_requested: 2 }];
     const { toUpdate } = planOrderItemMerge(existing, incoming);
     expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 5 }]);
+  });
+
+  it("keeps different varieties of the same item as separate lines", () => {
+    const existing: ExistingOrderLine[] = [
+      { id: "x1", availability_item_id: "a", unit_type: "lg", variety_key: "Genovese", quantity_requested: 3 },
+    ];
+    const incoming = [
+      { availability_item_id: "a", unit_type: "lg", variety_key: "Thai", quantity_requested: 2 },
+    ];
+    const { toInsert, toUpdate } = planOrderItemMerge(existing, incoming);
+    expect(toUpdate).toEqual([]);
+    expect(toInsert).toEqual(incoming);
   });
 
   it("distinguishes Events vs Regular lines of the same item", () => {

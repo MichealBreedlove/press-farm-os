@@ -23,6 +23,8 @@ export interface ReceiverLine {
   sizeLabel?: string;
   /** Comma-separated colors the chef picked ("red,blue"). undefined when none. */
   colorKey?: string;
+  /** Comma-separated varieties the chef picked ("Genovese,Thai"). undefined when none. */
+  varietyKey?: string;
   ordered: number;
   delivered: number;
   status: ReceiverLineStatus;
@@ -62,7 +64,7 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       id, restaurant_id, freeform_notes,
       order_items (
         id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason,
-        unit_type, size_label, color_key,
+        unit_type, size_label, color_key, variety_key,
         availability_items (
           id, item_id,
           items ( id, name, unit_type, is_event_item )
@@ -86,15 +88,16 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
     const order = (orders ?? []).find((o: any) => o.restaurant_id === r.id);
     const delivery = (deliveries ?? []).find((d: any) => d.restaurant_id === r.id);
 
-    // Composite key: (item.id, unit, size, color). Without this, multiple
-    // sizes/colors of the same item get collapsed into one row and the
-    // receiver can't tell what to pick.
+    // Composite key: (item.id, unit, size, color, variety). Without this,
+    // multiple sizes/colors/varieties of the same item get collapsed into one
+    // row and the receiver can't tell what to pick.
     const lineKey = (
       itemId: string,
       unit: string | null | undefined,
       size: string | null | undefined,
       color: string | null | undefined,
-    ) => `${itemId}__${unit ?? ""}__${size ?? ""}__${color ?? ""}`;
+      variety: string | null | undefined,
+    ) => `${itemId}__${unit ?? ""}__${size ?? ""}__${color ?? ""}__${variety ?? ""}`;
 
     const linesByItem = new Map<string, ReceiverLine>();
 
@@ -111,17 +114,19 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
         (String(item.unit_type ?? "").split(",")[0]?.trim() || "");
       const sizeLabel: string | null = oi.size_label ?? null;
       const colorKey: string | null = oi.color_key ?? null;
+      const varietyKey: string | null = oi.variety_key ?? null;
 
       let status: ReceiverLineStatus;
       if (shorted) status = "short";
       else if (fulfilled != null) status = "ready";
       else status = "pending";
 
-      linesByItem.set(lineKey(item.id, unit, sizeLabel, colorKey), {
+      linesByItem.set(lineKey(item.id, unit, sizeLabel, colorKey, varietyKey), {
         itemName: item.name,
         unit,
         sizeLabel: sizeLabel ?? undefined,
         colorKey: colorKey ?? undefined,
+        varietyKey: varietyKey ?? undefined,
         ordered,
         delivered: fulfilled ?? 0,
         status,
@@ -130,15 +135,15 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       });
     }
 
-    // Delivery items don't carry size/color today, so they always overlay
-    // onto the bare (item, unit, null, null) bucket. If the receiver
-    // pre-pulled extras outside an order, they show up as "extra" lines.
+    // Delivery items don't carry size/color/variety today, so they always
+    // overlay onto the bare (item, unit, null, null, null) bucket. If the
+    // receiver pre-pulled extras outside an order, they show up as "extra" lines.
     for (const di of delivery?.delivery_items ?? []) {
       const item = di.items;
       if (!item) continue;
       const delivered = Number(di.quantity ?? 0);
       const unit = String(di.unit ?? item.unit_type ?? "").split(",")[0]?.trim() ?? "";
-      const key = lineKey(item.id, unit, null, null);
+      const key = lineKey(item.id, unit, null, null, null);
 
       // Try the unit-specific bucket first; if missing, look for any line for
       // this item under that same unit (regardless of size/color) so a

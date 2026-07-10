@@ -11,17 +11,17 @@
 
 const AVAIL_SELECT = `
   id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
-  available_sizes, available_colors, available_units, created_at, updated_at,
+  available_sizes, available_colors, available_varieties, available_units, created_at, updated_at,
   item:items(
     id, farm_id, name, category, unit_type, default_price, unit_prices, size_prices, chef_notes,
     internal_notes, source, is_archived, is_event_item, is_press_bar_item, show_in_regular_menu,
-    sort_order, image_url, season_status, season_note, size, color, created_at, updated_at
+    sort_order, image_url, season_status, season_note, size, color, variety, created_at, updated_at
   )
 `;
 
 const AVAIL_SELECT_BARE = `
   id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes,
-  available_sizes, available_colors, available_units, created_at, updated_at
+  available_sizes, available_colors, available_varieties, available_units, created_at, updated_at
 `;
 
 interface AvailabilityFetchOptions {
@@ -161,6 +161,7 @@ export async function materializeRollover(
     cycle_notes: r.cycle_notes ?? null,
     available_sizes: r.available_sizes ?? null,
     available_colors: r.available_colors ?? null,
+    available_varieties: r.available_varieties ?? null,
     available_units: r.available_units ?? null,
   }));
 

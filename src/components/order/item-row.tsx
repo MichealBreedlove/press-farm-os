@@ -6,7 +6,7 @@ import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
-import { resolveUnits, resolveSizes, resolveColors, isEventOnlyItem } from "@/lib/order-availability";
+import { resolveUnits, resolveSizes, resolveColors, resolveVarieties, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
 
 interface ItemRowProps {
@@ -15,9 +15,12 @@ interface ItemRowProps {
   itemNote: string;
   /** Multi-select colors keyed by availId (no-sizes) or availId__size (per-size). */
   itemColors: Record<string, string[]>;
+  /** Multi-select varieties, keyed exactly like itemColors. */
+  itemVarieties: Record<string, string[]>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
   onColorChange: (key: string, colors: string[]) => void;
+  onVarietyChange: (key: string, varieties: string[]) => void;
   /** Whether this item's lines are marked "For an event". Only meaningful
    *  when onEventToggle is provided (i.e. not the Press Bar section). */
   eventChecked?: boolean;
@@ -64,25 +67,39 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
   );
 }
 
-/** Inline multi-select color picker. Used for whole-item colors (no sizes)
- *  and per-size colors (with sizes). */
-function ColorPicker({
-  colors,
+/** Inline multi-select option picker. Used for whole-item colors/varieties
+ *  (no sizes) and per-size colors/varieties (with sizes). Colors render in
+ *  the violet family, varieties in the blue family — matching the
+ *  availability editor's toggle tones. */
+function OptionPicker({
+  options,
   selected,
   onToggle,
   label = "Colors",
+  tone = "violet",
 }: {
-  colors: string[];
+  options: string[];
   selected: string[];
   onToggle: (next: string[]) => void;
   label?: string;
+  tone?: "violet" | "blue";
 }) {
+  const chipClass =
+    tone === "blue"
+      ? {
+          on: "bg-pf-master-blue text-white",
+          off: "bg-pf-master-blue/[0.08] text-pf-master-blue hover:bg-pf-master-blue/[0.16]",
+        }
+      : {
+          on: "bg-pf-master-violet text-white",
+          off: "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]",
+        };
   return (
     <div className="flex items-center gap-1 flex-wrap" role="group" aria-label={`${label} (multi-select)`}>
       <span className="text-[10px] text-farm-muted mr-0.5">
         {label}{selected.length > 0 ? ` (${selected.length})` : ""}:
       </span>
-      {colors.map((c: string) => {
+      {options.map((c: string) => {
         const isSelected = selected.includes(c);
         return (
           <button key={c} type="button"
@@ -94,9 +111,7 @@ function ColorPicker({
             }}
             aria-pressed={isSelected}
             className={`text-xs px-3 py-2 min-h-[44px] rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
-              isSelected
-                ? "bg-pf-master-violet text-white"
-                : "bg-pf-master-violet/[0.08] text-pf-master-violet hover:bg-pf-master-violet/[0.16]"
+              isSelected ? chipClass.on : chipClass.off
             }`}
           >{c}</button>
         );
@@ -110,9 +125,11 @@ export function ItemRow({
   quantities,
   itemNote,
   itemColors,
+  itemVarieties,
   onQuantityChange,
   onNoteChange,
   onColorChange,
+  onVarietyChange,
   eventChecked = false,
   onEventToggle,
   isEventCopy = false,
@@ -139,6 +156,7 @@ export function ItemRow({
   // "all of the item's master options"; a subset restricts what the chef can pick.
   const sizes = resolveSizes(item, availabilityItem.available_sizes);
   const colors = resolveColors(item, availabilityItem.available_colors);
+  const varieties = resolveVarieties(item, availabilityItem.available_varieties);
   const units = resolveUnits(item, availabilityItem.available_units);
   const hasSizes = sizes.length > 0;
   const hasMultiUnits = units.length > 1;
@@ -235,14 +253,25 @@ export function ItemRow({
               admin/farm-facing growing-cycle info (e.g. "Cool-season crop")
               that clutters the order experience. */}
 
-          {/* Whole-item color picker — only when item has NO sizes.
-              For items WITH sizes, the color picker lives under each size row. */}
+          {/* Whole-item color/variety pickers — only when item has NO sizes.
+              For items WITH sizes, the pickers live under each size row. */}
           {colors.length > 0 && !hasSizes && totalQty > 0 && (
             <div className="mt-1">
-              <ColorPicker
-                colors={colors}
+              <OptionPicker
+                options={colors}
                 selected={itemColors[availabilityItem.id] ?? []}
                 onToggle={(next) => onColorChange(availabilityItem.id, next)}
+              />
+            </div>
+          )}
+          {varieties.length > 0 && !hasSizes && totalQty > 0 && (
+            <div className="mt-1">
+              <OptionPicker
+                options={varieties}
+                selected={itemVarieties[availabilityItem.id] ?? []}
+                onToggle={(next) => onVarietyChange(availabilityItem.id, next)}
+                label="Varieties"
+                tone="blue"
               />
             </div>
           )}
@@ -250,6 +279,13 @@ export function ItemRow({
             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
               {colors.map((c: string) => (
                 <span key={c} className="text-[10px] bg-pf-master-violet/10 text-pf-master-violet px-1.5 py-0.5 rounded">{c}</span>
+              ))}
+            </div>
+          )}
+          {varieties.length > 0 && totalQty === 0 && (
+            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+              {varieties.map((v: string) => (
+                <span key={v} className="text-[10px] bg-pf-master-blue/10 text-pf-master-blue px-1.5 py-0.5 rounded">{v}</span>
               ))}
             </div>
           )}
@@ -307,6 +343,7 @@ export function ItemRow({
               const key = qtyKey(unit);
               const unitQty = quantities[key] ?? 0;
               const unitColors = itemColors[key] ?? [];
+              const unitVarieties = itemVarieties[key] ?? [];
               return (
                 <div key={unit} className="bg-blue-50/40 border border-blue-100 rounded-lg px-3 py-2 space-y-2">
                   <div className="flex items-center justify-between">
@@ -324,7 +361,10 @@ export function ItemRow({
                     />
                   </div>
                   {colors.length > 0 && unitQty > 0 && (
-                    <ColorPicker colors={colors} selected={unitColors} onToggle={(next) => onColorChange(key, next)} />
+                    <OptionPicker options={colors} selected={unitColors} onToggle={(next) => onColorChange(key, next)} />
+                  )}
+                  {varieties.length > 0 && unitQty > 0 && (
+                    <OptionPicker options={varieties} selected={unitVarieties} onToggle={(next) => onVarietyChange(key, next)} label="Varieties" tone="blue" />
                   )}
                 </div>
               );
@@ -339,6 +379,7 @@ export function ItemRow({
                   const key = qtyKey(unit, size);
                   const sizeQty = quantities[key] ?? 0;
                   const sizeColors = itemColors[key] ?? [];
+                  const sizeVarieties = itemVarieties[key] ?? [];
                   return (
                     <div key={size} className="bg-white/70 rounded-md px-2.5 py-1.5 space-y-1.5">
                       <div className="flex items-center justify-between">
@@ -352,7 +393,10 @@ export function ItemRow({
                         />
                       </div>
                       {colors.length > 0 && sizeQty > 0 && (
-                        <ColorPicker colors={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
+                        <OptionPicker options={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
+                      )}
+                      {varieties.length > 0 && sizeQty > 0 && (
+                        <OptionPicker options={varieties} selected={sizeVarieties} onToggle={(next) => onVarietyChange(key, next)} label="Varieties" tone="blue" />
                       )}
                     </div>
                   );
@@ -375,6 +419,7 @@ export function ItemRow({
             const key = buildOrderKey(availabilityItem.id, { size });
             const sizeQty = quantities[key] ?? 0;
             const sizeColors = itemColors[key] ?? [];
+            const sizeVarieties = itemVarieties[key] ?? [];
             return (
               <div key={size} className="bg-farm-cream/40 rounded-lg px-3 py-2 space-y-2">
                 <div className="flex items-center justify-between">
@@ -388,7 +433,10 @@ export function ItemRow({
                   />
                 </div>
                 {colors.length > 0 && sizeQty > 0 && (
-                  <ColorPicker colors={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
+                  <OptionPicker options={colors} selected={sizeColors} onToggle={(next) => onColorChange(key, next)} />
+                )}
+                {varieties.length > 0 && sizeQty > 0 && (
+                  <OptionPicker options={varieties} selected={sizeVarieties} onToggle={(next) => onVarietyChange(key, next)} label="Varieties" tone="blue" />
                 )}
               </div>
             );

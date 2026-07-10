@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       cycle_notes?: string | null;
       available_sizes?: string | null;
       available_colors?: string | null;
+      available_varieties?: string | null;
       available_units?: string | null;
     }>;
     allItemIds?: string[];
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
     cycle_notes: item.cycle_notes ?? null,
     available_sizes: item.available_sizes ?? null,
     available_colors: item.available_colors ?? null,
+    available_varieties: item.available_varieties ?? null,
     available_units: item.available_units ?? null,
     updated_at: new Date().toISOString(),
   }));

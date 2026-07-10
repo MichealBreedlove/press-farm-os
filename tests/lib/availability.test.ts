@@ -26,6 +26,7 @@ function availRow(over: Record<string, any>) {
     cycle_notes: null,
     available_sizes: null,
     available_colors: null,
+    available_varieties: null,
     available_units: null,
     item: { is_archived: false },
     ...over,
@@ -127,7 +128,7 @@ describe("materializeRollover", () => {
   it("creates rows for the target date from rolled-over source rows", async () => {
     const supabase = makeSupabaseMock({ availability_items: [] });
     const source = [
-      availRow({ item_id: "item-1", status: "available" }),
+      availRow({ item_id: "item-1", status: "available", available_varieties: "Genovese,Thai" }),
       availRow({ item_id: "item-2", status: "limited", limited_qty: 5 }),
     ];
     await materializeRollover(supabase, source, "2026-06-11");
@@ -135,6 +136,8 @@ describe("materializeRollover", () => {
     expect(rows).toHaveLength(2);
     expect(rows.every((r: any) => r.delivery_date === "2026-06-11")).toBe(true);
     expect(rows.find((r: any) => r.item_id === "item-2")?.limited_qty).toBe(5);
+    // Per-cycle variety override rides the rollover forward like sizes/colors.
+    expect(rows.find((r: any) => r.item_id === "item-1")?.available_varieties).toBe("Genovese,Thai");
   });
 
   it("never materializes archived items", async () => {

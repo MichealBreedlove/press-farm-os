@@ -42,6 +42,7 @@ export function EventOrderClient({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [itemColors, setItemColors] = useState<Record<string, string[]>>({});
+  const [itemVarieties, setItemVarieties] = useState<Record<string, string[]>>({});
   const [freeformNotes, setFreeformNotes] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -82,6 +83,7 @@ export function EventOrderClient({
       unit_type: string | null;
       size_label: string | null;
       color_key: string | null;
+      variety_key: string | null;
     }[] = [];
     for (const ai of availabilityItems) {
       const units = resolveUnits(ai.item, ai.available_units);
@@ -90,19 +92,21 @@ export function EventOrderClient({
         const qty = quantities[key] ?? 0;
         if (qty <= 0) continue;
         const colors = itemColors[key] ?? [];
+        const varieties = itemVarieties[key] ?? [];
         out.push({
           availability_item_id: ai.id,
           quantity: qty,
           unit_type: unit ?? units[0] ?? null,
           size_label: size ?? null,
           color_key: colors.length > 0 ? colors.join(",") : null,
+          variety_key: varieties.length > 0 ? varieties.join(",") : null,
         });
       }
     }
     return out;
   }
 
-  const orderedCount = useMemo(() => buildItems().length, [quantities, itemColors, availabilityItems]); // eslint-disable-line react-hooks/exhaustive-deps
+  const orderedCount = useMemo(() => buildItems().length, [quantities, itemColors, itemVarieties, availabilityItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit() {
     setError(null);
@@ -141,6 +145,7 @@ export function EventOrderClient({
       // Reset the item picker; keep the event metadata for a possible follow-up.
       setQuantities({});
       setItemColors({});
+      setItemVarieties({});
       setItemNotes({});
       setFreeformNotes("");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -247,12 +252,16 @@ export function EventOrderClient({
                   quantities={quantities}
                   itemNotes={itemNotes}
                   itemColors={itemColors}
+                  itemVarieties={itemVarieties}
                   onQuantityChange={(key, qty) =>
                     setQuantities((prev) => ({ ...prev, [key]: qty }))
                   }
                   onNoteChange={(id, note) => setItemNotes((prev) => ({ ...prev, [id]: note }))}
                   onColorChange={(key, colors) =>
                     setItemColors((prev) => ({ ...prev, [key]: colors }))
+                  }
+                  onVarietyChange={(key, varieties) =>
+                    setItemVarieties((prev) => ({ ...prev, [key]: varieties }))
                   }
                 />
               );

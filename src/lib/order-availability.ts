@@ -60,3 +60,11 @@ export function resolveColors(
 ): string[] {
   return filterAvailable(splitList(item.color), availableColors);
 }
+
+/** Varieties this availability row exposes to the chef (per-cycle override ∩ item master). */
+export function resolveVarieties(
+  item: { variety?: string | null },
+  availableVarieties: string | null | undefined,
+): string[] {
+  return filterAvailable(splitList(item.variety), availableVarieties);
+}

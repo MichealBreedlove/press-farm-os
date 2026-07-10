@@ -68,6 +68,8 @@ export async function POST(request: Request) {
       size_label?: string | null;
       /** Comma-separated colors selected for this line ("red,blue"). null when none. */
       color_key?: string | null;
+      /** Comma-separated varieties selected for this line ("Genovese,Thai"). null when none. */
+      variety_key?: string | null;
       /** Order-form section the line came from. 'events' keeps an Events-menu
        *  line distinct from the Regular-menu line for the same item. */
       menu_section?: string | null;
@@ -75,8 +77,8 @@ export async function POST(request: Request) {
     freeform_notes?: string;
     /** When set, this is an explicit edit — replace existing items.
      *  When omitted, a second submission for the same date MERGES new items
-     *  into the existing order (matching availId+unit+size+color sums qty;
-     *  unmatched lines are appended). */
+     *  into the existing order (matching availId+unit+size+color+variety sums
+     *  qty; unmatched lines are appended). */
     editing_order_id?: string | null;
     /** Per-review-session idempotency token. The client mints one token when
      *  the chef enters review and reuses it across retries (e.g. a lost
@@ -301,9 +303,9 @@ export async function POST(request: Request) {
   }
 
   // Build the canonical line shape for incoming items. Persist the
-  // (unit, size, color) discriminators so chefs can order multiple
-  // sizes/colors of the same item and have them round-trip through the
-  // receiver dashboard, email, and edit-order hydration.
+  // (unit, size, color, variety) discriminators so chefs can order multiple
+  // sizes/colors/varieties of the same item and have them round-trip through
+  // the receiver dashboard, email, and edit-order hydration.
   const incomingLines = items
     .filter((item) => item.quantity > 0)
     .map((item) => {
@@ -320,6 +322,7 @@ export async function POST(request: Request) {
         unit_type: chosenUnit,
         size_label: item.size_label ?? null,
         color_key: item.color_key ?? null,
+        variety_key: item.variety_key ?? null,
         menu_section: menuSection,
         // Accountability: who added this line. Stamped on every insert.
         created_by: user.id,
@@ -344,11 +347,12 @@ export async function POST(request: Request) {
   let linesToUpdate: { id: string; quantity_requested: number }[] = [];
 
   if (isMerge) {
-    // Merge: sum qty into matching existing lines (same availId+unit+size+color);
-    // anything unmatched is appended. Existing untouched lines stay put.
+    // Merge: sum qty into matching existing lines (same availId+unit+size+
+    // color+variety); anything unmatched is appended. Existing untouched
+    // lines stay put.
     // (planOrderItemMerge is the unit-tested core — see src/lib/orders.ts.)
     const { data: existingItems } = await (supabase.from("order_items") as any)
-      .select("id, availability_item_id, unit_type, size_label, color_key, menu_section, quantity_requested")
+      .select("id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested")
       .eq("order_id", existingOrder!.id);
 
     const { toInsert, toUpdate } = planOrderItemMerge(existingItems ?? [], incomingLines);

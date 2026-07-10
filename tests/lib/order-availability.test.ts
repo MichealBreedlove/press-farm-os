@@ -4,6 +4,7 @@ import {
   resolveUnits,
   resolveSizes,
   resolveColors,
+  resolveVarieties,
 } from "@/lib/order-availability";
 
 /**
@@ -55,5 +56,19 @@ describe("resolve helpers", () => {
   it("resolveUnits filters the item's master unit list by the cycle override", () => {
     expect(resolveUnits({ unit_type: "sm,lg,gb" }, "sm,gb")).toEqual(["sm", "gb"]);
     expect(resolveUnits({ unit_type: "sm,lg,gb" }, null)).toEqual(["sm", "lg", "gb"]);
+  });
+
+  it("resolveVarieties filters the item's master varieties by the cycle override", () => {
+    expect(resolveVarieties({ variety: "Genovese, Thai, Cinnamon" }, "Thai,Cinnamon")).toEqual([
+      "Thai",
+      "Cinnamon",
+    ]);
+    expect(resolveVarieties({ variety: "Genovese, Thai, Cinnamon" }, null)).toEqual([
+      "Genovese",
+      "Thai",
+      "Cinnamon",
+    ]);
+    expect(resolveVarieties({ variety: null }, null)).toEqual([]);
+    expect(resolveVarieties({ variety: "Genovese, Thai" }, "")).toEqual([]);
   });
 });

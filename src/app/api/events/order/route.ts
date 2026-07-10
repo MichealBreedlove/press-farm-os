@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       unit_type?: string | null;
       size_label?: string | null;
       color_key?: string | null;
+      variety_key?: string | null;
     }[];
   };
 
@@ -188,6 +189,7 @@ export async function POST(request: Request) {
       unit_type: unit,
       size_label: i.size_label ?? null,
       color_key: i.color_key ?? null,
+      variety_key: i.variety_key ?? null,
       menu_section: null,
       created_by: user.id,
     };

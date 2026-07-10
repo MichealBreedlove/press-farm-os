@@ -17,12 +17,13 @@ function parseUnits(unitType: string | null | undefined): UnitType[] {
 // Types
 // ============================================
 
-/** Item-level state shared across restaurants — sizes/colors/units/limits/notes. */
+/** Item-level state shared across restaurants — sizes/colors/varieties/units/limits/notes. */
 interface SharedItemState {
   limited_qty: string;
   cycle_notes: string;
   available_sizes: string | null;
   available_colors: string | null;
+  available_varieties: string | null;
   available_units: string | null;
 }
 
@@ -44,6 +45,7 @@ const DEFAULT_SHARED: SharedItemState = {
   cycle_notes: "",
   available_sizes: null,
   available_colors: null,
+  available_varieties: null,
   available_units: null,
 };
 
@@ -144,6 +146,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
         cycle_notes: e?.cycle_notes ?? "",
         available_sizes: (e as any)?.available_sizes ?? null,
         available_colors: (e as any)?.available_colors ?? null,
+        available_varieties: (e as any)?.available_varieties ?? null,
         available_units: (e as any)?.available_units ?? null,
       };
     }
@@ -266,7 +269,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
   const toggleSharedMulti = useCallback(
     (
       itemId: string,
-      field: "available_sizes" | "available_colors" | "available_units",
+      field: "available_sizes" | "available_colors" | "available_varieties" | "available_units",
       value: string,
       allValues: string[],
     ) => {
@@ -353,6 +356,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 // deselect-all sticks instead of silently reverting to all.
                 available_sizes: s.available_sizes ?? null,
                 available_colors: s.available_colors ?? null,
+                available_varieties: s.available_varieties ?? null,
                 // Units must always have ≥1 option (it's the container you order
                 // in), so deselect-all-units falls back to the item's full list.
                 available_units: s.available_units || null,
@@ -594,6 +598,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                   const colorsList = (item as any).color
                     ? ((item as any).color as string).split(", ").filter(Boolean)
                     : [];
+                  const varietiesList = (item as any).variety
+                    ? ((item as any).variety as string)
+                        .split(",")
+                        .map((v: string) => v.trim())
+                        .filter(Boolean)
+                    : [];
 
                   // Status across restaurants for the "Set all" cycler — picks the
                   // first restaurant's status as the indicator.
@@ -740,6 +750,44 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                                     }`}
                                   >
                                     {c}
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Varieties selector. Empty selection (all line-through) is a
+                              real state — "none, ordered plain" — distinct from the
+                              default (null → all selected). */}
+                          {varietiesList.length > 0 && (() => {
+                            const sel =
+                              sharedState.available_varieties === null
+                                ? new Set(varietiesList)
+                                : new Set(
+                                    sharedState.available_varieties
+                                      ?.split(",")
+                                      .map((v) => v.trim())
+                                      .filter(Boolean) ?? [],
+                                  );
+                            return (
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                <span className="text-[9px] text-farm-muted">
+                                  Varieties{sel.size === 0 ? " (none — ordered plain)" : ""}:
+                                </span>
+                                {varietiesList.map((v: string) => (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() =>
+                                      toggleSharedMulti(item.id, "available_varieties", v, varietiesList)
+                                    }
+                                    className={`text-[9px] px-1.5 py-0.5 rounded min-h-0 min-w-0 transition-colors ${
+                                      sel.has(v)
+                                        ? "bg-pf-master-blue text-white"
+                                        : "bg-farm-cream/60 text-farm-muted line-through"
+                                    }`}
+                                  >
+                                    {v}
                                   </button>
                                 ))}
                               </div>

@@ -14,6 +14,7 @@ export interface MergeableLine {
   unit_type?: string | null;
   size_label?: string | null;
   color_key?: string | null;
+  variety_key?: string | null;
   menu_section?: string | null;
   quantity_requested: number;
 }
@@ -34,6 +35,7 @@ export function orderLineKey(l: MergeableLine): string {
     l.unit_type ?? "",
     l.size_label ?? "",
     l.color_key ?? "",
+    l.variety_key ?? "",
     l.menu_section ?? "",
   ].join("|");
 }

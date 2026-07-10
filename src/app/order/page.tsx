@@ -72,6 +72,7 @@ export default async function OrderPage({
   // and the multi-unit/size selection state would silently reset.
   let initialQuantities: Record<string, number> = {};
   let initialColors: Record<string, string[]> = {};
+  let initialVarieties: Record<string, string[]> = {};
   let initialEventChecked: Record<string, boolean> = {};
   let initialSplitOpen: Record<string, boolean> = {};
   let initialNotes = "";
@@ -83,7 +84,7 @@ export default async function OrderPage({
       .select(`
         id, delivery_date, freeform_notes, status,
         order_items(
-          quantity_requested, unit_type, size_label, color_key, menu_section,
+          quantity_requested, unit_type, size_label, color_key, variety_key, menu_section,
           availability_items(id, item:items(unit_type))
         )
       `)
@@ -133,6 +134,9 @@ export default async function OrderPage({
         if (oi.color_key) {
           initialColors[key] = String(oi.color_key).split(",").filter(Boolean);
         }
+        if (oi.variety_key) {
+          initialVarieties[key] = String(oi.variety_key).split(",").filter(Boolean);
+        }
       }
     }
   }
@@ -165,6 +169,7 @@ export default async function OrderPage({
     // Fall back to next open date (edit date closed or not editing)
     initialQuantities = {};
     initialColors = {};
+    initialVarieties = {};
     initialEventChecked = {};
     initialSplitOpen = {};
     initialNotes = "";
@@ -269,6 +274,7 @@ export default async function OrderPage({
         deliveryDateFormatted={deliveryDateFormatted}
         initialQuantities={isEditing ? initialQuantities : undefined}
         initialColors={isEditing ? initialColors : undefined}
+        initialVarieties={isEditing ? initialVarieties : undefined}
         initialEventChecked={isEditing ? initialEventChecked : undefined}
         initialSplitOpen={isEditing ? initialSplitOpen : undefined}
         initialNotes={isEditing ? initialNotes : undefined}

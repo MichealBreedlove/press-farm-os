@@ -53,6 +53,7 @@ export default async function OrderDetailPage({
         unit_type,
         size_label,
         color_key,
+        variety_key,
         menu_section,
         availability_items(
           id,
@@ -185,6 +186,7 @@ export default async function OrderDetailPage({
               const unit = (persistedUnit ?? String(item.unit_type ?? "").split(",")[0]?.trim() ?? "") as UnitType;
               const sizeLabel: string | null = oi.size_label ?? null;
               const colorKey: string | null = oi.color_key ?? null;
+              const varietyKey: string | null = oi.variety_key ?? null;
               const isEvent = oi.menu_section === "events";
               const ordered = Number(oi.quantity_requested ?? 0);
               const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
@@ -203,10 +205,11 @@ export default async function OrderDetailPage({
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-farm-dark truncate">
                           {item.name}
-                          {(sizeLabel || colorKey) && (
+                          {(sizeLabel || colorKey || varietyKey) && (
                             <span className="ml-1.5 text-xs font-normal text-farm-muted">
                               {[
                                 sizeLabel,
+                                varietyKey ? varietyKey.split(",").join(" / ") : null,
                                 colorKey ? colorKey.split(",").join(" / ") : null,
                               ]
                                 .filter(Boolean)

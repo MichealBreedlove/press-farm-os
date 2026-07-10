@@ -7,8 +7,10 @@ export interface HarvestGridRow {
   itemId: string;
   name: string;
   unit: UnitType;
-  /** Specific variety/color the chef requested (e.g. "Chocolate, Spearmint"); null if none. */
+  /** Specific color the chef requested (e.g. "Red, Yellow"); null if none. */
   colorKey?: string | null;
+  /** Specific variety the chef requested (e.g. "Genovese, Thai"); null if none. */
+  varietyKey?: string | null;
   /** restaurantId → qty (for the restaurants that placed orders this date) */
   qtyByRestaurant: Record<string, number>;
   total: number;
@@ -115,12 +117,17 @@ export function HarvestGrid({
           <div className="space-y-0.5">
             {rows.map((row) => (
               <div
-                key={`${row.itemId}-${row.unit}-${row.colorKey ?? ""}`}
+                key={`${row.itemId}-${row.unit}-${row.colorKey ?? ""}-${row.varietyKey ?? ""}`}
                 className="grid gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
                 style={{ gridTemplateColumns: gridTemplate }}
               >
                 <span className="text-sm text-farm-dark truncate">
                   {row.name}
+                  {row.varietyKey && (
+                    <span className="text-pf-master-blue font-medium">
+                      {" "}· {row.varietyKey.split(",").map((v) => v.trim()).filter(Boolean).join(", ")}
+                    </span>
+                  )}
                   {row.colorKey && (
                     <span className="text-pf-master-violet font-medium">
                       {" "}· {row.colorKey.split(",").map((c) => c.trim()).filter(Boolean).join(", ")}

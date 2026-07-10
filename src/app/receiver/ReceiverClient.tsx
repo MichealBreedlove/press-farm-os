@@ -12,8 +12,8 @@ type Status = "ready" | "short" | "pending" | "extra";
 type LineKind = "order_item" | "delivery_item";
 
 interface Line {
-  /** Composite map key: itemId__unit__size__color. Differentiates rows when a chef
-   *  orders multiple sizes/colors of the same item. */
+  /** Composite map key: itemId__unit__size__color__variety. Differentiates rows
+   *  when a chef orders multiple sizes/colors/varieties of the same item. */
   lineKey: string;
   itemId: string;
   itemName: string;
@@ -23,6 +23,8 @@ interface Line {
   sizeLabel: string | null;
   /** Comma-separated colors selected ("red,blue"). null when none. */
   colorKey: string | null;
+  /** Comma-separated varieties selected ("Genovese,Thai"). null when none. */
+  varietyKey: string | null;
   imageUrl: string | null;
   isEvent: boolean;
   ordered: number;
@@ -92,14 +94,15 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
       const delivery = deliveries.find((d: any) => d.restaurant_id === r.id);
       const lines = new Map<string, Line>();
 
-      // Composite key — keep multiple sizes/colors of the same item visible
-      // as separate rows.
+      // Composite key — keep multiple sizes/colors/varieties of the same item
+      // visible as separate rows.
       const buildKey = (
         itemId: string,
         unit: string,
         size: string | null,
         color: string | null,
-      ) => `${itemId}__${unit}__${size ?? ""}__${color ?? ""}`;
+        variety: string | null,
+      ) => `${itemId}__${unit}__${size ?? ""}__${color ?? ""}__${variety ?? ""}`;
 
       // Pass 1 — record every ordered item
       for (const oi of order?.order_items ?? []) {
@@ -112,7 +115,8 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
           (String(item.unit_type ?? "").split(",")[0]?.trim().toUpperCase() ?? "");
         const sizeLabel: string | null = oi.size_label ?? null;
         const colorKey: string | null = oi.color_key ?? null;
-        const key = buildKey(item.id, unit, sizeLabel, colorKey);
+        const varietyKey: string | null = oi.variety_key ?? null;
+        const key = buildKey(item.id, unit, sizeLabel, colorKey, varietyKey);
         const ordered = Number(oi.quantity_requested ?? 0);
         const isShortedFlag = Boolean(oi.is_shorted);
         const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
@@ -124,6 +128,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
           unit,
           sizeLabel,
           colorKey,
+          varietyKey,
           imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
           isEvent: isEventOnlyItem(item),
           ordered,
@@ -159,7 +164,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         if (groupLines.length === 0) {
           // Delivered but never ordered → extra. Sum repeated lines for the
           // same item+unit; there's no order_item to attach the check to.
-          const extraKey = buildKey(item.id, unit, null, null);
+          const extraKey = buildKey(item.id, unit, null, null, null);
           const extra = lines.get(extraKey);
           if (extra && extra.kind === "delivery_item") {
             extra.delivered += delivered;
@@ -172,6 +177,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
               unit,
               sizeLabel: di.size_label ?? null,
               colorKey: null,
+              varietyKey: null,
               imageUrl: getItemImageUrl({ name: item.name, image_url: item.image_url }),
               isEvent: isEventOnlyItem(item),
               ordered: 0,
@@ -570,10 +576,11 @@ function LineRow({ line, disabled = false }: { line: Line; disabled?: boolean })
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-sm font-semibold text-farm-dark truncate">
             {line.itemName}
-            {(line.sizeLabel || line.colorKey) && (
+            {(line.sizeLabel || line.colorKey || line.varietyKey) && (
               <span className="ml-1.5 text-xs font-normal text-farm-muted">
                 {[
                   line.sizeLabel,
+                  line.varietyKey ? line.varietyKey.split(",").join(" / ") : null,
                   line.colorKey ? line.colorKey.split(",").join(" / ") : null,
                 ]
                   .filter(Boolean)

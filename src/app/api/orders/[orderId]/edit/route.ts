@@ -84,7 +84,7 @@ export async function PUT(
       id, restaurant_id, delivery_date, freeform_notes,
       order_items(
         id, availability_item_id, quantity_requested, unit_price_at_order,
-        unit_type, size_label, color_key, menu_section,
+        unit_type, size_label, color_key, variety_key, menu_section,
         availability_item:availability_items(id, item_id)
       )
     `,
@@ -188,6 +188,7 @@ export async function PUT(
     unit_type: string | null;
     size_label: string | null;
     color_key: string | null;
+    variety_key: string | null;
     menu_section: string | null;
     quantity_requested: number;
     unit_price_at_order: number;
@@ -211,6 +212,7 @@ export async function PUT(
       unit_type: cur.unit_type ?? null,
       size_label: cur.size_label ?? null,
       color_key: cur.color_key ?? null,
+      variety_key: cur.variety_key ?? null,
       menu_section: cur.menu_section ?? null,
       quantity_requested: qty,
       unit_price_at_order:
@@ -240,6 +242,7 @@ export async function PUT(
       unit_type: unit,
       size_label: nl.size_label ?? null,
       color_key: null,
+      variety_key: null,
       menu_section: null,
       quantity_requested: qty,
       unit_price_at_order: resolveOrderUnitPrice(
@@ -277,7 +280,7 @@ export async function PUT(
       .select(
         `
         id, freeform_notes,
-        order_items(id, availability_item_id, unit_type, size_label, color_key, menu_section, quantity_requested)
+        order_items(id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested)
       `,
       )
       .eq("restaurant_id", restaurantId)
@@ -298,6 +301,7 @@ export async function PUT(
         unit_type: l.unit_type ?? null,
         size_label: l.size_label ?? null,
         color_key: l.color_key ?? null,
+        variety_key: l.variety_key ?? null,
         menu_section: l.menu_section ?? null,
         quantity_requested: Number(l.quantity_requested ?? 0),
       }),
@@ -321,6 +325,7 @@ export async function PUT(
           unit_type: l.unit_type,
           size_label: l.size_label,
           color_key: l.color_key,
+          variety_key: l.variety_key,
           menu_section: l.menu_section,
           created_by: auth.user.id,
         })),
@@ -395,6 +400,7 @@ export async function PUT(
           unit_type: d.unit_type,
           size_label: d.size_label,
           color_key: d.color_key,
+          variety_key: d.variety_key,
           menu_section: d.menu_section,
           created_by: auth.user.id,
         })),

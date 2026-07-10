@@ -14,9 +14,11 @@ interface CategorySectionProps {
   quantities: Record<string, number>;
   itemNotes: Record<string, string>;
   itemColors: Record<string, string[]>;
+  itemVarieties: Record<string, string[]>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
   onColorChange: (key: string, colors: string[]) => void;
+  onVarietyChange: (key: string, varieties: string[]) => void;
   /** Per-item "For an event" checkmark state, keyed by availability id.
    *  Omitted for the Press Bar section, where event marking doesn't apply. */
   eventChecked?: Record<string, boolean>;
@@ -34,9 +36,11 @@ export function CategorySection({
   quantities,
   itemNotes,
   itemColors,
+  itemVarieties,
   onQuantityChange,
   onNoteChange,
   onColorChange,
+  onVarietyChange,
   eventChecked,
   onEventToggle,
   splitOpen,
@@ -89,9 +93,11 @@ export function CategorySection({
                   quantities={quantities}
                   itemNote={itemNotes[item.id] ?? ""}
                   itemColors={itemColors}
+                  itemVarieties={itemVarieties}
                   onQuantityChange={onQuantityChange}
                   onNoteChange={onNoteChange}
                   onColorChange={onColorChange}
+                  onVarietyChange={onVarietyChange}
                   eventChecked={eventChecked?.[item.id] ?? false}
                   onEventToggle={onEventToggle}
                   splitOpen={isSplit}
@@ -119,9 +125,11 @@ export function CategorySection({
                       quantities={quantities}
                       itemNote={itemNotes[eventCopyId] ?? ""}
                       itemColors={itemColors}
+                      itemVarieties={itemVarieties}
                       onQuantityChange={onQuantityChange}
                       onNoteChange={onNoteChange}
                       onColorChange={onColorChange}
+                      onVarietyChange={onVarietyChange}
                       isEventCopy
                     />
                   </div>

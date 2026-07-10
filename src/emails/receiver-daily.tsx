@@ -31,6 +31,8 @@ interface ReceiverLine {
   sizeLabel?: string;
   /** Comma-separated colors the chef picked ("red,blue"). undefined when none. */
   colorKey?: string;
+  /** Comma-separated varieties the chef picked ("Genovese,Thai"). undefined when none. */
+  varietyKey?: string;
   /** What the chef ordered. 0 means it wasn't ordered (extra). */
   ordered: number;
   /** What's actually being delivered. May be < ordered (short) or > 0 with ordered=0 (extra). */
@@ -301,7 +303,7 @@ function LineRow({ line, isLast }: { line: ReceiverLine; isLast: boolean }) {
               <td style={{ verticalAlign: "middle", paddingRight: "8px" }}>
                 <Text style={styles.itemName}>
                   {line.itemName}
-                  {(line.sizeLabel || line.colorKey) && (
+                  {(line.sizeLabel || line.colorKey || line.varietyKey) && (
                     <span style={{
                       fontFamily: FONT_STACK_INLINE,
                       fontSize: "11px",
@@ -309,7 +311,11 @@ function LineRow({ line, isLast }: { line: ReceiverLine; isLast: boolean }) {
                       color: colors.textMuted,
                       marginLeft: "6px",
                     }}>
-                      {[line.sizeLabel, line.colorKey ? line.colorKey.split(",").join(" / ") : null].filter(Boolean).join(" · ")}
+                      {[
+                        line.sizeLabel,
+                        line.varietyKey ? line.varietyKey.split(",").join(" / ") : null,
+                        line.colorKey ? line.colorKey.split(",").join(" / ") : null,
+                      ].filter(Boolean).join(" · ")}
                     </span>
                   )}
                 </Text>
