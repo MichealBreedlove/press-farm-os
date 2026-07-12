@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import { todayPacific } from "@/lib/utils";
 
 interface Note {
   id: string;
@@ -26,7 +27,7 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
   const [saving, setSaving] = useState(false);
   const [text, setText] = useState("");
   const [category, setCategory] = useState("observation");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayPacific());
   const [filter, setFilter] = useState("all");
 
   async function addNote() {

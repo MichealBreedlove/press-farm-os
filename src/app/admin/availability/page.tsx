@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { DeliveryDate } from "@/types";
 import { AddDatesButton } from "./AddDatesButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * /admin/availability — Availability dashboard
@@ -24,7 +25,7 @@ function formatDeliveryDate(dateStr: string): string {
 
 export default async function AdminAvailabilityPage() {
   const supabase = (await createClient()) as any;
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayPacific();
 
   // Fetch upcoming delivery dates
   const { data: rawDates, error } = await supabase

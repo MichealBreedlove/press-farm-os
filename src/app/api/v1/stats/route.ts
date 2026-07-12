@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { validateApiKey } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * GET /api/v1/stats — Dashboard stats overview
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
   if (authError) return authError;
 
   const url = new URL(request.url);
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayPacific();
   const month = url.searchParams.get("month") ?? today.slice(0, 7);
   const [y, m] = month.split("-").map(Number);
   const monthStart = `${month}-01`;

@@ -108,6 +108,34 @@ export function todayPacific(): string {
 }
 
 /**
+ * Format a timestamp's time-of-day in the farm's timezone.
+ * Server components render on Vercel in UTC, so any timestamp formatted
+ * without an explicit timeZone shows UTC times (7–8 hours ahead of Pacific).
+ * @example formatTimePacific("2026-07-12T17:24:00Z") → "10:24 AM"
+ */
+export function formatTimePacific(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Format a timestamp as short date + time in the farm's timezone.
+ * @example formatDateTimePacific("2026-07-12T17:24:00Z") → "Jul 12, 10:24 AM"
+ */
+export function formatDateTimePacific(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/**
  * Get month/year label for reporting.
  * @example formatMonthYear("2026-02-01") → "February 2026"
  */

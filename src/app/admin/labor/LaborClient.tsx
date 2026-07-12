@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Send } from "lucide-react";
-import { formatCurrencyWhole as fmt } from "@/lib/utils";
+import { formatCurrencyWhole as fmt, todayPacific } from "@/lib/utils";
 
 interface LaborEntry {
   id: string;
@@ -52,7 +52,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   const [sent, setSent] = useState(false);
 
   const [workerName, setWorkerName] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayPacific());
   const [timeIn, setTimeIn] = useState("");
   const [lunchOut, setLunchOut] = useState("");
   const [lunchIn, setLunchIn] = useState("");

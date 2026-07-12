@@ -74,6 +74,7 @@ export default async function ArchivedInboxPage() {
                       <span className="text-sm text-farm-dark truncate">{senderName}</span>
                       <span className="text-xs text-farm-muted/60 ml-auto flex-shrink-0">
                         {new Date(m.received_at).toLocaleDateString("en-US", {
+                          timeZone: "America/Los_Angeles",
                           month: "short",
                           day: "numeric",
                         })}

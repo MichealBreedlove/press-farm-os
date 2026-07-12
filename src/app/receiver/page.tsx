@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { SignOutButton } from "@/components/shared/SignOutButton";
 import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, formatDateTimePacific } from "@/lib/utils";
 import { ReceiverClient } from "./ReceiverClient";
 
 export const dynamic = "force-dynamic";
@@ -131,12 +131,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
             Finish & Send) or is still mid-pick. */}
         {lastNotifiedAt && (
           <p className="text-[11px] tracking-[0.18em] uppercase text-farm-muted text-center mb-4">
-            Notified {new Date(lastNotifiedAt).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
+            Notified {formatDateTimePacific(lastNotifiedAt)}
           </p>
         )}
 

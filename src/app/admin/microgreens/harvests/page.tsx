@@ -5,7 +5,8 @@ import { harvestUnitLabel } from "@/lib/microgreens/types";
 export const dynamic = "force-dynamic";
 
 function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: "America/Los_Angeles",
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
 }

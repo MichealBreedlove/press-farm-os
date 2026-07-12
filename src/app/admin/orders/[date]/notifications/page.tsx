@@ -98,6 +98,7 @@ export default async function NotificationHistoryPage({ params }: Props) {
                   <div>
                     <p className="font-display text-base text-farm-dark">
                       {new Date(evt.sent_at).toLocaleString("en-US", {
+                        timeZone: "America/Los_Angeles",
                         weekday: "short",
                         month: "short",
                         day: "numeric",

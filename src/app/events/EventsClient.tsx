@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 
 interface ItemRow {
   id: string;
@@ -62,7 +62,7 @@ function unitsFor(item: ItemRow): string[] {
 export function EventsClient({ restaurantName, categories, itemsByCategory, history }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const todayISO = new Date().toISOString().split("T")[0];
+  const todayISO = todayPacific();
 
   // Event-level metadata — shared across every line in this submission.
   const [neededBy, setNeededBy] = useState<string>("");

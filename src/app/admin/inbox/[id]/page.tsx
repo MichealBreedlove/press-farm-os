@@ -132,7 +132,7 @@ export default async function InboxDetailPage({ params }: { params: { id: string
         title={msg.subject?.trim() || "(no subject)"}
         subtitle={`From ${senderName}${restaurantName ? ` · ${restaurantName}` : ""} · ${new Date(
           msg.received_at,
-        ).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
+        ).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" })}`}
         backHref="/admin/inbox"
       />
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { todayPacific } from "@/lib/utils";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -41,7 +42,7 @@ export default async function ForecastPage({
   const admin = createAdminClient();
 
   // Get next upcoming delivery date if no date param
-  const today = new Date().toISOString().split("T")[0]!;
+  const today = todayPacific();
   let targetDate: string = dateParam ?? "";
   if (!targetDate) {
     const { data: nextDate } = await admin

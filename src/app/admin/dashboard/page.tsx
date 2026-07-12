@@ -9,7 +9,7 @@ import { SEEDS_ENABLED } from "@/lib/constants";
 import { listTodayTasks } from "@/lib/tasks/queries";
 import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
 import type { FarmTask } from "@/types/database";
-import { formatCurrencyWhole } from "@/lib/utils";
+import { formatCurrencyWhole, todayPacific } from "@/lib/utils";
 
 interface DashCard {
   href: string;
@@ -45,7 +45,7 @@ export default async function AdminDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayPacific();
   const currentMonth = today.slice(0, 7);
   const monthStart = `${currentMonth}-01`;
   const [y, m] = currentMonth.split("-").map(Number);
@@ -177,8 +177,8 @@ export default async function AdminDashboardPage() {
 
   const monthName = new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
   const todayDate = new Date();
-  const dayOfWeek = todayDate.toLocaleDateString("en-US", { weekday: "long" });
-  const monthDay = todayDate.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const dayOfWeek = todayDate.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", weekday: "long" });
+  const monthDay = todayDate.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", month: "long", day: "numeric" });
 
   // Editorial subtitle that summarizes the day at a glance
   const subtitleParts: string[] = [];

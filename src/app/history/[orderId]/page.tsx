@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, formatDateTimePacific } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { OrderActivity } from "@/components/shared/OrderActivity";
@@ -333,12 +333,7 @@ export default async function OrderDetailPage({
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Submitted</span>
               <span className="font-medium text-gray-900">
-                {new Date(order.submitted_at).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+                {formatDateTimePacific(order.submitted_at)}
               </span>
             </div>
           )}
