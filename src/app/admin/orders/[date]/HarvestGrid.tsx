@@ -1,31 +1,22 @@
 import { formatQty, cn } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
-import type { ItemCategory, UnitType } from "@/types";
+import type {
+  HarvestGridRow,
+  HarvestGridCategory,
+  HarvestGridContainer,
+} from "@/lib/harvest";
 
-export interface HarvestGridRow {
-  itemId: string;
-  name: string;
-  unit: UnitType;
-  /** Specific color the chef requested (e.g. "Red, Yellow"); null if none. */
-  colorKey?: string | null;
-  /** Specific variety the chef requested (e.g. "Genovese, Thai"); null if none. */
-  varietyKey?: string | null;
-  /** restaurantId → qty (for the restaurants that placed orders this date) */
-  qtyByRestaurant: Record<string, number>;
-  total: number;
-}
+export type { HarvestGridRow, HarvestGridCategory, HarvestGridContainer };
 
-export interface HarvestGridCategory {
-  key: ItemCategory;
-  rows: HarvestGridRow[];
-}
-
-export interface HarvestGridContainer {
-  unit: string;
-  label: string;
-  count: number;
-  icon: string;
+/** Display-string overrides so /harvest can render the grid in Spanish. */
+export interface HarvestGridLabels {
+  containersNeeded: string;
+  item: string;
+  container: string;
+  total: string;
+  /** category key → heading (falls back to English CATEGORY_LABELS). */
+  categoryLabels: Record<string, string>;
 }
 
 /**
@@ -54,11 +45,21 @@ export function HarvestGrid({
   restaurants,
   categories,
   containers,
+  labels,
 }: {
   restaurants: { id: string; name: string }[];
   categories: HarvestGridCategory[];
   containers: HarvestGridContainer[];
+  /** Optional display-string overrides (Spanish on /harvest). */
+  labels?: HarvestGridLabels;
 }) {
+  const t: HarvestGridLabels = labels ?? {
+    containersNeeded: "Containers Needed",
+    item: "Item",
+    container: "Cont.",
+    total: "Tot",
+    categoryLabels: CATEGORY_LABELS,
+  };
   // Dynamic grid template: Item | Container | (per-restaurant cols) | Total
   const gridTemplate = `minmax(9rem,1fr) auto ${"auto ".repeat(restaurants.length)}auto`.trim();
 
@@ -68,7 +69,7 @@ export function HarvestGrid({
       {containers.length > 0 && (
         <div className="card p-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted mb-3">
-            Containers Needed
+            {t.containersNeeded}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {containers.map(({ unit, label, count, icon }) => (
@@ -87,7 +88,7 @@ export function HarvestGrid({
       {categories.map(({ key, rows }) => (
         <div key={key}>
           <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted border-b border-farm-dark/10 pb-1 mb-2">
-            {CATEGORY_LABELS[key] ?? key}
+            {t.categoryLabels[key] ?? CATEGORY_LABELS[key] ?? key}
           </h2>
 
           {/* Horizontal-scroll wrapper: on a 375px phone the item name +
@@ -103,15 +104,15 @@ export function HarvestGrid({
             className="grid gap-1 sm:gap-2 text-xs text-farm-muted font-medium mb-1 px-1"
             style={{ gridTemplateColumns: gridTemplate }}
           >
-            <span>Item</span>
-            <span className="w-12 sm:w-16 text-center">Cont.</span>
+            <span>{t.item}</span>
+            <span className="w-12 sm:w-16 text-center">{t.container}</span>
             {restaurants.map((r) => (
               <span key={r.id} className="w-9 sm:w-12 inline-flex items-center justify-end gap-1" title={r.name}>
                 <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", laneStyle(r.name).dot)} aria-hidden="true" />
                 {shortCode(r.name)}
               </span>
             ))}
-            <span className="w-10 sm:w-14 text-right font-semibold">Tot</span>
+            <span className="w-10 sm:w-14 text-right font-semibold">{t.total}</span>
           </div>
 
           <div className="space-y-0.5">

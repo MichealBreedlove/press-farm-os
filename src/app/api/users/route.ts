@@ -88,13 +88,14 @@ export async function POST(request: Request) {
   const email = body.email?.trim().toLowerCase();
   const full_name = body.full_name;
   // Default role is "chef" for back-compat with the original form
-  const role = body.role === "receiver" ? "receiver" : "chef";
+  const role =
+    body.role === "receiver" || body.role === "harvester" ? body.role : "chef";
   const restaurant_id = body.restaurant_id;
 
   if (!email || !full_name?.trim()) {
     return NextResponse.json({ error: "email and full_name required" }, { status: 400 });
   }
-  // Chefs MUST have a restaurant; receivers don't.
+  // Chefs MUST have a restaurant; receivers and harvesters don't.
   if (role === "chef" && !restaurant_id) {
     return NextResponse.json({ error: "restaurant_id required for chef role" }, { status: 400 });
   }
@@ -128,7 +129,8 @@ export async function POST(request: Request) {
     .from("profiles")
     .upsert({ id: newUserId, full_name: full_name.trim(), role, is_active: true }, { onConflict: "id" });
 
-  // Link to restaurant only when chef — receivers see all restaurants by role.
+  // Link to restaurant only when chef — receivers/harvesters see all
+  // restaurants by role.
   if (role === "chef" && restaurant_id) {
     await admin
       .from("restaurant_users")

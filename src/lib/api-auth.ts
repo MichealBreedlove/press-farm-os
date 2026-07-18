@@ -6,7 +6,7 @@ import type { createClient } from "@/lib/supabase/server";
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /** Roles stored on `profiles.role`. */
-export type Role = "admin" | "receiver" | "chef";
+export type Role = "admin" | "receiver" | "chef" | "harvester";
 
 export type AdminAuthResult =
   | { ok: true; user: User }
