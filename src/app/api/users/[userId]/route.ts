@@ -80,16 +80,18 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     if (!name) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
     profileUpdate.full_name = name;
   }
-  if (body.role === "chef" || body.role === "receiver") profileUpdate.role = body.role;
+  if (body.role === "chef" || body.role === "receiver" || body.role === "harvester") {
+    profileUpdate.role = body.role;
+  }
   if (typeof body.is_active === "boolean") profileUpdate.is_active = body.is_active;
   if (Object.keys(profileUpdate).length > 0) {
     const { error } = await admin.from("profiles").update(profileUpdate).eq("id", userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // 3. Restaurant assignment. A receiver sees all restaurants, so clear theirs;
-  //    a chef is scoped to exactly one — replace any existing link.
-  if (body.role === "receiver") {
+  // 3. Restaurant assignment. Receivers/harvesters see all restaurants, so
+  //    clear theirs; a chef is scoped to exactly one — replace any existing link.
+  if (body.role === "receiver" || body.role === "harvester") {
     await admin.from("restaurant_users").delete().eq("user_id", userId);
   } else if (body.restaurant_id) {
     await admin.from("restaurant_users").delete().eq("user_id", userId);

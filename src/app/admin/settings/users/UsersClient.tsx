@@ -171,7 +171,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       restaurants.find((r) => u.restaurants.includes(r.name))?.id ?? restaurants[0]?.id ?? "";
     setEditForm({
       full_name: u.full_name ?? "",
-      role: u.role === "receiver" ? "receiver" : "chef",
+      role: u.role === "receiver" || u.role === "harvester" ? u.role : "chef",
       restaurant_id: currentRid,
     });
   }
@@ -226,6 +226,215 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const chefs = users.filter((u) => u.role === "chef");
   const admins = users.filter((u) => u.role === "admin");
   const receivers = users.filter((u) => u.role === "receiver");
+  const harvesters = users.filter((u) => u.role === "harvester");
+
+  // Shared account card with the full management controls (edit / welcome /
+  // reset password / deactivate / delete). Rendered for chefs AND harvesters —
+  // farm crew rotates just like kitchen staff, so both need the same levers.
+  // Plain render function (not a nested component) so the inline edit inputs
+  // keep focus across re-renders.
+  const renderManagedCard = (u: UserRow) => (
+      <div
+        key={u.id}
+        className={`bg-white rounded-xl border p-4 transition-opacity ${
+          u.is_active ? "border-farm-dark/5" : "border-farm-dark/5 opacity-50"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
+              {isSharedAccount(u.email) && <SharedTag />}
+            </div>
+            <p className="text-xs text-farm-muted truncate">{u.email}</p>
+            {u.restaurants.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                {u.restaurants.map((r) => (
+                  <LaneBadge key={r} name={r} />
+                ))}
+              </div>
+            )}
+          </div>
+          <span className={`${u.is_active ? "badge-green" : "badge-gray"} flex-shrink-0`}>
+            {u.is_active ? "Active" : "Inactive"}
+          </span>
+        </div>
+
+        {/* Account actions — own row so they never crush the name/email
+            on a phone; each control is a tap-safe ≥44px button. */}
+        {u.id !== currentUserId && (
+          <div className="mt-3 pt-3 border-t border-farm-dark/5 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => (editUserId === u.id ? setEditUserId(null) : openEdit(u))}
+              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+            >
+              {editUserId === u.id ? "Cancel" : "Edit"}
+            </button>
+            <button
+              onClick={() => handleSendWelcome(u)}
+              disabled={welcomingId === u.id}
+              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-green border border-farm-green/30 hover:bg-farm-green-light disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+              title="Send welcome email (points to /login — no password embedded)"
+            >
+              {welcomingId === u.id ? "Sending…" : "Send welcome"}
+            </button>
+            <button
+              onClick={() => {
+                setResetUserId(resetUserId === u.id ? null : u.id);
+                setNewPassword("");
+                setEditUserId(null);
+                setDeleteConfirmId(null);
+                setError(null);
+              }}
+              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
+            >
+              {resetUserId === u.id ? "Cancel" : "Reset password"}
+            </button>
+            <button
+              onClick={() => handleToggle(u)}
+              disabled={toggling === u.id || isPending}
+              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ml-auto"
+            >
+              {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
+            </button>
+            <button
+              onClick={() => {
+                setDeleteConfirmId(deleteConfirmId === u.id ? null : u.id);
+                setEditUserId(null);
+                setResetUserId(null);
+                setError(null);
+              }}
+              className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+            >
+              {deleteConfirmId === u.id ? "Cancel" : "Delete"}
+            </button>
+          </div>
+        )}
+
+        {/* Edit-details panel */}
+        {editUserId === u.id && (
+          <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-3">
+            <div>
+              <label className="block text-xs text-farm-muted mb-1">Full name</label>
+              <input
+                type="text"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                className="input-field"
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-farm-muted mb-1">Role</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, role: "chef" }))}
+                  className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                    editForm.role === "chef"
+                      ? "bg-farm-green text-white border-farm-green"
+                      : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
+                  }`}
+                >
+                  Chef
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, role: "receiver" }))}
+                  className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                    editForm.role === "receiver"
+                      ? "bg-pf-master-violet text-white border-pf-master-violet"
+                      : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-violet/30"
+                  }`}
+                >
+                  Receiver
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, role: "harvester" }))}
+                  className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                    editForm.role === "harvester"
+                      ? "bg-pf-master-blue text-white border-pf-master-blue"
+                      : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-blue/30"
+                  }`}
+                >
+                  Harvester
+                </button>
+              </div>
+            </div>
+            {editForm.role === "chef" && (
+              <div>
+                <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
+                <select
+                  value={editForm.restaurant_id}
+                  onChange={(e) => setEditForm((f) => ({ ...f, restaurant_id: e.target.value }))}
+                  className="input-field"
+                >
+                  {restaurants.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <button
+              onClick={() => handleSaveEdit(u)}
+              disabled={savingEdit}
+              className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
+            >
+              {savingEdit ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        )}
+
+        {/* Delete confirmation */}
+        {deleteConfirmId === u.id && (
+          <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 flex items-center gap-3 flex-wrap">
+            <p className="text-xs text-red-700 flex-1 min-w-[150px] leading-relaxed">
+              Permanently delete {u.full_name ?? "this account"}? This can&apos;t be undone.
+              Accounts with order history can&apos;t be deleted — deactivate those instead.
+            </p>
+            <button
+              onClick={() => handleDelete(u)}
+              disabled={deletingId === u.id}
+              className="btn-danger min-h-[44px] px-4 text-xs font-medium disabled:opacity-50"
+            >
+              {deletingId === u.id ? "Deleting…" : "Yes, delete"}
+            </button>
+          </div>
+        )}
+        {resetUserId === u.id && (
+          <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password (min 8 chars)"
+                className="flex-1 border border-farm-dark/10 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-farm-green"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              <button
+                onClick={() => handleResetPassword(u, "set")}
+                disabled={resetting}
+                className="min-h-[44px] px-4 bg-farm-green text-white rounded-lg text-sm font-medium hover:bg-farm-green/90 disabled:opacity-50"
+              >
+                {resetting ? "…" : "Set"}
+              </button>
+            </div>
+            <button
+              onClick={() => handleResetPassword(u, "generate")}
+              disabled={resetting}
+              className="w-full min-h-[40px] text-xs text-farm-muted hover:text-farm-dark/80 border border-farm-dark/10 rounded-lg disabled:opacity-50"
+            >
+              {resetting ? "…" : "Generate a new password"}
+            </button>
+          </div>
+        )}
+      </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -312,11 +521,11 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
           </div>
           <div>
             <label className="block text-xs text-farm-muted mb-1">Role</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, role: "chef" }))}
-                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 ${
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 py-2 ${
                   form.role === "chef"
                     ? "bg-farm-green text-white border-farm-green shadow-sm"
                     : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
@@ -330,7 +539,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, role: "receiver" }))}
-                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 ${
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 py-2 ${
                   form.role === "receiver"
                     ? "bg-pf-master-violet text-white border-pf-master-violet shadow-sm"
                     : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-violet/30"
@@ -339,6 +548,20 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                 <p className="font-semibold">Receiver</p>
                 <p className={`text-[11px] mt-0.5 ${form.role === "receiver" ? "text-white/80" : "text-farm-muted"}`}>
                   Sees incoming for both restaurants
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, role: "harvester" }))}
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 py-2 ${
+                  form.role === "harvester"
+                    ? "bg-pf-master-blue text-white border-pf-master-blue shadow-sm"
+                    : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-blue/30"
+                }`}
+              >
+                <p className="font-semibold">Harvester</p>
+                <p className={`text-[11px] mt-0.5 ${form.role === "harvester" ? "text-white/80" : "text-farm-muted"}`}>
+                  Harvest list only (English/Spanish)
                 </p>
               </button>
             </div>
@@ -367,6 +590,17 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               Receivers don&apos;t need a restaurant assignment — they see incoming
               from both Press and Under-Study, plus event items, on a single dashboard.
               Read-only: they can&apos;t place or edit orders.
+            </p>
+          )}
+
+          {form.role === "harvester" && (
+            <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-pf-master-blue/[0.06] border border-pf-master-blue/15 rounded-lg p-3">
+              Harvesters see one screen: the combined harvest list for each
+              delivery date, with the ability to add extra items. No prices,
+              orders, or reports. The page has an English/Spanish toggle.
+              Tip: use a username-style email like
+              {" "}<span className="font-mono">harvest@accounts.pressfarm.app</span>{" "}
+              so the crew signs in with just &quot;harvest&quot; + password.
             </p>
           )}
 
@@ -441,203 +675,23 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         </div>
       )}
 
+      {/* Harvesters — full management controls (crew rotates like kitchen staff) */}
+      {harvesters.length > 0 && (
+        <div>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">
+            Harvesters ({harvesters.length})
+          </p>
+          <div className="space-y-2">{harvesters.map(renderManagedCard)}</div>
+        </div>
+      )}
+
       {/* Chefs */}
       <div>
         <p className="section-eyebrow with-flower text-farm-muted mb-2">
           Chefs ({chefs.length})
         </p>
         <div className="space-y-2">
-          {chefs.map((u) => (
-            <div
-              key={u.id}
-              className={`bg-white rounded-xl border p-4 transition-opacity ${
-                u.is_active ? "border-farm-dark/5" : "border-farm-dark/5 opacity-50"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-farm-dark truncate">{u.full_name ?? "(No name)"}</p>
-                    {isSharedAccount(u.email) && <SharedTag />}
-                  </div>
-                  <p className="text-xs text-farm-muted truncate">{u.email}</p>
-                  {u.restaurants.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                      {u.restaurants.map((r) => (
-                        <LaneBadge key={r} name={r} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <span className={`${u.is_active ? "badge-green" : "badge-gray"} flex-shrink-0`}>
-                  {u.is_active ? "Active" : "Inactive"}
-                </span>
-              </div>
-
-              {/* Account actions — own row so they never crush the name/email
-                  on a phone; each control is a tap-safe ≥44px button. */}
-              {u.id !== currentUserId && (
-                <div className="mt-3 pt-3 border-t border-farm-dark/5 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => (editUserId === u.id ? setEditUserId(null) : openEdit(u))}
-                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
-                  >
-                    {editUserId === u.id ? "Cancel" : "Edit"}
-                  </button>
-                  <button
-                    onClick={() => handleSendWelcome(u)}
-                    disabled={welcomingId === u.id}
-                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-green border border-farm-green/30 hover:bg-farm-green-light disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
-                    title="Send welcome email (points to /login — no password embedded)"
-                  >
-                    {welcomingId === u.id ? "Sending…" : "Send welcome"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setResetUserId(resetUserId === u.id ? null : u.id);
-                      setNewPassword("");
-                      setEditUserId(null);
-                      setDeleteConfirmId(null);
-                      setError(null);
-                    }}
-                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40"
-                  >
-                    {resetUserId === u.id ? "Cancel" : "Reset password"}
-                  </button>
-                  <button
-                    onClick={() => handleToggle(u)}
-                    disabled={toggling === u.id || isPending}
-                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-farm-dark/80 border border-farm-dark/15 hover:bg-farm-cream/60 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ml-auto"
-                  >
-                    {toggling === u.id ? "…" : u.is_active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteConfirmId(deleteConfirmId === u.id ? null : u.id);
-                      setEditUserId(null);
-                      setResetUserId(null);
-                      setError(null);
-                    }}
-                    className="inline-flex items-center min-h-[44px] px-3 rounded-lg text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
-                  >
-                    {deleteConfirmId === u.id ? "Cancel" : "Delete"}
-                  </button>
-                </div>
-              )}
-
-              {/* Edit-details panel */}
-              {editUserId === u.id && (
-                <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-3">
-                  <div>
-                    <label className="block text-xs text-farm-muted mb-1">Full name</label>
-                    <input
-                      type="text"
-                      value={editForm.full_name}
-                      onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
-                      className="input-field"
-                      placeholder="Full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-farm-muted mb-1">Role</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditForm((f) => ({ ...f, role: "chef" }))}
-                        className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
-                          editForm.role === "chef"
-                            ? "bg-farm-green text-white border-farm-green"
-                            : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
-                        }`}
-                      >
-                        Chef
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditForm((f) => ({ ...f, role: "receiver" }))}
-                        className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
-                          editForm.role === "receiver"
-                            ? "bg-pf-master-violet text-white border-pf-master-violet"
-                            : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-violet/30"
-                        }`}
-                      >
-                        Receiver
-                      </button>
-                    </div>
-                  </div>
-                  {editForm.role === "chef" && (
-                    <div>
-                      <label className="block text-xs text-farm-muted mb-1">Restaurant</label>
-                      <select
-                        value={editForm.restaurant_id}
-                        onChange={(e) => setEditForm((f) => ({ ...f, restaurant_id: e.target.value }))}
-                        className="input-field"
-                      >
-                        {restaurants.map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleSaveEdit(u)}
-                    disabled={savingEdit}
-                    className="btn-primary w-full min-h-[44px] text-sm font-medium disabled:opacity-50"
-                  >
-                    {savingEdit ? "Saving…" : "Save changes"}
-                  </button>
-                </div>
-              )}
-
-              {/* Delete confirmation */}
-              {deleteConfirmId === u.id && (
-                <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 flex items-center gap-3 flex-wrap">
-                  <p className="text-xs text-red-700 flex-1 min-w-[150px] leading-relaxed">
-                    Permanently delete {u.full_name ?? "this account"}? This can&apos;t be undone.
-                    Accounts with order history can&apos;t be deleted — deactivate those instead.
-                  </p>
-                  <button
-                    onClick={() => handleDelete(u)}
-                    disabled={deletingId === u.id}
-                    className="btn-danger min-h-[44px] px-4 text-xs font-medium disabled:opacity-50"
-                  >
-                    {deletingId === u.id ? "Deleting…" : "Yes, delete"}
-                  </button>
-                </div>
-              )}
-              {resetUserId === u.id && (
-                <div className="mt-3 pt-3 border-t border-farm-dark/5 space-y-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="New password (min 8 chars)"
-                      className="flex-1 border border-farm-dark/10 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-farm-green"
-                      autoComplete="off"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                    />
-                    <button
-                      onClick={() => handleResetPassword(u, "set")}
-                      disabled={resetting}
-                      className="min-h-[44px] px-4 bg-farm-green text-white rounded-lg text-sm font-medium hover:bg-farm-green/90 disabled:opacity-50"
-                    >
-                      {resetting ? "…" : "Set"}
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => handleResetPassword(u, "generate")}
-                    disabled={resetting}
-                    className="w-full min-h-[40px] text-xs text-farm-muted hover:text-farm-dark/80 border border-farm-dark/10 rounded-lg disabled:opacity-50"
-                  >
-                    {resetting ? "…" : "Generate a new password"}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+          {chefs.map(renderManagedCard)}
           {chefs.length === 0 && (
             <p className="text-center text-sm text-farm-muted py-6">No chefs yet. Invite one above.</p>
           )}

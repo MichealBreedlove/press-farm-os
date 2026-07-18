@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireRole } from "@/lib/api-auth";
 import { UNIT_TYPES } from "@/lib/constants";
 
 const VALID_UNITS = new Set(UNIT_TYPES.map((u) => u.value));
@@ -19,14 +19,14 @@ const VALID_UNITS = new Set(UNIT_TYPES.map((u) => u.value));
  * the delivery_item to. If a deliveries row doesn't exist for that pair,
  * we create one in 'logged' status.
  *
- * Admin only.
+ * Admin + harvester (the /harvest portal's "add more" flow).
  */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ orderId: string }> },
 ) {
   const supabase = await createClient();
-  const auth = await requireAdmin(supabase);
+  const auth = await requireRole(supabase, ["admin", "harvester"], { requireActive: true });
   if (!auth.ok) return auth.response;
 
   const { orderId } = await params;
@@ -132,14 +132,16 @@ export async function POST(
  * Removes a previously-added extra delivery_item. Useful if admin
  * adds the wrong item or wrong quantity during pick-and-pack.
  *
- * Admin only.
+ * Admin + harvester — harvesters can only remove bonus (extra) lines, so a
+ * mistaken tap on /harvest can be undone without exposing real delivery
+ * lines to deletion.
  */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ orderId: string }> },
 ) {
   const supabase = await createClient();
-  const auth = await requireAdmin(supabase);
+  const auth = await requireRole(supabase, ["admin", "harvester"], { requireActive: true });
   if (!auth.ok) return auth.response;
 
   const { orderId } = await params;
@@ -158,10 +160,15 @@ export async function DELETE(
 
   const { data: line } = await (admin as any)
     .from("delivery_items")
-    .select("id, delivery:deliveries(delivery_date, restaurant_id)")
+    .select("id, is_bonus, delivery:deliveries(delivery_date, restaurant_id)")
     .eq("id", lineId)
     .single();
   if (!line) return NextResponse.json({ error: "Line not found" }, { status: 404 });
+
+  // Harvesters may only remove bonus (extra) lines — never real delivery lines.
+  if (auth.role === "harvester" && !(line as any).is_bonus) {
+    return NextResponse.json({ error: "Only extra items can be removed" }, { status: 403 });
+  }
 
   const d = (line as any).delivery;
   if (!d || d.delivery_date !== order.delivery_date || d.restaurant_id !== order.restaurant_id) {

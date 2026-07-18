@@ -8,7 +8,8 @@ import { DeleteOrderButton } from "./DeleteOrderButton";
 import { InlineShortageRow } from "./InlineShortageRow";
 import { AddExtraRow } from "./AddExtraRow";
 import { ExtrasList } from "./ExtrasList";
-import { HarvestGrid, type HarvestGridRow, type HarvestGridCategory, type HarvestGridContainer } from "./HarvestGrid";
+import { HarvestGrid } from "./HarvestGrid";
+import { aggregateHarvest } from "@/lib/harvest";
 import { PrintButton } from "./PrintButton";
 import { SendToReceiverBar } from "./SendToReceiverBar";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,7 +18,7 @@ import { EditorialHero } from "@/components/shared/EditorialHero";
 import { OrderActivity } from "@/components/shared/OrderActivity";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import type { ItemCategory, OrderStatus, UnitType, OrderAudit } from "@/types";
+import type { ItemCategory, OrderStatus, OrderAudit } from "@/types";
 
 interface AdminOrdersByDatePageProps {
   params: Promise<{ date: string }>;
@@ -137,127 +138,17 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
   // ── Combined harvest grid + pick progress ──
   // Roll up every order_item across every restaurant into (item, container)
   // buckets for the harvest grid at the top of the page — what to grab from
-  // the field before the per-restaurant pack split. Per-restaurant
-  // quantities become grid columns. Also count resolved lines (picked OR
-  // shorted) so the sticky bottom bar shows real progress.
-
-  // Restaurants that placed an order, in a stable harvester-friendly order
-  // (Press → Understudy → Press Bar → others). These drive the grid columns.
-  const harvestOrder = (name: string): number => {
-    const lower = name.toLowerCase();
-    if (lower === "press") return 0;
-    if (lower.includes("under")) return 1;
-    if (lower.includes("bar")) return 2;
-    if (lower.includes("event")) return 3;
-    return 100;
-  };
-  const restaurantsInPlay: { id: string; name: string }[] = [];
-  const seenRestaurantIds = new Set<string>();
-  for (const o of orders) {
-    const r = o.restaurant;
-    if (!r?.id || seenRestaurantIds.has(r.id)) continue;
-    seenRestaurantIds.add(r.id);
-    restaurantsInPlay.push({ id: r.id, name: r.name });
-  }
-  restaurantsInPlay.sort((a, b) => {
-    const oa = harvestOrder(a.name);
-    const ob = harvestOrder(b.name);
-    if (oa !== ob) return oa - ob;
-    return a.name.localeCompare(b.name);
-  });
-
-  // (item_id, container) → row with per-restaurant columns. Different
-  // containers of the same crop become separate rows; regular + events lines
-  // for the same crop sum together (you pick the combined total).
-  type AggRow = HarvestGridRow & { category: ItemCategory };
-  const itemMap = new Map<string, AggRow>();
-  let totalLines = 0;
-  let resolvedLines = 0;
-  let submittedOrderCount = 0;
-  for (const order of orders) {
-    if (order.status === "submitted") submittedOrderCount += 1;
-    const restaurantId = order.restaurant?.id;
-    for (const oi of order.order_items ?? []) {
-      const item = oi.availability_item?.item;
-      if (!item) continue;
-      totalLines += 1;
-      // A line is "resolved" if the admin has either checked it off as
-      // picked OR marked it as shorted. Both close the loop on that
-      // line for receiver hand-off.
-      if (oi.picked_at || oi.is_shorted) resolvedLines += 1;
-
-      const lineUnit = ((oi.unit_type ?? "").trim().toLowerCase() ||
-        (String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea")) as UnitType;
-      const qty = oi.is_shorted ? Number(oi.quantity_fulfilled ?? 0) : Number(oi.quantity_requested ?? 0);
-      if (qty <= 0 || !restaurantId) continue;
-
-      // Specific variety/color the chef picked (e.g. "Genovese" basil,
-      // "Chocolate" mint). Part of the harvest key so different varieties/
-      // colors of the same crop stay on their own rows — you pick each one
-      // separately.
-      const colorKey = (oi.color_key ?? "").trim();
-      const varietyKey = (oi.variety_key ?? "").trim();
-
-      const key = `${item.id}|${lineUnit}|${colorKey}|${varietyKey}`;
-      let row = itemMap.get(key);
-      if (!row) {
-        row = {
-          itemId: item.id,
-          name: item.name,
-          category: (item.category ?? "other") as ItemCategory,
-          unit: lineUnit,
-          colorKey: colorKey || null,
-          varietyKey: varietyKey || null,
-          qtyByRestaurant: {},
-          total: 0,
-        };
-        itemMap.set(key, row);
-      }
-      row.qtyByRestaurant[restaurantId] = (row.qtyByRestaurant[restaurantId] ?? 0) + qty;
-      row.total += qty;
-    }
-  }
-
-  // Group harvest rows by category (CATEGORY_ORDER), alphabetical within each.
-  const harvestByCategory: Record<string, HarvestGridRow[]> = {};
-  for (const row of itemMap.values()) {
-    if (!harvestByCategory[row.category]) harvestByCategory[row.category] = [];
-    harvestByCategory[row.category].push(row);
-  }
-  for (const cat of Object.keys(harvestByCategory)) {
-    harvestByCategory[cat].sort((a, b) => a.name.localeCompare(b.name));
-  }
-  const harvestCategories: HarvestGridCategory[] = CATEGORY_ORDER
-    .filter((c) => harvestByCategory[c])
-    .map((c) => ({ key: c, rows: harvestByCategory[c] }));
-
-  // Container calculator — how many of each vessel to grab, by unit total.
-  const CONTAINER_MAP: Record<string, { label: string; icon: string }> = {
-    lg: { label: "Large To-Go", icon: "📦" },
-    sm: { label: "Small To-Go", icon: "📦" },
-    lbs: { label: "Green Bin", icon: "🟩" },
-    bx: { label: "Box", icon: "📦" },
-    bu: { label: "Bunch", icon: "🌿" },
-    qt: { label: "Quart", icon: "🥤" },
-    pt: { label: "Pint", icon: "🥤" },
-    cs: { label: "Case", icon: "📦" },
-    kit: { label: "Kit", icon: "🧰" },
-  };
-  const containerCounts: Record<string, HarvestGridContainer> = {};
-  for (const row of itemMap.values()) {
-    if (row.unit === "ea") continue;
-    const c = CONTAINER_MAP[row.unit];
-    if (!c) continue;
-    if (!containerCounts[row.unit]) {
-      containerCounts[row.unit] = { unit: row.unit, label: c.label, count: 0, icon: c.icon };
-    }
-    containerCounts[row.unit].count += row.total;
-  }
-  const harvestContainers = Object.values(containerCounts)
-    .filter((v) => v.count > 0)
-    .sort((a, b) => b.count - a.count);
-
-  const harvestItemCount = itemMap.size;
+  // the field before the per-restaurant pack split. Shared with the
+  // harvester portal (/harvest) via src/lib/harvest.ts.
+  const {
+    restaurantsInPlay,
+    categories: harvestCategories,
+    containers: harvestContainers,
+    itemCount: harvestItemCount,
+    totalLines,
+    resolvedLines,
+    submittedOrderCount,
+  } = aggregateHarvest(orders);
 
   // Per-order picked counts for the restaurant-card header badges
   const orderProgress = new Map<string, { picked: number; total: number; shorted: number }>();
