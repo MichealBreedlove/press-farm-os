@@ -1,10 +1,12 @@
 import { formatQty, cn } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
-import type {
-  HarvestGridRow,
-  HarvestGridCategory,
-  HarvestGridContainer,
+import {
+  harvestRowKey,
+  isRowResolved,
+  type HarvestGridRow,
+  type HarvestGridCategory,
+  type HarvestGridContainer,
 } from "@/lib/harvest";
 
 export type { HarvestGridRow, HarvestGridCategory, HarvestGridContainer };
@@ -46,12 +48,22 @@ export function HarvestGrid({
   categories,
   containers,
   labels,
+  onToggleRow,
+  busyRowKey,
 }: {
   restaurants: { id: string; name: string }[];
   categories: HarvestGridCategory[];
   containers: HarvestGridContainer[];
   /** Optional display-string overrides (Spanish on /harvest). */
   labels?: HarvestGridLabels;
+  /**
+   * When set (from a client component — the /harvest portal), each row
+   * becomes a tap target that toggles its harvested state. The admin page
+   * omits it and keeps the read-only print-friendly grid.
+   */
+  onToggleRow?: (row: HarvestGridRow, next: boolean) => void;
+  /** Row key (harvestRowKey) currently saving — dims + disables that row. */
+  busyRowKey?: string | null;
 }) {
   const t: HarvestGridLabels = labels ?? {
     containersNeeded: "Containers Needed",
@@ -116,13 +128,45 @@ export function HarvestGrid({
           </div>
 
           <div className="space-y-0.5">
-            {rows.map((row) => (
-              <div
-                key={`${row.itemId}-${row.unit}-${row.colorKey ?? ""}-${row.varietyKey ?? ""}`}
-                className="grid gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60"
+            {rows.map((row) => {
+              const rowKey = harvestRowKey(row);
+              const done = onToggleRow ? isRowResolved(row) : false;
+              const busy = busyRowKey === rowKey;
+              const RowTag = onToggleRow ? "button" : "div";
+              return (
+              <RowTag
+                key={rowKey}
+                {...(onToggleRow
+                  ? {
+                      type: "button" as const,
+                      onClick: () => onToggleRow(row, !done),
+                      disabled: busy,
+                      "aria-pressed": done,
+                    }
+                  : {})}
+                className={cn(
+                  "grid gap-1 sm:gap-2 items-center py-2 px-1 rounded-lg odd:bg-farm-cream/40 print:odd:bg-farm-cream/60 w-full text-left",
+                  onToggleRow && "min-h-[44px] transition-colors active:bg-farm-green/10",
+                  done && "bg-farm-green/[0.08] odd:bg-farm-green/[0.08]",
+                  busy && "opacity-50",
+                )}
                 style={{ gridTemplateColumns: gridTemplate }}
               >
-                <span className="text-sm text-farm-dark truncate">
+                <span className={cn("text-sm text-farm-dark truncate flex items-center gap-1.5", done && "text-farm-muted")}>
+                  {onToggleRow && (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "inline-flex items-center justify-center w-[18px] h-[18px] rounded-full border text-[11px] leading-none flex-shrink-0",
+                        done
+                          ? "bg-farm-green border-farm-green text-white"
+                          : "border-farm-dark/25 bg-white text-transparent",
+                      )}
+                    >
+                      ✓
+                    </span>
+                  )}
+                  <span className={cn("truncate", done && "line-through decoration-farm-muted/60")}>
                   {row.name}
                   {row.varietyKey && (
                     <span className="text-pf-master-blue font-medium">
@@ -134,6 +178,7 @@ export function HarvestGrid({
                       {" "}· {row.colorKey.split(",").map((c) => c.trim()).filter(Boolean).join(", ")}
                     </span>
                   )}
+                  </span>
                 </span>
                 <span className="w-12 sm:w-16 text-center">
                   <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-farm-green/15 text-farm-green tabular-nums">
@@ -154,8 +199,9 @@ export function HarvestGrid({
                 <span className="text-sm font-bold text-farm-dark w-10 sm:w-14 text-right tabular-nums">
                   {formatQty(row.total)}
                 </span>
-              </div>
-            ))}
+              </RowTag>
+              );
+            })}
           </div>
           </div>
         </div>

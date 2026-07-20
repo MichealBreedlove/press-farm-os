@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   aggregateHarvest,
   harvestRestaurantOrder,
+  harvestRowKey,
+  isRowResolved,
   type HarvestOrder,
   type HarvestOrderItem,
 } from "@/lib/harvest";
@@ -180,6 +182,61 @@ describe("aggregateHarvest", () => {
     const agg = aggregateHarvest(orders);
     expect(agg.categories.map((c) => c.key)).toEqual(["flowers", "fruit_veg"]);
     expect(agg.categories[0].rows.map((r) => r.name)).toEqual(["Asters", "Zinnias"]);
+  });
+});
+
+describe("row pick state (tap-to-harvest on /harvest)", () => {
+  it("collects contributing line ids across restaurants and counts resolved lines", () => {
+    const mint = item("i-mint", "Mint");
+    const orders: HarvestOrder[] = [
+      { status: "submitted", restaurant: press, order_items: [line(mint, { id: "l1", quantity_requested: 2 })] },
+      {
+        status: "submitted",
+        restaurant: understudy,
+        order_items: [line(mint, { id: "l2", quantity_requested: 3, picked_at: "2026-07-20T08:00:00Z" })],
+      },
+    ];
+    const row = aggregateHarvest(orders).categories[0].rows[0];
+    expect([...row.lineIds].sort()).toEqual(["l1", "l2"]);
+    expect(row.resolvedLineCount).toBe(1);
+    expect(isRowResolved(row)).toBe(false);
+  });
+
+  it("marks a row resolved when every line is picked or shorted", () => {
+    const mint = item("i-mint", "Mint");
+    const orders: HarvestOrder[] = [
+      {
+        status: "submitted",
+        restaurant: press,
+        order_items: [
+          line(mint, { id: "l1", picked_at: "2026-07-20T08:00:00Z" }),
+          line(mint, { id: "l2", is_shorted: true, quantity_fulfilled: 1 }),
+        ],
+      },
+    ];
+    const row = aggregateHarvest(orders).categories[0].rows[0];
+    expect(isRowResolved(row)).toBe(true);
+  });
+
+  it("never resolves a row with no known line ids", () => {
+    const mint = item("i-mint", "Mint");
+    const row = aggregateHarvest([
+      { status: "submitted", restaurant: press, order_items: [line(mint)] },
+    ]).categories[0].rows[0];
+    expect(row.lineIds).toEqual([]);
+    expect(isRowResolved(row)).toBe(false);
+  });
+
+  it("harvestRowKey distinguishes unit, color, and variety", () => {
+    const base = { itemId: "i-basil", unit: "lg" as const, colorKey: null, varietyKey: null };
+    const keys = new Set([
+      harvestRowKey(base),
+      harvestRowKey({ ...base, unit: "sm" as const }),
+      harvestRowKey({ ...base, colorKey: "Purple" }),
+      harvestRowKey({ ...base, varietyKey: "Genovese" }),
+    ]);
+    expect(keys.size).toBe(4);
+    expect(harvestRowKey(base)).toBe(harvestRowKey({ ...base }));
   });
 });
 

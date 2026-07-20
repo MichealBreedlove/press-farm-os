@@ -14,6 +14,10 @@ export interface HarvestStrings {
   forDate: string;
   itemsToPick: string;
   restaurantsOrdering: string;
+  tapToMark: string;
+  harvestedCount: string;
+  allHarvested: string;
+  updateFailed: string;
   noOrders: string;
   noOrdersHint: string;
   containersNeeded: string;
@@ -53,6 +57,10 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     forDate: "Delivery for",
     itemsToPick: "items to pick",
     restaurantsOrdering: "restaurants ordering",
+    tapToMark: "Tap an item when it's harvested",
+    harvestedCount: "harvested",
+    allHarvested: "Everything harvested ✓",
+    updateFailed: "Couldn't save — try again",
     noOrders: "No orders yet",
     noOrdersHint: "Chefs haven't placed orders for this date yet. Check back later.",
     containersNeeded: "Containers Needed",
@@ -100,6 +108,10 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     forDate: "Entrega del",
     itemsToPick: "artículos por cosechar",
     restaurantsOrdering: "restaurantes con pedido",
+    tapToMark: "Toque un artículo cuando esté cosechado",
+    harvestedCount: "cosechados",
+    allHarvested: "Todo cosechado ✓",
+    updateFailed: "No se pudo guardar — intente de nuevo",
     noOrders: "Aún no hay pedidos",
     noOrdersHint: "Los chefs todavía no han hecho pedidos para esta fecha. Vuelva a revisar más tarde.",
     containersNeeded: "Envases necesarios",

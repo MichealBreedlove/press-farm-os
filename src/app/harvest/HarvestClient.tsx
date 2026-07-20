@@ -7,7 +7,13 @@ import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { HarvestGrid } from "@/app/admin/orders/[date]/HarvestGrid";
-import type { HarvestGridCategory, HarvestGridContainer } from "@/lib/harvest";
+import {
+  harvestRowKey,
+  isRowResolved,
+  type HarvestGridRow,
+  type HarvestGridCategory,
+  type HarvestGridContainer,
+} from "@/lib/harvest";
 import {
   HARVEST_STRINGS,
   formatHarvestDate,
@@ -68,6 +74,56 @@ export function HarvestClient({
   }
 
   const t = HARVEST_STRINGS[lang];
+  const router = useRouter();
+
+  // Tap-to-harvest: flips picked_at on every order_item behind the tapped
+  // grid row (all restaurants at once) — the same field the admin pick list
+  // checks off, so progress is shared live between /harvest and
+  // /admin/orders/[date]. Optimistic overlay so the row flips instantly;
+  // router.refresh() then reconciles with the server state.
+  const [busyRowKey, setBusyRowKey] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
+  async function handleToggleRow(row: HarvestGridRow, next: boolean) {
+    if (row.lineIds.length === 0 || busyRowKey) return;
+    const key = harvestRowKey(row);
+    setBusyRowKey(key);
+    setToggleError(null);
+    try {
+      const res = await fetch("/api/harvest/picked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, line_ids: row.lineIds, picked: next }),
+      });
+      if (!res.ok) throw new Error();
+      setOverrides((o) => ({ ...o, [key]: next }));
+      router.refresh();
+    } catch {
+      setToggleError(t.updateFailed);
+    } finally {
+      setBusyRowKey(null);
+    }
+  }
+
+  // Server refresh delivers the toggled state in props — drop the overlay
+  // then so a later admin-side change can't be masked by a stale override.
+  useEffect(() => {
+    setOverrides({});
+  }, [categories]);
+
+  // Apply optimistic overrides on top of the server-provided rows.
+  const displayCategories: HarvestGridCategory[] = categories.map((c) => ({
+    ...c,
+    rows: c.rows.map((row) => {
+      const ov = overrides[harvestRowKey(row)];
+      if (ov === undefined) return row;
+      return { ...row, resolvedLineCount: ov ? row.lineIds.length : 0 };
+    }),
+  }));
+
+  const allRows = displayCategories.flatMap((c) => c.rows);
+  const doneRows = allRows.filter(isRowResolved).length;
 
   // Re-label containers + categories for the active language. The server
   // sends English labels (shared with the admin page); Spanish re-derives
@@ -135,15 +191,24 @@ export function HarvestClient({
           </div>
         ) : (
           <>
-            <p className="text-sm text-farm-muted">
-              <span className="font-bold text-farm-dark">{itemCount}</span> {t.itemsToPick}
-              {" · "}
-              <span className="font-bold text-farm-dark">{orderable.length}</span> {t.restaurantsOrdering}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-farm-muted">
+                <span className="font-bold text-farm-dark">{itemCount}</span> {t.itemsToPick}
+                {" · "}
+                <span className="font-bold text-farm-dark">{orderable.length}</span> {t.restaurantsOrdering}
+              </p>
+              <p className={cn("text-sm font-semibold", doneRows === allRows.length && allRows.length > 0 ? "text-farm-green" : "text-farm-dark")}>
+                {doneRows === allRows.length && allRows.length > 0
+                  ? t.allHarvested
+                  : `${doneRows}/${allRows.length} ${t.harvestedCount}`}
+              </p>
+              <p className="text-xs text-farm-muted/90">{t.tapToMark}</p>
+              {toggleError && <p className="text-xs text-red-700">{toggleError}</p>}
+            </div>
 
             <HarvestGrid
               restaurants={restaurants}
-              categories={categories}
+              categories={displayCategories}
               containers={localizedContainers}
               labels={{
                 containersNeeded: t.containersNeeded,
@@ -152,6 +217,8 @@ export function HarvestClient({
                 total: t.total,
                 categoryLabels: t.categoryLabels,
               }}
+              onToggleRow={handleToggleRow}
+              busyRowKey={busyRowKey}
             />
           </>
         )}

@@ -12,6 +12,20 @@ export interface HarvestGridRow {
   /** restaurantId → qty (for the restaurants that placed orders this date) */
   qtyByRestaurant: Record<string, number>;
   total: number;
+  /** order_item ids contributing to this row (when the source rows carry ids). */
+  lineIds: string[];
+  /** Contributing lines already resolved — picked_at set OR shorted. */
+  resolvedLineCount: number;
+}
+
+/** Stable identity for a grid row — item × container × color × variety. */
+export function harvestRowKey(row: Pick<HarvestGridRow, "itemId" | "unit" | "colorKey" | "varietyKey">): string {
+  return `${row.itemId}|${row.unit}|${row.colorKey ?? ""}|${row.varietyKey ?? ""}`;
+}
+
+/** A row is "harvested" when every contributing line is picked or shorted. */
+export function isRowResolved(row: Pick<HarvestGridRow, "lineIds" | "resolvedLineCount">): boolean {
+  return row.lineIds.length > 0 && row.resolvedLineCount >= row.lineIds.length;
 }
 
 export interface HarvestGridCategory {
@@ -32,6 +46,8 @@ export interface HarvestGridContainer {
  * /admin/orders/[date] and /harvest.
  */
 export interface HarvestOrderItem {
+  /** order_item id — optional; when present rows collect it into lineIds. */
+  id?: string | null;
   quantity_requested: number | null;
   quantity_fulfilled: number | null;
   is_shorted: boolean | null;
@@ -160,11 +176,17 @@ export function aggregateHarvest(orders: HarvestOrder[]): HarvestAggregate {
           varietyKey: varietyKey || null,
           qtyByRestaurant: {},
           total: 0,
+          lineIds: [],
+          resolvedLineCount: 0,
         };
         itemMap.set(key, row);
       }
       row.qtyByRestaurant[restaurantId] = (row.qtyByRestaurant[restaurantId] ?? 0) + qty;
       row.total += qty;
+      if (oi.id) {
+        row.lineIds.push(oi.id);
+        if (oi.picked_at || oi.is_shorted) row.resolvedLineCount += 1;
+      }
     }
   }
 
