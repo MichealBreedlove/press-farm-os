@@ -124,17 +124,35 @@ export async function POST(request: Request) {
   const newUserId = createData.user.id;
 
   // The handle_new_user trigger inserts a profiles row (role 'chef'). Upsert to
-  // set full_name + the chosen role + is_active.
-  await admin
+  // set full_name + the chosen role + is_active. This error was previously
+  // swallowed — the prevent_role_escalation trigger once rejected the
+  // service-role write and accounts got created with the wrong role while the
+  // API reported success. Surface it (deleting the half-created auth user) so
+  // a DB-side rejection can never hide again.
+  const { error: profileErr } = await admin
     .from("profiles")
     .upsert({ id: newUserId, full_name: full_name.trim(), role, is_active: true }, { onConflict: "id" });
+  if (profileErr) {
+    await admin.auth.admin.deleteUser(newUserId);
+    return NextResponse.json(
+      { error: `Account setup failed (${profileErr.message}) — nothing was created, try again` },
+      { status: 500 },
+    );
+  }
 
   // Link to restaurant only when chef — receivers/harvesters see all
   // restaurants by role.
   if (role === "chef" && restaurant_id) {
-    await admin
+    const { error: linkErr } = await admin
       .from("restaurant_users")
       .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
+    if (linkErr) {
+      await admin.auth.admin.deleteUser(newUserId);
+      return NextResponse.json(
+        { error: `Restaurant link failed (${linkErr.message}) — nothing was created, try again` },
+        { status: 500 },
+      );
+    }
   }
 
   // Return the (temp) password ONCE so the admin can share it securely. Do NOT
