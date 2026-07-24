@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDeliveryDate, todayPacific } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific, minOrderableDatePacific } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
@@ -48,13 +48,17 @@ export default async function EventOrderPage({
   if (!restaurant) redirect("/");
   if (restaurant.slug !== "events") redirect("/order");
 
+  // `today` stays the min for the EVENT date (an event tonight is fine);
+  // the DELIVERY date list respects the 5pm cutoff — after 5pm Pacific
+  // today's harvest is done, so the earliest deliverable date is tomorrow.
   const today = todayPacific();
+  const minOrderable = minOrderableDatePacific();
 
   // Open, upcoming delivery dates the Events team can deliver on.
   const { data: dateRows } = (await (supabase as any)
     .from("delivery_dates")
     .select("date, day_of_week, ordering_open")
-    .gte("date", today)
+    .gte("date", minOrderable)
     .eq("ordering_open", true)
     .order("date", { ascending: true })
     .limit(30)) as any;

@@ -5,6 +5,7 @@ import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { planOrderItemMerge } from "@/lib/orders";
+import { minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC } from "@/lib/utils";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -170,6 +171,19 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Ordering is closed for this delivery date" },
       { status: 409 }
+    );
+  }
+
+  // Ordering cutoff backstop: after 5pm Pacific, today's harvest is done, so
+  // a submission for today (or any past date) must roll to the next harvest
+  // day — even if the admin never flipped ordering_open off. This is what
+  // catches a stale form left open across the cutoff.
+  if (delivery_date < minOrderableDatePacific()) {
+    return NextResponse.json(
+      {
+        error: `Ordering for ${delivery_date} has closed (orders after ${ORDER_CUTOFF_HOUR_PACIFIC - 12}pm go to the next harvest day). Please go back to the order page and resubmit for the next delivery date.`,
+      },
+      { status: 409 },
     );
   }
 

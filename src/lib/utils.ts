@@ -108,6 +108,36 @@ export function todayPacific(): string {
 }
 
 /**
+ * Chef ordering cutoff, farm-local (America/Los_Angeles). At/after this hour,
+ * TODAY's date is no longer orderable — harvest for today already happened, so
+ * an evening order must land on the next harvest day.
+ */
+export const ORDER_CUTOFF_HOUR_PACIFIC = 17; // 5:00 PM
+
+/**
+ * Earliest delivery date (YYYY-MM-DD) a chef may order for right now.
+ * Before 5pm Pacific this is today; at/after 5pm it's tomorrow, so a
+ * late-night order can never target a harvest day that's already over.
+ * `now` is injectable for tests.
+ */
+export function minOrderableDatePacific(now: Date = new Date()): string {
+  const today = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now),
+  );
+  if (hour < ORDER_CUTOFF_HOUR_PACIFIC) return today;
+  // Roll to the next calendar day. Noon-UTC anchor keeps the +1 immune to
+  // DST/UTC-offset edge cases.
+  const next = new Date(today + "T12:00:00Z");
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().split("T")[0];
+}
+
+/**
  * Get month/year label for reporting.
  * @example formatMonthYear("2026-02-01") → "February 2026"
  */

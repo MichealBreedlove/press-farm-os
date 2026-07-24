@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDeliveryDate, todayPacific } from "@/lib/utils";
+import { formatDeliveryDate, minOrderableDatePacific } from "@/lib/utils";
 import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
@@ -60,10 +60,10 @@ export default async function OrderPage({
   }
 
   const restaurant = restaurantUser.restaurants;
-  // Farm-local "today" — UTC rolls over at 4–5pm Pacific, right when chefs
-  // order for tomorrow; the UTC date made the next-open-date fallback skip
-  // a still-open same-day date in the evening window.
-  const today = todayPacific();
+  // Earliest orderable date, farm-local. Before 5pm Pacific that's today;
+  // after 5pm it rolls to tomorrow — today's harvest is done, so a late-night
+  // order must land on the NEXT harvest day, not a still-open same-day date.
+  const minOrderable = minOrderableDatePacific();
 
   // If editing, fetch the existing order to get its delivery date and quantities.
   // We also pull unit_type/size_label/color_key so the hydrated quantity keys
@@ -145,7 +145,7 @@ export default async function OrderPage({
   // ordering) → the edited order's date → next open date.
   let deliveryDate: any = null;
 
-  if (dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride)) {
+  if (dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride) && dateOverride >= minOrderable) {
     const { data: explicit } = await supabase
       .from("delivery_dates")
       .select("id, date, day_of_week, ordering_open")
@@ -155,7 +155,7 @@ export default async function OrderPage({
     deliveryDate = explicit;
   }
 
-  if (!deliveryDate && targetDate) {
+  if (!deliveryDate && targetDate && targetDate >= minOrderable) {
     const { data: editDate } = await supabase
       .from("delivery_dates")
       .select("id, date, day_of_week, ordering_open")
@@ -176,7 +176,7 @@ export default async function OrderPage({
     const { data: nextDate } = await supabase
       .from("delivery_dates")
       .select("id, date, day_of_week, ordering_open")
-      .gte("date", today)
+      .gte("date", minOrderable)
       .eq("ordering_open", true)
       .order("date", { ascending: true })
       .limit(1)

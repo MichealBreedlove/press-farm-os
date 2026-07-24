@@ -12,6 +12,7 @@ import {
   formatDateShort,
   toISODate,
   getNextDeliveryDates,
+  minOrderableDatePacific,
 } from "@/lib/utils";
 
 /**
@@ -176,5 +177,41 @@ describe("getNextDeliveryDates", () => {
 
   it("defaults to 3 dates", () => {
     expect(getNextDeliveryDates()).toHaveLength(3);
+  });
+});
+
+describe("minOrderableDatePacific", () => {
+  // Instants are constructed in UTC; July is PDT (UTC-7), January is PST (UTC-8).
+  it("returns today before the 5pm Pacific cutoff", () => {
+    // 8:00am PDT
+    expect(minOrderableDatePacific(new Date("2026-07-23T15:00:00Z"))).toBe("2026-07-23");
+    // 4:59pm PDT — one minute before cutoff
+    expect(minOrderableDatePacific(new Date("2026-07-23T23:59:00Z"))).toBe("2026-07-23");
+  });
+
+  it("rolls to tomorrow at and after 5pm Pacific", () => {
+    // exactly 5:00pm PDT
+    expect(minOrderableDatePacific(new Date("2026-07-24T00:00:00Z"))).toBe("2026-07-24");
+    // 11:30pm PDT — the late-night order case: must land on the NEXT day
+    expect(minOrderableDatePacific(new Date("2026-07-24T06:30:00Z"))).toBe("2026-07-24");
+  });
+
+  it("resets at midnight Pacific — early morning orders target the new today", () => {
+    // 12:15am PDT on the 24th
+    expect(minOrderableDatePacific(new Date("2026-07-24T07:15:00Z"))).toBe("2026-07-24");
+  });
+
+  it("is not fooled by UTC already being tomorrow during the evening window (PST)", () => {
+    // 4:30pm PST on Jan 15 = 00:30 UTC on Jan 16 — still before cutoff
+    expect(minOrderableDatePacific(new Date("2026-01-16T00:30:00Z"))).toBe("2026-01-15");
+    // 5:30pm PST on Jan 15 → rolls to Jan 16
+    expect(minOrderableDatePacific(new Date("2026-01-16T01:30:00Z"))).toBe("2026-01-16");
+  });
+
+  it("rolls across month and year boundaries", () => {
+    // 6:00pm PDT on Jul 31 → Aug 1
+    expect(minOrderableDatePacific(new Date("2026-08-01T01:00:00Z"))).toBe("2026-08-01");
+    // 6:00pm PST on Dec 31 → Jan 1
+    expect(minOrderableDatePacific(new Date("2027-01-01T02:00:00Z"))).toBe("2027-01-01");
   });
 });

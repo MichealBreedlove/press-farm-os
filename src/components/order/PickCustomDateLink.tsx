@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { todayPacific } from "@/lib/utils";
+import { minOrderableDatePacific } from "@/lib/utils";
 
 /**
  * Subtle "order for a different date" affordance below the chef order
@@ -22,9 +22,10 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
   const [isPending, startTransition] = useTransition();
   const navStarted = useRef(false);
 
-  // Farm-local "today" — UTC flips to tomorrow at 4–5pm Pacific, exactly the
-  // evening ordering window, which made the picker grey out today's date.
-  const today = todayPacific();
+  // Earliest orderable date, farm-local. Before 5pm Pacific that's today;
+  // after 5pm today's harvest is done, so the picker greys out today and
+  // the earliest choice becomes tomorrow.
+  const minDate = minOrderableDatePacific();
 
   // /order?date=X is a same-route navigation, so this component instance
   // survives it with its state intact. Close the modal once the transition
@@ -108,7 +109,7 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
               <input
                 type="date"
                 value={date}
-                min={today}
+                min={minDate}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border border-farm-dark/10 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-farm-green"
               />

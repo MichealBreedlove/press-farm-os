@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/api-auth";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { sendOrderSubmittedEmail } from "@/lib/email";
-import { todayPacific } from "@/lib/utils";
+import { todayPacific, minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC } from "@/lib/utils";
 
 /**
  * POST /api/events/order — Events-team order submission.
@@ -130,6 +130,19 @@ export async function POST(request: Request) {
   if (!deliveryDate?.ordering_open) {
     return NextResponse.json(
       { error: "Ordering is closed for this delivery date." },
+      { status: 409 },
+    );
+  }
+
+  // Ordering cutoff backstop: after 5pm Pacific today's harvest is done, so
+  // a delivery for today (or any past date) is no longer accepted even if
+  // the date row is still marked open — the order rolls to the next harvest
+  // day. (The event date above may still be today; only delivery is gated.)
+  if (delivery_date < minOrderableDatePacific()) {
+    return NextResponse.json(
+      {
+        error: `Delivery for ${delivery_date} has closed (orders after ${ORDER_CUTOFF_HOUR_PACIFIC - 12}pm go to the next harvest day). Please pick the next delivery date.`,
+      },
       { status: 409 },
     );
   }
