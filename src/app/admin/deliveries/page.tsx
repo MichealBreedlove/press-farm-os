@@ -9,7 +9,7 @@ import { GenerateDatesButton } from "./GenerateDatesButton";
 import { ViewToggle } from "./ViewToggle";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, todayPacific } from "@/lib/utils";
 
 function formatDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
@@ -40,7 +40,7 @@ export default async function AdminDeliveriesPage({
   const admin = createAdminClient();
 
   // Upcoming delivery dates (for "Log Delivery" links)
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const { data: upcomingDates } = await admin
     .from("delivery_dates")
     .select("date, ordering_open")

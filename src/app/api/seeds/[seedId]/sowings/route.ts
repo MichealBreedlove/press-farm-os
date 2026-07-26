@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 type Params = Promise<{ seedId: string }>;
 
@@ -46,7 +47,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
       seed_id: seedId,
       planting_id,
       amount_used: amount,
-      sown_on: body.sown_on ? String(body.sown_on) : new Date().toISOString().slice(0, 10),
+      sown_on: body.sown_on ? String(body.sown_on) : todayPacific(),
       notes: body.notes ? String(body.notes).trim() : null,
     })
     .select("*, planting:plantings(id, crop_name, variety, sow_date)")

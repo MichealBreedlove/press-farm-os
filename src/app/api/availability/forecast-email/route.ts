@@ -6,6 +6,7 @@ import { getAvailabilityBuckets } from "@/lib/forecasting";
 import type { AvailabilityBuckets, AvailabilityEntry } from "@/lib/forecasting";
 import { sendAvailabilityForecastEmail } from "@/lib/email";
 import type { ForecastEmailSection, ForecastEmailEntry } from "@/emails/availability-forecast";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * Availability Forecast email to chefs.
@@ -84,7 +85,7 @@ function bucketsToSections(buckets: AvailabilityBuckets): ForecastEmailSection[]
 async function sendForecastToChefs() {
   const admin = createAdminClient();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const buckets = await getAvailabilityBuckets(today);
   const sections = bucketsToSections(buckets);
   const asOfDate = formatRefDate(today);

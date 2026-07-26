@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 import { rollupByMonth } from "@/lib/reports/aggregate";
 
 /**
@@ -20,10 +21,9 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
 
   // Fetch deliveries for the last N months
-  const startDate = new Date();
-  startDate.setMonth(startDate.getMonth() - months + 1);
-  startDate.setDate(1);
-  const startStr = startDate.toISOString().slice(0, 10);
+  const [ty, tm] = todayPacific().split("-").map(Number);
+  const startMonths = ty * 12 + (tm - 1) - (months - 1);
+  const startStr = `${Math.floor(startMonths / 12)}-${String((startMonths % 12) + 1).padStart(2, "0")}-01`;
 
   const { data: deliveries, error: dErr } = await admin
     .from("deliveries")

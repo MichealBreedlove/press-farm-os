@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { SignOutButton } from "@/components/shared/SignOutButton";
 import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, formatDateTimePacific, todayPacific, addDaysISO } from "@/lib/utils";
 import { ReceiverClient } from "./ReceiverClient";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
   }
 
   const { date: dateParam } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const selected = (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) ? dateParam : today;
 
   // Use admin client for the data join — receivers have RLS read access but
@@ -54,8 +54,8 @@ export default async function ReceiverPage({ searchParams }: Props) {
   const { data: recentDates } = await (admin as any)
     .from("delivery_dates")
     .select("date, day_of_week, ordering_open")
-    .gte("date", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
-    .lte("date", new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10))
+    .gte("date", addDaysISO(todayPacific(), -7))
+    .lte("date", addDaysISO(todayPacific(), 7))
     .order("date", { ascending: true });
 
   // Restaurants (excluding the legacy Events row — events are now a tag on items)
@@ -131,12 +131,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
             Finish & Send) or is still mid-pick. */}
         {lastNotifiedAt && (
           <p className="text-[11px] tracking-[0.18em] uppercase text-farm-muted text-center mb-4">
-            Notified {new Date(lastNotifiedAt).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
+            Notified {formatDateTimePacific(lastNotifiedAt)}
           </p>
         )}
 

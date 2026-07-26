@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import { todayPacific } from "@/lib/utils";
 import {
   LIFECYCLE_LABELS,
   LIFECYCLE_HINTS,
@@ -39,7 +40,7 @@ export function PlantingForm({ boxId, items, initial, onDone, onCancel }: Props)
     name: initial?.name ?? "",
     item_id: initial?.item_id ?? "",
     lifecycle: (initial?.lifecycle ?? "annual") as PlantingLifecycle,
-    planted_date: initial?.planted_date ?? new Date().toISOString().slice(0, 10),
+    planted_date: initial?.planted_date ?? todayPacific(),
     end_date: initial?.end_date ?? "",
     value_amount: initial?.value_amount ?? 0,
     seasonal_months: initial?.seasonal_months ?? [],

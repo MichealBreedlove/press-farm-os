@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * GET /api/items/export?archived=true|false
@@ -93,7 +94,7 @@ export async function GET(request: Request) {
 
   // RFC 4180 line endings + UTF-8 BOM so Excel renders accents/em-dashes correctly
   const body = "﻿" + lines.join("\r\n");
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = todayPacific();
   return new NextResponse(body, {
     status: 200,
     headers: {

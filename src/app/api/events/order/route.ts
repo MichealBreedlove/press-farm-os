@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/api-auth";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { sendOrderSubmittedEmail } from "@/lib/email";
-import { todayPacific, minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC } from "@/lib/utils";
+import { todayPacific, minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC, FARM_TIMEZONE } from "@/lib/utils";
 
 /**
  * POST /api/events/order — Events-team order submission.
@@ -312,7 +312,7 @@ export async function POST(request: Request) {
       deliveryDate: delivery_date,
       items: emailItems,
       freeformNotes: composedNotes,
-      submittedAt: new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
+      submittedAt: new Date().toLocaleString("en-US", { timeZone: FARM_TIMEZONE }),
     });
   } catch (emailErr) {
     console.error("[EMAIL] Failed to send events order notification:", emailErr);

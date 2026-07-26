@@ -5,7 +5,7 @@ import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { planOrderItemMerge } from "@/lib/orders";
-import { minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC } from "@/lib/utils";
+import { minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC, FARM_TIMEZONE } from "@/lib/utils";
 
 /**
  * GET /api/orders?date=YYYY-MM-DD — Fetch orders for a delivery date (admin only)
@@ -490,7 +490,7 @@ export async function POST(request: Request) {
       deliveryDate: delivery_date,
       items: emailItems,
       freeformNotes: freeform_notes,
-      submittedAt: new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
+      submittedAt: new Date().toLocaleString("en-US", { timeZone: FARM_TIMEZONE }),
     });
 
     // 2. Chef confirmation — only if we can resolve their email

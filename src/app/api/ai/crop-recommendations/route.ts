@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { getAnthropicClient, ANTHROPIC_KEY_MISSING_ERROR } from "@/lib/anthropic/client";
 
 // Vercel function timeout — Opus 4.7 with adaptive thinking can take 30-50s
@@ -81,11 +82,8 @@ export async function POST(_request: Request) {
   const farmId = farms?.[0]?.id;
   if (!farmId) return NextResponse.json({ error: "Farm not found" }, { status: 500 });
 
-  const today = new Date();
-  const oneYearAgo = new Date(today);
-  oneYearAgo.setFullYear(today.getFullYear() - 1);
-  const startDate = oneYearAgo.toISOString().split("T")[0];
-  const endDate = today.toISOString().split("T")[0];
+  const endDate = todayPacific();
+  const startDate = addDaysISO(endDate, -365);
 
   // Pull delivery_items + items + deliveries via nested selects. Filter the
   // join with !inner so the date range applies — without !inner Supabase

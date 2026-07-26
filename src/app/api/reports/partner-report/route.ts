@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailabilityBuckets } from "@/lib/forecasting";
 import { sendPartnerReportEmail } from "@/lib/email";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, todayPacific } from "@/lib/utils";
 import type { PartnerReportLine } from "@/emails/partner-report";
 import type { ForecastEmailEntry } from "@/emails/availability-forecast";
 
@@ -211,7 +211,7 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
   }
 
   // Forward-looking teaser — next 2wk + 4wk windows from the availability forecast.
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   let comingSoon: ForecastEmailEntry[] = [];
   try {
     const buckets = await getAvailabilityBuckets(today);

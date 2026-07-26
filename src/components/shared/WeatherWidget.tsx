@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FARM_TIMEZONE } from "@/lib/utils";
 
 // Yountville, California coordinates
 const YOUNTVILLE_LAT = 38.4014;
@@ -48,7 +49,7 @@ export function WeatherWidget() {
     url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
     url.searchParams.set("temperature_unit", "fahrenheit");
     url.searchParams.set("wind_speed_unit", "mph");
-    url.searchParams.set("timezone", "America/Los_Angeles");
+    url.searchParams.set("timezone", FARM_TIMEZONE);
 
     fetch(url.toString())
       .then((r) => r.json())

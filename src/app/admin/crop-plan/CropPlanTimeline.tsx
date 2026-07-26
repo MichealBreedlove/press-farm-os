@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Search, ChevronDown, ChevronRight, X, Trash2, Calendar, Sprout } from "lucide-react";
+import { todayPacific } from "@/lib/utils";
 
 // ── Types ──
 interface Planting {
@@ -361,7 +362,7 @@ function AddPlantingModal({ items, farmId, season, onClose, onSaved }: {
     category: "leaf",
     growing_location: "in_ground",
     planting_stock: "seeds",
-    sow_date: new Date().toISOString().split("T")[0],
+    sow_date: todayPacific(),
     days_to_maturity: "30",
     harvest_start: "",
     harvest_end: "",

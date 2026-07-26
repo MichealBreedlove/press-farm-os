@@ -1,13 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
+import { formatDateTimePacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  });
+  return formatDateTimePacific(iso);
 }
 
 export default async function HarvestLogPage() {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * GET /api/notes — List all farm notes (admin only)
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await admin.from("farm_notes").insert({
     farm_id: farmId,
-    date: date || new Date().toISOString().split("T")[0],
+    date: date || todayPacific(),
     text: text.trim(),
     category: category || "observation",
   }).select().single();

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregateHarvest, type HarvestOrder } from "@/lib/harvest";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { HarvestClient, type HarvestExtra } from "./HarvestClient";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export default async function HarvestPage({ searchParams }: Props) {
   }
 
   const { date: dateParam } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
 
   const admin = createAdminClient();
 
@@ -46,8 +47,8 @@ export default async function HarvestPage({ searchParams }: Props) {
   const { data: nearbyDates } = await (admin as any)
     .from("delivery_dates")
     .select("date")
-    .gte("date", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10))
-    .lte("date", new Date(Date.now() + 8 * 86400000).toISOString().slice(0, 10))
+    .gte("date", addDaysISO(todayPacific(), -2))
+    .lte("date", addDaysISO(todayPacific(), 8))
     .order("date", { ascending: true });
 
   const dates: string[] = (nearbyDates ?? []).map((d: any) => d.date);

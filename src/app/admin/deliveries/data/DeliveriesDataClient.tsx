@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { todayPacific } from "@/lib/utils";
 
 type Tab = "export" | "import";
 
@@ -238,7 +239,7 @@ export function DeliveriesDataClient({ deliveryCount, lineCount }: Props) {
             </a>
 
             <p className="text-[11px] text-farm-muted text-center">
-              File: <code className="font-pf-mono bg-farm-cream/60 px-1.5 py-0.5 rounded">press-farm-deliveries-{new Date().toISOString().slice(0, 10)}.csv</code>
+              File: <code className="font-pf-mono bg-farm-cream/60 px-1.5 py-0.5 rounded">press-farm-deliveries-{todayPacific()}.csv</code>
             </p>
           </div>
         </div>

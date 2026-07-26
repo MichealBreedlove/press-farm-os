@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import FinalizeButton from "../FinalizeButton";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, todayPacific } from "@/lib/utils";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -22,7 +22,7 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const currentMonth = monthParam ?? today.slice(0, 7);
   const [year, mon] = currentMonth.split("-").map(Number);
   const start = `${currentMonth}-01`;
@@ -36,8 +36,9 @@ export default async function AdminFinalizeMonthPage({ searchParams }: Props) {
   // Prev / next month nav
   const prevDate = new Date(year, mon - 2, 1);
   const nextDate = new Date(year, mon, 1);
-  const prevMonth = prevDate.toISOString().slice(0, 7);
-  const nextMonth = nextDate.toISOString().slice(0, 7);
+  const fmtMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const prevMonth = fmtMonth(prevDate);
+  const nextMonth = fmtMonth(nextDate);
   const isCurrentMonth = currentMonth === today.slice(0, 7);
 
   const admin = createAdminClient();

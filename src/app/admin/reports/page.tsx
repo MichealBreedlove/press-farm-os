@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { rollupByMonth } from "@/lib/reports/aggregate";
+import { todayPacific } from "@/lib/utils";
 
 const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
@@ -14,7 +15,7 @@ export default async function AdminReportsPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const currentMonth = today.slice(0, 7);
 
   // Fetch historical delivery + expense totals (bounded tables) and the

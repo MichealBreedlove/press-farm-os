@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { todayPacific } from "@/lib/utils";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     .insert({
       box_id: body.box_id,
       planting_id: body.planting_id || null,
-      logged_at: body.logged_at || new Date().toISOString().slice(0, 10),
+      logged_at: body.logged_at || todayPacific(),
       note: body.note,
     })
     .select()

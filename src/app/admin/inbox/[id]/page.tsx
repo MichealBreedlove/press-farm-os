@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FARM_TIMEZONE } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { InboxActions } from "./InboxActions";
 import { TaskDraftCard } from "@/components/admin/tasks/TaskDraftCard";
@@ -132,7 +133,7 @@ export default async function InboxDetailPage({ params }: { params: { id: string
         title={msg.subject?.trim() || "(no subject)"}
         subtitle={`From ${senderName}${restaurantName ? ` · ${restaurantName}` : ""} · ${new Date(
           msg.received_at,
-        ).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
+        ).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: FARM_TIMEZONE })}`}
         backHref="/admin/inbox"
       />
 

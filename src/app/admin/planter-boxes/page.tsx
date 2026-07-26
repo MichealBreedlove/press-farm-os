@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { Flower2 } from "lucide-react";
 import { plantingAccrual, valueByMonth } from "@/lib/production-value/accrual";
+import { todayPacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic"; // production value is relative to today
 
@@ -23,7 +24,7 @@ function valueToDate(p: any, today: string): number {
 
 export default async function PlanterBoxesPage() {
   const admin = createAdminClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
 
   const { data } = await (admin as any)
     .from("planter_boxes")

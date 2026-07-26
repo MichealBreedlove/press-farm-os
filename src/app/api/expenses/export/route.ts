@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * GET /api/expenses/export?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
 
   // RFC 4180 + UTF-8 BOM (so Excel renders accents correctly)
   const body = "﻿" + lines.join("\r\n");
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = todayPacific();
   return new NextResponse(body, {
     status: 200,
     headers: {

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { BoxDetailClient, type EnrichedPlanting } from "@/components/admin/planter-boxes/BoxDetailClient";
 import { plantingAccrual, valueByMonth } from "@/lib/production-value/accrual";
+import { todayPacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ function valueToDate(p: any, today: string): number {
 export default async function PlanterBoxDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const admin = createAdminClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
 
   const [{ data: box }, { data: items }] = await Promise.all([
     (admin as any)

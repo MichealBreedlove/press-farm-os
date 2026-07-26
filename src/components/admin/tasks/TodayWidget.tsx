@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckSquare, AlertCircle } from "lucide-react";
 import type { FarmTask } from "@/types/database";
+import { todayPacific } from "@/lib/utils";
 import {
   TASK_TYPE_ICONS,
   PRIORITY_COLORS,
@@ -27,7 +28,7 @@ export function TodayWidget({
 }: Props) {
   const visible = tasks.slice(0, maxItems);
   const overflow = Math.max(0, tasks.length - visible.length);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const overdueCount = tasks.filter((t) => t.due_date < today).length;
 
   return (

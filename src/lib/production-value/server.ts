@@ -10,6 +10,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 import {
   trayAccrual,
   plantingAccrual,
@@ -78,7 +79,7 @@ const sumMap = (m: Record<string, number>): number =>
  */
 export async function getProductionValue(today?: string): Promise<ProductionValueData> {
   const admin = createAdminClient();
-  const cap = today ?? new Date().toISOString().slice(0, 10);
+  const cap = today ?? todayPacific();
 
   const [{ data: trays }, { data: plantings }, split] = await Promise.all([
     // Trays of crops that carry a value_per_tray and have started harvesting.

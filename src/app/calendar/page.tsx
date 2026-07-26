@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { todayPacific } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import {
   ForecastCalendar,
@@ -41,15 +42,16 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
   if (!user) redirect("/login");
 
   const { year: yearParam, month: monthParam } = await searchParams;
-  const today = new Date();
-  const year = parseInt(yearParam ?? "") || today.getFullYear();
-  const monthOneIndexed = parseInt(monthParam ?? "") || today.getMonth() + 1;
+  const todayStr = todayPacific();
+  const [todayYear, todayMonth] = todayStr.split("-").map(Number);
+  const year = parseInt(yearParam ?? "") || todayYear;
+  const monthOneIndexed = parseInt(monthParam ?? "") || todayMonth;
 
   const monthStart = `${year}-${String(monthOneIndexed).padStart(2, "0")}-01`;
   const lastDay = new Date(year, monthOneIndexed, 0).getDate();
   const monthEnd = `${year}-${String(monthOneIndexed).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = todayStr;
 
   // Calendar events for the grid + windows for the readable agenda.
   const [events, fieldWindows, microgreenWindows] = await Promise.all([

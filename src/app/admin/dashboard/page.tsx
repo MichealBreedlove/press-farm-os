@@ -9,7 +9,7 @@ import { SEEDS_ENABLED } from "@/lib/constants";
 import { listTodayTasks } from "@/lib/tasks/queries";
 import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
 import type { FarmTask } from "@/types/database";
-import { formatCurrencyWhole } from "@/lib/utils";
+import { formatCurrencyWhole, todayPacific, addDaysISO } from "@/lib/utils";
 
 interface DashCard {
   href: string;
@@ -45,7 +45,7 @@ export default async function AdminDashboardPage() {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayPacific();
   const currentMonth = today.slice(0, 7);
   const monthStart = `${currentMonth}-01`;
   const [y, m] = currentMonth.split("-").map(Number);
@@ -66,7 +66,7 @@ export default async function AdminDashboardPage() {
     admin.from("delivery_dates").select("date").gte("date", today).order("date", { ascending: true }).limit(1).single(),
     admin.from("deliveries").select("total_value").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
     admin.from("farm_expenses").select("amount").gte("date", monthStart).lte("date", monthEnd),
-    admin.from("labor_entries").select("hours").gte("date", (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split("T")[0]; })()),
+    admin.from("labor_entries").select("hours").gte("date", addDaysISO(today, -7)),
     // Off-schedule orders: any order still needing attention whose linked
     // delivery_date has day_of_week='custom' (anything not Thu/Sat/Mon, or
     // an ad-hoc date the chef opened from the order page). Once fulfilled

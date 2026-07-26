@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export default async function ReceiverArchivePage() {
   if (!profile) redirect("/login");
   if (profile.role !== "receiver" && profile.role !== "admin") redirect("/order");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const admin = createAdminClient();
 
   // Pull the universe of past delivery dates that had any activity.

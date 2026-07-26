@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Send } from "lucide-react";
-import { formatCurrencyWhole as fmt } from "@/lib/utils";
+import { formatCurrencyWhole as fmt, todayPacific, addDaysISO } from "@/lib/utils";
 
 interface LaborEntry {
   id: string;
@@ -52,7 +52,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   const [sent, setSent] = useState(false);
 
   const [workerName, setWorkerName] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayPacific());
   const [timeIn, setTimeIn] = useState("");
   const [lunchOut, setLunchOut] = useState("");
   const [lunchIn, setLunchIn] = useState("");
@@ -119,21 +119,17 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
 
   // Current week entries (Mon-Sun of the most recent week with data)
   // Date boundaries
-  const today = new Date();
-  const dayOfWeek = today.getDay();
+  const todayStr = todayPacific();
+  const [tYear, tMonth] = todayStr.split("-").map(Number);
+  const dayOfWeek = new Date(todayStr + "T12:00:00Z").getUTCDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
-  const mondayStr = monday.toISOString().split("T")[0];
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  const sundayStr = sunday.toISOString().split("T")[0];
+  const mondayStr = addDaysISO(todayStr, mondayOffset);
+  const sundayStr = addDaysISO(mondayStr, 6);
 
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
-  const yearStart = `${today.getFullYear()}-01-01`;
-  const yearEnd = `${today.getFullYear()}-12-31`;
+  const monthStart = `${todayStr.slice(0, 7)}-01`;
+  const monthEnd = `${todayStr.slice(0, 7)}-${String(new Date(tYear, tMonth, 0).getDate()).padStart(2, "0")}`;
+  const yearStart = `${tYear}-01-01`;
+  const yearEnd = `${tYear}-12-31`;
 
   const thisWeekEntries = entries.filter(e => e.date >= mondayStr && e.date <= sundayStr);
   const monthEntries = entries.filter(e => e.date >= monthStart && e.date <= monthEnd);
@@ -151,7 +147,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
   // Unique worker names across all entries (for the autocomplete datalist)
   const workers = Array.from(new Set(entries.map(e => e.worker_name)));
 
-  const monthLabel = today.toLocaleDateString("en-US", { month: "short" });
+  const monthLabel = new Date(todayStr + "T12:00:00").toLocaleDateString("en-US", { month: "short" });
 
   async function handleSendTimesheet() {
     setSending(true);
@@ -181,7 +177,7 @@ export function LaborClient({ entries, farmId }: { entries: LaborEntry[]; farmId
           {month.cost > 0 && <p className="text-[10px] text-farm-muted mt-0.5">{fmt(month.cost)}</p>}
         </div>
         <div className="card p-3 text-center">
-          <p className="text-xs text-farm-muted uppercase tracking-wide">{today.getFullYear()}</p>
+          <p className="text-xs text-farm-muted uppercase tracking-wide">{tYear}</p>
           <p className="text-xl font-bold text-farm-dark mt-1">{year.hours.toFixed(1)}h</p>
           {year.cost > 0 && <p className="text-[10px] text-farm-muted mt-0.5">{fmt(year.cost)}</p>}
         </div>

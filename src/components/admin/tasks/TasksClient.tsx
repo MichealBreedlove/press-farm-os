@@ -17,6 +17,7 @@ import {
   PRIORITY_COLORS,
 } from "@/lib/tasks/constants";
 import { TaskDraftCard } from "./TaskDraftCard";
+import { todayPacific } from "@/lib/utils";
 
 type Tab = "today" | "upcoming" | "drafts" | "done";
 type SourceFilter = "all" | FarmTaskSource;
@@ -360,7 +361,7 @@ function TaskRow({
     return parts.join(" · ");
   }, [task, itemNames, cropNames]);
 
-  const isOverdue = variant === "open" && task.due_date < new Date().toISOString().slice(0, 10);
+  const isOverdue = variant === "open" && task.due_date < todayPacific();
 
   return (
     <li className="bg-white border border-pf-master-gold/15 rounded-lg shadow-sm">

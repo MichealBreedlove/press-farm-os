@@ -6,6 +6,7 @@ import { StageTimeline } from "@/components/admin/microgreens/StageTimeline";
 import { MarkReadyButton } from "@/components/admin/microgreens/MarkReadyButton";
 import { TrayActionsFooter } from "@/components/admin/microgreens/TrayActionsFooter";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
+import { formatDateTimePacific } from "@/lib/utils";
 import { HARVEST_STAGE_LABELS } from "@/lib/microgreens/constants";
 import type { MicrogreenHarvestStage } from "@/types/database";
 
@@ -94,7 +95,7 @@ export default async function TrayDetailPage({ params }: { params: Promise<{ id:
             <ul className="space-y-1 text-sm">
               {(harvests ?? []).map((h: any) => (
                 <li key={h.id} className="p-2 bg-white rounded border border-farm-muted/15 flex justify-between">
-                  <span>{new Date(h.harvested_at).toLocaleString()}</span>
+                  <span>{formatDateTimePacific(h.harvested_at)}</span>
                   <span className="font-medium">{h.yield_oz} {harvestUnitLabel(h.unit)}</span>
                   <span className="text-xs text-farm-muted">
                     {h.delivery?.delivery_date ?? "unassigned"}

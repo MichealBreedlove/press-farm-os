@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { nextStatus } from "@/lib/microgreens/stages";
+import { todayPacific } from "@/lib/utils";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient();
@@ -27,7 +28,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Use harvest endpoint instead" }, { status: 400 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayPacific();
   const updates: any = { status: newStatus };
   if (newStatus === "blackout") updates.blackout_start = today;
   if (newStatus === "light") updates.light_start = today;

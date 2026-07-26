@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getItemImageUrl } from "@/lib/flower-images";
 import { laneStyle } from "@/lib/lanes";
 import { isEventOnlyItem } from "@/lib/order-availability";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTimePacific } from "@/lib/utils";
 
 type Status = "ready" | "short" | "pending" | "extra";
 /** Which DB table backs a line — drives the check-line API call. */
@@ -465,12 +465,7 @@ function RestaurantSection({ block }: { block: RestaurantBlock }) {
             <span>
               <span className="font-semibold">Closed out</span> by {block.closedByName ?? "—"} ·{" "}
               {block.closedAt
-                ? new Date(block.closedAt).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })
+                ? formatDateTimePacific(block.closedAt)
                 : ""}
             </span>
           </div>

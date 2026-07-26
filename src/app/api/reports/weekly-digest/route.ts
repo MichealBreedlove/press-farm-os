@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/constants";
 import { getAnthropicClient } from "@/lib/anthropic/client";
@@ -40,11 +41,8 @@ async function sendDigest() {
   const admin = createAdminClient();
 
   // Date range: last 7 days
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 7);
-  const start = startDate.toISOString().split("T")[0];
-  const end = endDate.toISOString().split("T")[0];
+  const end = todayPacific();
+  const start = addDaysISO(end, -7);
 
   // Fetch deliveries
   const { data: deliveries } = await (admin as any)

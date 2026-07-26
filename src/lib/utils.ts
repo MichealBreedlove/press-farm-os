@@ -98,13 +98,63 @@ export function toISODate(date: Date): string {
 }
 
 /**
+ * The farm's timezone. EVERY user-facing timestamp and every "what date is
+ * it now" computation must pin this zone explicitly — server components run
+ * in UTC on Vercel, and even in the browser `toISOString()` is UTC, so an
+ * unpinned format shows times 7–8h off and dates flip to tomorrow at 4–5pm
+ * Pacific.
+ */
+export const FARM_TIMEZONE = "America/Los_Angeles";
+
+/**
  * Today's date (YYYY-MM-DD) in the farm's timezone (America/Los_Angeles).
  * Use this instead of `new Date().toISOString().split("T")[0]` for any
  * "is this date today/past/future" check — UTC flips to the next day at
  * 4–5pm Pacific, exactly when chefs are ordering for tomorrow.
  */
 export function todayPacific(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  return new Date().toLocaleDateString("en-CA", { timeZone: FARM_TIMEZONE });
+}
+
+/**
+ * Add (or subtract) whole days to a YYYY-MM-DD string.
+ * @example addDaysISO("2026-07-25", 2) → "2026-07-27"
+ */
+export function addDaysISO(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T12:00:00Z"); // noon-UTC anchor — DST-immune
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split("T")[0]!;
+}
+
+/**
+ * Format a timestamp's time-of-day in farm-local time.
+ * @example formatTimePacific("2026-07-26T00:37:00Z") → "5:37 PM"
+ */
+export function formatTimePacific(ts: string | Date): string {
+  return new Date(ts).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: FARM_TIMEZONE,
+  });
+}
+
+/**
+ * Format a full timestamp in farm-local time.
+ * @example formatDateTimePacific("2026-07-26T00:37:00Z") → "Jul 25, 5:37 PM"
+ * @example formatDateTimePacific(ts, { weekday: true }) → "Sat, Jul 25, 5:37 PM"
+ */
+export function formatDateTimePacific(
+  ts: string | Date,
+  opts?: { weekday?: boolean },
+): string {
+  return new Date(ts).toLocaleString("en-US", {
+    ...(opts?.weekday ? { weekday: "short" as const } : {}),
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: FARM_TIMEZONE,
+  });
 }
 
 /**
@@ -121,20 +171,15 @@ export const ORDER_CUTOFF_HOUR_PACIFIC = 17; // 5:00 PM
  * `now` is injectable for tests.
  */
 export function minOrderableDatePacific(now: Date = new Date()): string {
-  const today = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const today = now.toLocaleDateString("en-CA", { timeZone: FARM_TIMEZONE });
   const hour = Number(
     new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/Los_Angeles",
+      timeZone: FARM_TIMEZONE,
       hour: "numeric",
       hourCycle: "h23",
     }).format(now),
   );
-  if (hour < ORDER_CUTOFF_HOUR_PACIFIC) return today;
-  // Roll to the next calendar day. Noon-UTC anchor keeps the +1 immune to
-  // DST/UTC-offset edge cases.
-  const next = new Date(today + "T12:00:00Z");
-  next.setUTCDate(next.getUTCDate() + 1);
-  return next.toISOString().split("T")[0];
+  return hour < ORDER_CUTOFF_HOUR_PACIFIC ? today : addDaysISO(today, 1);
 }
 
 /**

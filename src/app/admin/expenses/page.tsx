@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ExpensesClient } from "./ExpensesClient";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { todayPacific } from "@/lib/utils";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -15,8 +16,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date();
-  const currentMonth = monthParam ?? today.toISOString().slice(0, 7);
+  const currentMonth = monthParam ?? todayPacific().slice(0, 7);
 
   const [year, mon] = currentMonth.split("-").map(Number);
   const start = `${currentMonth}-01`;
@@ -26,9 +26,10 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
   // Prev / next month links
   const prevDate = new Date(year, mon - 2, 1);
   const nextDate = new Date(year, mon, 1);
-  const prevMonth = prevDate.toISOString().slice(0, 7);
-  const nextMonth = nextDate.toISOString().slice(0, 7);
-  const isCurrentMonth = currentMonth === today.toISOString().slice(0, 7);
+  const fmtMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const prevMonth = fmtMonth(prevDate);
+  const nextMonth = fmtMonth(nextDate);
+  const isCurrentMonth = currentMonth === todayPacific().slice(0, 7);
 
   const monthLabel = new Date(year, mon - 1, 1).toLocaleDateString("en-US", {
     month: "long",

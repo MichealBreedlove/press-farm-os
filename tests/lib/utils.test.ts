@@ -13,6 +13,9 @@ import {
   toISODate,
   getNextDeliveryDates,
   minOrderableDatePacific,
+  addDaysISO,
+  formatTimePacific,
+  formatDateTimePacific,
 } from "@/lib/utils";
 
 /**
@@ -213,5 +216,39 @@ describe("minOrderableDatePacific", () => {
     expect(minOrderableDatePacific(new Date("2026-08-01T01:00:00Z"))).toBe("2026-08-01");
     // 6:00pm PST on Dec 31 → Jan 1
     expect(minOrderableDatePacific(new Date("2027-01-01T02:00:00Z"))).toBe("2027-01-01");
+  });
+});
+
+describe("addDaysISO", () => {
+  it("adds and subtracts days across month/year boundaries", () => {
+    expect(addDaysISO("2026-07-25", 2)).toBe("2026-07-27");
+    expect(addDaysISO("2026-07-31", 1)).toBe("2026-08-01");
+    expect(addDaysISO("2026-01-01", -1)).toBe("2025-12-31");
+    expect(addDaysISO("2026-07-25", 0)).toBe("2026-07-25");
+  });
+
+  it("is DST-immune (spring forward / fall back)", () => {
+    expect(addDaysISO("2026-03-07", 1)).toBe("2026-03-08"); // spring-forward night
+    expect(addDaysISO("2026-10-31", 1)).toBe("2026-11-01"); // fall-back night
+  });
+});
+
+describe("Pacific timestamp formatting", () => {
+  // 2026-07-26T00:37:00Z = Jul 25, 5:37 PM PDT — the exact discrepancy from
+  // the orders page: an unpinned formatter on a UTC server showed 12:37 AM.
+  const eveningUtc = "2026-07-26T00:37:00Z";
+
+  it("formatTimePacific renders the farm-local time-of-day", () => {
+    expect(formatTimePacific(eveningUtc)).toBe("5:37 PM");
+    expect(formatTimePacific("2026-01-16T01:30:00Z")).toBe("5:30 PM"); // PST
+  });
+
+  it("formatDateTimePacific renders the farm-local date + time", () => {
+    expect(formatDateTimePacific(eveningUtc)).toBe("Jul 25, 5:37 PM");
+    expect(formatDateTimePacific(eveningUtc, { weekday: true })).toBe("Sat, Jul 25, 5:37 PM");
+  });
+
+  it("accepts Date objects too", () => {
+    expect(formatTimePacific(new Date(eveningUtc))).toBe("5:37 PM");
   });
 });

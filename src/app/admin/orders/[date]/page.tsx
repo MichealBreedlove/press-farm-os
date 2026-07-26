@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate, cn } from "@/lib/utils";
+import { formatDeliveryDate, formatTimePacific, cn } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { LaneBadge } from "@/components/shared/LaneBadge";
 import { CATEGORY_ORDER, CATEGORY_LABELS } from "@/lib/constants";
@@ -284,10 +284,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                   <p className="text-xs text-farm-muted mt-0.5">
                     {order.chef?.full_name ?? "Chef"} ·{" "}
                     {order.submitted_at
-                      ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })
+                      ? formatTimePacific(order.submitted_at)
                       : "Not submitted"}
                     {" · "}{totalItems} items
                   </p>
@@ -297,10 +294,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                       <p className="text-[11px] text-farm-muted/80 mt-0.5">
                         last edited by {order.edited_by.full_name}
                         {order.last_edited_at && (
-                          <> at {new Date(order.last_edited_at).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}</>
+                          <> at {formatTimePacific(order.last_edited_at)}</>
                         )}
                       </p>
                     )}

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { formatDeliveryDate, todayPacific, cn } from "@/lib/utils";
+import { formatDeliveryDate, formatTimePacific, todayPacific, cn } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { DateNav } from "./DateNav";
 import { OrderingToggle } from "./OrderingToggle";
@@ -163,10 +163,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                 const showEdited =
                   editedByName && order.last_edited_by && order.last_edited_by !== order.chef?.id;
                 const editedTime = order.last_edited_at
-                  ? new Date(order.last_edited_at).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })
+                  ? formatTimePacific(order.last_edited_at)
                   : null;
 
                 return (
@@ -190,10 +187,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                         <p className="text-sm text-farm-muted mt-0.5">
                           {order.chef?.full_name ?? "Chef"} ·{" "}
                           {order.submitted_at
-                            ? new Date(order.submitted_at).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })
+                            ? formatTimePacific(order.submitted_at)
                             : "Not submitted"}
                         </p>
                         {showEdited && (

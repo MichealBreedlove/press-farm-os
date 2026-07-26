@@ -1,4 +1,5 @@
 import type { OrderAudit, OrderAuditAction } from "@/types";
+import { FARM_TIMEZONE } from "@/lib/utils";
 
 /**
  * OrderActivity — compact, on-brand audit timeline for a single order.
@@ -83,7 +84,7 @@ function actionLabel(action: string, detail: Record<string, unknown> | null): st
 
 function formatStamp(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
-    timeZone: "America/Los_Angeles",
+    timeZone: FARM_TIMEZONE,
     month: "short",
     day: "numeric",
     hour: "numeric",

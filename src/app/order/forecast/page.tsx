@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { ForecastClient } from "./ForecastClient";
 import {
   fetchHistoricalDeliveries,
@@ -43,15 +44,12 @@ export default async function ForecastPage() {
 
   const restaurant = restaurantUser.restaurants;
 
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const currentYear = today.getUTCFullYear();
-  const currentMonth = today.getUTCMonth() + 1;
+  const todayIso = todayPacific();
+  const [currentYear, currentMonth] = todayIso.split("-").map(Number);
 
   // ±52 weeks from today
-  const MS_PER_DAY = 86_400_000;
-  const fromIso = new Date(today.getTime() - 52 * 7 * MS_PER_DAY).toISOString().slice(0, 10);
-  const toIso = new Date(today.getTime() + 52 * 7 * MS_PER_DAY).toISOString().slice(0, 10);
+  const fromIso = addDaysISO(todayIso, -52 * 7);
+  const toIso = addDaysISO(todayIso, 52 * 7);
 
   // Fetch the three zones in parallel.
   const [pastRows, concreteEvents, seasonalItems] = await Promise.all([

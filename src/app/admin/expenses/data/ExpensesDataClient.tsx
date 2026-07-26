@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, todayPacific } from "@/lib/utils";
 
 type Tab = "export" | "import";
 
@@ -235,7 +235,7 @@ export function ExpensesDataClient({ totalCount, totalAmount, latestDate }: Prop
             </a>
 
             <p className="text-[11px] text-farm-muted text-center">
-              File: <code className="font-pf-mono bg-farm-cream/60 px-1.5 py-0.5 rounded">press-farm-expenses-{new Date().toISOString().slice(0, 10)}.csv</code>
+              File: <code className="font-pf-mono bg-farm-cream/60 px-1.5 py-0.5 rounded">press-farm-expenses-{todayPacific()}.csv</code>
             </p>
           </div>
         </div>

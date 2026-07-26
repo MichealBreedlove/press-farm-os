@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { todayPacific } from "@/lib/utils";
 
 type Crop = {
   id: string;
@@ -16,7 +17,7 @@ interface Props {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  return todayPacific();
 }
 
 export function AdHocSowModal({ crops, onClose }: Props) {

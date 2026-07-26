@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import {
   ForecastCalendar,
@@ -41,11 +42,12 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
 
   const { year: yearParam, month: monthParam, view: viewParam } = await searchParams;
   const view = viewParam === "forecast" ? "forecast" : "activity";
-  const today = new Date();
-  const year = parseInt(yearParam ?? "") || today.getFullYear();
+  const todayStr = todayPacific();
+  const [todayYear, todayMonth] = todayStr.split("-").map(Number);
+  const year = parseInt(yearParam ?? "") || todayYear;
   // Stored 1-indexed in URL (1=Jan, 12=Dec) so it reads naturally; converted
   // to 0-indexed for Date math.
-  const monthOneIndexed = parseInt(monthParam ?? "") || (today.getMonth() + 1);
+  const monthOneIndexed = parseInt(monthParam ?? "") || todayMonth;
 
   const monthStart = `${year}-${String(monthOneIndexed).padStart(2, "0")}-01`;
   const lastDay = new Date(year, monthOneIndexed, 0).getDate();
@@ -90,7 +92,6 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     isToday: boolean;
   };
 
-  const todayStr = today.toISOString().slice(0, 10);
   const map = new Map<string, DayActivity>();
 
   function ensure(date: string): DayActivity {
@@ -145,7 +146,7 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
   // ── Harvest forecast layer ───────────────────────────────────────────────
   // Always load the "available now / 2wk / 4wk / 2mo" buckets for the summary.
   // Only load the month's calendar events when the forecast view is active.
-  const todayIso = today.toISOString().slice(0, 10);
+  const todayIso = todayStr;
   const [buckets, forecastEvents] = await Promise.all([
     getAvailabilityBuckets(todayIso),
     view === "forecast"

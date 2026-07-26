@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
-import { formatDeliveryDate } from "@/lib/utils";
+import { formatDeliveryDate, formatDateTimePacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -97,13 +97,7 @@ export default async function NotificationHistoryPage({ params }: Props) {
                 <div className="px-5 py-4 border-b border-farm-dark/5 bg-farm-cream/40 flex items-baseline justify-between gap-3">
                   <div>
                     <p className="font-display text-base text-farm-dark">
-                      {new Date(evt.sent_at).toLocaleString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTimePacific(evt.sent_at, { weekday: true })}
                     </p>
                     <p className="text-xs text-farm-muted mt-0.5">
                       Sent by {evt.sender?.full_name ?? "—"}

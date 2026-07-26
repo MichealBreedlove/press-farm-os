@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { todayPacific } from "@/lib/utils";
 
 interface PlantingOption {
   id: string;
@@ -35,7 +36,7 @@ export function LogSowingModal({
   const [pending, startTransition] = useTransition();
   const [amount, setAmount] = useState("");
   const [plantingId, setPlantingId] = useState(prefilledPlantingId ?? "");
-  const [sownOn, setSownOn] = useState(new Date().toISOString().slice(0, 10));
+  const [sownOn, setSownOn] = useState(todayPacific());
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 

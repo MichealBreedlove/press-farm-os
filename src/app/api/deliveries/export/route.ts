@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * GET /api/deliveries/export?from=YYYY-MM-DD&to=YYYY-MM-DD&restaurantId=...
@@ -86,7 +87,7 @@ export async function GET(request: Request) {
 }
 
 function csvResponse(body: string) {
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = todayPacific();
   return new NextResponse(body, {
     status: 200,
     headers: {

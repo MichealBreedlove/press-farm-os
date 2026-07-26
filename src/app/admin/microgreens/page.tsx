@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { computeSowPlan } from "@/lib/microgreens/sowPlan";
 import { PLAN_HORIZON_DAYS } from "@/lib/microgreens/constants";
 import { DashboardClient } from "./DashboardClient";
@@ -10,9 +11,8 @@ export const dynamic = "force-dynamic"; // sow plan must reflect today
 export default async function MicrogreensDashboardPage() {
   const admin = createAdminClient();
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
-  const horizon = new Date(now.getTime() + PLAN_HORIZON_DAYS * 24 * 3600 * 1000)
-    .toISOString().slice(0, 10);
+  const today = todayPacific();
+  const horizon = addDaysISO(today, PLAN_HORIZON_DAYS);
 
   const [{ data: crops }, { data: demand }, { data: batches }, { data: trays },
     { data: deliveryDates }, { data: deliveries }] = await Promise.all([

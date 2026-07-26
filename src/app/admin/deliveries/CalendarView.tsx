@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { todayPacific } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -19,9 +20,9 @@ interface CalendarViewProps {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const todayStr = todayPacific();
+  const [year, setYear] = useState(() => Number(todayStr.slice(0, 4)));
+  const [month, setMonth] = useState(() => Number(todayStr.slice(5, 7)) - 1);
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -48,7 +49,6 @@ export function CalendarView({ deliveries, deliveryDates }: CalendarViewProps) {
     else setMonth(month + 1);
   }
 
-  const todayStr = today.toISOString().split("T")[0];
 
   // Build calendar grid
   const cells: (number | null)[] = [];

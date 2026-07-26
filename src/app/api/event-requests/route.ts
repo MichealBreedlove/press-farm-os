@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomUUID } from "crypto";
+import { todayPacific } from "@/lib/utils";
 
 interface ItemLine {
   item_id?: string;
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
   const notes = body.notes?.trim() || null;
 
   if (!neededBy) return NextResponse.json({ error: "needed_by_date required" }, { status: 400 });
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayPacific();
   if (neededBy < today) {
     return NextResponse.json({ error: "needed_by_date must be today or later" }, { status: 400 });
   }

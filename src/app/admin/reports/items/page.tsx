@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { formatCurrency } from "@/lib/utils";
@@ -43,9 +44,7 @@ export default async function ItemPerformancePage({
   const days = windowParam === "year" ? 365 : windowParam === "quarter" ? 90 : 30;
   const windowLabel = days === 365 ? "Past Year" : days === 90 ? "Past Quarter" : "Past 30 Days";
 
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().split("T")[0];
+  const cutoffStr = addDaysISO(todayPacific(), -days);
 
   const admin = createAdminClient();
 

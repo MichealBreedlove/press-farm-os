@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FARM_TIMEZONE } from "@/lib/utils";
 
 const YOUNTVILLE_LAT = 38.4014;
 const YOUNTVILLE_LON = -122.3614;
@@ -100,7 +101,7 @@ export function DeliveryWeatherBanner({ deliveryDate, deliveryDateFormatted }: D
     url.searchParams.set("temperature_unit", "fahrenheit");
     url.searchParams.set("wind_speed_unit", "mph");
     url.searchParams.set("precipitation_unit", "inch");
-    url.searchParams.set("timezone", "America/Los_Angeles");
+    url.searchParams.set("timezone", FARM_TIMEZONE);
     url.searchParams.set("start_date", deliveryDate);
     url.searchParams.set("end_date", deliveryDate);
 

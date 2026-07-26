@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReceiverBlocks, sendToReceivers, statusCountsFromBlocks } from "@/lib/receiver-notify";
+import { FARM_TIMEZONE } from "@/lib/utils";
 
 export const maxDuration = 30;
 
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
   // Today's date in America/Los_Angeles — the farm's TZ. Using
   // toLocaleDateString with the timezone option keeps DST changes correct.
   const todayLA = new Date().toLocaleDateString("en-CA", {
-    timeZone: "America/Los_Angeles",
+    timeZone: FARM_TIMEZONE,
   }); // "en-CA" yields YYYY-MM-DD
 
   const admin = createAdminClient();

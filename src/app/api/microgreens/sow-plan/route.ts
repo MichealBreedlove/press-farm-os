@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { addDaysISO, todayPacific } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { computeSowPlan } from "@/lib/microgreens/sowPlan";
 import { PLAN_HORIZON_DAYS } from "@/lib/microgreens/constants";
@@ -14,9 +15,8 @@ export async function GET(_req: Request) {
 
   const admin = createAdminClient();
   const now = new Date();
-  const horizon = new Date(now.getTime() + PLAN_HORIZON_DAYS * 24 * 3600 * 1000);
-  const today = now.toISOString().slice(0, 10);
-  const horizonIso = horizon.toISOString().slice(0, 10);
+  const today = todayPacific();
+  const horizonIso = addDaysISO(today, PLAN_HORIZON_DAYS);
 
   const [{ data: crops }, { data: demand }, { data: batches }, { data: trays },
     { data: deliveryDates }] = await Promise.all([

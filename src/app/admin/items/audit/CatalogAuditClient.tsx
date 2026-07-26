@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SimpleMarkdown } from "@/components/shared/SimpleMarkdown";
+import { formatDateTimePacific } from "@/lib/utils";
 
 interface AuditResponse {
   report: string;
@@ -78,7 +79,7 @@ export function CatalogAuditClient({ itemCount }: { itemCount: number }) {
             <SimpleMarkdown text={data.report} />
             <div className="mt-5 pt-3 border-t border-farm-dark/5 flex items-center justify-between text-[10px] tracking-wider uppercase text-farm-muted/70">
               <span>Reviewed {data.item_count} items</span>
-              <span>{new Date(data.generated_at).toLocaleString()}</span>
+              <span>{formatDateTimePacific(data.generated_at)}</span>
             </div>
             <div className="mt-4 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200">
               <p className="text-[11px] text-amber-900 leading-snug">

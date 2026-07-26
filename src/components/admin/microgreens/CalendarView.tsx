@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { MicrogreenBatch } from "@/types/database";
+import { todayPacific } from "@/lib/utils";
 
 type EventKind =
   | "sow"
@@ -153,7 +154,7 @@ function buildEvents(batches: BatchWithCrop[]): Event[] {
 }
 
 export function CalendarView({ batches }: Props) {
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => todayPacific(), []);
 
   const [month, setMonth] = useState(() => {
     const d = new Date();
