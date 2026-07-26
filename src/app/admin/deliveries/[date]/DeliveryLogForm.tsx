@@ -160,6 +160,53 @@ export default function DeliveryLogForm({
     );
   }
 
+  function priceInfoFor(item: Item | undefined) {
+    if (!item) return null;
+    return {
+      unitPrices: item.unit_prices ?? {},
+      defaultPrice: item.default_price,
+      sizePrices: item.size_prices ?? null,
+    };
+  }
+
+  // Changing the container re-resolves the price from the catalog
+  // (size_prices[size] → unit_prices[unit] → default_price) so each
+  // container shows its own price. Admin can still override afterward.
+  function changeUnit(idx: number, unit: string) {
+    setLines((prev) =>
+      prev.map((l, i) => {
+        if (i !== idx) return l;
+        const info = priceInfoFor(itemMap[l.item_id]);
+        if (!info) return { ...l, unit };
+        return {
+          ...l,
+          unit,
+          unit_price: String(resolveOrderUnitPrice(info, unit, l.size_label || null)),
+        };
+      })
+    );
+  }
+
+  // Size changes only re-resolve the price for items that actually have
+  // size-tier pricing — otherwise a manual price edit would be clobbered.
+  function changeSize(idx: number, size: string) {
+    setLines((prev) =>
+      prev.map((l, i) => {
+        if (i !== idx) return l;
+        const item = itemMap[l.item_id];
+        const hasSizePrices =
+          item?.size_prices && Object.keys(item.size_prices).length > 0;
+        if (!hasSizePrices) return { ...l, size_label: size };
+        const info = priceInfoFor(item);
+        return {
+          ...l,
+          size_label: size,
+          unit_price: String(resolveOrderUnitPrice(info, l.unit || null, size || null)),
+        };
+      })
+    );
+  }
+
   function removeLine(idx: number) {
     setLines((prev) => prev.filter((_, i) => i !== idx));
   }
@@ -169,26 +216,27 @@ export default function DeliveryLogForm({
       setShowItemPicker(false);
       return;
     }
-    // unit_type may be "sm,lg" for multi-unit items; pick the first as the
-    // default. Admin can edit the unit field on the row before save if a
-    // different one is needed (the delivery_items CHECK constraint requires
-    // a single valid code).
-    const firstUnit =
-      String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean)[0] ?? "ea";
-    // Pre-fill the price with the canonical catalog precedence for that unit
-    // (unit_prices[unit] → default_price → 0; no size chosen yet, so the size
-    // tier can't apply). The old default_price-only pre-fill showed $0 for
-    // multi-unit items whose price lives in unit_prices. Admin can still
-    // edit the price on the row.
-    const prefillPrice = resolveOrderUnitPrice(
-      {
-        unitPrices: item.unit_prices ?? {},
-        defaultPrice: item.default_price,
-        sizePrices: item.size_prices ?? null,
-      },
-      firstUnit,
-      null,
-    );
+    // unit_type may be "sm,lg" for multi-unit items. A single-unit item
+    // pre-selects its only container; a multi-unit item starts unselected so
+    // the admin picks the container from the dropdown (the price fills in on
+    // pick, since each container can carry its own price).
+    const units =
+      String(item.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
+    const unit = units.length > 1 ? "" : units[0] ?? "ea";
+    // For a pre-selected unit, pre-fill the price with the canonical catalog
+    // precedence (unit_prices[unit] → default_price → 0; no size chosen yet,
+    // so the size tier can't apply). Admin can still edit the price.
+    const prefillPrice = unit
+      ? resolveOrderUnitPrice(
+          {
+            unitPrices: item.unit_prices ?? {},
+            defaultPrice: item.default_price,
+            sizePrices: item.size_prices ?? null,
+          },
+          unit,
+          null,
+        )
+      : "";
     setLines((prev) => [
       ...prev,
       {
@@ -196,7 +244,7 @@ export default function DeliveryLogForm({
         name: item.name,
         category: item.category,
         quantity: "1",
-        unit: firstUnit,
+        unit,
         unit_price: String(prefillPrice),
         size_label: "",
         is_bonus: false,
@@ -210,6 +258,17 @@ export default function DeliveryLogForm({
   async function handleSave() {
     setSaving(true);
     setError(null);
+
+    const missingUnit = lines.filter(
+      (l) => parseFloat(l.quantity) > 0 && !l.unit.trim()
+    );
+    if (missingUnit.length > 0) {
+      setError(
+        `Choose a container for: ${missingUnit.map((l) => l.name).join(", ")}`
+      );
+      setSaving(false);
+      return;
+    }
 
     const validLines = lines.filter(
       (l) => parseFloat(l.quantity) > 0 && parseFloat(l.unit_price) >= 0
@@ -325,6 +384,8 @@ export default function DeliveryLogForm({
               const lt = lineTotal(line.quantity, line.unit_price);
               const itemSizes = String(itemMap[line.item_id]?.size ?? "")
                 .split(", ").map((s) => s.trim()).filter(Boolean);
+              const itemUnits = String(itemMap[line.item_id]?.unit_type ?? "")
+                .split(",").map((u) => u.trim().toLowerCase()).filter(Boolean);
               return (
                 <div
                   key={line.item_id}
@@ -378,7 +439,7 @@ export default function DeliveryLogForm({
                       <label className="text-xs text-farm-muted">Size</label>
                       <select
                         value={line.size_label}
-                        onChange={(e) => updateLine(idx, "size_label", e.target.value)}
+                        onChange={(e) => changeSize(idx, e.target.value)}
                         disabled={isFinalized}
                         className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted"
                       >
@@ -405,15 +466,22 @@ export default function DeliveryLogForm({
                         className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted"
                       />
                     </div>
-                    <div className="w-16">
+                    <div className="w-20">
                       <label className="text-xs text-farm-muted">Unit</label>
-                      <input
-                        type="text"
+                      <select
                         value={line.unit}
-                        onChange={(e) => updateLine(idx, "unit", e.target.value)}
+                        onChange={(e) => changeUnit(idx, e.target.value)}
                         disabled={isFinalized}
-                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted uppercase"
-                      />
+                        className="w-full px-2 py-2 border border-farm-dark/10 rounded-lg text-sm mt-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-farm-green disabled:bg-farm-cream/40 disabled:text-farm-muted uppercase"
+                      >
+                        {!line.unit && <option value="">—</option>}
+                        {itemUnits.map((u) => (
+                          <option key={u} value={u}>{u.toUpperCase()}</option>
+                        ))}
+                        {line.unit && !itemUnits.includes(line.unit) && (
+                          <option value={line.unit}>{line.unit.toUpperCase()}</option>
+                        )}
+                      </select>
                     </div>
                     <div className="flex-1">
                       <label className="text-xs text-farm-muted">Price/unit</label>
