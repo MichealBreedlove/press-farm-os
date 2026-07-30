@@ -52,9 +52,16 @@ FORAGED = {
 ASSEMBLED = {"Flower Bouquet"}
 NON_FIELD = TREES_AND_VINES | PERENNIALS | FORAGED | ASSEMBLED
 
-# Blossoms that fill one LG. Three SM count as one LG.
-BLOSSOMS_PER_LG = {"Marigold": 50, "Gem Marigold": 100, "Puff Ball Marigold": 9}
+# Pieces that fill one LG. The farm price list prices one EA at one fiftieth
+# of an LG across the catalog, so 50 is the standard. Three SM count as one LG.
+PIECES_PER_LG_DEFAULT = 50
+PIECES_PER_LG = {"Gem Marigold": 100, "Puff Ball Marigold": 9}
 SM_PER_LG = 3
+
+# What one piece is called, by catalog category, unless PIECE_WORD names it.
+CATEGORY_WORD = {"flowers": "blossoms", "herbs_leaves": "leaves",
+                 "micros_leaves": "leaves", "kits": "leaves",
+                 "fruit_veg": "pieces"}
 
 # What one EA of a crop is, in plain words.
 PIECE_WORD = {
@@ -88,54 +95,46 @@ def friendly(x):
 
 
 def by_crop():
-    """{crop: {unit: [12 expected monthly quantities]}} for every crop.
+    """({crop: {unit: [12 expected monthly quantities]}}, {crop: category}).
     Each calendar month is averaged over the years it was delivered."""
-    crops = {}
-    for item, unit, _cat, monthly in MONTHLY:
+    crops, cats = {}, {}
+    for item, unit, cat, monthly in MONTHLY:
+        cats.setdefault(item, cat)
         slots = crops.setdefault(item, {}).setdefault(unit, [0.0] * 12)
         for mo, (total, years) in monthly.items():
             slots[mo - 1] += float(total) / max(int(years), 1)
-    return crops
+    return crops, cats
 
 
-def phrase_for_month(item, units, mi):
+def phrase_for_month(item, cat, units, mi):
     """Plain words for what to have ready in month index mi.
-    LG and SM are combined into LG only, three SM to one LG."""
+    Container amounts become EA pieces: 50 per LG, three SM to one LG."""
     parts = []
-    lg_n = 0
-    for unit in UNIT_ORDER:
-        if unit == "sm":
-            continue
+    per = PIECES_PER_LG.get(item, PIECES_PER_LG_DEFAULT)
+    word = PIECE_WORD.get(item) or CATEGORY_WORD.get(cat, "pieces")
+    ea_m = units.get("ea", [0.0] * 12)[mi]
+    lg_m = (units.get("lg", [0.0] * 12)[mi]
+            + units.get("sm", [0.0] * 12)[mi] / SM_PER_LG)
+    if ea_m > 0 or lg_m > 0:
+        pieces_w = (ea_m + lg_m * per) / WEEKS_PER_MONTH
+        if lg_m > 0 and pieces_w <= per:
+            parts.append(f"at least {friendly(per)} EA {word} a week")
+        elif pieces_w < 1.5:
+            parts.append(f"at least 1 EA {word.rstrip('s')} a week")
+        else:
+            parts.append(f"about {friendly(pieces_w)} EA {word} a week")
+    for unit in ("qt", "gb", "lbs", "bx", "cs"):
         total = units.get(unit, [0.0] * 12)[mi]
-        if unit == "lg":
-            total += units.get("sm", [0.0] * 12)[mi] / SM_PER_LG
         if total <= 0:
             continue
         w = total / WEEKS_PER_MONTH
-        if unit == "ea":
-            word = PIECE_WORD.get(item)
-            label = f"EA {word}" if word else "EA"
-            n = friendly(w)
-            if n <= 1:
-                parts.append(f"at least 1 {label.rstrip('s') if word else label} a week")
-            else:
-                parts.append(f"about {n} {label} a week")
+        n = friendly(w)
+        code = UNIT_WORD[unit]
+        if n <= 1:
+            parts.append(f"at least 1 {code} a week")
         else:
-            code = UNIT_WORD[unit]
-            n = friendly(w)
-            if unit == "lg":
-                lg_n = max(n, 1)
-            if n <= 1:
-                parts.append(f"at least 1 {code} a week")
-            else:
-                parts.append(f"{n} {code} a week")
-    text = ", ".join(parts)
-    per_lg = BLOSSOMS_PER_LG.get(item)
-    if per_lg and lg_n:
-        blossoms = lg_n * per_lg
-        if blossoms >= 5:
-            text += f" (about {friendly(blossoms)} blossoms a week)"
-    return text
+            parts.append(f"{n} {code} a week")
+    return ", ".join(parts)
 
 
 CSS = """
@@ -166,7 +165,7 @@ li { line-height: 1.5; margin-bottom: 4px; }
 
 
 def build_html():
-    crops = by_crop()
+    crops, cats = by_crop()
     field = {k: v for k, v in crops.items() if k not in NON_FIELD}
     parts = ["<style>" + CSS + "</style>"]
 
@@ -179,9 +178,9 @@ Press Farm OS, July 2024 through July 2026. Generated July 30, 2026.</div>
 
 <h2>How to use this</h2>
 <p>Find the month. The table lists every field crop the kitchens have taken in that month
-and how much they took every week. Where a crop was delivered in the same month in more than
-one year, the years are averaged. Example: marigolds in August, 7 LG a week, means having
-about 350 blossoms ready every week that month.</p>
+and how much they took every week, counted in pieces. Where a crop was delivered in the same
+month in more than one year, the years are averaged. Example: marigolds in August reads about
+350 EA blossoms a week, so have 350 blossoms ready every week that month.</p>
 <p>These numbers are what the kitchens actually took, not a guess. They cover every delivery
 ever logged: 418 to PRESS since July 2024, 32 to Under-Study since March 2026, 4 to the
 Events team and 1 to Press Bar, 4,275 order lines in all. <b>Plant more than the number.</b>
@@ -189,17 +188,18 @@ The field has to carry picking loss, weather and bad germination, so a third ext
 these numbers is a safe margin.</p>
 <h3>Units</h3>
 <ul class='note'>
-<li><b>EA</b> means each, counted by the piece: a leaf, a blossom, a radish, a carrot.</li>
-<li><b>LG</b> and <b>SM</b> are the large and small harvest containers we deliver in.
-This plan combines them: three SM count as one LG, and every container line is given
-in LG only.</li>
-<li><b>GB</b> is the big green harvest bin for bulky crops. <b>QT</b> is a quart,
-<b>LBS</b> is pounds, <b>BX</b> is a box, <b>CS</b> is a case.</li>
-<li>Marigold blossom counts: French marigold, about 50 blossoms fill an LG. Gem marigold,
-about 100 fill an LG. Puff ball, about 9 fill an LG.</li>
+<li>Everything is counted in <b>EA</b>, meaning each single piece: a blossom, a leaf,
+a radish, a carrot.</li>
+<li>The kitchens order in LG and SM harvest containers. This plan converts them to pieces:
+<b>one LG holds about 50 pieces</b> and three SM make one LG. The farm price list backs
+this, one piece is priced at one fiftieth of an LG across the catalog.</li>
+<li>Exceptions: gem marigold runs about 100 blossoms per LG and puff ball marigold about
+9 per LG, so their lines use those counts.</li>
+<li>A few bulk crops stay in their own units: <b>GB</b> is the big green harvest bin,
+<b>QT</b> is a quart, <b>LBS</b> is pounds, <b>BX</b> is a box, <b>CS</b> is a case.</li>
 <li>Lettuce is cut leaf by leaf and grows back. About half a head of leaves fills an LG.</li>
-<li>Nothing in this plan drops below one per week. Where the kitchens historically took less
-than that, the line says at least 1 a week, so there is always some on hand in season.</li>
+<li>Nothing drops below one LG worth per week. Where the kitchens historically took less,
+the line says at least 50 EA a week, so there is always some on hand in season.</li>
 </ul>
 <h3>Kitchen timing</h3>
 <p class='note'>Deliveries go out Thursday, Saturday and Monday. The menu changes eight times
@@ -213,7 +213,7 @@ volume about one week before. Crops need to be ready ahead of those dates, not o
         rows = []
         for item in sorted(field, key=str.lower):
             if any(units[mi] > 0 for units in field[item].values()):
-                rows.append((item, phrase_for_month(item, field[item], mi)))
+                rows.append((item, phrase_for_month(item, cats[item], field[item], mi)))
         parts.append(f"<div class='section'><h2>{month}</h2>")
         parts.append("<table><tr><th>Crop</th><th>Have ready every week</th></tr>")
         for item, text in rows:
@@ -248,7 +248,7 @@ They are listed so the picture is complete, but Peter does not need to plant for
 <h2>Changes coming, plant for these</h2>
 <ul>
 <li><b>Borage up.</b> Chef Phil wants borage in volume for a wine cellar concept.
-Last year it ran about 1 LG a week in early summer. Plant well past that.</li>
+Last year it ran about 50 to 70 leaves a week in early summer. Plant well past that.</li>
 <li><b>Alyssum down.</b> Chef Phil dislikes alyssum. Do not plant more for PRESS.
 Under-Study still takes a little.</li>
 <li><b>Puff ball marigold is new.</b> Added to the order list in June 2026, about 9 blossoms
@@ -285,7 +285,7 @@ def verify_pdf():
     reader = PdfReader(str(OUT_PDF))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
     required = ["Monthly Order Plan", "How to use this"] + MONTH_FULL + [
-        "Not for planting", "Changes coming", "blossoms a week", "at least 1",
+        "Not for planting", "Changes coming", "EA blossoms", "at least 50 EA",
         "Nasturtium", "Ox Heart"]
     missing = [r for r in required if r not in text]
     if missing:
