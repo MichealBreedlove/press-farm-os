@@ -58,10 +58,8 @@ PIECE_WORD = {
     "Persimmon": "persimmons", "Passionfruit": "fruit",
 }
 
-UNIT_WORD = {"lg": ("large", "large"), "sm": ("small", "small"),
-             "qt": ("quart", "quarts"), "gb": ("green bin", "green bins"),
-             "lbs": ("pound", "pounds"), "bx": ("box", "boxes"),
-             "cs": ("case", "cases")}
+UNIT_WORD = {"lg": "LG", "sm": "SM", "qt": "QT", "gb": "GB",
+             "lbs": "LBS", "bx": "BX", "cs": "CS"}
 
 UNIT_ORDER = ["ea", "lg", "sm", "qt", "gb", "lbs", "bx", "cs"]
 
@@ -100,19 +98,18 @@ def phrase_for_month(item, units, mi):
         if unit == "sm":
             sm_w = w
         if unit == "ea":
-            word = PIECE_WORD.get(item, "pieces")
+            word = PIECE_WORD.get(item)
+            label = f"EA {word}" if word else "EA"
             if w >= 5:
-                parts.append(f"about {friendly(w)} {word} a week")
+                parts.append(f"about {friendly(w)} {label} a week")
             else:
-                parts.append(f"about {friendly(total)} {word} over the month")
+                parts.append(f"about {friendly(total)} {label} over the month")
         else:
-            one, many = UNIT_WORD[unit]
+            code = UNIT_WORD[unit]
             if w >= 0.7:
-                n = friendly(w)
-                parts.append(f"{n} {one if n == 1 else many} a week")
+                parts.append(f"{friendly(w)} {code} a week")
             else:
-                n = friendly(total)
-                parts.append(f"{n} {one if n == 1 else many} over the month")
+                parts.append(f"{friendly(total)} {code} over the month")
     text = ", ".join(parts)
     per_lg = BLOSSOMS_PER_LG.get(item)
     if per_lg and (lg_w or sm_w):
@@ -163,18 +160,21 @@ August 2025 through July 2026, out of Press Farm OS. Generated July 30, 2026.</d
 
 <h2>How to use this</h2>
 <p>Find the month. The table lists every field crop the kitchens took that month last year
-and how much they took every week. Example: marigolds in August means having about 450
-blossoms ready every week that month.</p>
-<p>These numbers are what the kitchens actually took, not a guess. <b>Plant more than the
-number.</b> The field has to carry picking loss, weather and bad germination, so a third
-extra on top of these numbers is a safe margin.</p>
-<h3>Words used here</h3>
+and how much they took every week. Example: marigolds in August, 3 LG and 12 SM a week,
+means having about 450 blossoms ready every week that month.</p>
+<p>These numbers are what the kitchens actually took, not a guess. They cover every delivery
+logged in the year: 179 to PRESS, 32 to Under-Study, 4 to the Events team and 1 to Press Bar,
+2,353 order lines in all. <b>Plant more than the number.</b> The field has to carry picking
+loss, weather and bad germination, so a third extra on top of these numbers is a safe margin.</p>
+<h3>Units</h3>
 <ul class='note'>
-<li><b>Large</b> and <b>small</b> are the two harvest containers we deliver in.</li>
-<li>A <b>green bin</b> is the big harvest bin for bulky crops.</li>
-<li>Marigold blossom counts: French marigold, about 50 blossoms fill a large. Gem marigold,
-about 100 fill a large. Puff ball, about 9 fill a large. A small counts as half a large.</li>
-<li>Lettuce is cut leaf by leaf and grows back. About half a head of leaves fills a large.</li>
+<li><b>EA</b> means each, counted by the piece: a leaf, a blossom, a radish, a carrot.</li>
+<li><b>LG</b> and <b>SM</b> are the large and small harvest containers we deliver in.</li>
+<li><b>GB</b> is the big green harvest bin for bulky crops. <b>QT</b> is a quart,
+<b>LBS</b> is pounds, <b>BX</b> is a box, <b>CS</b> is a case.</li>
+<li>Marigold blossom counts: French marigold, about 50 blossoms fill an LG. Gem marigold,
+about 100 fill an LG. Puff ball, about 9 fill an LG. An SM counts as half an LG.</li>
+<li>Lettuce is cut leaf by leaf and grows back. About half a head of leaves fills an LG.</li>
 <li>Where a crop is slow, the amount is given for the whole month instead of per week.</li>
 </ul>
 <h3>Kitchen timing</h3>
@@ -224,7 +224,7 @@ They are listed so the picture is complete, but Peter does not need to plant for
 <h2>Changes coming, plant for these</h2>
 <ul>
 <li><b>Borage up.</b> Chef Phil wants borage in volume for a wine cellar concept.
-Last year it ran about 1 large a week in early summer. Plant well past that.</li>
+Last year it ran about 1 LG a week in early summer. Plant well past that.</li>
 <li><b>Alyssum down.</b> Chef Phil dislikes alyssum. Do not plant more for PRESS.
 Under-Study still takes a little.</li>
 <li><b>Puff ball marigold is new.</b> Added to the order list in June 2026, about 9 blossoms
@@ -261,7 +261,7 @@ def verify_pdf():
     reader = PdfReader(str(OUT_PDF))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
     required = ["Monthly Order Plan", "How to use this"] + MONTH_FULL + [
-        "Not for planting", "Changes coming", "blossoms a week",
+        "Not for planting", "Changes coming", "blossoms a week", "LG a week",
         "Nasturtium", "Ox Heart"]
     missing = [r for r in required if r not in text]
     if missing:
