@@ -7,12 +7,20 @@ to order every week, in real counts where a conversion is known.
 Run: python3 monthlyorders.py
 """
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 from cadence_data import MONTHLY
-from harvestcadence import find_chromium
+
+
+def find_chromium():
+    for pattern in ("chromium-*/chrome-linux/chrome", "chromium/chrome"):
+        for hit in sorted(Path("/opt/pw-browsers").glob(pattern)):
+            if hit.is_file():
+                return str(hit)
+    return shutil.which("chromium") or shutil.which("chromium-browser")
 
 HERE = Path(__file__).resolve().parent
 OUT_HTML = HERE / "monthly_orders.html"
@@ -44,8 +52,9 @@ FORAGED = {
 ASSEMBLED = {"Flower Bouquet"}
 NON_FIELD = TREES_AND_VINES | PERENNIALS | FORAGED | ASSEMBLED
 
-# Blossoms that fill one large container. A small counts as half a large.
+# Blossoms that fill one LG. Three SM count as one LG.
 BLOSSOMS_PER_LG = {"Marigold": 50, "Gem Marigold": 100, "Puff Ball Marigold": 9}
+SM_PER_LG = 3
 
 # What one EA of a crop is, in plain words.
 PIECE_WORD = {
@@ -90,35 +99,40 @@ def by_crop():
 
 
 def phrase_for_month(item, units, mi):
-    """Plain words for what to have ready in month index mi."""
+    """Plain words for what to have ready in month index mi.
+    LG and SM are combined into LG only, three SM to one LG."""
     parts = []
-    lg_w = sm_w = 0.0
+    lg_n = 0
     for unit in UNIT_ORDER:
+        if unit == "sm":
+            continue
         total = units.get(unit, [0.0] * 12)[mi]
+        if unit == "lg":
+            total += units.get("sm", [0.0] * 12)[mi] / SM_PER_LG
         if total <= 0:
             continue
         w = total / WEEKS_PER_MONTH
-        if unit == "lg":
-            lg_w = w
-        if unit == "sm":
-            sm_w = w
         if unit == "ea":
             word = PIECE_WORD.get(item)
             label = f"EA {word}" if word else "EA"
-            if w >= 5:
-                parts.append(f"about {friendly(w)} {label} a week")
+            n = friendly(w)
+            if n <= 1:
+                parts.append(f"at least 1 {label.rstrip('s') if word else label} a week")
             else:
-                parts.append(f"about {friendly(total)} {label} over the month")
+                parts.append(f"about {n} {label} a week")
         else:
             code = UNIT_WORD[unit]
-            if w >= 0.7:
-                parts.append(f"{friendly(w)} {code} a week")
+            n = friendly(w)
+            if unit == "lg":
+                lg_n = max(n, 1)
+            if n <= 1:
+                parts.append(f"at least 1 {code} a week")
             else:
-                parts.append(f"{friendly(total)} {code} over the month")
+                parts.append(f"{n} {code} a week")
     text = ", ".join(parts)
     per_lg = BLOSSOMS_PER_LG.get(item)
-    if per_lg and (lg_w or sm_w):
-        blossoms = lg_w * per_lg + sm_w * per_lg / 2
+    if per_lg and lg_n:
+        blossoms = lg_n * per_lg
         if blossoms >= 5:
             text += f" (about {friendly(blossoms)} blossoms a week)"
     return text
@@ -166,8 +180,8 @@ Press Farm OS, July 2024 through July 2026. Generated July 30, 2026.</div>
 <h2>How to use this</h2>
 <p>Find the month. The table lists every field crop the kitchens have taken in that month
 and how much they took every week. Where a crop was delivered in the same month in more than
-one year, the years are averaged. Example: marigolds in August, 3 LG and 13 SM a week, means
-having about 500 blossoms ready every week that month.</p>
+one year, the years are averaged. Example: marigolds in August, 7 LG a week, means having
+about 350 blossoms ready every week that month.</p>
 <p>These numbers are what the kitchens actually took, not a guess. They cover every delivery
 ever logged: 418 to PRESS since July 2024, 32 to Under-Study since March 2026, 4 to the
 Events team and 1 to Press Bar, 4,275 order lines in all. <b>Plant more than the number.</b>
@@ -176,13 +190,16 @@ these numbers is a safe margin.</p>
 <h3>Units</h3>
 <ul class='note'>
 <li><b>EA</b> means each, counted by the piece: a leaf, a blossom, a radish, a carrot.</li>
-<li><b>LG</b> and <b>SM</b> are the large and small harvest containers we deliver in.</li>
+<li><b>LG</b> and <b>SM</b> are the large and small harvest containers we deliver in.
+This plan combines them: three SM count as one LG, and every container line is given
+in LG only.</li>
 <li><b>GB</b> is the big green harvest bin for bulky crops. <b>QT</b> is a quart,
 <b>LBS</b> is pounds, <b>BX</b> is a box, <b>CS</b> is a case.</li>
 <li>Marigold blossom counts: French marigold, about 50 blossoms fill an LG. Gem marigold,
-about 100 fill an LG. Puff ball, about 9 fill an LG. An SM counts as half an LG.</li>
+about 100 fill an LG. Puff ball, about 9 fill an LG.</li>
 <li>Lettuce is cut leaf by leaf and grows back. About half a head of leaves fills an LG.</li>
-<li>Where a crop is slow, the amount is given for the whole month instead of per week.</li>
+<li>Nothing in this plan drops below one per week. Where the kitchens historically took less
+than that, the line says at least 1 a week, so there is always some on hand in season.</li>
 </ul>
 <h3>Kitchen timing</h3>
 <p class='note'>Deliveries go out Thursday, Saturday and Monday. The menu changes eight times
@@ -268,7 +285,7 @@ def verify_pdf():
     reader = PdfReader(str(OUT_PDF))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
     required = ["Monthly Order Plan", "How to use this"] + MONTH_FULL + [
-        "Not for planting", "Changes coming", "blossoms a week", "LG a week",
+        "Not for planting", "Changes coming", "blossoms a week", "at least 1",
         "Nasturtium", "Ox Heart"]
     missing = [r for r in required if r not in text]
     if missing:
