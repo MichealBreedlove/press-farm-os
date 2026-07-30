@@ -249,8 +249,8 @@ They are listed so the picture is complete, but Peter does not need to plant for
 <ul>
 <li><b>Borage up.</b> Chef Phil wants borage in volume for a wine cellar concept.
 Last year it ran about 50 to 70 leaves a week in early summer. Plant well past that.</li>
-<li><b>Alyssum down.</b> Chef Phil dislikes alyssum. Do not plant more for PRESS.
-Under-Study still takes a little.</li>
+<li><b>Alyssum.</b> Chef Phil does not want a full row at the farm dedicated to alyssum.
+Keep it to partial row or edge plantings.</li>
 <li><b>Puff ball marigold is new.</b> Added to the order list in June 2026, about 9 blossoms
 fill a large. No order history yet, expect orders to start this season.</li>
 <li><b>Ox Heart carrots.</b> PRESS fall and winter only, about 450 carrots a week. One bulk
