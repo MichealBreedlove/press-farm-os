@@ -51,10 +51,11 @@ CROP_NOTES = {
 
 
 def month_qty(monthly):
-    """Collapse {YYYY-MM: qty} into a 12 slot list indexed Jan to Dec."""
+    """Collapse {month: (total, years)} into a 12 slot list indexed Jan to Dec,
+    averaging each calendar month over the years it was delivered."""
     out = [0.0] * 12
-    for key, qty in monthly.items():
-        out[int(key[5:7]) - 1] += float(qty)
+    for mo, (total, years) in monthly.items():
+        out[mo - 1] += float(total) / max(int(years), 1)
     return out
 
 
@@ -138,14 +139,16 @@ def build_html():
     parts.append("""
 <div class='first'>
 <h1>Harvest Cadence</h1>
-<div class='sub'>Press Farm, Yountville. Expected weekly yield per crop, built from one full year
-of Press Farm OS delivery records, August 2025 through July 2026. Generated July 30, 2026.</div>
+<div class='sub'>Press Farm, Yountville. Expected weekly yield per crop, built from the complete
+Press Farm OS delivery history, July 2024 through July 2026: 455 deliveries and 4,275 order
+lines across PRESS, Under-Study, the Events team and Press Bar. Generated July 30, 2026.</div>
 
 <h2>How to read this</h2>
 <p>Each table shows one crop per row. The number in a month column is the average quantity
-delivered per week during that month. A blank cell means nothing was delivered that month.
-The shaded cell is the crop's strongest month. The Year column is the total delivered over
-the whole year.</p>
+delivered per week during that month. Where a crop was delivered in the same calendar month
+in more than one year, the years are averaged. A blank cell means nothing was delivered that
+month. The shaded cell is the crop's strongest month. The Year column is the expected total
+over a typical year.</p>
 <p>These numbers come from the delivery log, which records what actually left the farm for the
 kitchens. That makes this a record of proven demand, not a guess. If a crop shows 2 LG per week
 in June, the kitchens actually took that much last June, and planting to match it is safe.</p>

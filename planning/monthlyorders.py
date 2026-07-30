@@ -24,18 +24,22 @@ WEEKS_PER_MONTH = 4.33
 
 # Crops that are not field planted. Everything else is Peter's to plant.
 TREES_AND_VINES = {
-    "Apple", "Bay Leaf", "Blackberries", "Citrus", "Evergreen Branches",
-    "Fig Leaves", "Figs", "Grapes", "Green Walnuts", "Kumquat Branches",
-    "Limes", "Nectarines", "Olive", "Olive Branches", "Passionfruit",
-    "Peaches", "Pears", "Persimmon", "Quince", "Yuzu",
+    "Apple", "Bay Leaf", "Bergamot", "Blackberries", "Citrus", "Creeping Vine",
+    "Evergreen Branches", "Fig Leaves", "Figs", "Grapes", "Green Walnuts",
+    "Kumquat Branches", "Limes", "Nectarines", "Olive", "Olive Branches",
+    "Passionfruit", "Peach Blossom Branches", "Peaches", "Pears", "Persimmon",
+    "Plums", "Quince", "Red Wood Foliage", "Yuzu",
 }
 PERENNIALS = {
-    "Aptenia", "Ice Plant", "Lavender", "Lemon Balm", "Mint", "Purple Stardust",
+    "Aptenia", "Cardoon", "Columbine Flowers", "Hibiscus", "Ice Plant",
+    "Lavender", "Lemon Balm", "Mint", "Oregano", "Purple Stardust",
     "Rose Geranium", "Rosemary", "Sage", "Society Garlic", "Star Jasmine",
-    "Tarragon", "Thyme", "Wormwood", "Yarrow",
+    "Tarragon", "Thyme", "Verbena", "Wormwood", "Yarrow",
 }
 FORAGED = {
-    "Chickweed", "Miners Lettuce", "Oxalis", "Oxalis Flowers", "Wild Cress",
+    "Chickweed", "Deadnettle", "Milkweed", "Miners Lettuce", "Oxalis",
+    "Oxalis Flowers", "Peppercress", "Sharp-leaved Fluellen",
+    "Three Cornered Leek", "Wild Cress",
 }
 ASSEMBLED = {"Flower Bouquet"}
 NON_FIELD = TREES_AND_VINES | PERENNIALS | FORAGED | ASSEMBLED
@@ -75,12 +79,13 @@ def friendly(x):
 
 
 def by_crop():
-    """{crop: {unit: [12 monthly totals]}} for every crop in the data."""
+    """{crop: {unit: [12 expected monthly quantities]}} for every crop.
+    Each calendar month is averaged over the years it was delivered."""
     crops = {}
     for item, unit, _cat, monthly in MONTHLY:
         slots = crops.setdefault(item, {}).setdefault(unit, [0.0] * 12)
-        for key, qty in monthly.items():
-            slots[int(key[5:7]) - 1] += float(qty)
+        for mo, (total, years) in monthly.items():
+            slots[mo - 1] += float(total) / max(int(years), 1)
     return crops
 
 
@@ -155,17 +160,19 @@ def build_html():
 <div class='first'>
 <h1>Monthly Order Plan</h1>
 <div class='sub'>Press Farm, Yountville. What the kitchens are expected to order each month,
-so planting can stay ahead of it. Built from a full year of actual orders and deliveries,
-August 2025 through July 2026, out of Press Farm OS. Generated July 30, 2026.</div>
+so planting can stay ahead of it. Built from the complete order and delivery history in
+Press Farm OS, July 2024 through July 2026. Generated July 30, 2026.</div>
 
 <h2>How to use this</h2>
-<p>Find the month. The table lists every field crop the kitchens took that month last year
-and how much they took every week. Example: marigolds in August, 3 LG and 12 SM a week,
-means having about 450 blossoms ready every week that month.</p>
+<p>Find the month. The table lists every field crop the kitchens have taken in that month
+and how much they took every week. Where a crop was delivered in the same month in more than
+one year, the years are averaged. Example: marigolds in August, 3 LG and 13 SM a week, means
+having about 500 blossoms ready every week that month.</p>
 <p>These numbers are what the kitchens actually took, not a guess. They cover every delivery
-logged in the year: 179 to PRESS, 32 to Under-Study, 4 to the Events team and 1 to Press Bar,
-2,353 order lines in all. <b>Plant more than the number.</b> The field has to carry picking
-loss, weather and bad germination, so a third extra on top of these numbers is a safe margin.</p>
+ever logged: 418 to PRESS since July 2024, 32 to Under-Study since March 2026, 4 to the
+Events team and 1 to Press Bar, 4,275 order lines in all. <b>Plant more than the number.</b>
+The field has to carry picking loss, weather and bad germination, so a third extra on top of
+these numbers is a safe margin.</p>
 <h3>Units</h3>
 <ul class='note'>
 <li><b>EA</b> means each, counted by the piece: a leaf, a blossom, a radish, a carrot.</li>
