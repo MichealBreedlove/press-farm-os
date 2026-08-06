@@ -23,8 +23,16 @@ def find_chromium():
     return shutil.which("chromium") or shutil.which("chromium-browser")
 
 HERE = Path(__file__).resolve().parent
-OUT_HTML = HERE / "monthly_orders.html"
-OUT_PDF = HERE / "Monthly Order Plan.pdf"
+
+# (html_name, pdf_name, title_suffix, [(month_index, page_label), ...])
+EDITIONS = [
+    ("monthly_orders.html", "Monthly Order Plan.pdf", "",
+     None),
+    ("monthly_orders_2026.html", "Monthly Order Plan Aug-Dec 2026.pdf",
+     ", August to December 2026",
+     [(7, "August 2026"), (8, "September 2026"), (9, "October 2026"),
+      (10, "November 2026"), (11, "December 2026")]),
+]
 
 MONTH_FULL = ["January", "February", "March", "April", "May", "June",
               "July", "August", "September", "October", "November", "December"]
@@ -164,14 +172,17 @@ li { line-height: 1.5; margin-bottom: 4px; }
 """
 
 
-def build_html():
+def build_html(title_suffix="", months=None):
+    if months is None:
+        months = [(mi, name) for mi, name in enumerate(MONTH_FULL)]
     crops, cats = by_crop()
     field = {k: v for k, v in crops.items() if k not in NON_FIELD}
     parts = ["<style>" + CSS + "</style>"]
 
-    parts.append("""
+    parts.append(f"""
 <div class='first'>
-<h1>Monthly Order Plan</h1>
+<h1>Monthly Order Plan{title_suffix}</h1>""")
+    parts.append("""
 <div class='sub'>Press Farm, Yountville. What the kitchens are expected to order each month,
 so planting can stay ahead of it. Built from the complete order and delivery history in
 Press Farm OS, July 2024 through July 2026. Generated July 30, 2026.</div>
@@ -209,7 +220,7 @@ volume about one week before. Crops need to be ready ahead of those dates, not o
 </div>
 """)
 
-    for mi, month in enumerate(MONTH_FULL):
+    for mi, month in months:
         rows = []
         for item in sorted(field, key=str.lower):
             if any(units[mi] > 0 for units in field[item].values()):
@@ -269,31 +280,35 @@ pink, purple and peach flowers.</li>
     return "".join(parts)
 
 
-def render_pdf():
+def render_pdf(html_path, pdf_path):
     chrome = find_chromium()
     if not chrome:
         sys.exit("no chromium found")
     subprocess.run(
         [chrome, "--headless=new", "--no-sandbox", "--disable-gpu",
-         "--no-pdf-header-footer", f"--print-to-pdf={OUT_PDF}",
-         OUT_HTML.as_uri()],
+         "--no-pdf-header-footer", f"--print-to-pdf={pdf_path}",
+         html_path.as_uri()],
         check=True, capture_output=True)
 
 
-def verify_pdf():
+def verify_pdf(pdf_path, month_labels):
     from pypdf import PdfReader
-    reader = PdfReader(str(OUT_PDF))
+    reader = PdfReader(str(pdf_path))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    required = ["Monthly Order Plan", "How to use this"] + MONTH_FULL + [
+    required = ["Monthly Order Plan", "How to use this"] + month_labels + [
         "Not for planting", "Changes coming", "EA blossoms", "at least 50 EA",
         "Nasturtium", "Ox Heart"]
     missing = [r for r in required if r not in text]
     if missing:
-        sys.exit(f"verification FAILED, missing: {missing}")
-    print(f"OK: {len(reader.pages)} pages, all {len(required)} check strings found")
+        sys.exit(f"{pdf_path.name}: verification FAILED, missing: {missing}")
+    print(f"OK: {pdf_path.name}, {len(reader.pages)} pages, "
+          f"all {len(required)} check strings found")
 
 
 if __name__ == "__main__":
-    OUT_HTML.write_text(build_html(), encoding="utf-8")
-    render_pdf()
-    verify_pdf()
+    for html_name, pdf_name, suffix, months in EDITIONS:
+        html_path, pdf_path = HERE / html_name, HERE / pdf_name
+        html_path.write_text(build_html(suffix, months), encoding="utf-8")
+        render_pdf(html_path, pdf_path)
+        labels = [lbl for _, lbl in months] if months else list(MONTH_FULL)
+        verify_pdf(pdf_path, labels)
