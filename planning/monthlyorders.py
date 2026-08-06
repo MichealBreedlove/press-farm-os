@@ -28,10 +28,9 @@ HERE = Path(__file__).resolve().parent
 EDITIONS = [
     ("monthly_orders.html", "Monthly Order Plan.pdf", "",
      None),
-    ("monthly_orders_2026.html", "Monthly Order Plan Aug-Dec 2026.pdf",
-     ", August to December 2026",
-     [(7, "August 2026"), (8, "September 2026"), (9, "October 2026"),
-      (10, "November 2026"), (11, "December 2026")]),
+    ("monthly_orders_2026.html", "Monthly Order Plan Nov-Dec 2026.pdf",
+     ", November to December 2026",
+     [(10, "November 2026"), (11, "December 2026")]),
 ]
 
 MONTH_FULL = ["January", "February", "March", "April", "May", "June",
