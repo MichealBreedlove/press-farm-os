@@ -9,7 +9,7 @@ import { SEEDS_ENABLED } from "@/lib/constants";
 import { listTodayTasks } from "@/lib/tasks/queries";
 import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
 import type { FarmTask } from "@/types/database";
-import { formatCurrencyWhole, todayPacific, addDaysISO } from "@/lib/utils";
+import { formatCurrencyWhole, todayPacific, addDaysISO, FARM_TIMEZONE } from "@/lib/utils";
 
 interface DashCard {
   href: string;
@@ -60,6 +60,7 @@ export default async function AdminDashboardPage() {
     { data: monthExpenses },
     { data: weekLabor },
     { data: offScheduleOrders },
+    { data: weeklyUpdateSettings },
   ] = await Promise.all([
     admin.from("orders").select("*", { count: "exact", head: true }).eq("status", "submitted"),
     admin.from("event_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -79,7 +80,43 @@ export default async function AdminDashboardPage() {
       .eq("delivery_dates.day_of_week", "custom")
       .order("delivery_date", { ascending: true })
       .limit(20),
+    // Weekly-update reminder inputs: when was the general note last touched,
+    // and is anyone on the recipient list at all.
+    admin
+      .from("farm_settings")
+      .select("key, value, updated_at")
+      .in("key", ["weekly_update_general_note", "weekly_update_recipients"]),
   ]);
+
+  // Weekly Update reminder — the chef email goes out Monday morning. Remind
+  // until the general note has been saved since last Monday (Pacific), so the
+  // banner reappears each week and clears the moment the note is refreshed.
+  // Also nag if the recipient list is empty (the send would be skipped).
+  const wuNoteRow = (weeklyUpdateSettings ?? []).find(
+    (r: any) => r.key === "weekly_update_general_note",
+  );
+  const wuRecipientCount = (
+    ((weeklyUpdateSettings ?? []).find((r: any) => r.key === "weekly_update_recipients")
+      ?.value as string | null) ?? ""
+  )
+    .split(",")
+    .map((s: string) => s.trim())
+    .filter(Boolean).length;
+  const todayDow = new Date(today + "T12:00:00Z").getUTCDay();
+  const nextMondayISO = addDaysISO(today, (1 - todayDow + 7) % 7);
+  const lastMondayISO = addDaysISO(nextMondayISO, -7);
+  const noteUpdatedPacific = wuNoteRow?.updated_at
+    ? new Date(wuNoteRow.updated_at as string).toLocaleDateString("en-CA", {
+        timeZone: FARM_TIMEZONE,
+      })
+    : null;
+  const weeklyUpdateNoteStale = !(noteUpdatedPacific && noteUpdatedPacific > lastMondayISO);
+  const showWeeklyUpdateReminder = weeklyUpdateNoteStale || wuRecipientCount === 0;
+  const nextMondayLabel = new Date(nextMondayISO + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 
   const nextDeliveryDate = nextDate?.date;
   const nextDeliveryLabel = nextDeliveryDate
@@ -129,6 +166,12 @@ export default async function AdminDashboardPage() {
         { href: "/admin/availability", title: "Availability", description: "What's ready to harvest", flower: "calendula" },
         { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", flower: "marigold" },
         { href: "/admin/calendar", title: "Calendar", description: "Month-at-a-glance", flower: "anise-hyssop" },
+        {
+          href: "/admin/weekly-update",
+          title: "Weekly Update",
+          description: "Chef email — edit before Monday",
+          flower: "chamomile",
+        },
         {
           href: "/admin/event-requests",
           title: "Event Requests",
@@ -271,6 +314,36 @@ export default async function AdminDashboardPage() {
                     );
                   })}
                 </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Weekly Update reminder — nags until the note has been refreshed
+            since last Monday (or recipients are still empty), then clears
+            until the following week. */}
+        {showWeeklyUpdateReminder && (
+          <section className="bg-amber-50 border-2 border-amber-300 rounded-2xl px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span aria-hidden="true" className="text-2xl leading-none flex-shrink-0">📝</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                  Weekly Update · sends {nextMondayLabel}
+                </p>
+                <p className="text-sm text-amber-800 mt-1 leading-snug">
+                  {wuRecipientCount === 0
+                    ? "No recipients are selected — the Monday send will be skipped. Pick who gets it and write this week's note."
+                    : "This week's note hasn't been updated yet. Refresh what's going on at the farm before it goes out Monday morning."}
+                </p>
+                <Link
+                  href="/admin/weekly-update"
+                  className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-amber-800 hover:underline"
+                >
+                  Update it now
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
             </div>
           </section>
