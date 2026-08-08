@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { WeeklyUpdateClient } from "./WeeklyUpdateClient";
+import {
+  buildWeeklyUpdateData,
+  parseWeeklyUpdateDraft,
+  upcomingMondayISO,
+} from "@/lib/weekly-update";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +20,17 @@ export default async function WeeklyUpdatePage() {
   const { data: settings } = await admin
     .from("farm_settings")
     .select("key, value")
-    .in("key", ["weekly_update_general_note", "weekly_update_recipients"]);
+    .in("key", ["weekly_update_general_note", "weekly_update_recipients", "weekly_update_draft"]);
   const settingsMap: Record<string, string> = {};
   for (const row of settings ?? []) settingsMap[row.key] = row.value ?? "";
+
+  // Live-built draft + any saved edits for this week. The client starts from
+  // the saved draft when one exists (so edits survive reloads), and can reset
+  // back to the live build at any time.
+  const weekAnchor = upcomingMondayISO();
+  const liveData = await buildWeeklyUpdateData(admin);
+  const savedDraft = parseWeeklyUpdateDraft(settingsMap.weekly_update_draft);
+  const draftData = savedDraft && savedDraft.weekOf === weekAnchor ? savedDraft.data : null;
 
   const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id ?? "";
@@ -59,7 +72,14 @@ export default async function WeeklyUpdatePage() {
         backHref="/admin/dashboard"
       />
       <div className="px-4 py-6 max-w-3xl mx-auto">
-        <WeeklyUpdateClient settings={settingsMap} farmId={farmId} chefs={chefs} />
+        <WeeklyUpdateClient
+          settings={settingsMap}
+          farmId={farmId}
+          chefs={chefs}
+          liveData={liveData}
+          draftData={draftData}
+          weekAnchor={weekAnchor}
+        />
       </div>
     </main>
   );
