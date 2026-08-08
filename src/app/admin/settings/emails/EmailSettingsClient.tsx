@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Save, Check, Send, Loader2, Sprout, Inbox } from "lucide-react";
+import { Mail, Save, Check, Send, Loader2, Sprout, Inbox, Newspaper, Plus, X } from "lucide-react";
 
 /** Where "Send All Test Emails" routes its sample sends. */
 const TEST_EMAIL_RECIPIENT = "mikejohnbreedlove@gmail.com";
@@ -52,7 +52,15 @@ const EMAIL_FIELDS = [
   },
 ];
 
-export function EmailSettingsClient({ settings, farmId }: { settings: Record<string, string>; farmId: string }) {
+export function EmailSettingsClient({
+  settings,
+  farmId,
+  chefs,
+}: {
+  settings: Record<string, string>;
+  farmId: string;
+  chefs: { name: string; email: string }[];
+}) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -65,6 +73,134 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [sendingTests, setSendingTests] = useState(false);
   const [testResult, setTestResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  // Weekly digest recipient list — stored comma-separated in farm_settings
+  // under weekly_digest_recipients, managed here as chips.
+  const [digestRecipients, setDigestRecipients] = useState<string[]>(() =>
+    (settings["weekly_digest_recipients"] ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  const [digestInput, setDigestInput] = useState("");
+  const [digestInputError, setDigestInputError] = useState<string | null>(null);
+  const [sendingDigest, setSendingDigest] = useState(false);
+  const [digestResult, setDigestResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  function addDigestRecipient() {
+    const email = digestInput.trim().toLowerCase();
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setDigestInputError("That doesn't look like a valid email address.");
+      return;
+    }
+    if (digestRecipients.includes(email)) {
+      setDigestInputError("Already on the list.");
+      return;
+    }
+    setDigestRecipients((list) => [...list, email]);
+    setDigestInput("");
+    setDigestInputError(null);
+    setSaved(false);
+  }
+
+  function removeDigestRecipient(email: string) {
+    setDigestRecipients((list) => list.filter((e) => e !== email));
+    setSaved(false);
+  }
+
+  // Chef weekly update — general note + hand-picked recipient list, stored in
+  // farm_settings under weekly_update_general_note / weekly_update_recipients.
+  // ONLY addresses on this list receive the update; chefs are offered as a
+  // picker but never auto-included.
+  const [updateNote, setUpdateNote] = useState(settings["weekly_update_general_note"] ?? "");
+  const [updateRecipients, setUpdateRecipients] = useState<string[]>(() =>
+    (settings["weekly_update_recipients"] ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const [updateInput, setUpdateInput] = useState("");
+  const [updateInputError, setUpdateInputError] = useState<string | null>(null);
+  const [sendingUpdate, setSendingUpdate] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  const chefEmails = new Set(chefs.map((c) => c.email));
+  const customRecipients = updateRecipients.filter((e) => !chefEmails.has(e));
+
+  function toggleUpdateRecipient(email: string) {
+    setUpdateRecipients((list) =>
+      list.includes(email) ? list.filter((e) => e !== email) : [...list, email],
+    );
+    setSaved(false);
+  }
+
+  function addUpdateRecipient() {
+    const email = updateInput.trim().toLowerCase();
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setUpdateInputError("That doesn't look like a valid email address.");
+      return;
+    }
+    if (updateRecipients.includes(email)) {
+      setUpdateInputError("Already on the list.");
+      return;
+    }
+    setUpdateRecipients((list) => [...list, email]);
+    setUpdateInput("");
+    setUpdateInputError(null);
+    setSaved(false);
+  }
+
+  function removeUpdateRecipient(email: string) {
+    setUpdateRecipients((list) => list.filter((e) => e !== email));
+    setSaved(false);
+  }
+
+  async function sendWeeklyUpdateNow() {
+    setSendingUpdate(true);
+    setUpdateResult(null);
+    try {
+      const res = await fetch("/api/reports/weekly-update", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        setUpdateResult({ kind: "err", msg: data?.error || "Send failed — check Resend config." });
+      } else {
+        const to: string[] = Array.isArray(data?.to) ? data.to : [data?.to].filter(Boolean);
+        const failedNote = data?.failed?.length
+          ? ` (${data.failed.length} failed: ${data.failed.map((f: { to: string }) => f.to).join(", ")})`
+          : "";
+        setUpdateResult({
+          kind: "ok",
+          msg: `Weekly update sent to ${to.length} recipient${to.length === 1 ? "" : "s"}: ${to.join(", ")}.${failedNote}`,
+        });
+      }
+    } catch (err) {
+      setUpdateResult({ kind: "err", msg: String(err) });
+    }
+    setSendingUpdate(false);
+  }
+
+  async function sendDigestNow() {
+    setSendingDigest(true);
+    setDigestResult(null);
+    try {
+      const res = await fetch("/api/reports/weekly-digest", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        setDigestResult({ kind: "err", msg: data?.error || "Send failed — check Resend config." });
+      } else {
+        const to: string[] = Array.isArray(data?.to) ? data.to : [data?.to].filter(Boolean);
+        const failedNote = data?.failed?.length
+          ? ` (${data.failed.length} failed: ${data.failed.map((f: { to: string }) => f.to).join(", ")})`
+          : "";
+        setDigestResult({ kind: "ok", msg: `Digest sent to ${to.join(", ")}.${failedNote}` });
+      }
+    } catch (err) {
+      setDigestResult({ kind: "err", msg: String(err) });
+    }
+    setSendingDigest(false);
+  }
 
   // Quarterly send selector — defaults to the most recent COMPLETED quarter.
   const now = new Date();
@@ -149,7 +285,15 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
     const res = await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ farm_id: farmId, settings: form }),
+      body: JSON.stringify({
+        farm_id: farmId,
+        settings: {
+          ...form,
+          weekly_digest_recipients: digestRecipients.join(","),
+          weekly_update_general_note: updateNote,
+          weekly_update_recipients: updateRecipients.join(","),
+        },
+      }),
     });
     if (res.ok) {
       setSaved(true);
@@ -186,6 +330,243 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-farm-green text-white flex items-center justify-center">
+            <Sprout className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-sm text-farm-dark">Chef Weekly Update</h2>
+            <p className="text-xs text-farm-muted">
+              The &quot;what&apos;s going on at the farm&quot; email — available now, planter beds,
+              gaps &amp; limited supply, and what&apos;s coming. Sends automatically every Monday
+              morning — <span className="font-medium text-farm-dark">only to the people you pick
+              below</span>.
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-farm-dark mb-0.5">General Note</label>
+          <p className="text-xs text-farm-muted mb-1.5">
+            Shows at the top of the email as bullets — one per line. Update it each week with
+            farm news, or leave blank to skip the section.
+          </p>
+          <textarea
+            value={updateNote}
+            onChange={(e) => {
+              setUpdateNote(e.target.value);
+              setSaved(false);
+            }}
+            rows={3}
+            placeholder={"First tomatoes of the season this week\nHeat wave — flowers may run short"}
+            className="input-field resize-y"
+          />
+        </div>
+
+        <label className="block text-sm font-medium text-farm-dark mb-0.5">Recipients</label>
+        <p className="text-xs text-farm-muted mb-2">
+          Check the chef accounts that should get the update — unchecked chefs won&apos;t receive
+          it — and add any other addresses below.
+        </p>
+
+        {chefs.length > 0 && (
+          <div className="rounded-lg border border-farm-dark/10 divide-y divide-farm-dark/5 mb-3">
+            {chefs.map((chef) => (
+              <label
+                key={chef.email}
+                className="flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={updateRecipients.includes(chef.email)}
+                  onChange={() => toggleUpdateRecipient(chef.email)}
+                  className="w-4 h-4 accent-farm-green"
+                />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium text-farm-dark truncate">{chef.name}</span>
+                  <span className="block text-xs text-farm-muted truncate">{chef.email}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {customRecipients.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {customRecipients.map((email) => (
+              <span
+                key={email}
+                className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-100 text-farm-green text-xs px-3 py-1.5"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() => removeUpdateRecipient(email)}
+                  aria-label={`Remove ${email}`}
+                  className="text-farm-green/60 hover:text-farm-green min-h-0 min-w-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={updateInput}
+            onChange={(e) => {
+              setUpdateInput(e.target.value);
+              setUpdateInputError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addUpdateRecipient();
+              }
+            }}
+            placeholder="name@example.com"
+            className="input-field flex-1"
+          />
+          <button
+            type="button"
+            onClick={addUpdateRecipient}
+            className="btn-secondary flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Add
+          </button>
+        </div>
+        {updateInputError && (
+          <p className="text-xs text-amber-800 mt-1.5">{updateInputError}</p>
+        )}
+
+        {updateResult && (
+          <div
+            className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+              updateResult.kind === "ok"
+                ? "bg-green-50 text-farm-green border border-green-100"
+                : "bg-amber-50 text-amber-800 border border-amber-100"
+            }`}
+          >
+            {updateResult.msg}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={sendWeeklyUpdateNow}
+          disabled={sendingUpdate}
+          className="btn-secondary w-full flex items-center justify-center gap-2 mt-3"
+        >
+          {sendingUpdate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Send Weekly Update Now
+        </button>
+        <p className="text-xs text-farm-muted mt-1.5 text-center">
+          Sends only to the saved recipient list — save first if you just changed the note or the
+          list.
+        </p>
+      </div>
+
+      <div className="card p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-farm-green text-white flex items-center justify-center">
+            <Newspaper className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-sm text-farm-dark">Weekly Digest Recipients</h2>
+            <p className="text-xs text-farm-muted">
+              Who receives the weekly farm digest — revenue, deliveries, expenses, and labor for
+              the past 7 days. Sends automatically every Monday morning; each person gets their own
+              copy. If the list is empty it falls back to the admin email.
+            </p>
+          </div>
+        </div>
+
+        {digestRecipients.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {digestRecipients.map((email) => (
+              <span
+                key={email}
+                className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-100 text-farm-green text-xs px-3 py-1.5"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() => removeDigestRecipient(email)}
+                  aria-label={`Remove ${email}`}
+                  className="text-farm-green/60 hover:text-farm-green min-h-0 min-w-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-farm-muted mb-3">
+            No recipients yet — the digest currently goes to the admin email only.
+          </p>
+        )}
+
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={digestInput}
+            onChange={(e) => {
+              setDigestInput(e.target.value);
+              setDigestInputError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addDigestRecipient();
+              }
+            }}
+            placeholder="name@example.com"
+            className="input-field flex-1"
+          />
+          <button
+            type="button"
+            onClick={addDigestRecipient}
+            className="btn-secondary flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Add
+          </button>
+        </div>
+        {digestInputError && (
+          <p className="text-xs text-amber-800 mt-1.5">{digestInputError}</p>
+        )}
+        <p className="text-xs text-farm-muted mt-2">
+          Remember to tap <span className="font-medium text-farm-dark">Save Email Settings</span>{" "}
+          below after changing the list.
+        </p>
+
+        {digestResult && (
+          <div
+            className={`mt-3 rounded-lg px-3 py-2 text-xs ${
+              digestResult.kind === "ok"
+                ? "bg-green-50 text-farm-green border border-green-100"
+                : "bg-amber-50 text-amber-800 border border-amber-100"
+            }`}
+          >
+            {digestResult.msg}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={sendDigestNow}
+          disabled={sendingDigest}
+          className="btn-secondary w-full flex items-center justify-center gap-2 mt-3"
+        >
+          {sendingDigest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Send Weekly Digest Now
+        </button>
+        <p className="text-xs text-farm-muted mt-1.5 text-center">
+          Sends to the saved list — save first if you just changed it.
+        </p>
       </div>
 
       <button

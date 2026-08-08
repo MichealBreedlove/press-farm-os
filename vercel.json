@@ -5,6 +5,10 @@
       "schedule": "0 9 * * 1"
     },
     {
+      "path": "/api/reports/weekly-update",
+      "schedule": "0 14 * * 1"
+    },
+    {
       "path": "/api/cron/receiver-notify",
       "schedule": "0 14,15 * * *"
     },

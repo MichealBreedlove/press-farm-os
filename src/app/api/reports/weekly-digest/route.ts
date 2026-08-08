@@ -66,12 +66,6 @@ async function sendDigest() {
     .gte("date", start)
     .lte("date", end);
 
-  // Fetch top delivered items
-  const { data: topItems } = await (admin as any)
-    .from("delivery_items")
-    .select("quantity, unit_price, items(name)")
-    .in("delivery_id", (deliveries ?? []).map((d: any) => d.id).filter(Boolean));
-
   // Calculate totals
   const totalRevenue = (deliveries ?? []).reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
   const totalExpenses = (expenses ?? []).reduce((s: number, e: any) => s + (e.amount ?? 0), 0);
@@ -141,14 +135,24 @@ async function sendDigest() {
   try {
     const { safeResendSend } = await import("@/lib/resend/client");
 
-    // Also check for configured email in farm_settings
-    const { data: settings } = await (admin as any)
+    // Recipient list is admin-managed in /admin/settings/emails and stored
+    // comma-separated under weekly_digest_recipients. Falls back through the
+    // configured admin email (email_admin is what the settings UI writes;
+    // admin_email is the legacy key) to the hardcoded ADMIN_EMAIL.
+    const { data: settingRows } = await (admin as any)
       .from("farm_settings")
-      .select("value")
-      .eq("key", "admin_email")
-      .single();
+      .select("key, value")
+      .in("key", ["weekly_digest_recipients", "email_admin", "admin_email"]);
+    const settingsMap: Record<string, string> = {};
+    for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
 
-    const toEmail = settings?.value || ADMIN_EMAIL;
+    const recipients = (settingsMap.weekly_digest_recipients ?? "")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    if (recipients.length === 0) {
+      recipients.push(settingsMap.email_admin || settingsMap.admin_email || ADMIN_EMAIL);
+    }
 
     const { FROM_ADDRESSES } = await import("@/lib/constants");
     const reactEl = WeeklyDigest({
@@ -179,15 +183,36 @@ async function sendDigest() {
       }),
     }) as React.ReactElement;
 
-    await safeResendSend({
-      from: FROM_ADDRESSES.digest,
-      to: toEmail,
-      subject,
-      text: fallbackText,
-      react: reactEl,
-    });
+    // One send per recipient so a single bad address can't sink the whole
+    // batch, and recipients never see each other's emails.
+    const sendResults = await Promise.allSettled(
+      recipients.map((to: string) =>
+        safeResendSend({
+          from: FROM_ADDRESSES.digest,
+          to,
+          subject,
+          text: fallbackText,
+          react: reactEl,
+        }).then((res) => {
+          if (res.error) throw new Error(res.error.message);
+        }),
+      ),
+    );
 
-    return NextResponse.json({ success: true, subject, to: toEmail });
+    const sent: string[] = [];
+    const failed: Array<{ to: string; error: string }> = [];
+    sendResults.forEach((r, i) => {
+      if (r.status === "fulfilled") sent.push(recipients[i]);
+      else failed.push({ to: recipients[i], error: String(r.reason) });
+    });
+    if (failed.length > 0) console.error("[DIGEST] Some sends failed:", failed);
+
+    return NextResponse.json({
+      success: sent.length > 0,
+      subject,
+      to: sent,
+      ...(failed.length > 0 ? { failed, error: `${failed.length} of ${recipients.length} sends failed` } : {}),
+    });
   } catch (err) {
     console.error("[DIGEST] Failed to send:", err);
     // Return the digest content even if email fails
