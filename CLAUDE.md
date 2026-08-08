@@ -303,7 +303,8 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Notes, suggestions, photos manager.
 - Offer sheet (printable/shareable PDF-style view per delivery date).
 - Public About page with partner restaurants + logos.
-- Resend email pipelines (8 React Email templates + 2 raw HTML).
+- Resend email pipelines (React Email templates + 2 raw HTML).
+- **Chef Weekly Update** (`/api/reports/weekly-update`, `src/emails/weekly-update.tsx`) — Monday-morning "what's going on at the farm" email to all active chefs + extra recipients: general note, Available Now, planter beds, gaps/limited, incoming timeline. Managed (note, extra recipients, Send Now) in `/admin/settings/emails`; settings keys `weekly_update_general_note` / `weekly_update_extra_recipients`. The internal financial weekly digest similarly supports a recipient list via `weekly_digest_recipients`.
 - Public **read-only** (GET-only) `/api/v1/*` endpoints — gated by a single shared `PRESSFARM_API_KEY`. Write verbs were removed; mutations go through authenticated `/api/*` routes.
 - Editorial brand system + UI Kit reference page.
 - `/admin/microgreens` — production module: variety library, demand targets, sow plan dashboard, tray ops (soaking→blackout→light→harvesting→terminated), harvest event log, calendar.

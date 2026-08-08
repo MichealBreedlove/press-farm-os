@@ -5,8 +5,8 @@ import { requireAdmin } from "@/lib/api-auth";
 import { safeResendSend } from "@/lib/resend/client";
 import { FROM_ADDRESSES, APP_URL } from "@/lib/constants";
 
-// ~18 emails × 600ms throttle ≈ 11s of work (12 per-restaurant + receiver +
-// 5 farm-level); bump the function's max runtime so we don't get cut off
+// ~19 emails × 600ms throttle ≈ 12s of work (12 per-restaurant + receiver +
+// 6 farm-level); bump the function's max runtime so we don't get cut off
 // mid-batch on Vercel.
 export const maxDuration = 30;
 
@@ -20,6 +20,7 @@ import ReceiverDaily from "@/emails/receiver-daily";
 import AvailabilityForecast from "@/emails/availability-forecast";
 import EventRequestAccepted from "@/emails/event-request-accepted";
 import WeeklyDigest from "@/emails/weekly-digest";
+import WeeklyUpdate from "@/emails/weekly-update";
 import LaborTimesheet from "@/emails/labor-timesheet";
 import PartnerReport from "@/emails/partner-report";
 
@@ -30,9 +31,9 @@ import PartnerReport from "@/emails/partner-report";
  * correctness. The 6 transactional emails (welcome, availability, order
  * confirmation/received/fulfilled, shortage) are sent once per restaurant
  * (Press + Under-Study by default → 12 emails). The receiver-daily summary and
- * the 5 farm-level templates (forecast, event-request-accepted, weekly digest,
- * timesheet, partner report) are sent once each since they aren't restaurant-
- * scoped. Pass ?restaurant=Press to scope the per-restaurant set to one.
+ * the 6 farm-level templates (forecast, event-request-accepted, weekly digest,
+ * weekly update, timesheet, partner report) are sent once each since they
+ * aren't restaurant-scoped. Pass ?restaurant=Press to scope the per-restaurant set to one.
  *
  * Admin only.
  */
@@ -320,6 +321,36 @@ export async function GET(request: Request) {
       workers: [
         { name: "Micheal", hours: "18.0" },
         { name: "Field Helper", hours: "13.5" },
+      ],
+    }) as React.ReactElement,
+  );
+
+  // 10b. Weekly update (chef-facing farm update)
+  await send(
+    "weekly-update",
+    "All",
+    FROM_ADDRESSES.forecast,
+    "Press Farm Weekly Update — Week of May 25",
+    WeeklyUpdate({
+      weekOfLabel: "May 25",
+      generalNote: "First tomatoes of the season this week\nHeat wave through Thursday — flowers may run short",
+      availableNow: [
+        { name: "Edible Flower Mix", qty: "Open", size: "SM, LG", notes: "Peak color right now" },
+        { name: "Nasturtium Leaves", qty: "Open", size: "Palm", notes: "" },
+        { name: "Squash Blossoms", qty: "12 (limited)", size: "EA", notes: "Morning pick only" },
+      ],
+      planterBeds: [
+        { name: "Thai Basil", bed: "Press — Bed 2", planted: "Apr 12", notes: "Pinch weekly" },
+        { name: "Lemon Verbena", bed: "Under-Study — Bed 1", planted: "May 2", notes: "" },
+      ],
+      gaps: [
+        { name: "Snap Peas", lastWeek: "Yes", substitute: "—", backWhen: "~Jun 14" },
+        { name: "Squash Blossoms", lastWeek: "Yes", substitute: "—", backWhen: "Now (limited)" },
+      ],
+      incoming: [
+        { label: "~2 Weeks", items: ["Snap Peas", "Cucumbers"] },
+        { label: "~1 Month", items: ["Early Girl Tomatoes"] },
+        { label: "~2 Months", items: ["Padrón Peppers", "Shishitos"] },
       ],
     }) as React.ReactElement,
   );
