@@ -52,7 +52,15 @@ const EMAIL_FIELDS = [
   },
 ];
 
-export function EmailSettingsClient({ settings, farmId }: { settings: Record<string, string>; farmId: string }) {
+export function EmailSettingsClient({
+  settings,
+  farmId,
+  chefs,
+}: {
+  settings: Record<string, string>;
+  farmId: string;
+  chefs: { name: string; email: string }[];
+}) {
   const router = useRouter();
   const [form, setForm] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -101,19 +109,31 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
     setSaved(false);
   }
 
-  // Chef weekly update — general note + extra (non-chef) recipients, stored in
-  // farm_settings under weekly_update_general_note / weekly_update_extra_recipients.
+  // Chef weekly update — general note + hand-picked recipient list, stored in
+  // farm_settings under weekly_update_general_note / weekly_update_recipients.
+  // ONLY addresses on this list receive the update; chefs are offered as a
+  // picker but never auto-included.
   const [updateNote, setUpdateNote] = useState(settings["weekly_update_general_note"] ?? "");
-  const [updateExtras, setUpdateExtras] = useState<string[]>(() =>
-    (settings["weekly_update_extra_recipients"] ?? "")
+  const [updateRecipients, setUpdateRecipients] = useState<string[]>(() =>
+    (settings["weekly_update_recipients"] ?? "")
       .split(",")
-      .map((s) => s.trim())
+      .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
   );
   const [updateInput, setUpdateInput] = useState("");
   const [updateInputError, setUpdateInputError] = useState<string | null>(null);
   const [sendingUpdate, setSendingUpdate] = useState(false);
   const [updateResult, setUpdateResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  const chefEmails = new Set(chefs.map((c) => c.email));
+  const customRecipients = updateRecipients.filter((e) => !chefEmails.has(e));
+
+  function toggleUpdateRecipient(email: string) {
+    setUpdateRecipients((list) =>
+      list.includes(email) ? list.filter((e) => e !== email) : [...list, email],
+    );
+    setSaved(false);
+  }
 
   function addUpdateRecipient() {
     const email = updateInput.trim().toLowerCase();
@@ -122,18 +142,18 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
       setUpdateInputError("That doesn't look like a valid email address.");
       return;
     }
-    if (updateExtras.includes(email)) {
+    if (updateRecipients.includes(email)) {
       setUpdateInputError("Already on the list.");
       return;
     }
-    setUpdateExtras((list) => [...list, email]);
+    setUpdateRecipients((list) => [...list, email]);
     setUpdateInput("");
     setUpdateInputError(null);
     setSaved(false);
   }
 
   function removeUpdateRecipient(email: string) {
-    setUpdateExtras((list) => list.filter((e) => e !== email));
+    setUpdateRecipients((list) => list.filter((e) => e !== email));
     setSaved(false);
   }
 
@@ -271,7 +291,7 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           ...form,
           weekly_digest_recipients: digestRecipients.join(","),
           weekly_update_general_note: updateNote,
-          weekly_update_extra_recipients: updateExtras.join(","),
+          weekly_update_recipients: updateRecipients.join(","),
         },
       }),
     });
@@ -322,8 +342,8 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
             <p className="text-xs text-farm-muted">
               The &quot;what&apos;s going on at the farm&quot; email — available now, planter beds,
               gaps &amp; limited supply, and what&apos;s coming. Sends automatically every Monday
-              morning to <span className="font-medium text-farm-dark">all active chefs</span>, plus
-              anyone you add below.
+              morning — <span className="font-medium text-farm-dark">only to the people you pick
+              below</span>.
             </p>
           </div>
         </div>
@@ -346,13 +366,37 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           />
         </div>
 
-        <label className="block text-sm font-medium text-farm-dark mb-0.5">Extra Recipients</label>
+        <label className="block text-sm font-medium text-farm-dark mb-0.5">Recipients</label>
         <p className="text-xs text-farm-muted mb-2">
-          Chefs are always included. Add anyone else who should get the update.
+          Check the chef accounts that should get the update — unchecked chefs won&apos;t receive
+          it — and add any other addresses below.
         </p>
-        {updateExtras.length > 0 && (
+
+        {chefs.length > 0 && (
+          <div className="rounded-lg border border-farm-dark/10 divide-y divide-farm-dark/5 mb-3">
+            {chefs.map((chef) => (
+              <label
+                key={chef.email}
+                className="flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={updateRecipients.includes(chef.email)}
+                  onChange={() => toggleUpdateRecipient(chef.email)}
+                  className="w-4 h-4 accent-farm-green"
+                />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium text-farm-dark truncate">{chef.name}</span>
+                  <span className="block text-xs text-farm-muted truncate">{chef.email}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {customRecipients.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {updateExtras.map((email) => (
+            {customRecipients.map((email) => (
               <span
                 key={email}
                 className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-100 text-farm-green text-xs px-3 py-1.5"
@@ -421,8 +465,8 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           Send Weekly Update Now
         </button>
         <p className="text-xs text-farm-muted mt-1.5 text-center">
-          Sends to all active chefs + the saved extra list — save first if you just changed the
-          note or the list.
+          Sends only to the saved recipient list — save first if you just changed the note or the
+          list.
         </p>
       </div>
 

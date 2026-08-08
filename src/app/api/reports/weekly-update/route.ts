@@ -20,9 +20,10 @@ import type {
  *          `Authorization: Bearer ${CRON_SECRET}`; fail-closed in production.
  *   POST — Manual admin trigger from /admin/settings/emails.
  *
- * Recipients: every active chef account, plus any extra addresses stored
- * comma-separated in farm_settings.weekly_update_extra_recipients. The
- * "General" section is admin-authored via
+ * Recipients: ONLY the addresses stored comma-separated in
+ * farm_settings.weekly_update_recipients — chosen per-person in
+ * /admin/settings/emails (chefs are offered as a picker there but are not
+ * auto-included). The "General" section is admin-authored via
  * farm_settings.weekly_update_general_note.
  *
  * Content is assembled from live data:
@@ -176,31 +177,21 @@ async function sendWeeklyUpdate() {
   const { data: settingRows } = await (admin as any)
     .from("farm_settings")
     .select("key, value")
-    .in("key", ["weekly_update_general_note", "weekly_update_extra_recipients"]);
+    .in("key", ["weekly_update_general_note", "weekly_update_recipients"]);
   const settingsMap: Record<string, string> = {};
   for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
 
-  // ---- Recipients: all active chefs + extras -----------------------------
+  // ---- Recipients: exactly the saved list, nobody else -------------------
   const recipients = new Set<string>();
-  const { data: chefProfiles } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("role", "chef")
-    .eq("is_active", true);
-  for (const chef of chefProfiles ?? []) {
-    const { data: authUser } = await admin.auth.admin.getUserById(chef.id);
-    const email = authUser?.user?.email;
-    if (email) recipients.add(email.toLowerCase());
-  }
-  for (const extra of (settingsMap.weekly_update_extra_recipients ?? "").split(",")) {
-    const email = extra.trim().toLowerCase();
+  for (const entry of (settingsMap.weekly_update_recipients ?? "").split(",")) {
+    const email = entry.trim().toLowerCase();
     if (email) recipients.add(email);
   }
   if (recipients.size === 0) {
     return NextResponse.json({
       success: false,
       skipped: true,
-      error: "No recipients — no active chefs and no extra recipients configured.",
+      error: "No recipients configured — pick who gets the update in Settings → Emails.",
     });
   }
 

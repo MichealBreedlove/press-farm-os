@@ -17,6 +17,23 @@ export default async function EmailSettingsPage() {
   const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id ?? "";
 
+  // Active chef accounts, offered as a recipient picker for the weekly update.
+  const { data: chefProfiles } = await admin
+    .from("profiles")
+    .select("id, full_name")
+    .eq("role", "chef")
+    .eq("is_active", true);
+  const chefs: { name: string; email: string }[] = [];
+  const seen = new Set<string>();
+  for (const chef of chefProfiles ?? []) {
+    const { data: authUser } = await admin.auth.admin.getUserById(chef.id);
+    const email = authUser?.user?.email?.toLowerCase();
+    if (!email || seen.has(email)) continue;
+    seen.add(email);
+    chefs.push({ name: chef.full_name ?? email, email });
+  }
+  chefs.sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <main className="pb-24">
       <header className="page-header">
@@ -37,7 +54,7 @@ export default async function EmailSettingsPage() {
         backHref="/admin/settings"
       />
       <div className="px-4 py-6">
-        <EmailSettingsClient settings={settingsMap} farmId={farmId} />
+        <EmailSettingsClient settings={settingsMap} farmId={farmId} chefs={chefs} />
       </div>
     </main>
   );
