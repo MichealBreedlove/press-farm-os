@@ -133,12 +133,18 @@ async function sendWeeklyUpdate() {
   }
 
   // ---- Gaps: limited this cycle, or available last cycle and gone now ----
+  // The availability editor publishes a row for EVERY catalog item each cycle,
+  // so most rows sit at 'unavailable' (out of season / never toggled on).
+  // Those aren't gaps — an unavailable item only makes the table when it was
+  // actually available the previous cycle, i.e. something chefs just lost.
   const gaps: WeeklyUpdateGapRow[] = [];
   for (const i of current.values()) {
     if (i.status === "available") continue;
+    const wasAvailable = previous.get(i.name.toLowerCase())?.status === "available";
+    if (i.status === "unavailable" && !wasAvailable) continue;
     gaps.push({
       name: i.name,
-      lastWeek: previous.get(i.name.toLowerCase())?.status === "available" ? "Yes" : "No",
+      lastWeek: wasAvailable ? "Yes" : "No",
       substitute: "—",
       backWhen: i.status === "limited" ? "Now (limited)" : backWhenFor(i.name),
     });
