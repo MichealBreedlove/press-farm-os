@@ -198,10 +198,14 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
     return day ? `${t.title} (${day})` : t.title;
   });
 
+  // Only tasks due WITHIN the update week (Mon-Sun). Older overdue tasks are
+  // an internal backlog, not chef news — including them made long-dead items
+  // (e.g. July sow jobs) reappear in every live build.
   const { data: openTasks } = await (admin as any)
     .from("farm_tasks")
     .select("title, due_date, status")
     .in("status", ["open", "snoozed"])
+    .gte("due_date", weekAnchor)
     .lte("due_date", addDaysISO(weekAnchor, 6))
     .order("due_date", { ascending: true })
     .limit(50);
