@@ -46,6 +46,8 @@ describe("sanitizeWeeklyUpdateData", () => {
         { label: "~2 Weeks", items: ["Peas", "", 7, "Cukes"] },
         { label: "", items: ["dropped — no label"] },
       ],
+      tasksCompleted: ["Sowed brassicas", "", 42],
+      tasksUpcoming: ["Fix drip line", null],
     });
     expect(out).not.toBeNull();
     expect(out!.availableNow).toHaveLength(1);
@@ -56,6 +58,14 @@ describe("sanitizeWeeklyUpdateData", () => {
     expect(out!.incoming[0].items).toEqual(["Peas", "Cukes"]);
     expect(out!.generalNote).toBe("note");
     expect(out!.weekOfLabel).toBe("August 10");
+    expect(out!.tasksCompleted).toEqual(["Sowed brassicas"]);
+    expect(out!.tasksUpcoming).toEqual(["Fix drip line"]);
+  });
+
+  it("defaults task lists to empty arrays for pre-task drafts", () => {
+    const out = sanitizeWeeklyUpdateData({ availableNow: [], planterBeds: [], gaps: [], incoming: [] });
+    expect(out!.tasksCompleted).toEqual([]);
+    expect(out!.tasksUpcoming).toEqual([]);
   });
 
   it("fills a default weekOfLabel when missing", () => {

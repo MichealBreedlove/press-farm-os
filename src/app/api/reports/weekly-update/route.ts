@@ -124,6 +124,18 @@ async function sendWeeklyUpdate({
     ...(data.gaps.length > 0
       ? [`=== GAPS OR LIMITED SUPPLY ===`, ...data.gaps.map((r) => `  ${r.name} — last wk: ${r.lastWeek} — back: ${r.backWhen}`), ``]
       : []),
+    ...(data.tasksCompleted.length > 0 || data.tasksUpcoming.length > 0
+      ? [
+          `=== AROUND THE FARM ===`,
+          ...(data.tasksCompleted.length > 0
+            ? [`Done this week:`, ...data.tasksCompleted.map((t) => `  ✓ ${t}`)]
+            : []),
+          ...(data.tasksUpcoming.length > 0
+            ? [`On the list this week:`, ...data.tasksUpcoming.map((t) => `  - ${t}`)]
+            : []),
+          ``,
+        ]
+      : []),
     `=== ITEMS INCOMING ===`,
     ...data.incoming.map((g) => `  ${g.label}: ${g.items.length > 0 ? g.items.join(", ") : "—"}`),
     ``,
@@ -140,6 +152,8 @@ async function sendWeeklyUpdate({
     planterBeds: data.planterBeds,
     gaps: data.gaps,
     incoming: data.incoming,
+    tasksCompleted: data.tasksCompleted,
+    tasksUpcoming: data.tasksUpcoming,
   }) as React.ReactElement;
 
   const list = Array.from(recipients);

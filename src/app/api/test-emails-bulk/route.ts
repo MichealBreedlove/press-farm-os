@@ -352,6 +352,8 @@ export async function GET(request: Request) {
         { label: "~1 Month", items: ["Early Girl Tomatoes"] },
         { label: "~2 Months", items: ["Padrón Peppers", "Shishitos"] },
       ],
+      tasksCompleted: ["Sowed fall brassicas (May 26)", "Cleared spent squash beds (May 28)"],
+      tasksUpcoming: ["Transplant lettuce starts (due Jun 2)", "Drip line repair, block C (due Jun 4)"],
     }) as React.ReactElement,
   );
 

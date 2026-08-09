@@ -50,6 +50,10 @@ interface WeeklyUpdateProps {
   planterBeds: WeeklyUpdateBedRow[];
   gaps: WeeklyUpdateGapRow[];
   incoming: WeeklyUpdateIncomingGroup[];
+  /** Farm tasks finished in the last week, one line each. */
+  tasksCompleted?: string[];
+  /** Farm tasks due (or overdue) this week, one line each. */
+  tasksUpcoming?: string[];
 }
 
 const table = {
@@ -100,6 +104,8 @@ export default function WeeklyUpdate({
   planterBeds,
   gaps,
   incoming,
+  tasksCompleted = [],
+  tasksUpcoming = [],
 }: WeeklyUpdateProps) {
   const noteLines = (generalNote ?? "")
     .split("\n")
@@ -211,6 +217,32 @@ export default function WeeklyUpdate({
                       ))}
                     </tbody>
                   </table>
+                </Section>
+              )}
+
+              {(tasksCompleted.length > 0 || tasksUpcoming.length > 0) && (
+                <Section>
+                  <Text style={styles.h2}>Around the Farm</Text>
+                  {tasksCompleted.length > 0 && (
+                    <>
+                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "0 0 4px" }}>
+                        Done this week
+                      </Text>
+                      {tasksCompleted.map((t, i) => (
+                        <Text key={i} style={bullet}>✓ {t}</Text>
+                      ))}
+                    </>
+                  )}
+                  {tasksUpcoming.length > 0 && (
+                    <>
+                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "10px 0 4px" }}>
+                        On the list this week
+                      </Text>
+                      {tasksUpcoming.map((t, i) => (
+                        <Text key={i} style={bullet}>• {t}</Text>
+                      ))}
+                    </>
+                  )}
                 </Section>
               )}
 

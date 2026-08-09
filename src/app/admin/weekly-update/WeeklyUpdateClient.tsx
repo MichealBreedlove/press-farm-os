@@ -335,6 +335,39 @@ export function WeeklyUpdateClient({
       </SectionCard>
 
       <SectionCard
+        icon={<Check className="w-5 h-5" />}
+        title="Around the Farm — Tasks"
+        description="Pre-filled from the task list: what got done in the last 7 days and what's due this week. One task per line; clear a box to skip that half of the section."
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-farm-muted mb-0.5">
+              Done this week
+            </label>
+            <textarea
+              value={data.tasksCompleted.join("\n")}
+              onChange={(e) => patch({ tasksCompleted: e.target.value.split("\n") })}
+              rows={3}
+              placeholder={"Sowed fall brassicas (Aug 5)\nCleared spent squash beds (Aug 7)"}
+              className="input-field resize-y"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-farm-muted mb-0.5">
+              On the list this week
+            </label>
+            <textarea
+              value={data.tasksUpcoming.join("\n")}
+              onChange={(e) => patch({ tasksUpcoming: e.target.value.split("\n") })}
+              rows={3}
+              placeholder={"Transplant lettuce starts (due Aug 12)\nDrip line repair, block C (due Aug 14)"}
+              className="input-field resize-y"
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
         icon={<CalendarClock className="w-5 h-5" />}
         title="Items Incoming Timeline"
         description="Pre-filled from the crop plan forecast. Comma-separate the items in each window."

@@ -29,6 +29,10 @@ export interface WeeklyUpdateData {
   planterBeds: WeeklyUpdateBedRow[];
   gaps: WeeklyUpdateGapRow[];
   incoming: WeeklyUpdateIncomingGroup[];
+  /** Farm tasks finished in the last 7 days, one line each. */
+  tasksCompleted: string[];
+  /** Farm tasks due (or overdue) through the end of the update week. */
+  tasksUpcoming: string[];
 }
 
 /** Saved-draft envelope stored in farm_settings.weekly_update_draft. */
@@ -178,6 +182,34 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
     { label: "~2 Months", items: names(buckets.in2Months) },
   ];
 
+  // ---- Farm tasks: done last 7 days + due through end of update week -----
+  const weekAnchor = upcomingMondayISO(today);
+  const { data: doneTasks } = await (admin as any)
+    .from("farm_tasks")
+    .select("title, completed_at")
+    .eq("status", "completed")
+    .gte("completed_at", addDaysISO(today, -7) + "T00:00:00Z")
+    .order("completed_at", { ascending: true })
+    .limit(50);
+  const tasksCompleted: string[] = (doneTasks ?? []).map((t: any) => {
+    const day = t.completed_at
+      ? new Date(t.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" })
+      : null;
+    return day ? `${t.title} (${day})` : t.title;
+  });
+
+  const { data: openTasks } = await (admin as any)
+    .from("farm_tasks")
+    .select("title, due_date, status")
+    .in("status", ["open", "snoozed"])
+    .lte("due_date", addDaysISO(weekAnchor, 6))
+    .order("due_date", { ascending: true })
+    .limit(50);
+  const tasksUpcoming: string[] = (openTasks ?? []).map((t: any) => {
+    const overdue = t.due_date < today;
+    return `${t.title} (${overdue ? "overdue — " : "due "}${shortDate(t.due_date)})`;
+  });
+
   // ---- General note ------------------------------------------------------
   const { data: noteRow } = await (admin as any)
     .from("farm_settings")
@@ -186,12 +218,14 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
     .maybeSingle();
 
   return {
-    weekOfLabel: weekOfLabelFor(upcomingMondayISO(today)),
+    weekOfLabel: weekOfLabelFor(weekAnchor),
     generalNote: noteRow?.value ?? "",
     availableNow,
     planterBeds,
     gaps,
     incoming,
+    tasksCompleted,
+    tasksUpcoming,
   };
 }
 
@@ -225,6 +259,12 @@ export function sanitizeWeeklyUpdateData(raw: unknown): WeeklyUpdateData | null 
         items: Array.isArray(x.items) ? x.items.map(str).filter(Boolean).slice(0, MAX_ROWS) : [],
       }))
       .filter((x) => x.label),
+    tasksCompleted: Array.isArray(r.tasksCompleted)
+      ? r.tasksCompleted.map(str).filter(Boolean).slice(0, MAX_ROWS)
+      : [],
+    tasksUpcoming: Array.isArray(r.tasksUpcoming)
+      ? r.tasksUpcoming.map(str).filter(Boolean).slice(0, MAX_ROWS)
+      : [],
   };
 }
 
