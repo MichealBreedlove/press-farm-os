@@ -140,6 +140,32 @@ export default function WeeklyUpdate({
                 </Section>
               )}
 
+              {(tasksCompleted.length > 0 || tasksUpcoming.length > 0) && (
+                <Section>
+                  <Text style={styles.h2}>Around the Farm</Text>
+                  {tasksCompleted.length > 0 && (
+                    <>
+                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "0 0 4px" }}>
+                        Done this week
+                      </Text>
+                      {tasksCompleted.map((t, i) => (
+                        <Text key={i} style={bullet}>✓ {t}</Text>
+                      ))}
+                    </>
+                  )}
+                  {tasksUpcoming.length > 0 && (
+                    <>
+                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "10px 0 4px" }}>
+                        On the list this week
+                      </Text>
+                      {tasksUpcoming.map((t, i) => (
+                        <Text key={i} style={bullet}>• {t}</Text>
+                      ))}
+                    </>
+                  )}
+                </Section>
+              )}
+
               <Text style={styles.h2}>Available Now</Text>
               {availableNow.length === 0 ? (
                 <Text style={styles.paragraphMuted}>
@@ -217,32 +243,6 @@ export default function WeeklyUpdate({
                       ))}
                     </tbody>
                   </table>
-                </Section>
-              )}
-
-              {(tasksCompleted.length > 0 || tasksUpcoming.length > 0) && (
-                <Section>
-                  <Text style={styles.h2}>Around the Farm</Text>
-                  {tasksCompleted.length > 0 && (
-                    <>
-                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "0 0 4px" }}>
-                        Done this week
-                      </Text>
-                      {tasksCompleted.map((t, i) => (
-                        <Text key={i} style={bullet}>✓ {t}</Text>
-                      ))}
-                    </>
-                  )}
-                  {tasksUpcoming.length > 0 && (
-                    <>
-                      <Text style={{ ...bullet, fontWeight: 600, color: colors.greenDark, margin: "10px 0 4px" }}>
-                        On the list this week
-                      </Text>
-                      {tasksUpcoming.map((t, i) => (
-                        <Text key={i} style={bullet}>• {t}</Text>
-                      ))}
-                    </>
-                  )}
                 </Section>
               )}
 

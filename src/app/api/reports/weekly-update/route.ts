@@ -113,17 +113,6 @@ async function sendWeeklyUpdate({
     `Week of ${data.weekOfLabel}`,
     ``,
     ...(data.generalNote ? [`GENERAL:`, data.generalNote, ``] : []),
-    `=== AVAILABLE NOW ===`,
-    ...(data.availableNow.length > 0
-      ? data.availableNow.map((r) => `  ${r.name} — ${r.qty}${r.size && r.size !== "—" ? ` — ${r.size}` : ""}${r.notes ? ` (${r.notes})` : ""}`)
-      : ["  Availability not yet published — check the order form."]),
-    ``,
-    ...(data.planterBeds.length > 0
-      ? [`=== RESTAURANT PLANTER BEDS ===`, ...data.planterBeds.map((r) => `  ${r.name} — ${r.bed} — planted ${r.planted}${r.notes ? ` (${r.notes})` : ""}`), ``]
-      : []),
-    ...(data.gaps.length > 0
-      ? [`=== GAPS OR LIMITED SUPPLY ===`, ...data.gaps.map((r) => `  ${r.name} — last wk: ${r.lastWeek} — back: ${r.backWhen}`), ``]
-      : []),
     ...(data.tasksCompleted.length > 0 || data.tasksUpcoming.length > 0
       ? [
           `=== AROUND THE FARM ===`,
@@ -135,6 +124,17 @@ async function sendWeeklyUpdate({
             : []),
           ``,
         ]
+      : []),
+    `=== AVAILABLE NOW ===`,
+    ...(data.availableNow.length > 0
+      ? data.availableNow.map((r) => `  ${r.name} — ${r.qty}${r.size && r.size !== "—" ? ` — ${r.size}` : ""}${r.notes ? ` (${r.notes})` : ""}`)
+      : ["  Availability not yet published — check the order form."]),
+    ``,
+    ...(data.planterBeds.length > 0
+      ? [`=== RESTAURANT PLANTER BEDS ===`, ...data.planterBeds.map((r) => `  ${r.name} — ${r.bed} — planted ${r.planted}${r.notes ? ` (${r.notes})` : ""}`), ``]
+      : []),
+    ...(data.gaps.length > 0
+      ? [`=== GAPS OR LIMITED SUPPLY ===`, ...data.gaps.map((r) => `  ${r.name} — last wk: ${r.lastWeek} — back: ${r.backWhen}`), ``]
       : []),
     `=== ITEMS INCOMING ===`,
     ...data.incoming.map((g) => `  ${g.label}: ${g.items.length > 0 ? g.items.join(", ") : "—"}`),
