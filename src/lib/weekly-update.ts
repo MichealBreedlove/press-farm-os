@@ -67,19 +67,36 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   // ---- Availability: current cycle + the one before it -------------------
   // Cycles run Thu/Sat/Mon, so 14 days back always covers the previous cycle,
   // and 7 days forward covers a cycle the admin has published ahead of time.
+  //
+  // IMPORTANT: a cycle carries ~1,200 availability rows (every catalog item ×
+  // every restaurant), so the full 3-week window is ~7,000+ rows — far past
+  // Supabase's silent 1,000-row response cap. Fetching it in one unbounded
+  // select returned an arbitrary truncated subset: cycle detection was wrong
+  // and stale rows from old cycles leaked into the draft. Instead: find the
+  // two most recent cycle dates from a compact date-only query, then fetch
+  // ONLY offered rows (status ≠ unavailable, ~150/cycle) for those two dates.
+  const { data: dateRows } = await (admin as any)
+    .from("availability_items")
+    .select("delivery_date")
+    .gte("delivery_date", addDaysISO(today, -14))
+    .lte("delivery_date", addDaysISO(today, 7))
+    .neq("status", "unavailable")
+    .order("delivery_date", { ascending: false })
+    .limit(1000);
+  const cycleDates: string[] = Array.from(
+    new Set<string>((dateRows ?? []).map((r: any) => r.delivery_date as string)),
+  ).sort();
+  const currentCycle = cycleDates[cycleDates.length - 1] ?? null;
+  const previousCycle = cycleDates.length > 1 ? cycleDates[cycleDates.length - 2] : null;
+
   const { data: availRows } = await (admin as any)
     .from("availability_items")
     .select(
       "delivery_date, status, limited_qty, cycle_notes, available_sizes, available_units, items(name)",
     )
-    .gte("delivery_date", addDaysISO(today, -14))
-    .lte("delivery_date", addDaysISO(today, 7));
-
-  const cycleDates: string[] = Array.from(
-    new Set<string>((availRows ?? []).map((r: any) => r.delivery_date as string)),
-  ).sort();
-  const currentCycle = cycleDates[cycleDates.length - 1] ?? null;
-  const previousCycle = cycleDates.length > 1 ? cycleDates[cycleDates.length - 2] : null;
+    .in("delivery_date", [currentCycle, previousCycle].filter(Boolean))
+    .neq("status", "unavailable")
+    .limit(2000);
 
   // Dedupe by item name across restaurants; an item available anywhere counts
   // as available, and limited quantities take the largest published cap.
@@ -136,20 +153,19 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   }
 
   // ---- Gaps: limited this cycle, or available last cycle and gone now ----
-  // The availability editor publishes a row for EVERY catalog item each cycle,
-  // so most rows sit at 'unavailable' (out of season / never toggled on).
-  // Those aren't gaps — an unavailable item only makes the table when it was
-  // actually available the previous cycle, i.e. something chefs just lost.
+  // Only offered rows are fetched, so `current` holds available + limited.
+  // Explicitly-unavailable items simply vanish from `current`, and the
+  // dropped-items loop below catches the ones chefs actually just lost
+  // (available last cycle, gone now). Out-of-season items that were never
+  // offered don't appear anywhere — they aren't gaps.
   const gaps: WeeklyUpdateGapRow[] = [];
   for (const i of current.values()) {
-    if (i.status === "available") continue;
-    const wasAvailable = previous.get(i.name.toLowerCase())?.status === "available";
-    if (i.status === "unavailable" && !wasAvailable) continue;
+    if (i.status !== "limited") continue;
     gaps.push({
       name: i.name,
-      lastWeek: wasAvailable ? "Yes" : "No",
+      lastWeek: previous.get(i.name.toLowerCase())?.status === "available" ? "Yes" : "No",
       substitute: "—",
-      backWhen: i.status === "limited" ? "Now (limited)" : backWhenFor(i.name),
+      backWhen: "Now (limited)",
     });
   }
   for (const p of previous.values()) {
