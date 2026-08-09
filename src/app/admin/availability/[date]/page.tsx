@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { EditorialHero } from "@/components/shared/EditorialHero";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
@@ -154,36 +153,33 @@ export default async function AdminAvailabilityEditorPage({
           </div>
         </div>
       </header>
-      <EditorialHero
-        eyebrow={pageTitle}
-        title="Set Availability"
-        subtitle={`Ordering ${deliveryDate.ordering_open ? "is open" : "is closed"} · tap items to mark available, limited, or unavailable`}
-        flower="calendula"
-        backHref="/admin/availability"
-      />
-
-      {/* Offer-sheet shortcut — printable / shareable PDF view of this date */}
-      <div className="px-4 pt-4 max-w-3xl mx-auto">
+      {/* Slim utility strip — the hero block repeated the header's date +
+          ordering status and pushed the editor below the fold on a phone.
+          Carried-over notice (left) + offer-sheet link (right) share one row. */}
+      <div className="bg-farm-cream/60 border-b border-pf-master-gold/20 px-4 py-2 flex items-center gap-3 text-xs">
+        <div className="flex-1 min-w-0 text-farm-dark">
+          {inheritedFromDate ? (
+            <p className="truncate">
+              <span className="text-farm-green">↻</span>{" "}
+              <span className="font-semibold">
+                Carried over from {new Date(inheritedFromDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </span>{" "}
+              — save to publish this date.
+            </p>
+          ) : (
+            <p className="text-farm-muted">Tap items to mark available, limited, or unavailable.</p>
+          )}
+        </div>
         <a
           href={`/admin/availability/${date}/offer-sheet`}
-          className="inline-flex items-center gap-2 text-xs text-farm-green font-medium hover:underline"
+          className="inline-flex items-center gap-1.5 text-farm-green font-medium hover:underline flex-shrink-0"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a4 4 0 014-4h6m0 0l-3-3m3 3l-3 3" />
           </svg>
-          Open Offer Sheet
+          Offer Sheet
         </a>
       </div>
-
-      {inheritedFromDate && (
-        <div className="bg-farm-cream/60 border-b border-farm-green/15 px-4 py-2.5 flex items-start gap-2">
-          <span className="text-farm-green">↻</span>
-          <div className="flex-1 text-xs text-farm-dark">
-            <p className="font-semibold">Carried over from {new Date(inheritedFromDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}.</p>
-            <p>Tweak as needed and tap <strong>Save All Restaurants</strong> to publish this date.</p>
-          </div>
-        </div>
-      )}
 
       <AvailabilityEditor
         items={items}

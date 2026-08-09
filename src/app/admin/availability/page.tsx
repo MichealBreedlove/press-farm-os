@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { DeliveryDate } from "@/types";
 import { AddDatesButton } from "./AddDatesButton";
-import { EditorialHero } from "@/components/shared/EditorialHero";
 import { todayPacific } from "@/lib/utils";
 
 /**
@@ -69,16 +68,16 @@ export default async function AdminAvailabilityPage() {
 
   return (
     <main>
+      {/* Single compact header — the hero block was redundant with this bar
+          and pushed the date list below the fold on a phone. */}
       <header className="page-header">
         <h1 className="page-title">Availability</h1>
+        <p className="text-xs text-white/60">
+          {dates.length > 0
+            ? `${dates.length} upcoming cycle${dates.length === 1 ? "" : "s"} · tap a date to set availability`
+            : "No cycles scheduled — add delivery dates below"}
+        </p>
       </header>
-      <EditorialHero
-        eyebrow="Daily Operations"
-        title="What's Ready"
-        subtitle={dates.length > 0 ? `${dates.length} upcoming cycle${dates.length === 1 ? "" : "s"} · tap a date to set availability` : "No cycles scheduled — add delivery dates below"}
-        flower="calendula"
-        backHref="/admin/dashboard"
-      />
 
       <div className="px-4 py-4 max-w-3xl mx-auto space-y-3">
         {dates.length === 0 && (
