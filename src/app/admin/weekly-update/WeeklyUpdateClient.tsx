@@ -131,6 +131,13 @@ export function WeeklyUpdateClient({
 }) {
   const router = useRouter();
   const [data, setData] = useState<WeeklyUpdateData>(draftData ?? liveData);
+  // The incoming-timeline inputs keep the RAW typed text here and only parse
+  // it into data.incoming. Deriving the input value back from the parsed list
+  // (items.join(", ")) made deletions impossible — the join re-inserted the
+  // ", " the user had just deleted on every re-render.
+  const [incomingRaw, setIncomingRaw] = useState<string[]>(() =>
+    (draftData ?? liveData).incoming.map((g) => g.items.join(", ")),
+  );
   const [recipients, setRecipients] = useState<string[]>(() =>
     (settings["weekly_update_recipients"] ?? "")
       .split(",")
@@ -240,6 +247,7 @@ export function WeeklyUpdateClient({
 
   function resetToLive() {
     setData(liveData);
+    setIncomingRaw(liveData.incoming.map((g) => g.items.join(", ")));
     setSaved(false);
   }
 
@@ -393,16 +401,18 @@ export function WeeklyUpdateClient({
                 />
                 <input
                   type="text"
-                  value={group.items.join(", ")}
-                  onChange={(e) =>
+                  value={incomingRaw[gi] ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setIncomingRaw((rs) => rs.map((r, i) => (i === gi ? raw : r)));
                     patch({
                       incoming: data.incoming.map((g, i) =>
                         i === gi
-                          ? { ...g, items: e.target.value.split(",").map((s) => s.trimStart()) }
+                          ? { ...g, items: raw.split(",").map((s) => s.trim()).filter(Boolean) }
                           : g,
                       ),
-                    })
-                  }
+                    });
+                  }}
                   placeholder="Snap Peas, Cucumbers"
                   className="input-field py-1.5 text-sm flex-1"
                 />
