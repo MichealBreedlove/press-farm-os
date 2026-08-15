@@ -22,6 +22,7 @@ import type {
   SowTask,
 } from "@/lib/microgreens/types";
 import { todayIso } from "./dates";
+import { reopenSupersededTasks } from "./reopen";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -121,6 +122,7 @@ function harvestTaskRow(farmId: string, task: HarvestTask, today: string): TaskR
 export interface RegenerateResult {
   generated: number;
   inserted: number;
+  reopened: number;
   superseded: number;
 }
 
@@ -182,9 +184,15 @@ export async function regenerateMicrogreensTasks(
     }
   }
 
+  const activeKeys = rows.map((r) => r.generator_key);
+
+  // Resurrection: the upsert above skips conflicts, so a previously superseded
+  // task that's back in the plan would stay off the board. Reopen it. Must run
+  // before the supersession pass, which only touches keys NOT in activeKeys.
+  const reopened = await reopenSupersededTasks(admin, "microgreens-auto", activeKeys);
+
   // Supersession: any open microgreens-auto task whose generator_key wasn't
   // produced this run is now stale.
-  const activeKeys = rows.map((r) => r.generator_key);
   let superseded = 0;
   if (activeKeys.length > 0) {
     const { data: supRows, error: supErr } = await (admin as any)
@@ -218,5 +226,5 @@ export async function regenerateMicrogreensTasks(
     if (!supErr) superseded = supRows?.length ?? 0;
   }
 
-  return { generated: rows.length, inserted, superseded };
+  return { generated: rows.length, inserted, reopened, superseded };
 }

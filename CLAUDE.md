@@ -24,7 +24,7 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — 272 tests across 32 files in top-level `tests/` |
+| Tests | Vitest — 277 tests across 33 files in top-level `tests/` |
 | Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
@@ -102,7 +102,7 @@ src/
   types/
     database.ts                  # DB types — regenerated; covers 37 tables + 4 views. Remaining `(as any)` casts are legacy, not required
     index.ts                     # App-level types + enriched join shapes
-tests/                           # Vitest suites (microgreens, forecasting, tasks, harvest, api) — 250 tests
+tests/                           # Vitest suites (microgreens, forecasting, tasks, harvest, api) — 277 tests
 scripts/
   optimize-images.mjs            # Idempotent brand-image downsizer (npm run optimize:images)
   optimize-svg-logos.mjs         # Shrinks the base64 rasters EMBEDDED in logo SVGs (idempotent)
@@ -114,7 +114,7 @@ supabase/migrations/             # 001 → 072 (76 files; see table — 044/047/
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **77 migration files, numbered 001 → 073** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions); 072 (variety selection) and 073 (harvester role) applied via the Supabase MCP. **Next migration number is 074.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **78 migration files, numbered 001 → 074** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions); 072 (variety selection) and 073 (harvester role) applied via the Supabase MCP; 074 (microgreens board reset + 2026-08-14 sowing) applied via the Supabase MCP. **Next migration number is 075.** Read latest first when scoping work.
 
 > **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes, and a `prevent_role_escalation` trigger on `profiles` (fixed 2026-07-20 to exempt service-role/no-JWT writes — it originally blocked the app's own admin API from setting roles)). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
@@ -267,7 +267,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **073**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers.)
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **075**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers.)
 - The user does NOT have `supabase` CLI linked. Apply migrations via the Supabase MCP (`apply_migration`, project `rxdfjaseilmjvcwamqyk`) when it's available in the session; otherwise present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.
@@ -316,7 +316,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Individual-account order accountability (`order_audit`, migration 058).
 - `/receiver` — destination-side unpack / check-in.
 - `/harvest` — harvester portal: the combined cross-restaurant pick list (shared roll-up in `src/lib/harvest.ts`) + add-extra-items flow, with a persisted English/Spanish toggle (`src/lib/i18n/harvest.ts`). Harvester accounts are created in /admin/settings/users (role: Harvester).
-- **238 Vitest tests** across 30 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate), and the event-request accept flow. (The route-level financial flows — deliveries logging, reports — still have thin automated coverage.)
+- **277 Vitest tests** across 33 files in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate), and the event-request accept flow. (The route-level financial flows — deliveries logging, reports — still have thin automated coverage.)
 - Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps).
 
 ## Open Follow-ups (Prioritized)

@@ -7,16 +7,17 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { regenerateMicrogreensTasks } from "./regenerate-microgreens";
+import { regenerateMicrogreensTasks, type RegenerateResult } from "./regenerate-microgreens";
 import { regenerateRecurringItemTasks } from "./regenerate-recurring";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
 export interface RegenerateSummary {
-  microgreens: { generated: number; inserted: number; superseded: number };
-  recurring: { generated: number; inserted: number; superseded: number };
+  microgreens: RegenerateResult;
+  recurring: RegenerateResult;
   total_generated: number;
   total_inserted: number;
+  total_reopened: number;
   total_superseded: number;
 }
 
@@ -33,6 +34,7 @@ export async function regenerateAllTasks(
     recurring,
     total_generated: microgreens.generated + recurring.generated,
     total_inserted: microgreens.inserted + recurring.inserted,
+    total_reopened: microgreens.reopened + recurring.reopened,
     total_superseded: microgreens.superseded + recurring.superseded,
   };
 }
@@ -50,10 +52,11 @@ export async function regenerateAllTasksForDefaultFarm(
   if (!farmId) {
     return {
       farm_id: null,
-      microgreens: { generated: 0, inserted: 0, superseded: 0 },
-      recurring: { generated: 0, inserted: 0, superseded: 0 },
+      microgreens: { generated: 0, inserted: 0, reopened: 0, superseded: 0 },
+      recurring: { generated: 0, inserted: 0, reopened: 0, superseded: 0 },
       total_generated: 0,
       total_inserted: 0,
+      total_reopened: 0,
       total_superseded: 0,
     };
   }

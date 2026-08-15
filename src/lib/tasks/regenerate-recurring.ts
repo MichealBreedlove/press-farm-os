@@ -25,6 +25,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { addDays, todayIso } from "./dates";
 import { RECURRING_HORIZON_DAYS } from "./constants";
 import type { RegenerateResult } from "./regenerate-microgreens";
+import { reopenSupersededTasks } from "./reopen";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -97,7 +98,7 @@ export async function regenerateRecurringItemTasks(
 
   if (itemsErr) {
     console.error("[TASKS] recurring items fetch failed", itemsErr);
-    return { generated: 0, inserted: 0, superseded: 0 };
+    return { generated: 0, inserted: 0, reopened: 0, superseded: 0 };
   }
 
   const rows: RecurringTaskRow[] = [];
@@ -143,8 +144,12 @@ export async function regenerateRecurringItemTasks(
     }
   }
 
-  // Supersession pass.
   const activeKeys = rows.map((r) => r.generator_key);
+
+  // Resurrection pass — see reopenSupersededTasks(). Runs before supersession.
+  const reopened = await reopenSupersededTasks(admin, "recurring-item", activeKeys);
+
+  // Supersession pass.
   let superseded = 0;
   if (activeKeys.length > 0) {
     const { data: supRows, error: supErr } = await (admin as any)
@@ -173,5 +178,5 @@ export async function regenerateRecurringItemTasks(
     if (!supErr) superseded = supRows?.length ?? 0;
   }
 
-  return { generated: rows.length, inserted, superseded };
+  return { generated: rows.length, inserted, reopened, superseded };
 }
