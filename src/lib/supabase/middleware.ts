@@ -53,7 +53,33 @@ export async function updateSession(request: NextRequest) {
   // signed in); it self-protects via a honeypot, length caps + IP rate limiting.
   // /api/cron/* is invoked by Vercel Cron with a Bearer CRON_SECRET (no Supabase
   // cookie) and fail-closes inside the handler, so it must bypass the redirect.
-  const publicPaths = ["/login", "/signup", "/api/auth/signup", "/api/contact", "/about", "/auth/callback", "/auth/confirm", "/api/v1", "/api/inbound", "/api/cron"];
+  // The four cron paths at the end live OUTSIDE /api/cron for historical
+  // reasons but are invoked exactly the same way, and each self-gates on
+  // Bearer CRON_SECRET in its own GET handler. They are listed individually
+  // rather than as an "/api/reports" prefix on purpose — the other routes
+  // under /api/reports (income, monthly, top-items) are admin UI endpoints
+  // that must keep the redirect.
+  //
+  // Their absence here is why the chef Weekly Update never fired once between
+  // 2026-08-08 and 2026-08-17: Vercel's cron GET was 307'd to /login and the
+  // handler never ran, which from the outside looked identical to the cron
+  // never firing at all.
+  const publicPaths = [
+    "/login",
+    "/signup",
+    "/api/auth/signup",
+    "/api/contact",
+    "/about",
+    "/auth/callback",
+    "/auth/confirm",
+    "/api/v1",
+    "/api/inbound",
+    "/api/cron",
+    "/api/reports/weekly-update",
+    "/api/reports/weekly-digest",
+    "/api/reports/partner-report",
+    "/api/availability/forecast-email",
+  ];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {
