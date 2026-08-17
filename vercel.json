@@ -6,7 +6,11 @@
     },
     {
       "path": "/api/reports/weekly-update",
-      "schedule": "0 14 * * 1"
+      "schedule": "30 22 * * 1"
+    },
+    {
+      "path": "/api/cron/weekly-update-watchdog",
+      "schedule": "30 23 * * 1"
     },
     {
       "path": "/api/cron/receiver-notify",

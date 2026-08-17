@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildWeeklyUpdateData,
   parseWeeklyUpdateDraft,
+  recordWeeklyUpdateAttempt,
   sanitizeWeeklyUpdateData,
   upcomingMondayISO,
   type WeeklyUpdateData,
@@ -69,13 +70,18 @@ async function sendWeeklyUpdate({
   const settingsMap: Record<string, string> = {};
   for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
 
+  const triggeredBy = isCron ? "cron" : "manual";
+
   // Cron never double-sends a week the admin already sent manually.
   if (isCron && settingsMap.weekly_update_last_sent_week === weekAnchor) {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      message: `Already sent for week of ${weekAnchor} — skipping scheduled send.`,
+    const message = `Already sent for week of ${weekAnchor} — skipping scheduled send.`;
+    await recordWeeklyUpdateAttempt(admin, {
+      weekOf: weekAnchor,
+      triggeredBy,
+      status: "skipped",
+      error: message,
     });
+    return NextResponse.json({ success: true, skipped: true, message });
   }
 
   // ---- Recipients: exactly the saved list, nobody else -------------------
@@ -85,11 +91,15 @@ async function sendWeeklyUpdate({
     if (email) recipients.add(email);
   }
   if (recipients.size === 0) {
-    return NextResponse.json({
-      success: false,
-      skipped: true,
-      error: "No recipients configured — pick who gets the update on the Weekly Update page.",
+    const error =
+      "No recipients configured — pick who gets the update on the Weekly Update page.";
+    await recordWeeklyUpdateAttempt(admin, {
+      weekOf: weekAnchor,
+      triggeredBy,
+      status: "skipped",
+      error,
     });
+    return NextResponse.json({ success: false, skipped: true, error });
   }
 
   // ---- Content: explicit edit > this week's saved draft > live build -----
@@ -101,7 +111,28 @@ async function sendWeeklyUpdate({
       data = draft.data;
       source = "draft";
     } else {
-      data = await buildWeeklyUpdateData(admin);
+      // A live build touches availability, planter boxes and the forecast —
+      // any of which can throw. Without this catch the run dies here and
+      // leaves no trace at all, which is the failure mode this logging
+      // exists to close.
+      try {
+        data = await buildWeeklyUpdateData(admin);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await recordWeeklyUpdateAttempt(admin, {
+          weekOf: weekAnchor,
+          triggeredBy,
+          status: "failed",
+          source: "live",
+          recipientsCount: recipients.size,
+          error: `Live build failed: ${message}`,
+        });
+        console.error("[WEEKLY-UPDATE] Live build failed:", err);
+        return NextResponse.json(
+          { success: false, error: `Could not build this week's update: ${message}` },
+          { status: 500 },
+        );
+      }
       source = "live";
     }
   }
@@ -178,6 +209,23 @@ async function sendWeeklyUpdate({
     else failed.push({ to: list[i], error: String(r.reason) });
   });
   if (failed.length > 0) console.error("[WEEKLY-UPDATE] Some sends failed:", failed);
+
+  // Durable record of the outcome. A console.error alone is invisible the
+  // moment the Vercel log ages out — this row is what the watchdog and the
+  // admin UI read to answer "did Monday's update go out?".
+  await recordWeeklyUpdateAttempt(admin, {
+    weekOf: weekAnchor,
+    triggeredBy,
+    status: sent.length === 0 ? "failed" : failed.length > 0 ? "partial" : "sent",
+    source,
+    recipientsCount: list.length,
+    succeededCount: sent.length,
+    failedCount: failed.length,
+    error:
+      failed.length > 0
+        ? failed.map((f) => `${f.to}: ${f.error}`).join(" | ")
+        : null,
+  });
 
   // Stamp the sent week so the Monday cron doesn't re-send after a manual send.
   if (sent.length > 0) {

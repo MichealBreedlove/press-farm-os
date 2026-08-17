@@ -42,6 +42,74 @@ export interface WeeklyUpdateDraft {
   data: WeeklyUpdateData;
 }
 
+/** One row of weekly_update_log — every send attempt, successful or not. */
+export interface WeeklyUpdateAttempt {
+  weekOf: string;
+  triggeredBy: "cron" | "manual";
+  status: "sent" | "partial" | "failed" | "skipped";
+  source?: "edited" | "draft" | "live" | null;
+  recipientsCount?: number;
+  succeededCount?: number;
+  failedCount?: number;
+  error?: string | null;
+}
+
+/**
+ * Record a send attempt in weekly_update_log.
+ *
+ * Deliberately swallows its own errors: logging must never be the reason an
+ * otherwise-good email fails. A lost log row is recoverable; a throw here
+ * would abort the send path. `admin` must be the service-role client.
+ */
+export async function recordWeeklyUpdateAttempt(
+  admin: SupabaseClient,
+  attempt: WeeklyUpdateAttempt,
+): Promise<void> {
+  try {
+    await (admin as any).from("weekly_update_log").insert({
+      week_of: attempt.weekOf,
+      triggered_by: attempt.triggeredBy,
+      status: attempt.status,
+      source: attempt.source ?? null,
+      recipients_count: attempt.recipientsCount ?? 0,
+      succeeded_count: attempt.succeededCount ?? 0,
+      failed_count: attempt.failedCount ?? 0,
+      // A runaway Resend error shouldn't bloat the row — a few KB is plenty
+      // to diagnose from.
+      error: attempt.error ? attempt.error.slice(0, 4000) : null,
+    });
+  } catch (err) {
+    console.error("[WEEKLY-UPDATE] Failed to write weekly_update_log row:", err);
+  }
+}
+
+/**
+ * Did the update for `weekOf` reach at least one recipient?
+ *
+ * 'partial' counts as reached — some chefs got it, which is a different and
+ * less urgent problem than nobody getting it. The watchdog uses this to
+ * decide whether Monday silently missed.
+ */
+export async function hasSuccessfulWeeklyUpdate(
+  admin: SupabaseClient,
+  weekOf: string,
+): Promise<boolean> {
+  const { data, error } = await (admin as any)
+    .from("weekly_update_log")
+    .select("id")
+    .eq("week_of", weekOf)
+    .in("status", ["sent", "partial"])
+    .limit(1);
+  // On a query error, assume it DID send. A watchdog that cries wolf every
+  // time the database hiccups gets muted, and a muted watchdog is worse than
+  // no watchdog.
+  if (error) {
+    console.error("[WEEKLY-UPDATE] Watchdog lookup failed:", error);
+    return true;
+  }
+  return (data ?? []).length > 0;
+}
+
 /** The upcoming Monday (Pacific) — today when today IS Monday. The email's
  *  "Week of" anchor and the draft/sent-week stamp. */
 export function upcomingMondayISO(today: string = todayPacific()): string {
