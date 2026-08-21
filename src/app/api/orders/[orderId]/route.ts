@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types";
 import { sendOrderConfirmedEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { materializeDeliveryItems } from "@/lib/materialize-deliveries";
 
 /**
  * PATCH /api/orders/[orderId] — Update order status (admin only)
@@ -93,6 +94,22 @@ export async function PATCH(
     }
   }
 
+  // When status changes to 'fulfilled', write the financial paper trail.
+  // Marking an order fulfilled means it was (or will be) delivered, so the
+  // deliveries + delivery_items rows the finance reports read must exist —
+  // regardless of whether admin closed the day via the Send to Receiver bar
+  // (which also materializes) or this per-order button. Runs AFTER the
+  // quantity_fulfilled auto-fill above so shorted-line quantities are final.
+  // Idempotent and skips finalized deliveries, so double-running is safe.
+  let deliveryItemsCreated = 0;
+  if (status === "fulfilled") {
+    try {
+      deliveryItemsCreated = await materializeDeliveryItems(adminClient, order.delivery_date);
+    } catch (matErr) {
+      console.error("[orders PATCH] delivery materialization failed:", matErr);
+    }
+  }
+
   // When status changes to 'fulfilled', send confirmation email to the chef
   if (status === "fulfilled") {
     try {
@@ -169,7 +186,7 @@ export async function PATCH(
     detail: { status },
   });
 
-  return NextResponse.json({ data: order, error: null });
+  return NextResponse.json({ data: order, error: null, delivery_items_created: deliveryItemsCreated });
 }
 
 /**
