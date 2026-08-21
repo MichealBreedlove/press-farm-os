@@ -11,7 +11,7 @@ const VALID_UNITS = new Set(["ea", "sm", "lg", "lbs", "bu", "qt", "bx", "cs", "p
  * button auto-fills quantity_fulfilled the same way). Without that third
  * case, closing a day via Mark Fulfilled instead of Send to Receiver left
  * the whole date invisible to the finance system (Jul–Aug 2026 gap,
- * backfilled by migration 074).
+ * backfilled by migration 076).
  *
  * Shared by POST /api/orders/send-to-receiver and the fulfilled transition
  * of PATCH /api/orders/[orderId], so BOTH close-out paths write the

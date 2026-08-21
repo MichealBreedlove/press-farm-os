@@ -1,4 +1,4 @@
--- 074_backfill_missing_deliveries_jul_aug_2026.sql
+-- 076_backfill_missing_deliveries_jul_aug_2026.sql
 --
 -- DATA FIX: restore deliveries missing from the finance system, Jul 11 – Aug 20 2026.
 --
@@ -85,7 +85,7 @@ new_deliveries AS (
     delivery_date,
     restaurant_id,
     'logged',
-    'Backfilled from picked/fulfilled orders (migration 074) — day was closed via Mark Fulfilled, which skipped delivery logging'
+    'Backfilled from picked/fulfilled orders (migration 076) — day was closed via Mark Fulfilled, which skipped delivery logging'
   FROM priced
   RETURNING id, delivery_date, restaurant_id
 )
@@ -109,10 +109,10 @@ COMMIT;
 --   SELECT d.delivery_date, r.name, d.total_value,
 --          (SELECT count(*) FROM delivery_items di WHERE di.delivery_id = d.id) AS lines
 --   FROM deliveries d JOIN restaurants r ON r.id = d.restaurant_id
---   WHERE d.notes LIKE 'Backfilled from picked/fulfilled orders (migration 074)%'
+--   WHERE d.notes LIKE 'Backfilled from picked/fulfilled orders (migration 076)%'
 --   ORDER BY d.delivery_date;
 --
 -- Rollback (only if something looks wrong — deletes ONLY backfilled rows;
 -- delivery_items cascade):
 --   DELETE FROM deliveries
---   WHERE notes LIKE 'Backfilled from picked/fulfilled orders (migration 074)%';
+--   WHERE notes LIKE 'Backfilled from picked/fulfilled orders (migration 076)%';
