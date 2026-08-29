@@ -90,7 +90,10 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
     const out: RestaurantBlock[] = [];
 
     for (const r of restaurants) {
-      const order = orders.find((o: any) => o.restaurant_id === r.id);
+      // ALL orders for this restaurant — the Events pseudo-restaurant may
+      // place several orders per date (one per event, migration 070); every
+      // other restaurant is capped at one by the partial unique index.
+      const rOrders = orders.filter((o: any) => o.restaurant_id === r.id);
       const delivery = deliveries.find((d: any) => d.restaurant_id === r.id);
       const lines = new Map<string, Line>();
 
@@ -104,8 +107,9 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         variety: string | null,
       ) => `${itemId}__${unit}__${size ?? ""}__${color ?? ""}__${variety ?? ""}`;
 
-      // Pass 1 — record every ordered item
-      for (const oi of order?.order_items ?? []) {
+      // Pass 1 — record every ordered item, across every order this
+      // restaurant placed for the date.
+      for (const oi of rOrders.flatMap((o: any) => o.order_items ?? [])) {
         const item = oi.availability_items?.items;
         if (!item) continue;
         // Prefer the chef's chosen unit; fall back to the item's first
@@ -116,7 +120,10 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         const sizeLabel: string | null = oi.size_label ?? null;
         const colorKey: string | null = oi.color_key ?? null;
         const varietyKey: string | null = oi.variety_key ?? null;
-        const key = buildKey(item.id, unit, sizeLabel, colorKey, varietyKey);
+        let key = buildKey(item.id, unit, sizeLabel, colorKey, varietyKey);
+        // Two orders (Events) can carry an identical line — keep both rows
+        // instead of letting the second overwrite the first.
+        if (lines.has(key)) key = `${key}__${oi.id}`;
         const ordered = Number(oi.quantity_requested ?? 0);
         const isShortedFlag = Boolean(oi.is_shorted);
         const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
@@ -248,10 +255,15 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
         return a.itemName.localeCompare(b.itemName);
       });
 
+      const notes = rOrders
+        .map((o: any) => (o.freeform_notes ?? "").trim())
+        .filter(Boolean)
+        .join(" · ");
+
       out.push({
         id: r.id,
         name: r.name,
-        freeformNotes: order?.freeform_notes ?? null,
+        freeformNotes: notes || null,
         lines: allLines,
         hasDelivery: Boolean(delivery),
         deliveryId: delivery?.id ?? null,

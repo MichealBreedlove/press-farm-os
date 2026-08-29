@@ -9,6 +9,7 @@ import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
+import { resolveUnits } from "@/lib/order-availability";
 import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
 import { buildOrderKey } from "@/lib/order-keys";
 import type { AvailabilityItemWithItem } from "@/types";
@@ -85,7 +86,7 @@ export default async function OrderPage({
         id, delivery_date, freeform_notes, status,
         order_items(
           quantity_requested, unit_type, size_label, color_key, variety_key, menu_section,
-          availability_items(id, item:items(unit_type))
+          availability_items(id, available_units, item:items(unit_type))
         )
       `)
       .eq("id", editOrderId)
@@ -106,9 +107,18 @@ export default async function OrderPage({
         const ai = oi.availability_items;
         const aiId = ai?.id;
         if (!aiId) continue;
-        const itemUnits = String(ai.item?.unit_type ?? "")
-          .split(",").map((u: string) => u.trim()).filter(Boolean);
-        const hasMultiUnits = itemUnits.length > 1;
+        // Multi-unit is decided from the RESOLVED (availability-overridden)
+        // unit list — the same rule OrderForm.enumerateKeys() applies. Using
+        // the raw item.unit_type here diverges whenever a per-cycle
+        // available_units override narrows a multi-unit item to one unit:
+        // the hydrated key would carry a `__unit:` segment the form never
+        // renders, the chef's existing lines would show up empty in the edit
+        // form, and resubmitting would silently drop them.
+        const hasMultiUnits =
+          resolveUnits(
+            { unit_type: String(ai.item?.unit_type ?? "") },
+            ai.available_units,
+          ).length > 1;
         const persistedUnit: string | null = oi.unit_type ?? null;
         const persistedSize: string | null = oi.size_label ?? null;
 

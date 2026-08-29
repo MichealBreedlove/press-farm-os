@@ -46,8 +46,11 @@ export interface ReceiverBlock {
  *     (delivered without an order line), and upgrades pending → ready/short
  *     when delivery is logged
  *
- * Excludes the legacy "Events" pseudo-restaurant; events are now an
- * is_event_item flag on items.
+ * Includes the Events pseudo-restaurant — it's a real ordering restaurant
+ * again (migrations 069/070: the events account places its own orders,
+ * possibly several per date), and excluding it made those orders invisible
+ * to receivers. Blocks with no lines are dropped at the end, so Events only
+ * appears in the email when it actually ordered.
  */
 export async function buildReceiverBlocks(delivery_date: string): Promise<ReceiverBlock[]> {
   const admin = createAdminClient();
@@ -55,7 +58,6 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
   const { data: restaurants } = await (admin as any)
     .from("restaurants")
     .select("id, name")
-    .not("name", "ilike", "%event%")
     .order("name");
 
   const { data: orders } = await (admin as any)
@@ -85,7 +87,9 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
     .eq("delivery_date", delivery_date);
 
   return (restaurants ?? []).map((r: any) => {
-    const order = (orders ?? []).find((o: any) => o.restaurant_id === r.id);
+    // ALL orders for this restaurant — Events may place one per event
+    // (migration 070); everyone else is capped at one by the unique index.
+    const rOrders = (orders ?? []).filter((o: any) => o.restaurant_id === r.id);
     const delivery = (deliveries ?? []).find((d: any) => d.restaurant_id === r.id);
 
     // Composite key: (item.id, unit, size, color, variety). Without this,
@@ -101,7 +105,7 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
 
     const linesByItem = new Map<string, ReceiverLine>();
 
-    for (const oi of order?.order_items ?? []) {
+    for (const oi of rOrders.flatMap((o: any) => o.order_items ?? [])) {
       const item = oi.availability_items?.items;
       if (!item) continue;
       const ordered = Number(oi.quantity_requested ?? 0);
@@ -121,7 +125,11 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       else if (fulfilled != null) status = "ready";
       else status = "pending";
 
-      linesByItem.set(lineKey(item.id, unit, sizeLabel, colorKey, varietyKey), {
+      // Two orders (Events) can carry an identical line — keep both rows
+      // instead of letting the second overwrite the first.
+      let key = lineKey(item.id, unit, sizeLabel, colorKey, varietyKey);
+      if (linesByItem.has(key)) key = `${key}__${oi.id}`;
+      linesByItem.set(key, {
         itemName: item.name,
         unit,
         sizeLabel: sizeLabel ?? undefined,
@@ -178,9 +186,14 @@ export async function buildReceiverBlocks(delivery_date: string): Promise<Receiv
       }
     }
 
+    const notes = rOrders
+      .map((o: any) => String(o.freeform_notes ?? "").trim())
+      .filter(Boolean)
+      .join(" · ");
+
     return {
       restaurantName: r.name,
-      freeformNotes: order?.freeform_notes ?? undefined,
+      freeformNotes: notes || undefined,
       lines: Array.from(linesByItem.values()),
     };
   }).filter((b: ReceiverBlock) => b.lines.length > 0);

@@ -58,14 +58,16 @@ export default async function ReceiverPage({ searchParams }: Props) {
     .lte("date", addDaysISO(todayPacific(), 7))
     .order("date", { ascending: true });
 
-  // Restaurants (excluding the legacy Events row — events are now a tag on items)
+  // All restaurants — including the Events pseudo-restaurant. Events came
+  // back as a real ordering restaurant (migrations 069/070: the events
+  // account places its own orders under it), so excluding it here made
+  // every Events order invisible to receiving. It's filtered below to only
+  // show when it actually has an order or delivery on the date, so quiet
+  // days don't render a permanently empty Events block.
   const { data: restaurants } = await (admin as any)
     .from("restaurants")
     .select("id, name")
-    .not("name", "ilike", "%event%")
     .order("name");
-
-  const restaurantList: { id: string; name: string }[] = restaurants ?? [];
 
   // Orders for selected date — need the order_items joined with availability_items → items.
   // Pull unit_type/size_label/color_key/variety_key so the dashboard can render
@@ -97,6 +99,15 @@ export default async function ReceiverPage({ searchParams }: Props) {
       )
     `)
     .eq("delivery_date", selected);
+
+  // Events block only appears when the events team actually ordered (or a
+  // delivery was logged) for this date.
+  const restaurantList: { id: string; name: string }[] = ((restaurants ?? []) as any[]).filter(
+    (r: any) =>
+      !/event/i.test(String(r.name ?? "")) ||
+      (orders ?? []).some((o: any) => o.restaurant_id === r.id) ||
+      (deliveries ?? []).some((d: any) => d.restaurant_id === r.id),
+  );
 
   // Most recent notify event for this date — drives the "last notified at"
   // caption under the editorial hero so receivers know whether the data
