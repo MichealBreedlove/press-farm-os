@@ -60,7 +60,6 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     { data: deliveryDates },
     { data: orders },
     { data: deliveries },
-    { data: availabilityRows },
     { data: notifyRows },
   ] = await Promise.all([
     (admin as any).from("delivery_dates")
@@ -72,12 +71,26 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     (admin as any).from("deliveries")
       .select("id, delivery_date, status, total_value")
       .gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
-    (admin as any).from("availability_items")
-      .select("delivery_date").gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
     (admin as any).from("receiver_notify_log")
       .select("delivery_date, sent_at")
       .gte("delivery_date", monthStart).lte("delivery_date", monthEnd),
   ]);
+
+  // "Published?" per delivery date via head-counts, one per date in the
+  // month (≤13 tiny parallel requests). The old month-wide row fetch
+  // (~1,170 rows per published date) blew past Supabase's silent
+  // 1,000-row cap, so later dates in the month lost their badge.
+  const publishedDates: string[] = (
+    await Promise.all(
+      ((deliveryDates ?? []) as any[]).map(async (d) => {
+        const { count } = await (admin as any)
+          .from("availability_items")
+          .select("id", { count: "exact", head: true })
+          .eq("delivery_date", d.date);
+        return (count ?? 0) > 0 ? (d.date as string) : null;
+      }),
+    )
+  ).filter((d): d is string => d !== null);
 
   // Aggregate per-date signals into a single map for the client
   type DayActivity = {
@@ -124,8 +137,8 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     day.deliveryCount++;
     day.deliveryTotal += Number(d.total_value ?? 0);
   }
-  for (const a of (availabilityRows ?? []) as any[]) {
-    ensure(a.delivery_date).availabilityPublished = true;
+  for (const date of publishedDates) {
+    ensure(date).availabilityPublished = true;
   }
   for (const n of (notifyRows ?? []) as any[]) ensure(n.delivery_date).notified = true;
 

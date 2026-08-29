@@ -24,7 +24,7 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — 272 tests across 32 files in top-level `tests/` |
+| Tests | Vitest — 279 tests across 33 files in top-level `tests/` |
 | Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
@@ -114,7 +114,7 @@ supabase/migrations/             # 001 → 077 (84 files; see table — 044/047/
 
 ## Database Migrations
 
-Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **84 migration files, numbered 001 → 077** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions); 072 (variety selection), 073 (harvester role), 074 (lemon verbena), 075 (weekly update log), and 076 + 077 (delivery backfill & top-up) applied via the Supabase MCP. **Next migration number is 078.** Read latest first when scoping work.
+Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060: `inbound_messages`, `inbox_task_drafts`), order accountability (058: `order_audit`), and farm tasks (062: `farm_tasks`). **85 migration files, numbered 001 → 078** — numbers **044, 047, and 062 are each used by two files, and 069 by three** that all shipped (historical collisions; don't "fix" them). 064 confirmed applied — the live security advisors are clean; 066 + 067 + 068 applied via the Supabase MCP; 069–071 shipped with their features (production value, event orders, substitutions); 072 (variety selection), 073 (harvester role), 074 (lemon verbena), 075 (weekly update log), 076 + 077 (delivery backfill & top-up), and 078 (Press availability restore) applied via the Supabase MCP. **Next migration number is 079.** Read latest first when scoping work.
 
 > **Prod/repo migration drift:** Supabase's *tracked* migration history doesn't mirror this repo — most repo migrations were run untracked via the SQL editor, and prod additionally contains MCP-applied migrations with no repo file (a `reporting` schema with cron + vault jobs, `farmer_pay_rates`, mustard-consolidation data fixes, and a `prevent_role_escalation` trigger on `profiles` (fixed 2026-07-20 to exempt service-role/no-JWT writes — it originally blocked the app's own admin API from setting roles)). Treat the repo files as the schema source of truth for `public`, but check prod before assuming a name is free.
 
@@ -202,6 +202,7 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 | 075 | weekly_update_log | `weekly_update_log` table — durable record of every chef-weekly-update send attempt (cron or manual, success/failure/skip), powering the watchdog cron |
 | 076 | backfill_missing_deliveries_jul_aug_2026 | DATA FIX — recreates 13 deliveries (61 lines, $4,122.50) for Jul 11 – Aug 20 dates closed via "Mark Fulfilled" (which never wrote the finance paper trail; code fix: shared `src/lib/materialize-deliveries.ts` now runs on BOTH close-out paths). Only touches (date, restaurant) pairs with NO deliveries row; re-run is a no-op; rollback = delete rows whose notes match 'Backfilled…(migration 076)'. Applied 2026-08-21 via the Supabase MCP |
 | 077 | top_up_underlogged_deliveries_jul_aug_2026 | DATA FIX (companion to 076) — fills `quantity_fulfilled`, closes the window's in_progress orders, and tops up 13 hand-logged deliveries with 69 order lines ($2,548.70) missing from `delivery_items`. Overlap guard: skips any item+unit the delivery already holds (hand logs used different size labels / variety items for the same goods, e.g. 8/8 tomatoes). Touched deliveries carry a '(migration 077)' notes marker. Applied 2026-08-21 via the Supabase MCP |
+| 078 | restore_press_availability_2026_08_29 | DATA FIX — restores 25 Press availability rows for 2026-08-29 that the editor's truncated fetch clobbered to unavailable (Supabase's silent 1,000-row cap on the date-wide select; 4 restaurants × 293 items = 1,172 rows). Restored from Press's 08-27 statuses (else Under-Study's 08-29) only where Under-Study is orderable. Code fix: `src/lib/fetch-all.ts` paginates the editor/list/calendar reads. Applied 2026-08-29 via the Supabase MCP |
 
 ## Auth Model
 
@@ -271,7 +272,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Push to `origin/main` triggers Vercel deploy. No PRs — push when work is solid.
 
 **Migrations**
-- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **078**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers. Check `ls supabase/migrations/ | tail` before numbering — CLAUDE.md's "next" note can lag sessions that shipped in parallel.)
+- Numbered sequentially in `supabase/migrations/NNN_description.sql`. Next is **079**. (044/047/062 each collide across two files and 069 across three — don't add to those numbers. Check `ls supabase/migrations/ | tail` before numbering — CLAUDE.md's "next" note can lag sessions that shipped in parallel.)
 - The user does NOT have `supabase` CLI linked. Apply migrations via the Supabase MCP (`apply_migration`, project `rxdfjaseilmjvcwamqyk`) when it's available in the session; otherwise present the SQL to Micheal — he runs it in the web SQL editor at `https://supabase.com/dashboard/project/rxdfjaseilmjvcwamqyk/sql/new`.
 - Schema-dependent SELECTs will fail page loads with "column does not exist" until the migration runs. Either ship migration + code together OR ship code first without referencing the new column and re-enable after Micheal confirms the migration ran. **We've been bitten by this twice — be careful.**
 - **Expected advisor noise:** Supabase's `unindexed_foreign_keys` linter will flag ~15 FK columns on `event_requests`, `farm_expenses`, `farm_notes`, `labor_entries`, `plantings`, `price_history`, `receiver_notify_log`, `restaurant_users`, `restaurants`, `suggestions`, `crop_plan_entries`. These indexes were intentionally dropped in migration 044 — the tables are single-tenant or tiny (≤549 rows) so the planner prefers seq scans. **Don't re-add them without checking row counts first.** Rollback statements are commented at the bottom of `044_drop_unused_indexes.sql` if a regression appears.

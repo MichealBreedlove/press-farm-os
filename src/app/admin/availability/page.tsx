@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/fetch-all";
 import type { DeliveryDate } from "@/types";
 import { AddDatesButton } from "./AddDatesButton";
 import { todayPacific } from "@/lib/utils";
@@ -45,11 +46,18 @@ export default async function AdminAvailabilityPage() {
   const availabilityCountsByDate: Record<string, number> = {};
 
   if (dateStrings.length > 0) {
-    const { data: availCounts } = await supabase
-      .from("availability_items")
-      .select("delivery_date, item_id, status")
-      .in("delivery_date", dateStrings)
-      .eq("status", "available");
+    // Paginated: 12 dates × ~120 available rows each clears the silent
+    // 1,000-row response cap, which would zero out the later dates' badges.
+    const { data: availCounts } = await fetchAllRows(
+      (from, to) =>
+        supabase
+          .from("availability_items")
+          .select("delivery_date, item_id, status")
+          .in("delivery_date", dateStrings)
+          .eq("status", "available")
+          .order("id", { ascending: true })
+          .range(from, to),
+    );
 
     if (availCounts) {
       // Deduplicate by item_id per date to avoid double-counting across restaurants

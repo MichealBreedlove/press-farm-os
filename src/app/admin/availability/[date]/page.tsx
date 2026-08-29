@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
 import { SendAvailabilityButton } from "../SendAvailabilityButton";
 import type { Item, Restaurant, AvailabilityItem } from "@/types";
@@ -74,11 +75,21 @@ export default async function AdminAvailabilityEditorPage({
     console.error("Error fetching restaurants:", restaurantsError);
   }
 
-  // Fetch existing availability_items for this date across all restaurants
-  const { data: rawAvailability, error: availError } = await supabase
-    .from("availability_items")
-    .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
-    .eq("delivery_date", date);
+  // Fetch existing availability_items for this date across all restaurants.
+  // MUST be paginated: a fully published date carries ~1,170 rows (every
+  // catalog item × 4 restaurants), past Supabase's silent 1,000-row cap.
+  // A truncated read here is what the editor SAVES BACK — missing rows
+  // seed "unavailable" and one Save wipes them for real (2026-08-28
+  // incident: Press went out with 7 orderable items instead of 29).
+  const { data: rawAvailability, error: availError } = await fetchAllRows(
+    (from, to) =>
+      supabase
+        .from("availability_items")
+        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
+        .eq("delivery_date", date)
+        .order("id", { ascending: true })
+        .range(from, to),
+  );
   let availability: AvailabilityItem[] = rawAvailability ?? [];
   let inheritedFromDate: string | null = null;
 
