@@ -63,8 +63,9 @@ export async function POST(request: Request) {
 
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
   if (!VALID_CATEGORIES.includes(category as any)) return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-  // unit_type may be a comma-separated list of one or more valid units (e.g. "sm,lg")
-  const unitParts = (unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
+  // unit_type may be a comma-separated list of one or more valid units
+  // (e.g. "sm,lg"). Lowercased — unit codes are canonically lowercase.
+  const unitParts = (unit_type ?? "").split(",").map((u: string) => u.trim().toLowerCase()).filter(Boolean);
   if (unitParts.length === 0 || unitParts.some((u: string) => !VALID_UNITS.includes(u as any))) {
     return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
   }
@@ -78,11 +79,16 @@ export async function POST(request: Request) {
     cleanedDefaultPrice = n;
   }
 
-  // Sanitize unit_prices: only keep numeric entries for currently-selected units
+  // Sanitize unit_prices: only keep numeric entries for currently-selected
+  // units, matching keys case-insensitively.
   const cleanedUnitPrices: Record<string, number> = {};
   if (unit_prices && typeof unit_prices === "object") {
+    const pricesByCode: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(unit_prices as Record<string, unknown>)) {
+      pricesByCode[k.trim().toLowerCase()] = v;
+    }
     for (const u of unitParts) {
-      const v = (unit_prices as any)[u];
+      const v = pricesByCode[u];
       if (typeof v === "number" && Number.isFinite(v) && v >= 0) cleanedUnitPrices[u] = v;
     }
   }

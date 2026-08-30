@@ -56,8 +56,10 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     updates.category = body.category;
   }
   if (body.unit_type !== undefined) {
-    // Accept comma-separated list of one or more valid units (e.g. "sm,lg")
-    const parts = String(body.unit_type ?? "").split(",").map((u: string) => u.trim()).filter(Boolean);
+    // Accept comma-separated list of one or more valid units (e.g. "sm,lg").
+    // Lowercase before validating — legacy rows stored "EA" and the
+    // case-sensitive check made those items unsavable.
+    const parts = String(body.unit_type ?? "").split(",").map((u: string) => u.trim().toLowerCase()).filter(Boolean);
     if (parts.length === 0 || parts.some((u: string) => !VALID_UNITS.includes(u as any))) {
       return NextResponse.json({ error: "Invalid unit_type" }, { status: 400 });
     }
@@ -80,7 +82,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     const cleaned: Record<string, number> = {};
     if (body.unit_prices && typeof body.unit_prices === "object") {
       // Only keep numeric, non-negative entries; drop any unit codes outside VALID_UNITS
-      for (const [k, v] of Object.entries(body.unit_prices as Record<string, unknown>)) {
+      for (const [rawKey, v] of Object.entries(body.unit_prices as Record<string, unknown>)) {
+        const k = rawKey.trim().toLowerCase();
         if (!VALID_UNITS.includes(k as any)) continue;
         const n = typeof v === "number" ? v : parseFloat(String(v));
         if (Number.isFinite(n) && n >= 0) cleaned[k] = n;
