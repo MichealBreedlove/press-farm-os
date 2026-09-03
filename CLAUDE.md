@@ -281,6 +281,7 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - Always `npm run build` before committing — auto-deploy means a broken push goes straight to prod.
 - The build **enforces** TypeScript and ESLint (`next.config.js` no longer ignores either). A type or lint *error* fails the build by design; warnings (e.g. `<img>` usage) don't. `tsc --noEmit`, `next lint`, and `vitest run` should all be clean before pushing.
 - TypeScript strict; `(supabase as any)` casts are acceptable where `database.ts` doesn't yet cover a table (~16 tables uncovered). Note: `next build` validates route files — `app/api/**/route.ts` may only export HTTP handlers + recognized route config, never helper functions.
+- **Never write-then-refetch with the same query inside one server-component render.** React memoizes identical `fetch` GETs (same URL + headers) for the whole render, and supabase-js selects are GETs — the "refetch" replays the pre-write result without touching the network. This is what shipped prior-date availability ids to chefs on every first load of a rolled-over date (2026-09-03; `materializeRollover` now returns the target-date rows instead). Use the write's returned rows, or a query the render hasn't issued yet.
 
 ## Source Data (legacy import targets)
 

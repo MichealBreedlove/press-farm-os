@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
+import { fetchAvailabilityWithRollover, materializeRollover, remapInheritedRows } from "@/lib/availability";
 import { makeSupabaseMock } from "../helpers/supabase-mock";
 
 /**
@@ -167,5 +167,75 @@ describe("materializeRollover", () => {
     expect(rows).toHaveLength(1);
     // Existing row untouched — ignoreDuplicates, not last-write-wins.
     expect(rows[0].status).toBe("unavailable");
+  });
+});
+
+/**
+ * Regression suite for the 2026-09-03 first-load failure: the order page
+ * materialized the rolled-over rows, then "refetched" — but React memoizes
+ * identical GETs within a server render, so the refetch replayed the
+ * pre-insert result and the form shipped the PRIOR date's ids. Submit then
+ * rejected every line ("the availability list changed"). The fix: the
+ * materializer hands back rows already carrying the target date's ids.
+ */
+describe("materializeRollover return value", () => {
+  it("returns the source rows rewritten with the target date's real ids", async () => {
+    const supabase = makeSupabaseMock({ availability_items: [] });
+    const source = [
+      availRow({ id: "old-1", item_id: "item-1", _inheritedFrom: "2026-06-08" }),
+      availRow({ id: "old-2", item_id: "item-2", _inheritedFrom: "2026-06-08" }),
+    ];
+    const out = await materializeRollover(supabase, source, "2026-06-11");
+    const written = supabase._data.availability_items;
+    expect(out).toHaveLength(2);
+    for (const row of out) {
+      const real = written.find((w: any) => w.item_id === row.item_id);
+      expect(real).toBeDefined();
+      expect(row.id).toBe(real!.id);
+      expect(row.id).not.toMatch(/^old-/);
+      expect(row.delivery_date).toBe("2026-06-11");
+      expect((row as any)._inheritedFrom).toBeUndefined();
+      // Everything else (joined item, per-cycle overrides) survives.
+      expect(row.item).toEqual({ is_archived: false });
+    }
+  });
+
+  it("maps onto rows another request already created (concurrent first loads)", async () => {
+    const supabase = makeSupabaseMock({
+      availability_items: [
+        availRow({ id: "already-there", item_id: "item-1", delivery_date: "2026-06-11", status: "limited" }),
+      ],
+    });
+    const out = await materializeRollover(
+      supabase,
+      [availRow({ id: "old-1", item_id: "item-1", status: "available" })],
+      "2026-06-11",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe("already-there");
+  });
+
+  it("returns nothing for archived-only input", async () => {
+    const supabase = makeSupabaseMock({ availability_items: [] });
+    const out = await materializeRollover(
+      supabase,
+      [availRow({ item_id: "gone", item: { is_archived: true } })],
+      "2026-06-11",
+    );
+    expect(out).toEqual([]);
+  });
+});
+
+describe("remapInheritedRows", () => {
+  it("swaps ids by item_id and drops rows with no target counterpart", () => {
+    const out = remapInheritedRows(
+      [
+        { id: "old-a", item_id: "a", delivery_date: "2026-06-08", _inheritedFrom: "2026-06-08" } as any,
+        { id: "old-b", item_id: "b", delivery_date: "2026-06-08" } as any,
+      ],
+      [{ id: "new-a", item_id: "a" }],
+      "2026-06-11",
+    );
+    expect(out).toEqual([{ id: "new-a", item_id: "a", delivery_date: "2026-06-11" }]);
   });
 });

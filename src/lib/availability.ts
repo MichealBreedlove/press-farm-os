@@ -128,6 +128,32 @@ export async function fetchAvailabilityWithRollover(
 }
 
 /**
+ * Rewrite inherited (prior-date) rows so they carry the TARGET date's row
+ * ids. `targetRows` are the real rows for the target date (from an admin
+ * select after materializing); matching is by item_id, which is what the
+ * (item_id, restaurant_id, delivery_date) unique key pins down. Rows with no
+ * target counterpart are dropped — the submit endpoint would reject their
+ * stale id anyway.
+ *
+ * Pure so it can be unit-tested; materializeRollover applies it.
+ */
+export function remapInheritedRows<T extends { item_id: string }>(
+  sourceRows: T[],
+  targetRows: { id: string; item_id: string }[],
+  targetDeliveryDate: string,
+): T[] {
+  const idByItem = new Map(targetRows.map((r) => [r.item_id, r.id]));
+  const out: T[] = [];
+  for (const row of sourceRows) {
+    const id = idByItem.get(row.item_id);
+    if (!id) continue;
+    const { _inheritedFrom: _drop, ...rest } = row as any;
+    out.push({ ...rest, id, delivery_date: targetDeliveryDate } as T);
+  }
+  return out;
+}
+
+/**
  * Materialize rolled-over availability into real DB rows for the target
  * date. Required before chefs can submit orders against rolled-over
  * availability — the submit endpoint validates each line by ID against
@@ -136,23 +162,37 @@ export async function fetchAvailabilityWithRollover(
  *
  * Idempotent — uses the (item_id, restaurant_id, delivery_date) unique
  * constraint to ignore duplicates if another concurrent request already
- * created the rows. Caller should re-fetch availability after this so
- * the IDs reflect the new rows.
+ * created the rows.
+ *
+ * RETURNS the source rows rewritten with the target date's real ids
+ * (see remapInheritedRows). Callers must render THESE rows — do NOT
+ * re-run fetchAvailabilityWithRollover afterwards. React memoizes
+ * identical GET requests for the lifetime of a server-component render,
+ * so a second, byte-identical Supabase select in the same render never
+ * hits the network: it replays the pre-insert (empty) result, the
+ * rollover branch replays too, and the form ships with the PRIOR date's
+ * ids. That is exactly what happened on 2026-09-03 01:04 PT — the
+ * Supabase API log shows the four rollover reads, the upsert, and then
+ * no refetch at all — and every first-load submit for a rolled-over date
+ * failed with "the availability list changed" until the chef reloaded.
+ * The id lookup below goes through the admin client (different auth
+ * header → different memo key) and is a query shape this render has not
+ * issued before, so it is served fresh.
  *
  * Must be called with an admin client (bypasses RLS — chef sessions
  * can't write availability_items).
  */
-export async function materializeRollover(
+export async function materializeRollover<T extends { item_id: string; item?: any }>(
   adminClient: any,
-  sourceRows: any[],
+  sourceRows: T[],
   targetDeliveryDate: string,
-): Promise<void> {
+): Promise<T[]> {
   // Never materialize archived items — they can't be ordered or displayed,
   // and once written they propagate to every later date via rollover.
   sourceRows = sourceRows.filter((r) => !r.item?.is_archived);
-  if (sourceRows.length === 0) return;
+  if (sourceRows.length === 0) return [];
 
-  const rowsToInsert = sourceRows.map((r) => ({
+  const rowsToInsert = sourceRows.map((r: any) => ({
     item_id: r.item_id,
     restaurant_id: r.restaurant_id,
     delivery_date: targetDeliveryDate,
@@ -174,5 +214,26 @@ export async function materializeRollover(
 
   if (error) {
     console.error("[availability] materializeRollover failed:", error);
+    // Nothing was written, so there are no target-date ids to hand back.
+    // Returning the inherited rows would put prior-date ids on the form and
+    // guarantee a failed submit; an empty list at least fails visibly.
+    return [];
   }
+
+  // ON CONFLICT DO NOTHING only returns the rows it inserted, so read the
+  // full target-date set back to pick up ids that already existed.
+  const restaurantId = (sourceRows[0] as any).restaurant_id;
+  const { data: targetRows, error: readError } = await adminClient
+    .from("availability_items")
+    .select("id, item_id")
+    .eq("restaurant_id", restaurantId)
+    .eq("delivery_date", targetDeliveryDate)
+    .in("item_id", sourceRows.map((r) => r.item_id));
+
+  if (readError) {
+    console.error("[availability] materializeRollover id read failed:", readError);
+    return [];
+  }
+
+  return remapInheritedRows(sourceRows, targetRows ?? [], targetDeliveryDate);
 }

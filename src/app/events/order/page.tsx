@@ -85,15 +85,11 @@ export default async function EventOrderPage({
       hideUnavailable: true,
     });
 
+    // Render the rows materializeRollover returns (target-date ids). A
+    // refetch here would be served from React's per-render fetch memo and
+    // replay the prior-date ids — see materializeRollover's doc comment.
     if (isInherited && (rawItems ?? []).length > 0) {
-      await materializeRollover(createAdminClient(), rawItems!, selectedDeliveryDate);
-      const refetched = await fetchAvailabilityWithRollover(supabase, {
-        deliveryDate: selectedDeliveryDate,
-        restaurantId: restaurant.id,
-        withItem: true,
-        hideUnavailable: true,
-      });
-      rawItems = refetched.data;
+      rawItems = await materializeRollover(createAdminClient(), rawItems!, selectedDeliveryDate);
     }
 
     availabilityItems = (rawItems ?? []).filter(

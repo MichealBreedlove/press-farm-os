@@ -215,19 +215,17 @@ export default async function OrderPage({
   // Materialize rolled-over rows into real DB rows for THIS date so the
   // submit endpoint's per-line validation (which queries by exact
   // delivery_date) accepts them. Otherwise the chef sees the items in
-  // the form but Submit fails with "One or more items are not available
-  // for this restaurant/date" — the IDs were for the prior date.
+  // the form but Submit fails with "the availability list changed" — the
+  // IDs were for the prior date.
+  //
+  // Render the rows materializeRollover hands back (already carrying the
+  // target-date ids). Do NOT re-run fetchAvailabilityWithRollover here:
+  // React memoizes identical GETs within one server render, so the
+  // "refetch" replayed the pre-insert result and shipped prior-date ids
+  // (2026-09-03 incident — see materializeRollover's doc comment).
   if (isInherited && (rawItems ?? []).length > 0) {
     const adminForMaterialize = createAdminClient();
-    await materializeRollover(adminForMaterialize, rawItems!, deliveryDate.date);
-    // Re-fetch — should now hit the direct path with target-date IDs.
-    const refetched = await fetchAvailabilityWithRollover(supabase, {
-      deliveryDate: deliveryDate.date,
-      restaurantId: restaurant.id,
-      withItem: true,
-      hideUnavailable: true,
-    });
-    rawItems = refetched.data;
+    rawItems = await materializeRollover(adminForMaterialize, rawItems!, deliveryDate.date);
   }
 
   const availabilityItems: AvailabilityItemWithItem[] = (rawItems ?? []).filter(

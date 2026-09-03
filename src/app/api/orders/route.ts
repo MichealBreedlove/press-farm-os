@@ -4,7 +4,7 @@ import { requireAdmin, requireUser } from "@/lib/api-auth";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
-import { planOrderItemMerge } from "@/lib/orders";
+import { planOrderItemMerge, resolveStaleAvailabilityIds } from "@/lib/orders";
 import { minOrderableDatePacific, ORDER_CUTOFF_HOUR_PACIFIC, FARM_TIMEZONE } from "@/lib/utils";
 
 /**
@@ -234,51 +234,88 @@ export async function POST(request: Request) {
   // Validate only the lines we'll actually persist (qty>0). Building this from
   // the raw items would let a stray zero-quantity line referencing a
   // now-unavailable item fail the whole submission with "no longer available".
-  const submittedIds = orderedInput.map((i: any) => i.availability_item_id);
-  const { data: availItems } = await (supabase.from("availability_items") as any)
-    .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
-    .eq("restaurant_id", restaurant_id)
-    .eq("delivery_date", delivery_date)
-    .neq("status", "unavailable")
-    .in("id", submittedIds);
-
-  const validIdSet = new Set((availItems ?? []).map((a: any) => a.id));
-  const tamperedIds = submittedIds.filter((id: string) => !validIdSet.has(id));
-  if (tamperedIds.length > 0) {
-    // Most often this is a STALE cart, not tampering: the chef loaded the
-    // form, the admin republished availability (changing/removing rows),
-    // and the cart's availability IDs no longer match this date. Tell the
-    // chef how to recover instead of leaving them stuck (2026-06-10 incident).
-    //
-    // Best case the rows still exist but were flipped to unavailable mid-
-    // session — then name the exact items so the chef removes just those
-    // instead of rebuilding the whole order.
-    const { data: unavailRows } = await (supabase.from("availability_items") as any)
-      .select("id, item:items(name)")
+  const fetchAvailForIds = (ids: string[]) =>
+    (supabase.from("availability_items") as any)
+      .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
       .eq("restaurant_id", restaurant_id)
       .eq("delivery_date", delivery_date)
-      .eq("status", "unavailable")
-      .in("id", tamperedIds);
-    const unavailableNames: string[] = (unavailRows ?? [])
-      .map((r: any) => r.item?.name)
-      .filter(Boolean);
-    if (unavailableNames.length === tamperedIds.length) {
+      .neq("status", "unavailable")
+      .in("id", ids);
+
+  let submittedIds: string[] = orderedInput.map((i: any) => i.availability_item_id);
+  let { data: availItems } = await fetchAvailForIds(submittedIds);
+
+  let validIdSet = new Set((availItems ?? []).map((a: any) => a.id));
+  let tamperedIds = submittedIds.filter((id: string) => !validIdSet.has(id));
+  if (tamperedIds.length > 0) {
+    // Almost always a STALE cart, not tampering: the form was rendered from
+    // a prior date's rows (rollover before materialization — the 2026-09-03
+    // first-load failure), the admin republished, or a tab sat open across a
+    // cycle. The ITEM the chef picked is still known via the stale row's
+    // item_id, so map each stale id onto this date's row for the same item
+    // and only bounce lines whose item is genuinely gone or turned
+    // unavailable. RLS scopes both reads to the chef's own restaurant.
+    const [{ data: staleRows }, { data: currentRows }] = await Promise.all([
+      (supabase.from("availability_items") as any)
+        .select("id, item_id")
+        .eq("restaurant_id", restaurant_id)
+        .in("id", tamperedIds),
+      (supabase.from("availability_items") as any)
+        .select("id, item_id, status, item:items(name)")
+        .eq("restaurant_id", restaurant_id)
+        .eq("delivery_date", delivery_date),
+    ]);
+    const resolution = resolveStaleAvailabilityIds(tamperedIds, staleRows ?? [], currentRows ?? []);
+
+    if (resolution.unresolved.length === 0 && resolution.unavailableNames.length === 0) {
+      // Every stale id maps to an orderable row for this date — rewrite the
+      // lines in place and validate again against the real ids.
+      for (const line of items) {
+        const mapped = resolution.remap.get(line.availability_item_id);
+        if (mapped) line.availability_item_id = mapped;
+      }
+      submittedIds = orderedInput.map((i: any) => i.availability_item_id);
+      ({ data: availItems } = await fetchAvailForIds(submittedIds));
+      validIdSet = new Set((availItems ?? []).map((a: any) => a.id));
+      tamperedIds = submittedIds.filter((id: string) => !validIdSet.has(id));
+    }
+
+    if (tamperedIds.length > 0) {
+      // Rows exist for this date but were flipped to unavailable (directly,
+      // or via the stale id's item) — name them so the chef removes just
+      // those instead of rebuilding the whole order.
+      const { data: unavailRows } = await (supabase.from("availability_items") as any)
+        .select("id, item:items(name)")
+        .eq("restaurant_id", restaurant_id)
+        .eq("delivery_date", delivery_date)
+        .eq("status", "unavailable")
+        .in("id", tamperedIds);
+      const unavailableNames: string[] = Array.from(
+        new Set<string>([
+          ...(unavailRows ?? []).map((r: any) => r.item?.name).filter(Boolean),
+          ...resolution.unavailableNames,
+        ]),
+      );
+      const directUnavailable = (unavailRows ?? []).length;
+      const accountedFor = directUnavailable + resolution.unavailableNames.length;
+      if (unavailableNames.length > 0 && accountedFor === tamperedIds.length) {
+        return NextResponse.json(
+          {
+            error: `No longer available for this delivery: ${unavailableNames.join(", ")}. Go back, remove ${
+              unavailableNames.length === 1 ? "that item" : "those items"
+            }, and resubmit — the rest of your order is fine.`,
+          },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         {
-          error: `No longer available for this delivery: ${unavailableNames.join(", ")}. Go back, remove ${
-            unavailableNames.length === 1 ? "that item" : "those items"
-          }, and resubmit — the rest of your order is fine.`,
+          error:
+            "The availability list changed since you loaded the order form, so some items in your cart are no longer valid. Please go back to the order page, refresh, and re-add your items.",
         },
         { status: 400 },
       );
     }
-    return NextResponse.json(
-      {
-        error:
-          "The availability list changed since you loaded the order form, so some items in your cart are no longer valid. Please go back to the order page, refresh, and re-add your items.",
-      },
-      { status: 400 },
-    );
   }
 
   // Per-availability info we need for line construction: per-unit price map,

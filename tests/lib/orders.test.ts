@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { orderLineKey, planOrderItemMerge, type ExistingOrderLine } from "@/lib/orders";
+import {
+  orderLineKey,
+  planOrderItemMerge,
+  resolveStaleAvailabilityIds,
+  type ExistingOrderLine,
+} from "@/lib/orders";
 
 /**
  * Order-line merge decides whether a re-submitted line bumps an existing line's
@@ -99,5 +104,52 @@ describe("planOrderItemMerge", () => {
     const { toInsert, toUpdate } = planOrderItemMerge(existing, incoming);
     expect(toUpdate).toEqual([]);
     expect(toInsert).toEqual(incoming);
+  });
+});
+
+/**
+ * Submit-time recovery for carts holding availability ids from another
+ * date (rollover-before-materialize, admin republish, stale tab). The row
+ * behind a stale id still names its item, so the line can be re-pointed at
+ * this date's row for the same item instead of failing the whole order.
+ */
+describe("resolveStaleAvailabilityIds", () => {
+  const stale = [
+    { id: "old-sorrel", item_id: "sorrel" },
+    { id: "old-mint", item_id: "mint" },
+    { id: "old-basil", item_id: "basil" },
+  ];
+  const current = [
+    { id: "new-sorrel", item_id: "sorrel", status: "available", item: { name: "Sorrel" } },
+    { id: "new-mint", item_id: "mint", status: "limited", item: { name: "Mint" } },
+    { id: "new-basil", item_id: "basil", status: "unavailable", item: { name: "Greek Basil" } },
+  ];
+
+  it("maps stale ids onto the current date's rows for the same item", () => {
+    const r = resolveStaleAvailabilityIds(["old-sorrel", "old-mint"], stale, current);
+    expect(Array.from(r.remap.entries())).toEqual([
+      ["old-sorrel", "new-sorrel"],
+      ["old-mint", "new-mint"],
+    ]);
+    expect(r.unavailableNames).toEqual([]);
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it("names items whose current row is unavailable instead of remapping them", () => {
+    const r = resolveStaleAvailabilityIds(["old-sorrel", "old-basil"], stale, current);
+    expect(r.remap.get("old-sorrel")).toBe("new-sorrel");
+    expect(r.remap.has("old-basil")).toBe(false);
+    expect(r.unavailableNames).toEqual(["Greek Basil"]);
+    expect(r.unresolved).toEqual([]);
+  });
+
+  it("reports ids it cannot place: unknown row, or item with no row for the date", () => {
+    const r = resolveStaleAvailabilityIds(
+      ["ghost", "old-carrot"],
+      [...stale, { id: "old-carrot", item_id: "carrot" }],
+      current,
+    );
+    expect(r.remap.size).toBe(0);
+    expect(r.unresolved).toEqual(["ghost", "old-carrot"]);
   });
 });

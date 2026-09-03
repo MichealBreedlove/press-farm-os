@@ -73,3 +73,72 @@ export function planOrderItemMerge<T extends MergeableLine>(
 
   return { toInsert, toUpdate };
 }
+
+/**
+ * Stale availability-id recovery for order submission.
+ *
+ * A chef's cart can carry availability ids that no longer match the delivery
+ * date being submitted: the form was rendered from a prior date's rows
+ * (rollover before materialization), the admin republished the date, or a
+ * tab sat open across a cycle. The ITEM the chef picked is still knowable —
+ * every availability row names its item_id — so rather than bouncing the
+ * whole order, map each stale id to the current date's row for the same
+ * item, and only refuse the lines whose item is genuinely gone or turned
+ * unavailable.
+ *
+ * `staleRows` are the rows behind the ids that failed validation (any date,
+ * same restaurant — RLS already scopes the chef's read). `currentRows` are
+ * this restaurant's rows for the delivery date being submitted, all
+ * statuses.
+ */
+export interface StaleAvailabilityRow {
+  id: string;
+  item_id: string;
+}
+
+export interface CurrentAvailabilityRow {
+  id: string;
+  item_id: string;
+  status: string;
+  item?: { name?: string | null } | null;
+}
+
+export interface StaleIdResolution {
+  /** stale id → current-date id, for ids whose item is orderable today */
+  remap: Map<string, string>;
+  /** Names of items that exist for the date but are marked unavailable */
+  unavailableNames: string[];
+  /** Ids that could not be resolved at all (unknown row, or item has no row for the date) */
+  unresolved: string[];
+}
+
+export function resolveStaleAvailabilityIds(
+  staleIds: string[],
+  staleRows: StaleAvailabilityRow[],
+  currentRows: CurrentAvailabilityRow[],
+): StaleIdResolution {
+  const itemByStaleId = new Map(staleRows.map((r) => [r.id, r.item_id]));
+  const currentByItem = new Map(currentRows.map((r) => [r.item_id, r]));
+
+  const remap = new Map<string, string>();
+  const unavailableNames: string[] = [];
+  const unresolved: string[] = [];
+
+  for (const staleId of staleIds) {
+    const itemId = itemByStaleId.get(staleId);
+    const current = itemId ? currentByItem.get(itemId) : undefined;
+    if (!current) {
+      unresolved.push(staleId);
+      continue;
+    }
+    if (current.status === "unavailable") {
+      const name = current.item?.name;
+      if (name) unavailableNames.push(name);
+      else unresolved.push(staleId);
+      continue;
+    }
+    remap.set(staleId, current.id);
+  }
+
+  return { remap, unavailableNames, unresolved };
+}
