@@ -106,8 +106,13 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   async function handleDelete(id: string) {
     if (!confirm("Delete this expense?")) return;
     setDeleting(id);
+    setError(null);
     try {
-      await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Failed to delete");
+      }
       startTransition(() => router.refresh());
     } catch (err: any) {
       setError(err.message);

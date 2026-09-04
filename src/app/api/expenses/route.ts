@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { validateExpenseInput } from "@/lib/expenses/validate";
+
+const EXPENSE_COLUMNS = "id, date, category, description, vendor, amount, created_at";
 
 /**
  * GET /api/expenses?month=2026-04
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   let query = admin
     .from("farm_expenses")
-    .select("id, date, category, description, amount, created_at")
+    .select(EXPENSE_COLUMNS)
     .order("date", { ascending: false });
 
   if (month) {
@@ -38,7 +40,8 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/expenses
- * Body: { date, category, description?, amount }
+ * Body: { date, category, description?, vendor?, amount }
+ * `category` may be a single name or a ", "-joined list of names.
  * Admin only.
  */
 export async function POST(request: Request) {
@@ -46,23 +49,16 @@ export async function POST(request: Request) {
   const auth = await requireAdmin(supabase);
   if (!auth.ok) return auth.response;
 
-  let body: { date: string; category: string; description?: string; amount: number };
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { date, category, description, amount } = body;
-
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return NextResponse.json({ error: "Invalid date" }, { status: 400 });
-  }
-  if (!category || !(EXPENSE_CATEGORIES as readonly string[]).includes(category)) {
-    return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-  }
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return NextResponse.json({ error: "amount must be a positive number" }, { status: 400 });
+  const validated = validateExpenseInput(body);
+  if (!validated.ok) {
+    return NextResponse.json({ error: validated.error }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -77,14 +73,8 @@ export async function POST(request: Request) {
 
   const { data: expense, error } = await admin
     .from("farm_expenses")
-    .insert({
-      farm_id: farm.id,
-      date,
-      category,
-      description: description ?? null,
-      amount,
-    })
-    .select("id, date, category, description, amount")
+    .insert({ farm_id: farm.id, ...validated.value })
+    .select(EXPENSE_COLUMNS)
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
