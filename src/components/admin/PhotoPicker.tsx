@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Camera, X, Search, Upload } from "lucide-react";
-import { useRef } from "react";
+import { uploadSinglePhoto } from "@/lib/photo-upload";
 
 interface PhotoPickerProps {
   value: string | null;
@@ -23,29 +23,32 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Direct-to-Supabase upload (resize → signed URL → PUT). The old path
+  // POSTed the raw file to /api/upload, which Vercel's 4.5MB body cap
+  // rejected for most phone photos — and the error was swallowed, so the
+  // button just appeared to do nothing. See src/lib/photo-upload.ts.
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    setUploadError(null);
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.url) {
-        onChange(data.url);
-        // Splice the new upload into the head of the list so the picker
-        // immediately reflects it (with a placeholder name/path — refresh
-        // on next open will pull canonical metadata).
-        setPhotos((prev) => [
-          { name: file.name, path: data.url, url: data.url },
-          ...prev,
-        ]);
-        setOpen(false);
-      }
-    } catch {}
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+      const url = await uploadSinglePhoto(file);
+      onChange(url);
+      // Splice the new upload into the head of the list so the picker
+      // immediately reflects it (with a placeholder name/path — refresh
+      // on next open will pull canonical metadata).
+      setPhotos((prev) => [{ name: file.name, path: url, url }, ...prev]);
+      setOpen(false);
+      setSearch("");
+    } catch (err: any) {
+      setUploadError(err?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   // Fetch from /api/photos (Supabase Storage) instead of the old static
@@ -119,7 +122,7 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
               <h3 className="font-display text-sm text-farm-dark">Choose Photo</h3>
               <button
                 type="button"
-                onClick={() => { setOpen(false); setSearch(""); }}
+                onClick={() => { setOpen(false); setSearch(""); setUploadError(null); }}
                 className="p-2 text-farm-muted hover:text-farm-muted/90 min-h-0 min-w-0"
               >
                 <X className="w-5 h-5" />
@@ -149,6 +152,11 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
                 {uploading ? "Uploading..." : "Upload New Photo"}
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+              {uploadError && (
+                <p className="text-xs text-red-700 text-center" role="alert">
+                  {uploadError}
+                </p>
+              )}
             </div>
 
             {/* Photo grid */}
