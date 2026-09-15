@@ -52,8 +52,8 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | ~~1.3~~ | `src/app/admin/reports/expenses/page.tsx` | **Keep** — Micheal uses this URL. (It redirects to `/admin/expenses`; that's fine.) | — |
 | ~~1.4~~ | `src/app/admin/setup-shared-accounts/` + its API | **Deleted** (Micheal, 2026-09-15). It wiped every non-admin login and their orders on submit. Shared accounts are created one at a time in `/admin/settings/users`. | — |
 | 1.5 | `/admin/ui-kit` from BottomNav + dashboard cards | 564-line brand reference is a developer artifact. Keep the page, drop it from operator nav. | S |
-| 1.6 | `/admin/items/audit` + `/admin/items/bulk-fill` links in `ItemsClient.tsx` | One-shot AI cleanup utilities permanently in the catalog toolbar. Move under Settings → Data tools. | S |
-| 1.7 | `/order/confirmed` | Only says "submitted" then links to `/order` or `/history`. Cannot link the order it just placed (only has a date string in sessionStorage). Replace with redirect to `/history/[orderId]` + success banner. | M |
+| ~~1.6~~ | AI catalog tools | **Done** — listed on the Settings hub, out of the Items toolbar. | One-shot AI cleanup utilities permanently in the catalog toolbar. Move under Settings → Data tools. | S |
+| ~~1.7~~ | `/order/confirmed` | **Done** — deleted; submit lands on `/history/[orderId]?placed=1` with a banner. | Only says "submitted" then links to `/order` or `/history`. Cannot link the order it just placed (only has a date string in sessionStorage). Replace with redirect to `/history/[orderId]` + success banner. | M |
 | ~~1.8~~ | `/admin/forecast` | **Kept.** It answers "how much of each item will chefs order next Thu/Sat/Mon" from delivery history, not "what's growing". Emoji + `text-blue-900` fixed. | — |
 
 ## 2. Combine (duplicate surfaces)
@@ -62,9 +62,9 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 |---|---|---|---|
 | 2.1 | **Six calendars**: `/admin/calendar`, `/admin/microgreens/calendar`, `/admin/foraging-calendar`, deliveries page `CalendarView` (+ `ViewToggle`), chef `/calendar`, chef `/order/forecast` | `/admin/calendar` is now the admin one (done). Next: drop `CalendarView`/`ViewToggle` from `/admin/deliveries` (link to `/admin/calendar` with the deliveries layer). **Microgreens calendar stays** (Micheal likes it); optionally mirror its tray stages as a layer without removing the page. Foraging stays as a reference page. | M |
 | 2.2 | **Orders vs Explorer**: `/admin/orders` (one date, no filters) and `/admin/orders/explorer` (568 lines, filters) reachable only from a small hero accessory | Make Explorer's GET-form filter bar the top of `/admin/orders`; retire the separate route. | M |
-| 2.3 | **Chef calendar vs forecast**: `/calendar` (month grid + agenda) and `/order/forecast` (year → month → week drawer, ~650 lines incl. `components/order/forecast/*`) read the same `getCalendarEvents` data. `/order/forecast` has **no inbound link anywhere**. | Either put the year view behind a tab on `/calendar` or delete it. | M |
+| ~~2.3~~ | **Done** — `/order/forecast` and its components deleted (year-view lib kept, still tested). Was: `/calendar` (month grid + agenda) and `/order/forecast` (year → month → week drawer, ~650 lines incl. `components/order/forecast/*`) read the same `getCalendarEvents` data. `/order/forecast` has **no inbound link anywhere**. | Either put the year view behind a tab on `/calendar` or delete it. | M |
 | ~~2.4~~ | Events | **Done** — see 0b. | — |
-| 2.5 | **Notes vs Tasks vs Inbox**: three capture inboxes (`/admin/notes`, `/admin/tasks`, `/admin/inbox`) with no links between them; notes can't become tasks. | Add "Make a task" on a note; the calendar day panel already shows both side-by-side. Longer term: notes become a tab on Tasks. | M |
+| ~~2.5~~ | **Done** — "Make a task" on every note. Was: three capture inboxes (`/admin/notes`, `/admin/tasks`, `/admin/inbox`) with no links between them; notes can't become tasks. | Add "Make a task" on a note; the calendar day panel already shows both side-by-side. Longer term: notes become a tab on Tasks. | M |
 | 2.6 | **Reports split across 8 pages** and two link sets: 4 cards on `reports/page.tsx`, 4 more at the bottom of `ReportsDashboard.tsx:299-341`. Executive already contains P&L + YoY + top items, duplicating `income`, `yoy`, `items`. | One report hub with a period picker; fold `income`/`yoy`/`items` into Executive sections. | L |
 | ~~2.7~~ | Growing plan across four pages | **Done.** `/admin/growing` hub (area cards with live counts, in-harvest list, opening-next, microgreens rack by stage, projected availability) + a shared `GrowingTabs` strip on Crop Plan, Planter Boxes, Seeds, Microgreens. Nav shows one "Growing" entry; the four pages keep their URLs. | — |
 | 2.8 | **`/receiver/archive` vs `/history`** | Same "past deliveries by date" idea, two components, two empty-state styles. Share one list component. | S |
@@ -78,12 +78,12 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | # | Where | Gap | Proposal | Effort |
 |---|---|---|---|---|
 | 3.1 | `/admin/deliveries` | "Log a Delivery" sits below the month card, calendar/list toggle and full history — 2 taps + a long scroll for a daily task | Move "Log delivery for [next date]" to the top; calendar day panel now also links straight to `/admin/deliveries/[date]`. | S |
-| 3.2 | `/admin/availability` | No search, no "duplicate last cycle" at list level; no `EditorialHero` on the most-used tab | Add hero + a per-date "Copy from previous" button (API `/api/availability/duplicate` already exists). | S |
+| ~~3.2~~ | `/admin/availability` | **Done** — "Copy last cycle" under any date with no availability (the list keeps its compact header on purpose). | No search, no "duplicate last cycle" at list level; no `EditorialHero` on the most-used tab | Add hero + a per-date "Copy from previous" button (API `/api/availability/duplicate` already exists). | S |
 | 3.3 | `/admin/orders/[date]` | Harvest list is a print-only block | Inline pick checkboxes already exist on `/harvest`; embed that component. | M |
-| 3.4 | `/admin/microgreens/harvests` | Log with no "log a harvest" button, no filter, no pagination | Add inline log form + crop/date filter. | M |
-| 3.5 | `/admin/inbox/archived` | Subtitle promises "restore" but there is no control | Add unarchive button (API exists for archive). | S |
-| 3.6 | `/admin/orders/[date]/notifications` | History only, reachable only from inside `NotifyReceiverButton` | Add "Resend" + link from the day panel. | S |
-| 3.7 | `/admin/settings/data-check` | Lists integrity problems with no jump-to-record links | Link each row to the item/order. | S |
+| ~~3.4~~ | `/admin/microgreens/harvests` | **Done** — inline log form + crop filter chips. | Log with no "log a harvest" button, no filter, no pagination | Add inline log form + crop/date filter. | M |
+| ~~3.5~~ | `/admin/inbox/archived` | **Done** — Restore button per row. | Subtitle promises "restore" but there is no control | Add unarchive button (API exists for archive). | S |
+| ~~3.6~~ | `/admin/orders/[date]/notifications` | **Done** — send/resend from the history page. | History only, reachable only from inside `NotifyReceiverButton` | Add "Resend" + link from the day panel. | S |
+| ~~3.7~~ | `/admin/settings/data-check` | **Done** — every row links to its records. | Lists integrity problems with no jump-to-record links | Link each row to the item/order. | S |
 | 3.8 | All report pages | Fixed period, only a `PrintButton` | Period + restaurant picker (Explorer's GET-form pattern). | M |
 | ~~3.9~~ | `/admin/weekly-update/page.tsx` | **Done** — one `listUsers` call. | `auth.admin.getUserById` per chef in a loop; no `loading.tsx` | Batch the lookup; add a route `loading.tsx`. | S |
 | ~~3.10~~ | Chef, receiver, harvester routes | **Done** — `loading.tsx` on calendar, history, events, receiver, harvest (admin already had one). | Only `src/app/admin/loading.tsx` exists; Explorer, Executive, Income, Weekly Update block navigation | Add `loading.tsx` with `FlowerSpinner` per route group. | S |
@@ -97,7 +97,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | 3.13 | `/history/[orderId]` | No reorder | "Order this again" → prefill `/order` with the same lines (keys already documented in CLAUDE.md). | M |
 | 3.14 | `/order` | Search only; no category chips, favorites, "ordered last time", or "limited only" filter on a ~300-item catalog | Chips row under the search box; "Last order" section at top. | M |
 | 3.15 | `/calendar` | Day cells link to `/order?date=ISO`, but `/order` silently ignores the date unless it is an open delivery date (`order/page.tsx:148-156`) | Link only delivery-date cells, or show "that date isn't open, showing next" on `/order`. | S |
-| 3.16 | `/calendar` | Agenda rows ("Squash Blossoms, Aug 12 – Sep 3") are inert | Tap → `/order` scrolled to that item, or "notify me when it's in". | M |
+| ~~3.16~~ | `/calendar` | **Done** — agenda rows open `/order?q=<crop>` with the search prefilled. | Agenda rows ("Squash Blossoms, Aug 12 – Sep 3") are inert | Tap → `/order` scrolled to that item, or "notify me when it's in". | M |
 | 3.17 | `/history` | No search, no date or status filter | Status chips + month picker. | S |
 | ~~3.18~~ | Role gating | **Done** — `gateChefPortal()` in the four chef layouts. | `/order`, `/calendar`, `/history`, `/events` check auth only; a receiver/harvester typing `/history` gets "No restaurant found" | Redirect by role in `src/lib/supabase/middleware.ts` (or the layouts). | S |
 | ~~3.19~~ | PWA install prompt | **Done** — also mounts on the chef calendar. | Mounts only on `/history` and `/receiver` | Mount in the chef layout. | S |

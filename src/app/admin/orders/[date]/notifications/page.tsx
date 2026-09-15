@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { NotifyReceiverButton } from "../NotifyReceiverButton";
 import { formatDeliveryDate, formatDateTimePacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -50,14 +51,6 @@ export default async function NotificationHistoryPage({ params }: Props) {
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link
-            href={`/admin/orders/${date}`}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-white/70 hover:text-white"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
           <h1 className="page-title">Notifications</h1>
         </div>
       </header>
@@ -70,7 +63,14 @@ export default async function NotificationHistoryPage({ params }: Props) {
         backHref={`/admin/orders/${date}`}
       />
 
-      <div className="px-4 py-6 max-w-3xl mx-auto">
+      <div className="px-4 py-6 max-w-3xl mx-auto space-y-6">
+        {/* Resend from here — same confirm-then-send flow as the orders page. */}
+        <section>
+          <p className="section-eyebrow with-flower text-farm-muted mb-3">
+            {events.length === 0 ? "Send" : "Send again"}
+          </p>
+          <NotifyReceiverButton deliveryDate={date} initialLastNotify={null} />
+        </section>
         {events.length === 0 ? (
           <div className="text-center py-12 bg-white border border-farm-dark/5 rounded-2xl shadow-sm">
             <img

@@ -771,8 +771,8 @@ export function ItemForm({ item, parentCandidates, hasChildren, prefillFromParen
       </div>
 
       {/* Typical season — months when this item is usually available.
-          Fills in the far-future zone on /order/forecast where there is
-          no concrete planting data yet. Independent of Season Status
+          Feeds the seasonal hints in the availability forecast for months
+          with no concrete planting data yet. Independent of Season Status
           (which describes current availability). */}
       <div>
         <label className="form-label">Typical Season</label>

@@ -108,7 +108,10 @@ export default function OrderReviewPage() {
       // Store the delivery date for the confirmation page, then clear order
       sessionStorage.setItem("press_farm_order_confirmed_date", deliveryDateFormatted);
       sessionStorage.removeItem("press_farm_order");
-      router.push("/order/confirmed");
+      // Land on the order itself (with a "submitted" banner) instead of a
+      // standalone thank-you screen that couldn't link to it.
+      const placedId = json?.data?.orderId as string | undefined;
+      router.push(placedId ? `/history/${placedId}?placed=1` : "/history");
     } catch {
       setError("Network error. Please check your connection and try again.");
       setIsSubmitting(false);

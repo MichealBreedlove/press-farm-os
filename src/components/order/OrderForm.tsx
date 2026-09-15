@@ -35,6 +35,8 @@ interface OrderFormProps {
   /** Item ids on this restaurant's most recent order — powers the "Last order" chip. */
   lastOrderItemIds?: string[];
   lastOrderDate?: string | null;
+  /** Pre-filled search (from /order?q=, e.g. a chef calendar crop tap). */
+  initialSearch?: string;
 }
 
 type ChipFilter = "all" | "last" | ItemCategory;
@@ -91,6 +93,7 @@ export function OrderForm({
   reorderNotice,
   lastOrderItemIds = [],
   lastOrderDate = null,
+  initialSearch = "",
 }: OrderFormProps) {
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
@@ -100,7 +103,7 @@ export function OrderForm({
   const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
   const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [chip, setChip] = useState<ChipFilter>("all");
   const [reorderDismissed, setReorderDismissed] = useState(false);
 

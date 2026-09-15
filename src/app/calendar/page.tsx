@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { todayPacific, minOrderableDatePacific } from "@/lib/utils";
@@ -100,7 +101,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
       <EditorialHero
         eyebrow="From the Field"
         title="Harvest Calendar"
-        subtitle="What's coming up — field crops, plus microgreens we've seeded and when they'll be ready. Ringed days are open delivery dates: tap one to order."
+        subtitle="What's coming up — field crops, plus microgreens we've seeded and when they'll be ready. Tap a crop to find it on the order form; ringed days are open delivery dates."
         flower="anise-hyssop"
       />
 
@@ -135,7 +136,11 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
               </h3>
               <ul className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm divide-y divide-farm-dark/5 overflow-hidden">
                 {fieldAgenda.map((w) => (
-                  <li key={w.plantingId} className="px-4 py-3 flex items-start justify-between gap-3">
+                  <li key={w.plantingId}>
+                    <Link
+                      href={`/order?q=${encodeURIComponent(w.name)}`}
+                      className="px-4 py-3 min-h-[52px] flex items-start justify-between gap-3 hover:bg-farm-cream/40 transition-colors"
+                    >
                     <div className="min-w-0">
                       <p className="font-medium text-farm-dark text-sm leading-snug">{w.name}</p>
                       {w.category && (
@@ -156,6 +161,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
                         </p>
                       )}
                     </div>
+                  </Link>
                   </li>
                 ))}
               </ul>
@@ -169,7 +175,11 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
               </h3>
               <ul className="bg-white rounded-2xl border border-farm-dark/5 shadow-sm divide-y divide-farm-dark/5 overflow-hidden">
                 {mgAgenda.map((w) => (
-                  <li key={w.batchId} className="px-4 py-3 flex items-start justify-between gap-3">
+                  <li key={w.batchId}>
+                    <Link
+                      href={`/order?q=${encodeURIComponent(w.name)}`}
+                      className="px-4 py-3 min-h-[52px] flex items-start justify-between gap-3 hover:bg-farm-cream/40 transition-colors"
+                    >
                     <div className="min-w-0">
                       <p className="font-medium text-farm-dark text-sm leading-snug">{w.name}</p>
                       <p className="text-[11px] text-farm-muted mt-0.5">
@@ -185,6 +195,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
                         <p className="text-[11px] text-farm-muted mt-0.5">{w.estimate}</p>
                       )}
                     </div>
+                  </Link>
                   </li>
                 ))}
               </ul>

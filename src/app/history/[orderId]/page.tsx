@@ -14,10 +14,14 @@ import type { OrderStatus, UnitType } from "@/types";
  */
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orderId: string }>;
+  searchParams: Promise<{ placed?: string }>;
 }) {
   const { orderId } = await params;
+  const { placed } = await searchParams;
+  const justPlaced = placed === "1";
   const supabase = await createClient();
 
   const {
@@ -167,6 +171,26 @@ export default async function OrderDetailPage({
       </header>
 
       <div className="px-4 py-4 space-y-4">
+        {justPlaced && (
+          <div className="rounded-2xl border border-farm-green/25 bg-farm-green-light/60 px-4 py-4 flex items-start gap-3">
+            <img
+              src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png"
+              alt=""
+              aria-hidden="true"
+              className="w-12 h-12 object-contain flex-shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green font-semibold">Order submitted</p>
+              <p className="text-sm text-farm-dark mt-1 leading-snug">
+                Thank you — your order for <strong>{formatDeliveryDate(order.delivery_date)}</strong> is with Press Farm. A confirmation email is on its way.
+              </p>
+              <Link href="/order" className="inline-flex items-center mt-2 text-sm font-semibold text-farm-green hover:underline min-h-[36px]">
+                Place another order →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Shortage warning banner — uses pf-master-orange to match the
             receiver dashboard's "short" status semantics. */}
         {hasShortages && (

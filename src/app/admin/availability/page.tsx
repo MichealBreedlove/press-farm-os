@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/fetch-all";
 import type { DeliveryDate } from "@/types";
 import { AddDatesButton } from "./AddDatesButton";
+import { CopyLastCycleButton } from "./CopyLastCycleButton";
 import { todayPacific } from "@/lib/utils";
 
 /**
@@ -26,6 +27,13 @@ function formatDeliveryDate(dateStr: string): string {
 export default async function AdminAvailabilityPage() {
   const supabase = (await createClient()) as any;
   const today = todayPacific();
+
+  // Restaurants — the list-level "copy last cycle" runs per restaurant.
+  const { data: restaurantRows } = await supabase
+    .from("restaurants")
+    .select("id, name")
+    .order("name", { ascending: true });
+  const restaurants: { id: string; name: string }[] = restaurantRows ?? [];
 
   // Fetch upcoming delivery dates
   const { data: rawDates, error } = await supabase
@@ -98,8 +106,8 @@ export default async function AdminAvailabilityPage() {
         {dates.map((dd) => {
           const availableCount = availabilityCountsByDate[dd.date] ?? 0;
           return (
+            <div key={dd.id} className="space-y-1">
             <Link
-              key={dd.id}
               href={`/admin/availability/${dd.date}`}
               className="block card-interactive px-4 py-4"
             >
@@ -132,6 +140,10 @@ export default async function AdminAvailabilityPage() {
                 </div>
               </div>
             </Link>
+            {availableCount === 0 && (
+              <CopyLastCycleButton targetDate={dd.date} restaurants={restaurants} />
+            )}
+            </div>
           );
         })}
       </div>

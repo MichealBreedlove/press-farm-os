@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CheckSquare } from "lucide-react";
 import { todayPacific } from "@/lib/utils";
 
 interface Note {
@@ -67,6 +69,29 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
   }
 
   const filtered = filter === "all" ? notes : notes.filter((n) => n.category === filter);
+
+  // Note → task: one tap turns an observation into an open farm task.
+  const [tasked, setTasked] = useState<Record<string, "pending" | "done" | "error">>({});
+  async function makeTask(note: Note) {
+    setTasked((prev) => ({ ...prev, [note.id]: "pending" }));
+    try {
+      const title = note.text.length > 120 ? `${note.text.slice(0, 117).trimEnd()}…` : note.text;
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description: `From field note (${note.date}): ${note.text}`,
+          type: note.category === "harvest_note" ? "harvest" : "custom",
+          due_date: todayPacific(),
+          priority: 2,
+        }),
+      });
+      setTasked((prev) => ({ ...prev, [note.id]: res.ok ? "done" : "error" }));
+    } catch {
+      setTasked((prev) => ({ ...prev, [note.id]: "error" }));
+    }
+  }
 
   const categoryColors: Record<string, string> = {
     observation: "badge-blue",
@@ -193,9 +218,25 @@ export function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
                   </div>
                   <p className="text-sm text-farm-dark">{note.text}</p>
                 </div>
+                {tasked[note.id] === "done" ? (
+                  <Link href="/admin/tasks" className="text-[11px] font-medium text-farm-green hover:underline min-h-[44px] inline-flex items-center px-1 flex-shrink-0">
+                    Task created ✓
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => makeTask(note)}
+                    disabled={tasked[note.id] === "pending"}
+                    className="text-farm-muted/70 hover:text-farm-green transition-colors min-h-[44px] min-w-[44px] inline-flex items-center justify-center disabled:opacity-50 flex-shrink-0"
+                    title="Make a task from this note"
+                    aria-label="Make a task from this note"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => deleteNote(note.id)}
-                  className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-0 min-w-0 p-1"
+                  className="text-farm-muted/60 hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] inline-flex items-center justify-center flex-shrink-0"
+                  aria-label="Delete note"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

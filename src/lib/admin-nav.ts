@@ -92,6 +92,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: "/admin/settings/emails", label: "Email Settings", icon: "AtSign", flower: "chamomile", description: "Sender addresses for notifications and reminders", hideFrom: ["sheet", "dashboard"] },
       { href: "/admin/settings/suggestions", label: "Suggestion Box", icon: "Lightbulb", flower: "borage", description: "Ideas and feedback for improving the system", hideFrom: ["sheet", "dashboard"] },
       { href: "/admin/settings/data-check", label: "Data Check", icon: "ShieldCheck", flower: "thyme", description: "Verify item counts, deliveries, and import completeness", hideFrom: ["sheet", "dashboard"] },
+      { href: "/admin/items/audit", label: "Catalog Audit (AI)", icon: "Sparkles", flower: "nasturtium", description: "One-shot duplicate + parent/child review of the item catalog", hideFrom: ["sheet", "dashboard"] },
+      { href: "/admin/items/bulk-fill", label: "Bulk Fill (AI)", icon: "Sparkles", flower: "nasturtium", description: "Draft descriptions for every item with empty fields", hideFrom: ["sheet", "dashboard"] },
     ],
   },
 ];

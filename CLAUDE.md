@@ -37,7 +37,7 @@ src/
   app/
     login/                       # Username/password + magic link login
     signup/                      # Public chef self-signup (open registration)
-    order/                       # Chef portal — list / review / confirmed
+    order/                       # Chef portal — list / review (submit lands on /history/[orderId]?placed=1)
     events/                      # Chef event-request flow (advance orders for events)
     history/                     # Chef order history
     receiver/                    # Destination-side unpack / check-in (+ archive)

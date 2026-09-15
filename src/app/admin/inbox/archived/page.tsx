@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { Archive } from "lucide-react";
+import { RestoreButton } from "./RestoreButton";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +38,6 @@ export default async function ArchivedInboxPage() {
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <a href="/admin/inbox" className="text-white/70 hover:text-white min-h-0 min-w-0">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </a>
           <h1 className="page-title">Archived</h1>
         </div>
       </header>
@@ -49,7 +45,7 @@ export default async function ArchivedInboxPage() {
       <EditorialHero
         eyebrow="Inbox"
         title="Archived"
-        subtitle="Triaged replies. Click through to re-read or restore."
+        subtitle="Triaged replies. Open one to re-read, or restore it to the inbox."
         flower="bachelor-button"
         backHref="/admin/inbox"
       />
@@ -65,10 +61,10 @@ export default async function ArchivedInboxPage() {
             {messages.map((m) => {
               const senderName = m.from_name?.trim() || m.from_email;
               return (
-                <li key={m.id}>
+                <li key={m.id} className="card px-4 py-3 flex items-center gap-3">
                   <Link
                     href={`/admin/inbox/${m.id}`}
-                    className="block card px-4 py-3 opacity-70 hover:opacity-100 transition-opacity"
+                    className="block flex-1 min-w-0 opacity-70 hover:opacity-100 transition-opacity"
                   >
                     <div className="flex items-baseline gap-2 mb-0.5">
                       <span className="text-sm text-farm-dark truncate">{senderName}</span>
@@ -83,6 +79,7 @@ export default async function ArchivedInboxPage() {
                       {m.subject?.trim() || "(no subject)"}
                     </div>
                   </Link>
+                  <RestoreButton messageId={m.id} />
                 </li>
               );
             })}

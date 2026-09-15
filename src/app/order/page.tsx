@@ -24,9 +24,9 @@ import type { AvailabilityItemWithItem } from "@/types";
 export default async function OrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; date?: string; reorder?: string }>;
+  searchParams: Promise<{ edit?: string; date?: string; reorder?: string; q?: string }>;
 }) {
-  const { edit: editOrderId, date: dateOverride, reorder: reorderId } = await searchParams;
+  const { edit: editOrderId, date: dateOverride, reorder: reorderId, q: searchParam } = await searchParams;
   const supabase = await createClient();
 
   // Auth check
@@ -365,6 +365,7 @@ export default async function OrderPage({
         }
         lastOrderItemIds={lastOrderItemIds}
         lastOrderDate={lastOrderDate}
+        initialSearch={typeof searchParam === "string" ? searchParam.slice(0, 80) : undefined}
       />
     </main>
   );

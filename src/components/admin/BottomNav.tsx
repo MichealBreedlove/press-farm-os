@@ -27,6 +27,7 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  Sparkles,
   Sprout,
   StickyNote,
   TreePine,
@@ -44,7 +45,7 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<string, LucideIcon> = {
   AtSign, BarChart3, Bean, Boxes, CalendarDays, CalendarHeart, Carrot, CheckSquare,
   ClipboardList, Clock, FileText, Home, Leaf, Lightbulb, Mail, Map, Newspaper,
-  PackageOpen, Receipt, Settings, ShieldCheck, Sprout, StickyNote, TreePine,
+  PackageOpen, Receipt, Settings, ShieldCheck, Sparkles, Sprout, StickyNote, TreePine,
   TrendingUp, Users,
 };
 const iconFor = (name: string): LucideIcon => ICONS[name] ?? Menu;
