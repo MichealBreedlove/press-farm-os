@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { PrintButton } from "@/components/shared/PrintButton";
 import { getProductionValue } from "@/lib/production-value/server";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function ProductionValueReportPage() {
         subtitle="Self-harvest value · separate from chef order revenue"
         flower="nasturtium"
         backHref="/admin/reports"
+        accessory={<PrintButton />}
       />
 
       <div className="px-4 max-w-3xl mx-auto space-y-6">

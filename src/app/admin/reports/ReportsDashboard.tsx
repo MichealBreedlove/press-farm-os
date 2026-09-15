@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   BarChart,
   Bar,
@@ -292,68 +291,6 @@ export default function ReportsDashboard({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Executive Summary CTA */}
-      <Link
-        href="/admin/reports/executive"
-        className="card-interactive flex items-center justify-between px-4 py-4"
-      >
-        <div>
-          <p className="text-sm font-semibold text-farm-dark">Executive Summary</p>
-          <p className="text-xs text-farm-muted mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
-        </div>
-        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
-
-      {/* Income Statement CTA */}
-      <Link
-        href="/admin/reports/income"
-        className="card-interactive flex items-center justify-between px-4 py-4"
-      >
-        <div>
-          <p className="text-sm font-semibold text-farm-dark">Income Statement</p>
-          <p className="text-xs text-farm-muted mt-0.5">P&amp;L · Farmer pay · Margin benchmarks</p>
-        </div>
-        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
-
-      {/* Item Performance CTA */}
-      <Link
-        href="/admin/reports/items"
-        className="card-interactive flex items-center justify-between px-4 py-4"
-      >
-        <div>
-          <p className="text-sm font-semibold text-farm-dark">Item Performance</p>
-          <p className="text-xs text-farm-muted mt-0.5">Top revenue · Reliable sellers · Dead stock</p>
-        </div>
-        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
-
-      {/* Year over Year CTA */}
-      <Link
-        href="/admin/reports/yoy"
-        className="card-interactive flex items-center justify-between px-4 py-4"
-      >
-        <div>
-          <p className="text-sm font-semibold text-farm-dark">Year over Year</p>
-          <p className="text-xs text-farm-muted mt-0.5">Compare months/quarters across years</p>
-        </div>
-        <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
-
-      {topItems.length === 0 && monthlyData.length === 0 && (
-        <p className="text-center text-farm-muted text-sm py-8">
-          No delivery data yet — log deliveries to see reports
-        </p>
       )}
     </div>
   );

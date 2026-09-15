@@ -65,7 +65,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | ~~2.3~~ | **Done** — `/order/forecast` and its components deleted (year-view lib kept, still tested). Was: `/calendar` (month grid + agenda) and `/order/forecast` (year → month → week drawer, ~650 lines incl. `components/order/forecast/*`) read the same `getCalendarEvents` data. `/order/forecast` has **no inbound link anywhere**. | Either put the year view behind a tab on `/calendar` or delete it. | M |
 | ~~2.4~~ | Events | **Done** — see 0b. | — |
 | ~~2.5~~ | **Done** — "Make a task" on every note. Was: three capture inboxes (`/admin/notes`, `/admin/tasks`, `/admin/inbox`) with no links between them; notes can't become tasks. | Add "Make a task" on a note; the calendar day panel already shows both side-by-side. Longer term: notes become a tab on Tasks. | M |
-| 2.6 | **Reports split across 8 pages** and two link sets: 4 cards on `reports/page.tsx`, 4 more at the bottom of `ReportsDashboard.tsx:299-341`. Executive already contains P&L + YoY + top items, duplicating `income`, `yoy`, `items`. | One report hub with a period picker; fold `income`/`yoy`/`items` into Executive sections. | L |
+| ~~2.6~~ | Reports | **Decided + done** (Micheal, 2026-09-15): every report stays its own printable page; Executive is not merged with anything. `/admin/reports` now lists all seven in one place (Financial statements / Operations), the duplicate links at the bottom of the dashboard are gone, and Production Value gained the Print button the others had. | — |
 | ~~2.7~~ | Growing plan across four pages | **Done.** `/admin/growing` hub (area cards with live counts, in-harvest list, opening-next, microgreens rack by stage, projected availability) + a shared `GrowingTabs` strip on Crop Plan, Planter Boxes, Seeds, Microgreens. Nav shows one "Growing" entry; the four pages keep their URLs. | — |
 | 2.8 | **`/receiver/archive` vs `/history`** | Same "past deliveries by date" idea, two components, two empty-state styles. Share one list component. | S |
 | 2.9 | **Three admin directories that disagree**: BottomNav More sheet (23 links), dashboard cards (~20; missing Microgreens, Inbox, Tasks), Settings hub | Generate all three from one `ADMIN_NAV` constant. | S |
@@ -84,7 +84,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | ~~3.5~~ | `/admin/inbox/archived` | **Done** — Restore button per row. | Subtitle promises "restore" but there is no control | Add unarchive button (API exists for archive). | S |
 | ~~3.6~~ | `/admin/orders/[date]/notifications` | **Done** — send/resend from the history page. | History only, reachable only from inside `NotifyReceiverButton` | Add "Resend" + link from the day panel. | S |
 | ~~3.7~~ | `/admin/settings/data-check` | **Done** — every row links to its records. | Lists integrity problems with no jump-to-record links | Link each row to the item/order. | S |
-| 3.8 | All report pages | Fixed period, only a `PrintButton` | Period + restaurant picker (Explorer's GET-form pattern). | M |
+| ~~3.8~~ | Report pages | Period pickers | **Mostly already true** — Income (year/quarter), Items (30/90/365d), Crops (year + category), Labor (year) have them; YoY compares the last two years. Not adding one to Executive by design. | — |
 | ~~3.9~~ | `/admin/weekly-update/page.tsx` | **Done** — one `listUsers` call. | `auth.admin.getUserById` per chef in a loop; no `loading.tsx` | Batch the lookup; add a route `loading.tsx`. | S |
 | ~~3.10~~ | Chef, receiver, harvester routes | **Done** — `loading.tsx` on calendar, history, events, receiver, harvest (admin already had one). | Only `src/app/admin/loading.tsx` exists; Explorer, Executive, Income, Weekly Update block navigation | Add `loading.tsx` with `FlowerSpinner` per route group. | S |
 
@@ -129,6 +129,6 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 2. ~~**Calendar consolidation**~~ — **Done.** Deliveries page lost its own calendar; "Log a Delivery" is first. Microgreens calendar kept.
 3. ~~**Chef ordering flow**~~ — **Done.** Date chips, "Order again", category + Last-order chips, history status/month filters (3.12, 3.13, 3.14, 3.17).
 4. ~~**Orders + Explorer merge**~~ — **Done.** `/admin/orders?view=explore` (old URL redirects). BottomNav sheet, dashboard cards and Settings hub render from `src/lib/admin-nav.ts` (2.2, 2.9). Microgreens, Inbox and Tasks now appear on the dashboard too.
-5. **Reports + Growing hubs** (2.6, 2.7) — largest, lowest urgency.
+5. ~~**Reports + Growing hubs**~~ — done (2.6 as decided above, 2.7 shipped).
 
-Decision still needed from Micheal: 2.6 (which report pages can go).
+No decisions outstanding.

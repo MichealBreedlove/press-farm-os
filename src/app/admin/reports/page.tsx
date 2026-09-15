@@ -10,6 +10,44 @@ import { todayPacific } from "@/lib/utils";
 
 const ReportsDashboard = dynamic(() => import("./ReportsDashboard"), { ssr: false });
 
+interface ReportLink {
+  href: string;
+  title: string;
+  blurb: string;
+  /** Executive gets a stronger card — it's the one printed for partners. */
+  featured?: boolean;
+}
+
+const FINANCIAL_REPORTS: ReportLink[] = [
+  { href: "/admin/reports/executive", title: "Executive Summary", blurb: "One-page P&L · YoY growth · Top items · Benchmarks", featured: true },
+  { href: "/admin/reports/income", title: "Income Statement", blurb: "Quarterly P&L · Farmer pay · Margin benchmarks" },
+  { href: "/admin/reports/yoy", title: "Year over Year", blurb: "Revenue + expense change by month and quarter" },
+];
+
+const OPERATIONS_REPORTS: ReportLink[] = [
+  { href: "/admin/reports/items", title: "Item Performance", blurb: "Top revenue · Reliable sellers · Dead stock · 30 / 90 / 365-day window" },
+  { href: "/admin/reports/crops", title: "Crop Revenue", blurb: "Per-crop ranking · Revenue · Units · $/unit · by year and category" },
+  { href: "/admin/reports/labor-efficiency", title: "Labor per Delivery", blurb: "Weekly labor cost vs. delivery throughput" },
+  { href: "/admin/reports/production-value", title: "Production Value", blurb: "Self-harvest value · microgreens + planter boxes · separate from orders" },
+];
+
+function ReportCard({ href, title, blurb, featured }: ReportLink) {
+  return (
+    <Link
+      href={href}
+      className={`card-interactive flex items-center justify-between px-4 py-4 min-h-[64px] ${
+        featured ? "border-farm-green/40 ring-1 ring-farm-green/15" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-farm-dark">{title}</p>
+        <p className="text-xs text-farm-muted mt-0.5">{blurb}</p>
+      </div>
+      <span className="text-[10px] tracking-[0.14em] uppercase text-farm-muted/70 flex-shrink-0 ml-3">Print ›</span>
+    </Link>
+  );
+}
+
 export default async function AdminReportsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -129,59 +167,26 @@ export default async function AdminReportsPage() {
         accessory={<PrintButton />}
       />
 
-      {/* Drill-down CTAs */}
-      <div className="px-4 pt-4 space-y-2">
-        <Link
-          href="/admin/reports/executive"
-          className="card-interactive flex items-center justify-between px-4 py-4"
-        >
-          <div>
-            <p className="text-sm font-semibold text-farm-dark">Executive Summary</p>
-            <p className="text-xs text-farm-muted mt-0.5">Full P&amp;L · YoY growth · Top items · Benchmarks</p>
+      {/* Every report, in one place. Each is its own page with its own
+          Print button — Micheal prints them separately, so nothing here is
+          folded together. */}
+      <div className="px-4 pt-4 space-y-5">
+        <section>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">Financial statements</p>
+          <div className="space-y-2">
+            {FINANCIAL_REPORTS.map((r) => (
+              <ReportCard key={r.href} {...r} />
+            ))}
           </div>
-          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-
-        <Link
-          href="/admin/reports/crops"
-          className="card-interactive flex items-center justify-between px-4 py-4"
-        >
-          <div>
-            <p className="text-sm font-semibold text-farm-dark">Crop Revenue</p>
-            <p className="text-xs text-farm-muted mt-0.5">Per-crop ranking · Revenue · Units · $/unit</p>
+        </section>
+        <section>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">Operations</p>
+          <div className="space-y-2">
+            {OPERATIONS_REPORTS.map((r) => (
+              <ReportCard key={r.href} {...r} />
+            ))}
           </div>
-          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-
-        <Link
-          href="/admin/reports/production-value"
-          className="card-interactive flex items-center justify-between px-4 py-4"
-        >
-          <div>
-            <p className="text-sm font-semibold text-farm-dark">Production Value</p>
-            <p className="text-xs text-farm-muted mt-0.5">Self-harvest value · microgreens + planter boxes · separate from orders</p>
-          </div>
-          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-
-        <Link
-          href="/admin/reports/labor-efficiency"
-          className="card-interactive flex items-center justify-between px-4 py-4"
-        >
-          <div>
-            <p className="text-sm font-semibold text-farm-dark">Labor per Delivery</p>
-            <p className="text-xs text-farm-muted mt-0.5">Weekly labor cost vs. delivery throughput</p>
-          </div>
-          <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+        </section>
       </div>
 
       <ReportsDashboard
