@@ -50,7 +50,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | 1.1 | `src/app/order/client.tsx` (280 lines) | Zero importers. Superseded single-unit order form. | S |
 | 1.2 | `src/app/admin/deliveries/finalize/page.tsx` | Zero inbound links. Same `FinalizeButton` + month total already on `/admin/deliveries`. | S |
 | ~~1.3~~ | `src/app/admin/reports/expenses/page.tsx` | **Keep** — Micheal uses this URL. (It redirects to `/admin/expenses`; that's fine.) | — |
-| 1.4 | `src/app/admin/setup-shared-accounts/` + `src/app/api/admin/setup-shared-accounts/` | One-time cutover tool that wipes and recreates every non-admin auth user. Reachable only by typing the URL. Move to `scripts/` or delete. | S |
+| ~~1.4~~ | `src/app/admin/setup-shared-accounts/` + its API | **Deleted** (Micheal, 2026-09-15). It wiped every non-admin login and their orders on submit. Shared accounts are created one at a time in `/admin/settings/users`. | — |
 | 1.5 | `/admin/ui-kit` from BottomNav + dashboard cards | 564-line brand reference is a developer artifact. Keep the page, drop it from operator nav. | S |
 | 1.6 | `/admin/items/audit` + `/admin/items/bulk-fill` links in `ItemsClient.tsx` | One-shot AI cleanup utilities permanently in the catalog toolbar. Move under Settings → Data tools. | S |
 | 1.7 | `/order/confirmed` | Only says "submitted" then links to `/order` or `/history`. Cannot link the order it just placed (only has a date string in sessionStorage). Replace with redirect to `/history/[orderId]` + success banner. | M |
@@ -131,4 +131,4 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 4. ~~**Orders + Explorer merge**~~ — **Done.** `/admin/orders?view=explore` (old URL redirects). BottomNav sheet, dashboard cards and Settings hub render from `src/lib/admin-nav.ts` (2.2, 2.9). Microgreens, Inbox and Tasks now appear on the dashboard too.
 5. **Reports + Growing hubs** (2.6, 2.7) — largest, lowest urgency.
 
-Decisions still needed from Micheal: 1.4 (delete the shared-account provisioning page or move to a script), 2.6 (which report pages can go).
+Decision still needed from Micheal: 2.6 (which report pages can go).

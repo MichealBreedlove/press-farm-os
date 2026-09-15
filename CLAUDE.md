@@ -63,7 +63,6 @@ src/
       notes/                     # Farm notes
       reports/                   # income, expenses, items, yoy, executive, crops, labor-efficiency
       settings/                  # Users / data-check / emails / suggestions
-      setup-shared-accounts/     # One-time provisioning of shared chef accounts
       ui-kit/                    # Brand reference page
     api/
       orders/                    # Submit / update / shortage
