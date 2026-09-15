@@ -69,7 +69,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | ~~2.7~~ | Growing plan across four pages | **Done.** `/admin/growing` hub (area cards with live counts, in-harvest list, opening-next, microgreens rack by stage, projected availability) + a shared `GrowingTabs` strip on Crop Plan, Planter Boxes, Seeds, Microgreens. Nav shows one "Growing" entry; the four pages keep their URLs. | — |
 | 2.8 | **`/receiver/archive` vs `/history`** | Same "past deliveries by date" idea, two components, two empty-state styles. Share one list component. | S |
 | 2.9 | **Three admin directories that disagree**: BottomNav More sheet (23 links), dashboard cards (~20; missing Microgreens, Inbox, Tasks), Settings hub | Generate all three from one `ADMIN_NAV` constant. | S |
-| 2.10 | **Item picker written three times**: `OrderForm.tsx`/`item-row.tsx`, `EventsClient.tsx`, `EventOrderClient.tsx` | One `ItemPicker` component. | L |
+| ~~2.10~~ | Item picker | **Done** — one selection hook (`useItemPicker`), one flatten core (`lib/order/lines.ts`, tested) and one `ItemSearchBar` behind both the chef order form and the Events order form; the Events form gained search. The old third picker went with the retired request queue. | — |
 
 ## 3. Improve (interactivity + flow)
 

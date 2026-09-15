@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { CATEGORY_LABELS, CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { formatDateShort, priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
+import { ItemSearchBar } from "./ItemSearchBar";
+import { useItemPicker } from "./useItemPicker";
+import { collectOrderedLines, countOrderedLines, groupByCategory } from "@/lib/order/lines";
+import type { PickerSource } from "@/lib/order/lines";
 import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
-import type { UnitType } from "@/types/database";
-import { resolveUnits, resolveSizes, isEventOnlyItem } from "@/lib/order-availability";
-import { buildOrderKey, enumerateOrderKeys } from "@/lib/order-keys";
+import { resolveUnits, isEventOnlyItem } from "@/lib/order-availability";
+import { buildOrderKey } from "@/lib/order-keys";
 
 interface OrderFormProps {
   availabilityItems: AvailabilityItemWithItem[];
@@ -46,7 +49,8 @@ type ChipFilter = "all" | "last" | ItemCategory;
  *  events-only items) or by the event portion of a split line, and persists
  *  to order_items.menu_section. 'press_bar' lines never collide with the
  *  others, so they persist as NULL (same as 'regular'). */
-export type MenuSection = "regular" | "events" | "press_bar";
+export type { MenuSection } from "@/lib/order/lines";
+import type { MenuSection } from "@/lib/order/lines";
 
 export interface OrderFormData {
   restaurantId: string;
@@ -96,10 +100,12 @@ export function OrderForm({
   initialSearch = "",
 }: OrderFormProps) {
   const router = useRouter();
-  const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
-  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [itemColors, setItemColors] = useState<Record<string, string[]>>(initialColors);
-  const [itemVarieties, setItemVarieties] = useState<Record<string, string[]>>(initialVarieties);
+  const picker = useItemPicker({
+    quantities: initialQuantities,
+    itemColors: initialColors,
+    itemVarieties: initialVarieties,
+  });
+  const { quantities, itemNotes, itemColors, itemVarieties, setQuantities, setItemColors, setItemVarieties } = picker;
   const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
   const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
@@ -273,15 +279,14 @@ export function OrderForm({
   // the UNFILTERED catalog so search never drops an in-progress quantity.
   // Split-open items contribute a second, event-portion source whose clone id
   // makes its keys diverge from the regular portion's.
-  type KeyedSource = { ai: AvailabilityItemWithItem; section: MenuSection };
-  const orderedSources: KeyedSource[] = isPressBarChef
+  const orderedSources: PickerSource[] = isPressBarChef
     ? allAvailable
         .filter((ai) => ai.item.is_press_bar_item)
         .map((ai) => ({ ai, section: "press_bar" as const }))
     : allAvailable
         .filter((ai) => ai.item.show_in_regular_menu !== false || isEventFlagged(ai))
         .flatMap((ai) => {
-          const sources: KeyedSource[] = [{ ai, section: sectionFor(ai) }];
+          const sources: PickerSource[] = [{ ai, section: sectionFor(ai) }];
           if (splitOpen[ai.id]) sources.push({ ai: asEventKeyAi(ai), section: "events" });
           return sources;
         });
@@ -296,31 +301,8 @@ export function OrderForm({
   function closeSplit(id: string) {
     // Clear the event portion's quantities/colors/note so nothing invisible
     // stays in the order after the sub-row disappears.
-    const prefix = `${EVENT_MENU_KEY_PREFIX}${id}`;
-    const dropPrefixed = <T,>(map: Record<string, T>): Record<string, T> =>
-      Object.fromEntries(Object.entries(map).filter(([k]) => !k.startsWith(prefix)));
-    setQuantities(dropPrefixed);
-    setItemColors(dropPrefixed);
-    setItemVarieties(dropPrefixed);
-    setItemNotes(dropPrefixed);
+    picker.dropKeysWithPrefix(`${EVENT_MENU_KEY_PREFIX}${id}`);
     setSplitOpen((prev) => ({ ...prev, [id]: false }));
-  }
-
-  function groupByCategory(items: AvailabilityItemWithItem[]): Record<ItemCategory, AvailabilityItemWithItem[]> {
-    return CATEGORY_ORDER.reduce<Record<ItemCategory, AvailabilityItemWithItem[]>>(
-      (acc, cat) => {
-        // Items within each category section sorted alphabetically by
-        // name so chefs can scan a long list quickly. Case-insensitive
-        // localeCompare so "Sage" and "sage" sort consistently.
-        acc[cat] = items
-          .filter((ai) => ai.item.category === cat)
-          .sort((a, b) =>
-            a.item.name.localeCompare(b.item.name, undefined, { sensitivity: "base" }),
-          );
-        return acc;
-      },
-      {} as Record<ItemCategory, AvailabilityItemWithItem[]>,
-    );
   }
 
   const menuByCategory = groupByCategory(menuItems);
@@ -328,67 +310,30 @@ export function OrderForm({
 
   const isSearching = search.trim().length > 0;
 
-  function handleQuantityChange(key: string, qty: number) {
-    setQuantities((prev) => ({ ...prev, [key]: qty }));
-  }
+  const { onQuantityChange: handleQuantityChange, onNoteChange: handleNoteChange } = picker.sectionHandlers;
 
-  function handleNoteChange(id: string, note: string) {
-    setItemNotes((prev) => ({ ...prev, [id]: note }));
-  }
-
-  /** Iterate every (unit?, size?) combination an item exposes, yielding its quantity key. */
-  function enumerateKeys(ai: AvailabilityItemWithItem): Generator<{ key: string; unit?: UnitType; size?: string }> {
-    return enumerateOrderKeys(
-      ai.id,
-      resolveUnits(ai.item, ai.available_units),
-      resolveSizes(ai.item, ai.available_sizes),
-    );
-  }
-
-  // Check if any item has quantity > 0 (across ALL items + portions, not just searched)
-  const hasAnyOrdered = orderedSources.some(({ ai }) => {
-    for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) return true;
-    return false;
-  });
-
-  // Total order lines with quantity > 0
-  const orderedCount = orderedSources.reduce((count, { ai }) => {
-    let n = 0;
-    for (const { key } of enumerateKeys(ai)) if ((quantities[key] ?? 0) > 0) n++;
-    return count + n;
-  }, 0);
+  // Total order lines with quantity > 0 (across ALL items + portions, not
+  // just the searched/filtered ones).
+  const orderedCount = countOrderedLines(orderedSources, quantities);
+  const hasAnyOrdered = orderedCount > 0;
 
   function handleReview() {
-    const orderedItems: OrderFormData["items"] = [];
-
-    // A split item appears as two sources (regular + event portion) and so
-    // produces two distinct lines for the same availability item.
-    for (const { ai, section } of orderedSources) {
-      const itemNote = itemNotes[ai.id] ?? "";
-
-      for (const { key, unit, size } of enumerateKeys(ai)) {
-        const qty = quantities[key] ?? 0;
-        if (qty <= 0) continue;
-
+    // Shared flatten: a split item appears as two sources (regular + event
+    // portion) and so produces two distinct lines for the same row.
+    const orderedItems: OrderFormData["items"] = collectOrderedLines(orderedSources, picker.maps, realAvailId).map(
+      (line) => {
+        const { ai, unit, unitExplicit, size, colors, varieties, section, quantity, itemNote } = line;
         // Suffix the displayed name with unit + size + section when present
-        const unitLabel = unit ? ((UNIT_LABELS as Record<string, string>)[unit] ?? unit.toUpperCase()) : null;
+        const unitLabel = unitExplicit ? ((UNIT_LABELS as Record<string, string>)[unit] ?? unit.toUpperCase()) : null;
         const suffixParts = [unitLabel, size, section === "events" ? "Events" : null].filter(Boolean) as string[];
         const itemName = suffixParts.length > 0 ? `${ai.item.name} (${suffixParts.join(" · ")})` : ai.item.name;
 
-        // Colors/varieties live at the same key as the qty
-        const colors = itemColors[key] ?? [];
-        const colorKey = colors.length > 0 ? colors.join(",") : null;
-        const lineVarieties = itemVarieties[key] ?? [];
-        const varietyKey = lineVarieties.length > 0 ? lineVarieties.join(",") : null;
         // Keep the human-readable color/variety note in itemNote for
         // backwards-compat displays; the structured colorKey/varietyKey
         // fields are what receiver/edit hydration round-trips through.
         const colorNote = colors.length > 0 ? `Color: ${colors.join(", ")}` : "";
-        const varietyNote = lineVarieties.length > 0 ? `Variety: ${lineVarieties.join(", ")}` : "";
+        const varietyNote = varieties.length > 0 ? `Variety: ${varieties.join(", ")}` : "";
         const note = [varietyNote, colorNote, itemNote].filter(Boolean).join(" | ");
-
-        // Persist the specific unit chosen (or fall back to whatever's on the item)
-        const unitForOrder = unit ?? (String(ai.item.unit_type).split(",")[0]?.trim() || ai.item.unit_type);
 
         // Resolve per-unit price → fallback to default_price.
         // Frozen at submit time so future price changes don't rewrite history.
@@ -398,24 +343,24 @@ export function OrderForm({
             unit_prices: ai.item.unit_prices as Record<string, number> | null,
             size_prices: (ai.item as any).size_prices as Record<string, number> | null,
           },
-          unitForOrder,
-          size,
+          unit,
+          size ?? undefined,
         );
 
-        orderedItems.push({
-          availabilityItemId: realAvailId(ai.id),
+        return {
+          availabilityItemId: line.availabilityItemId,
           itemName,
-          unitType: unitForOrder,
-          sizeLabel: size ?? null,
-          colorKey,
-          varietyKey,
+          unitType: unit,
+          sizeLabel: size,
+          colorKey: colors.length > 0 ? colors.join(",") : null,
+          varietyKey: varieties.length > 0 ? varieties.join(",") : null,
           menuSection: section,
-          quantity: qty,
+          quantity,
           unitPrice,
           itemNote: note,
-        });
-      }
-    }
+        };
+      },
+    );
 
     const formData: OrderFormData = {
       restaurantId,
@@ -449,31 +394,8 @@ export function OrderForm({
           <span className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</span>
         </div>
       )}
-      {/* Sticky search bar */}
-      <div className="sticky top-0 z-30 bg-farm-cream/95 backdrop-blur-sm border-b border-farm-dark/5 px-4 py-3">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Search items..."
-            aria-label="Search items"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-base border border-farm-dark/10 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-farm-muted hover:text-farm-muted/90"
-              aria-label="Clear search"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+      {/* Sticky search bar — shared with the Events order form */}
+      <ItemSearchBar value={search} onChange={setSearch}>
         {/* Filter chips — category + "Last order" */}
         {(categoryCounts.length > 1 || lastOrderCount > 0) && (
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 mt-2.5 pb-0.5" role="group" aria-label="Filter items">
@@ -509,7 +431,7 @@ export function OrderForm({
             {orderedCount} item{orderedCount !== 1 ? "s" : ""} in your order
           </p>
         )}
-      </div>
+      </ItemSearchBar>
 
       {/* Reorder notice — what carried over from the past order, what didn't */}
       {reorderNotice && !reorderDismissed && (
@@ -572,8 +494,8 @@ export function OrderForm({
                       itemVarieties={itemVarieties}
                       onQuantityChange={handleQuantityChange}
                       onNoteChange={handleNoteChange}
-                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
-                      onVarietyChange={(key, varieties) => setItemVarieties((prev) => ({ ...prev, [key]: varieties }))}
+                      onColorChange={picker.sectionHandlers.onColorChange}
+                      onVarietyChange={picker.sectionHandlers.onVarietyChange}
                       eventChecked={eventChecked}
                       onEventToggle={(id, checked) =>
                         setEventChecked((prev) => ({ ...prev, [id]: checked }))
@@ -618,8 +540,8 @@ export function OrderForm({
                       itemVarieties={itemVarieties}
                       onQuantityChange={handleQuantityChange}
                       onNoteChange={handleNoteChange}
-                      onColorChange={(key, colors) => setItemColors((prev) => ({ ...prev, [key]: colors }))}
-                      onVarietyChange={(key, varieties) => setItemVarieties((prev) => ({ ...prev, [key]: varieties }))}
+                      onColorChange={picker.sectionHandlers.onColorChange}
+                      onVarietyChange={picker.sectionHandlers.onVarietyChange}
                     />
                   );
                 })}

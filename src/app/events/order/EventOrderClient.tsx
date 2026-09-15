@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH } from "@/lib/constants";
 import { CategorySection } from "@/components/order/category-section";
-import { resolveUnits, resolveSizes } from "@/lib/order-availability";
-import { enumerateOrderKeys } from "@/lib/order-keys";
-import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
+import { ItemSearchBar } from "@/components/order/ItemSearchBar";
+import { useItemPicker } from "@/components/order/useItemPicker";
+import { collectOrderedLines, groupByCategory } from "@/lib/order/lines";
+import type { PickerSource } from "@/lib/order/lines";
+import type { AvailabilityItemWithItem } from "@/types";
 
 interface DeliveryDateOption {
   date: string;
@@ -37,12 +39,10 @@ export function EventOrderClient({
   const [eventDate, setEventDate] = useState(initialEventDate);
   const [eventName, setEventName] = useState(initialEventName);
 
-  // Item-picker state — keyed by the order-form quantity keys (availId or
-  // availId__unit:U__size). Reset on every delivery-date load (remount).
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [itemColors, setItemColors] = useState<Record<string, string[]>>({});
-  const [itemVarieties, setItemVarieties] = useState<Record<string, string[]>>({});
+  // Item-picker state — the same hook + key conventions as the chef order
+  // form. Reset on every delivery-date load (remount).
+  const picker = useItemPicker();
+  const [search, setSearch] = useState("");
   const [freeformNotes, setFreeformNotes] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -58,55 +58,33 @@ export function EventOrderClient({
     router.push(`/events/order?${params.toString()}`);
   }
 
-  const byCategory = useMemo(() => {
-    const map = {} as Record<ItemCategory, AvailabilityItemWithItem[]>;
-    for (const cat of CATEGORY_ORDER) map[cat] = [];
-    for (const ai of availabilityItems) {
-      if (ai.status === "unavailable") continue;
-      if (map[ai.item.category as ItemCategory]) {
-        map[ai.item.category as ItemCategory].push(ai);
-      }
-    }
-    for (const cat of CATEGORY_ORDER) {
-      map[cat].sort((a, b) =>
-        a.item.name.localeCompare(b.item.name, undefined, { sensitivity: "base" }),
-      );
-    }
-    return map;
-  }, [availabilityItems]);
+  const allAvailable = useMemo(
+    () => availabilityItems.filter((ai) => ai.status !== "unavailable"),
+    [availabilityItems],
+  );
+  // Quantities are kept for the whole list; search only narrows what's shown.
+  const sources: PickerSource[] = useMemo(
+    () => allAvailable.map((ai) => ({ ai, section: "events" as const })),
+    [allAvailable],
+  );
+  const visible = search.trim()
+    ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
+    : allAvailable;
+  const byCategory = useMemo(() => groupByCategory(visible), [visible]);
 
   // Flatten every ordered line (qty > 0) into the API's item shape.
   function buildItems() {
-    const out: {
-      availability_item_id: string;
-      quantity: number;
-      unit_type: string | null;
-      size_label: string | null;
-      color_key: string | null;
-      variety_key: string | null;
-    }[] = [];
-    for (const ai of availabilityItems) {
-      const units = resolveUnits(ai.item, ai.available_units);
-      const sizes = resolveSizes(ai.item, ai.available_sizes);
-      for (const { key, unit, size } of enumerateOrderKeys(ai.id, units, sizes)) {
-        const qty = quantities[key] ?? 0;
-        if (qty <= 0) continue;
-        const colors = itemColors[key] ?? [];
-        const varieties = itemVarieties[key] ?? [];
-        out.push({
-          availability_item_id: ai.id,
-          quantity: qty,
-          unit_type: unit ?? units[0] ?? null,
-          size_label: size ?? null,
-          color_key: colors.length > 0 ? colors.join(",") : null,
-          variety_key: varieties.length > 0 ? varieties.join(",") : null,
-        });
-      }
-    }
-    return out;
+    return collectOrderedLines(sources, picker.maps).map((l) => ({
+      availability_item_id: l.availabilityItemId,
+      quantity: l.quantity,
+      unit_type: l.unit || null,
+      size_label: l.size,
+      color_key: l.colors.length > 0 ? l.colors.join(",") : null,
+      variety_key: l.varieties.length > 0 ? l.varieties.join(",") : null,
+    }));
   }
 
-  const orderedCount = useMemo(() => buildItems().length, [quantities, itemColors, itemVarieties, availabilityItems]); // eslint-disable-line react-hooks/exhaustive-deps
+  const orderedCount = useMemo(() => buildItems().length, [picker.maps, sources]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit() {
     setError(null);
@@ -143,10 +121,7 @@ export function EventOrderClient({
         }. Press Farm has it.`,
       );
       // Reset the item picker; keep the event metadata for a possible follow-up.
-      setQuantities({});
-      setItemColors({});
-      setItemVarieties({});
-      setItemNotes({});
+      picker.reset();
       setFreeformNotes("");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
@@ -237,35 +212,36 @@ export function EventOrderClient({
         </p>
       ) : (
         <>
+          <div className="-mx-4">
+            <ItemSearchBar value={search} onChange={setSearch}>
+              {orderedCount > 0 && (
+                <p className="text-xs text-farm-green mt-1.5 px-1 tabular-nums">
+                  {orderedCount} item{orderedCount !== 1 ? "s" : ""} in this order
+                </p>
+              )}
+            </ItemSearchBar>
+          </div>
           <div>
-            <p className="section-eyebrow with-flower text-farm-muted mb-2">
-              Items{orderedCount > 0 ? ` · ${orderedCount} in order` : ""}
-            </p>
-            {CATEGORY_ORDER.map((cat) => {
-              const catItems = byCategory[cat];
-              if (catItems.length === 0) return null;
-              return (
-                <CategorySection
-                  key={cat}
-                  category={cat}
-                  items={catItems}
-                  quantities={quantities}
-                  itemNotes={itemNotes}
-                  itemColors={itemColors}
-                  itemVarieties={itemVarieties}
-                  onQuantityChange={(key, qty) =>
-                    setQuantities((prev) => ({ ...prev, [key]: qty }))
-                  }
-                  onNoteChange={(id, note) => setItemNotes((prev) => ({ ...prev, [id]: note }))}
-                  onColorChange={(key, colors) =>
-                    setItemColors((prev) => ({ ...prev, [key]: colors }))
-                  }
-                  onVarietyChange={(key, varieties) =>
-                    setItemVarieties((prev) => ({ ...prev, [key]: varieties }))
-                  }
-                />
-              );
-            })}
+            {visible.length === 0 ? (
+              <p className="text-sm text-farm-muted text-center py-8">No items match &ldquo;{search}&rdquo;.</p>
+            ) : (
+              CATEGORY_ORDER.map((cat) => {
+                const catItems = byCategory[cat];
+                if (catItems.length === 0) return null;
+                return (
+                  <CategorySection
+                    key={cat}
+                    category={cat}
+                    items={catItems}
+                    quantities={picker.quantities}
+                    itemNotes={picker.itemNotes}
+                    itemColors={picker.itemColors}
+                    itemVarieties={picker.itemVarieties}
+                    {...picker.sectionHandlers}
+                  />
+                );
+              })
+            )}
           </div>
 
           <div className="card px-4 py-4">
