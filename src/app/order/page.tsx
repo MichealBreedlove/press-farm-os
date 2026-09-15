@@ -8,6 +8,8 @@ import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner
 import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PickCustomDateLink } from "@/components/order/PickCustomDateLink";
+import { DateChips } from "@/components/order/DateChips";
+import { mapReorder } from "@/lib/order/reorder";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
 import { buildOrderKey } from "@/lib/order-keys";
@@ -22,9 +24,9 @@ import type { AvailabilityItemWithItem } from "@/types";
 export default async function OrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; date?: string }>;
+  searchParams: Promise<{ edit?: string; date?: string; reorder?: string }>;
 }) {
-  const { edit: editOrderId, date: dateOverride } = await searchParams;
+  const { edit: editOrderId, date: dateOverride, reorder: reorderId } = await searchParams;
   const supabase = await createClient();
 
   // Auth check
@@ -232,9 +234,76 @@ export default async function OrderPage({
     (ai: any) => ai.item && !ai.item.is_archived,
   );
 
-  const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
   const isEditing = editOrderId && targetDate === deliveryDate.date;
 
+  // ── Reorder: prefill from a past order, mapped onto THIS date's rows ──
+  // (RLS scopes the read to the chef's own restaurant.)
+  let reorderPrefill: ReturnType<typeof mapReorder> | null = null;
+  let reorderFromDate: string | null = null;
+  if (reorderId && !isEditing) {
+    const { data: past } = await supabase
+      .from("orders")
+      .select(`
+        id, delivery_date,
+        order_items(
+          quantity_requested, unit_type, size_label, color_key, variety_key, menu_section,
+          availability_items(item_id, item:items(id, name))
+        )
+      `)
+      .eq("id", reorderId)
+      .single() as any;
+    if (past) {
+      reorderFromDate = past.delivery_date;
+      const lines = (past.order_items ?? [])
+        .filter((oi: any) => oi.availability_items?.item_id)
+        .map((oi: any) => ({
+          itemId: oi.availability_items.item_id as string,
+          itemName: (oi.availability_items.item?.name as string) ?? "Item",
+          quantity: Number(oi.quantity_requested ?? 0),
+          unitType: oi.unit_type ?? null,
+          sizeLabel: oi.size_label ?? null,
+          colorKey: oi.color_key ?? null,
+          varietyKey: oi.variety_key ?? null,
+          menuSection: oi.menu_section ?? null,
+        }));
+      reorderPrefill = mapReorder(lines, availabilityItems as any);
+    }
+  }
+
+  // ── "Last order" filter + date chips (independent reads, in parallel) ──
+  const [{ data: lastOrder }, { data: openDates }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("id, delivery_date, order_items(availability_items(item_id))")
+      .eq("restaurant_id", restaurant.id)
+      .in("status", ["submitted", "in_progress", "fulfilled"])
+      .neq("id", editOrderId ?? reorderId ?? "00000000-0000-0000-0000-000000000000")
+      .order("delivery_date", { ascending: false })
+      .limit(1)
+      .maybeSingle() as any,
+    supabase
+      .from("delivery_dates")
+      .select("date, day_of_week")
+      .eq("ordering_open", true)
+      .gte("date", minOrderable)
+      .order("date", { ascending: true })
+      .limit(5) as any,
+  ]);
+  const lastOrderItemIds: string[] = Array.from(
+    new Set(
+      ((lastOrder?.order_items ?? []) as any[])
+        .map((oi) => oi.availability_items?.item_id as string | undefined)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const lastOrderDate: string | null = lastOrder?.delivery_date ?? null;
+  const chipDates: string[] = ((openDates ?? []) as Array<{ date: string }>).map((d) => d.date);
+  if (!chipDates.includes(deliveryDate.date)) chipDates.unshift(deliveryDate.date);
+  const customChipDates = ((openDates ?? []) as Array<{ date: string; day_of_week: string | null }>)
+    .filter((d) => d.day_of_week === "custom")
+    .map((d) => d.date);
+
+  const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
   // Microgreens ready to cut in the greenhouse right now — surfaced so chefs and
   // the bar team harvest from our trays instead of ordering from Meadowood.
   const readyMicrogreens = await getReadyMicrogreens();
@@ -251,10 +320,17 @@ export default async function OrderPage({
         )}
       </header>
 
-      {/* Off-schedule order affordance — sits just below the header so
-          it's visible without crowding. Only shown when not editing. */}
+      {/* Delivery-date chips + off-schedule affordance. Hidden while editing:
+          an edit is pinned to the order's own date. */}
       {!isEditing && (
-        <PickCustomDateLink key={deliveryDate.date} currentDate={deliveryDate.date} />
+        <>
+          <DateChips
+            dates={chipDates}
+            activeDate={deliveryDate.date}
+            customDates={customChipDates}
+          />
+          <PickCustomDateLink key={deliveryDate.date} currentDate={deliveryDate.date} />
+        </>
       )}
 
       <div className="px-4 pt-4 space-y-4">
@@ -275,13 +351,20 @@ export default async function OrderPage({
         restaurantName={restaurant.name}
         deliveryDate={deliveryDate.date}
         deliveryDateFormatted={deliveryDateFormatted}
-        initialQuantities={isEditing ? initialQuantities : undefined}
-        initialColors={isEditing ? initialColors : undefined}
-        initialVarieties={isEditing ? initialVarieties : undefined}
-        initialEventChecked={isEditing ? initialEventChecked : undefined}
-        initialSplitOpen={isEditing ? initialSplitOpen : undefined}
+        initialQuantities={isEditing ? initialQuantities : reorderPrefill?.quantities}
+        initialColors={isEditing ? initialColors : reorderPrefill?.colors}
+        initialVarieties={isEditing ? initialVarieties : reorderPrefill?.varieties}
+        initialEventChecked={isEditing ? initialEventChecked : reorderPrefill?.eventChecked}
+        initialSplitOpen={isEditing ? initialSplitOpen : reorderPrefill?.splitOpen}
         initialNotes={isEditing ? initialNotes : undefined}
         editingOrderId={isEditing ? editOrderId : undefined}
+        reorderNotice={
+          reorderPrefill && reorderFromDate
+            ? { fromDate: reorderFromDate, placed: reorderPrefill.placed, missing: reorderPrefill.missing }
+            : undefined
+        }
+        lastOrderItemIds={lastOrderItemIds}
+        lastOrderDate={lastOrderDate}
       />
     </main>
   );

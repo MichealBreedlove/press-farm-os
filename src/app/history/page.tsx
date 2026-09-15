@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus } from "@/types";
+import { HistoryFilters } from "./HistoryFilters";
+
+const STATUS_FILTERS: OrderStatus[] = ["submitted", "in_progress", "fulfilled", "cancelled"];
 
 /** Pool of flowers used for per-order accents in the history list. */
 const HISTORY_FLOWERS = [
@@ -34,11 +37,14 @@ const PAGE_SIZE = 50;
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string; status?: string; month?: string }>;
 }) {
+  const sp = await searchParams;
   const supabase = await createClient();
 
-  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const statusFilter = STATUS_FILTERS.includes(sp.status as OrderStatus) ? (sp.status as OrderStatus) : null;
+  const monthFilter = sp.month && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : null;
   const from = (page - 1) * PAGE_SIZE;
   // Fetch one extra row to detect whether a next page exists without a count.
   const to = from + PAGE_SIZE;
@@ -65,7 +71,7 @@ export default async function HistoryPage({
           <h1 className="page-title">Order History</h1>
         </header>
         <div className="flex items-center justify-center h-64 px-4">
-          <p className="text-center text-gray-500 text-sm">
+          <p className="text-center text-farm-muted text-sm">
             No restaurant found. Please contact Press Farm.
           </p>
         </div>
@@ -78,7 +84,7 @@ export default async function HistoryPage({
   // Fetch all orders with item count + shortage flag so the list row
   // can surface a "1 shortage" caption inline — chefs can spot problem
   // orders without opening each one.
-  const { data: rows } = await supabase
+  let query = supabase
     .from("orders")
     .select(`
       id,
@@ -92,9 +98,38 @@ export default async function HistoryPage({
       edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
       order_items(id, is_shorted)
     `)
-    .eq("restaurant_id", restaurant.id)
+    .eq("restaurant_id", restaurant.id);
+  if (statusFilter) query = query.eq("status", statusFilter);
+  if (monthFilter) {
+    const [y, m] = monthFilter.split("-").map(Number);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    query = query.gte("delivery_date", `${monthFilter}-01`).lte("delivery_date", `${monthFilter}-${String(last).padStart(2, "0")}`);
+  }
+  const { data: rows } = await query
     .order("delivery_date", { ascending: false })
     .range(from, to) as any;
+
+  // Months that have orders — for the month picker. Bounded: one column,
+  // newest 400 orders, deduped to YYYY-MM.
+  const { data: monthRows } = await supabase
+    .from("orders")
+    .select("delivery_date")
+    .eq("restaurant_id", restaurant.id)
+    .order("delivery_date", { ascending: false })
+    .limit(400) as any;
+  const months: string[] = Array.from(
+    new Set(((monthRows ?? []) as Array<{ delivery_date: string }>).map((r) => r.delivery_date.slice(0, 7))),
+  );
+  const filterQs = (over: { status?: string | null; month?: string | null; page?: number }) => {
+    const p = new URLSearchParams();
+    const st = over.status === undefined ? statusFilter : over.status;
+    const mo = over.month === undefined ? monthFilter : over.month;
+    if (st) p.set("status", st);
+    if (mo) p.set("month", mo);
+    if (over.page && over.page > 1) p.set("page", String(over.page));
+    const q = p.toString();
+    return q ? `/history?${q}` : "/history";
+  };
 
   const hasNext = (rows?.length ?? 0) > PAGE_SIZE;
   const orders = hasNext ? rows.slice(0, PAGE_SIZE) : rows;
@@ -104,10 +139,16 @@ export default async function HistoryPage({
     <main className="min-h-screen bg-farm-cream pb-20">
       <header className="page-header">
         <h1 className="page-title">Order History</h1>
-        <p className="text-sm text-gray-500">{restaurant.name}</p>
+        <p className="text-sm text-white/80">{restaurant.name}</p>
       </header>
 
       <div className="px-4 py-4">
+        <HistoryFilters
+          statusFilter={statusFilter}
+          monthFilter={monthFilter}
+          months={months}
+          statusOptions={STATUS_FILTERS.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] ?? s }))}
+        />
         {!orders || orders.length === 0 ? (
           <div className="text-center py-12">
             <img
@@ -116,9 +157,15 @@ export default async function HistoryPage({
               aria-hidden="true"
               className="mx-auto h-24 w-auto mb-4 opacity-90"
             />
-            <h3 className="text-base font-semibold text-farm-dark">No past orders yet</h3>
-            <p className="text-sm text-gray-400 mt-1.5 max-w-sm mx-auto">
-              Once you place an order, it&apos;ll show up here.
+            <h3 className="text-base font-semibold text-farm-dark">
+              {statusFilter || monthFilter ? "No orders match this filter" : "No past orders yet"}
+            </h3>
+            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
+              {statusFilter || monthFilter ? (
+                <Link href="/history" className="text-farm-green font-medium hover:underline">Clear filters</Link>
+              ) : (
+                <>Once you place an order, it&apos;ll show up here.</>
+              )}
             </p>
           </div>
         ) : (
@@ -187,8 +234,8 @@ export default async function HistoryPage({
           <nav className="flex items-center justify-between gap-3 mt-5" aria-label="Order history pages">
             {hasPrev ? (
               <Link
-                href={`/history?page=${page - 1}`}
-                className="btn-ghost bg-gray-50 hover:bg-gray-100 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
+                href={filterQs({ page: page - 1 })}
+                className="btn-ghost bg-white border border-farm-dark/10 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
               >
                 ‹ Newer
               </Link>
@@ -198,8 +245,8 @@ export default async function HistoryPage({
             <span className="text-xs text-farm-muted">Page {page}</span>
             {hasNext ? (
               <Link
-                href={`/history?page=${page + 1}`}
-                className="btn-ghost bg-gray-50 hover:bg-gray-100 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
+                href={filterQs({ page: page + 1 })}
+                className="btn-ghost bg-white border border-farm-dark/10 text-sm px-4 py-2.5 min-h-[44px] inline-flex items-center"
               >
                 Older ›
               </Link>

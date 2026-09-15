@@ -146,12 +146,20 @@ export default async function OrderDetailPage({
           <p className="text-sm text-gray-500">{restaurant}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {canEdit && (
+          {canEdit ? (
             <Link
               href={`/order?edit=${order.id}`}
-              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 py-1.5 min-h-0 hover:bg-white/20 transition-colors"
+              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[40px] inline-flex items-center hover:bg-white/20 transition-colors"
             >
               Edit
+            </Link>
+          ) : (
+            <Link
+              href={`/order?reorder=${order.id}`}
+              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[40px] inline-flex items-center hover:bg-white/20 transition-colors whitespace-nowrap"
+              title="Start a new order with these items"
+            >
+              Order again
             </Link>
           )}
           <StatusPill status={status} />

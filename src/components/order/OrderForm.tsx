@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
-import { priceForUnit } from "@/lib/utils";
+import { CATEGORY_LABELS, CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
+import { formatDateShort, priceForUnit } from "@/lib/utils";
 import { CategorySection } from "./category-section";
 import { OnboardingTour } from "./OnboardingTour";
 import { ChefSuggestionBox } from "./ChefSuggestionBox";
@@ -30,7 +30,14 @@ interface OrderFormProps {
   initialSplitOpen?: Record<string, boolean>;
   initialNotes?: string;
   editingOrderId?: string;
+  /** Set when the form was prefilled from a past order (?reorder=). */
+  reorderNotice?: { fromDate: string; placed: number; missing: string[] };
+  /** Item ids on this restaurant's most recent order — powers the "Last order" chip. */
+  lastOrderItemIds?: string[];
+  lastOrderDate?: string | null;
 }
+
+type ChipFilter = "all" | "last" | ItemCategory;
 
 /** Which menu a line was placed under. The chef form renders one merged list;
  *  'events' is set by the per-item "For an event" checkmark (automatic for
@@ -81,6 +88,9 @@ export function OrderForm({
   initialSplitOpen = {},
   initialNotes = "",
   editingOrderId,
+  reorderNotice,
+  lastOrderItemIds = [],
+  lastOrderDate = null,
 }: OrderFormProps) {
   const router = useRouter();
   const [quantities, setQuantities] = useState<Record<string, number>>(initialQuantities);
@@ -91,6 +101,8 @@ export function OrderForm({
   const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
   const [search, setSearch] = useState("");
+  const [chip, setChip] = useState<ChipFilter>("all");
+  const [reorderDismissed, setReorderDismissed] = useState(false);
 
   // Rehydrate from sessionStorage on first mount when not editing — this
   // is what makes "Review Order → Back" preserve quantities. The review
@@ -101,6 +113,7 @@ export function OrderForm({
   // a different in-flight session.
   useEffect(() => {
     if (editingOrderId) return; // edit mode hydrates from order_items via props
+    if (reorderNotice) return; // reorder prefill wins over any stale draft
     try {
       const raw = typeof window !== "undefined"
         ? sessionStorage.getItem("press_farm_order")
@@ -189,9 +202,19 @@ export function OrderForm({
 
   // Filter to only available/limited items, then by search query
   const allAvailable = availabilityItems.filter((ai) => ai.status !== "unavailable");
-  const visibleItems = search.trim()
-    ? allAvailable.filter((ai) => ai.item.name.toLowerCase().includes(search.toLowerCase().trim()))
-    : allAvailable;
+  const lastOrderSet = new Set(lastOrderItemIds);
+  const matchesChip = (ai: AvailabilityItemWithItem): boolean =>
+    chip === "all" ? true : chip === "last" ? lastOrderSet.has(ai.item.id) : ai.item.category === chip;
+  const visibleItems = allAvailable
+    .filter((ai) => (search.trim() ? ai.item.name.toLowerCase().includes(search.toLowerCase().trim()) : true))
+    .filter(matchesChip);
+
+  // Chip row: All · Last order · each category that has something to order.
+  const lastOrderCount = allAvailable.filter((ai) => lastOrderSet.has(ai.item.id)).length;
+  const categoryCounts = CATEGORY_ORDER.map((cat) => ({
+    cat,
+    n: allAvailable.filter((ai) => ai.item.category === cat).length,
+  })).filter((c) => c.n > 0);
 
   // Restaurant-scoped section visibility:
   //   • Press Bar login → only the Press Bar section.
@@ -448,6 +471,36 @@ export function OrderForm({
             </button>
           )}
         </div>
+        {/* Filter chips — category + "Last order" */}
+        {(categoryCounts.length > 1 || lastOrderCount > 0) && (
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 mt-2.5 pb-0.5" role="group" aria-label="Filter items">
+            {([
+              { key: "all" as ChipFilter, label: "All", n: allAvailable.length },
+              ...(lastOrderCount > 0
+                ? [{ key: "last" as ChipFilter, label: lastOrderDate ? `Last order · ${formatDateShort(lastOrderDate)}` : "Last order", n: lastOrderCount }]
+                : []),
+              ...categoryCounts.map((c) => ({ key: c.cat as ChipFilter, label: CATEGORY_LABELS[c.cat], n: c.n })),
+            ]).map((c) => {
+              const on = chip === c.key;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setChip(on && c.key !== "all" ? "all" : c.key)}
+                  aria-pressed={on}
+                  className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full border px-3 min-h-[36px] text-xs font-medium transition-colors ${
+                    on
+                      ? "bg-farm-dark text-white border-farm-dark"
+                      : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/30"
+                  }`}
+                >
+                  {c.label}
+                  <span className={`tabular-nums ${on ? "text-white/70" : "text-farm-muted/60"}`}>{c.n}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         {orderedCount > 0 && (
           <p className="text-xs text-farm-green mt-1.5 px-1 tabular-nums">
             {orderedCount} item{orderedCount !== 1 ? "s" : ""} in your order
@@ -455,10 +508,39 @@ export function OrderForm({
         )}
       </div>
 
+      {/* Reorder notice — what carried over from the past order, what didn't */}
+      {reorderNotice && !reorderDismissed && (
+        <div className="mx-4 mt-4 rounded-xl border border-farm-green/25 bg-farm-green-light/60 px-4 py-3 flex items-start gap-3">
+          <div className="flex-1 min-w-0 text-sm text-farm-dark">
+            <p className="font-medium">
+              Prefilled from your {formatDateShort(reorderNotice.fromDate)} order
+              <span className="text-farm-muted font-normal"> · {reorderNotice.placed} line{reorderNotice.placed === 1 ? "" : "s"}</span>
+            </p>
+            {reorderNotice.missing.length > 0 && (
+              <p className="text-xs text-farm-muted mt-1 leading-snug">
+                Not available for this date: {reorderNotice.missing.join(", ")}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setReorderDismissed(true)}
+            aria-label="Dismiss"
+            className="w-9 h-9 -mr-2 -mt-1 flex items-center justify-center text-farm-muted hover:text-farm-dark"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 px-4 py-4 pb-32">
         {visibleItems.length === 0 ? (
           <div className="text-center py-12 text-farm-muted text-sm">
-            {search ? `No items match "${search}"` : "No items available for this delivery."}
+            {search
+              ? `No items match "${search}"`
+              : chip !== "all"
+                ? "Nothing in this filter for this delivery."
+                : "No items available for this delivery."}
           </div>
         ) : (
           <>
