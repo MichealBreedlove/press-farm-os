@@ -42,11 +42,17 @@ export default async function WeeklyUpdatePage() {
     .select("id, full_name")
     .eq("role", "chef")
     .eq("is_active", true);
+  // One auth listing instead of a getUserById round-trip per chef. The
+  // farm has well under 1,000 accounts, so a single page covers everyone.
+  const { data: authList } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const emailById = new Map<string, string>();
+  for (const u of authList?.users ?? []) {
+    if (u.email) emailById.set(u.id, u.email.toLowerCase());
+  }
   const chefs: { name: string; email: string }[] = [];
   const seen = new Set<string>();
   for (const chef of chefProfiles ?? []) {
-    const { data: authUser } = await admin.auth.admin.getUserById(chef.id);
-    const email = authUser?.user?.email?.toLowerCase();
+    const email = emailById.get(chef.id);
     if (!email || seen.has(email)) continue;
     seen.add(email);
     chefs.push({ name: chef.full_name ?? email, email });
@@ -57,11 +63,6 @@ export default async function WeeklyUpdatePage() {
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/admin/dashboard" className="text-white/70 hover:text-white min-h-0 min-w-0">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
           <h1 className="page-title">Weekly Update</h1>
         </div>
       </header>

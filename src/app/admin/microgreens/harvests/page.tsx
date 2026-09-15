@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { harvestUnitLabel } from "@/lib/microgreens/types";
 import { formatDateTimePacific } from "@/lib/utils";
 
@@ -28,9 +29,12 @@ export default async function HarvestLogPage() {
       />
       <div className="px-4 max-w-3xl mx-auto">
         {harvests.length === 0 ? (
-          <p className="p-6 text-center text-sm text-farm-muted bg-white border border-farm-dark/10 rounded-xl">
-            No harvests logged yet.
-          </p>
+          <EmptyState
+            flower="dill"
+            title="No harvests logged yet"
+            body="Harvests are logged from a tray's page when it's cut."
+            cta={{ label: "Trays", href: "/admin/microgreens/trays" }}
+          />
         ) : (
           <ul className="space-y-2">
             {harvests.map((h: any) => (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { GrowingTabs } from "@/components/admin/GrowingTabs";
 import { Flower2 } from "lucide-react";
 import { plantingAccrual, valueByMonth } from "@/lib/production-value/accrual";
@@ -59,9 +60,12 @@ export default async function PlanterBoxesPage() {
         </div>
 
         {enriched.length === 0 ? (
-          <p className="text-sm text-farm-muted">
-            No planter boxes yet. Add one to track flowers and herbs chefs harvest themselves.
-          </p>
+          <EmptyState
+            flower="rosemary"
+            title="No planter boxes yet"
+            body="Add one to track flowers and herbs chefs harvest themselves."
+            cta={{ label: "New box", href: "/admin/planter-boxes/new" }}
+          />
         ) : (
           <ul className="space-y-2">
             {enriched.map((b) => (

@@ -143,7 +143,7 @@ export default async function OrderDetailPage({
           <h1 className="text-lg font-semibold truncate">
             {formatDeliveryDate(order.delivery_date)}
           </h1>
-          <p className="text-sm text-gray-500">{restaurant}</p>
+          <p className="text-sm text-white/80">{restaurant}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {canEdit ? (
@@ -327,27 +327,27 @@ export default async function OrderDetailPage({
         {order.freeform_notes && (
           <div className="card px-4 py-4">
             <p className="section-eyebrow with-flower text-farm-muted mb-1.5">Notes for Press Farm</p>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{order.freeform_notes}</p>
+            <p className="text-sm text-farm-dark whitespace-pre-wrap">{order.freeform_notes}</p>
           </div>
         )}
 
         {/* Order metadata */}
         <div className="card px-4 py-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Status</span>
-            <span className="font-medium text-gray-900">{ORDER_STATUS_LABELS[status]}</span>
+            <span className="text-farm-muted">Status</span>
+            <span className="font-medium text-farm-dark">{ORDER_STATUS_LABELS[status]}</span>
           </div>
           {order.submitted_at && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Submitted</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-farm-muted">Submitted</span>
+              <span className="font-medium text-farm-dark">
                 {formatDateTimePacific(order.submitted_at)}
               </span>
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Order ID</span>
-            <span className="font-mono text-xs text-gray-400">{order.id.slice(0, 8)}</span>
+            <span className="text-farm-muted">Order ID</span>
+            <span className="font-mono text-xs text-farm-muted/70">{order.id.slice(0, 8)}</span>
           </div>
         </div>
 

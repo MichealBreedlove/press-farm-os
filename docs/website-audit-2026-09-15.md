@@ -85,8 +85,8 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | 3.6 | `/admin/orders/[date]/notifications` | History only, reachable only from inside `NotifyReceiverButton` | Add "Resend" + link from the day panel. | S |
 | 3.7 | `/admin/settings/data-check` | Lists integrity problems with no jump-to-record links | Link each row to the item/order. | S |
 | 3.8 | All report pages | Fixed period, only a `PrintButton` | Period + restaurant picker (Explorer's GET-form pattern). | M |
-| 3.9 | `/admin/weekly-update/page.tsx:47` | `auth.admin.getUserById` per chef in a loop; no `loading.tsx` | Batch the lookup; add a route `loading.tsx`. | S |
-| 3.10 | Heavy pages with no skeleton | Only `src/app/admin/loading.tsx` exists; Explorer, Executive, Income, Weekly Update block navigation | Add `loading.tsx` with `FlowerSpinner` per route group. | S |
+| ~~3.9~~ | `/admin/weekly-update/page.tsx` | **Done** — one `listUsers` call. | `auth.admin.getUserById` per chef in a loop; no `loading.tsx` | Batch the lookup; add a route `loading.tsx`. | S |
+| ~~3.10~~ | Chef, receiver, harvester routes | **Done** — `loading.tsx` on calendar, history, events, receiver, harvest (admin already had one). | Only `src/app/admin/loading.tsx` exists; Explorer, Executive, Income, Weekly Update block navigation | Add `loading.tsx` with `FlowerSpinner` per route group. | S |
 
 ### Chef
 
@@ -99,8 +99,8 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | 3.15 | `/calendar` | Day cells link to `/order?date=ISO`, but `/order` silently ignores the date unless it is an open delivery date (`order/page.tsx:148-156`) | Link only delivery-date cells, or show "that date isn't open, showing next" on `/order`. | S |
 | 3.16 | `/calendar` | Agenda rows ("Squash Blossoms, Aug 12 – Sep 3") are inert | Tap → `/order` scrolled to that item, or "notify me when it's in". | M |
 | 3.17 | `/history` | No search, no date or status filter | Status chips + month picker. | S |
-| 3.18 | Role gating | `/order`, `/calendar`, `/history`, `/events` check auth only; a receiver/harvester typing `/history` gets "No restaurant found" | Redirect by role in `src/lib/supabase/middleware.ts` (or the layouts). | S |
-| 3.19 | PWA install prompt | Mounts only on `/history` and `/receiver` | Mount in the chef layout. | S |
+| ~~3.18~~ | Role gating | **Done** — `gateChefPortal()` in the four chef layouts. | `/order`, `/calendar`, `/history`, `/events` check auth only; a receiver/harvester typing `/history` gets "No restaurant found" | Redirect by role in `src/lib/supabase/middleware.ts` (or the layouts). | S |
+| ~~3.19~~ | PWA install prompt | **Done** — also mounts on the chef calendar. | Mounts only on `/history` and `/receiver` | Mount in the chef layout. | S |
 
 ## 4. Fix (bugs and brand inconsistencies)
 
@@ -108,14 +108,14 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 |---|---|---|---|
 | 4.1 | `forecast/page.tsx:153`, `crop-plan/CropPlanTimeline.tsx:218,273`, `reports/executive/ExecutiveDashboard.tsx:161,211,242,273,305` | **8 broken Tailwind classes** like `bg-farm-cream/60/40` (double opacity) render nothing. | S |
 | 4.2 | `deliveries/finalize/page.tsx:72` | Back arrow is `text-farm-muted` inside the dark `page-header` (invisible). Moot if 1.2 lands. | S |
-| 4.3 | `history/page.tsx`, `history/[orderId]/page.tsx`, `order/review/page.tsx`, `order/forecast/page.tsx`, `microgreens/trays/[id]`, `setup-shared-accounts` | Raw `text-gray-*` / `bg-gray-50` / `text-blue-900` / non-brand purples outside the documented `farm-*` / `pf-*` / status families. | S |
-| 4.4 | `OnboardingTour.tsx:73` | `bg-black/60` overlay; rest of app uses `bg-farm-dark/40`. | S |
+| ~~4.3~~ | history, order detail, review | **Done** for the chef pages; `microgreens/trays/[id]` and `order/forecast` untouched. | Raw `text-gray-*` / `bg-gray-50` / `text-blue-900` / non-brand purples outside the documented `farm-*` / `pf-*` / status families. | S |
+| ~~4.4~~ | `OnboardingTour.tsx` | **Done.** | `bg-black/60` overlay; rest of app uses `bg-farm-dark/40`. | S |
 | 4.5 | 8 admin pages | Missing `EditorialHero`: `availability/`, `availability/[date]/`, `availability/[date]/offer-sheet`, `deliveries/finalize`, `items/[itemId]`, `reports/expenses`, `setup-shared-accounts`, `ui-kit`. | S |
-| 4.6 | `deliveries/[date]`, `inbox/[id]`, `forecast`, `weekly-update` | Two back buttons (header arrow **and** hero `backHref`). Back target hard-coded to `/admin/dashboard` on `crop-plan`, `notes`, `foraging-calendar`, `forecast` even when arrived from a list. | S |
+| ~~4.6~~ | `deliveries/[date]`, `inbox/[id]`, `forecast`, `weekly-update`, `calendar` | **Done** — header arrow removed, hero back link stays. | Two back buttons (header arrow **and** hero `backHref`). Back target hard-coded to `/admin/dashboard` on `crop-plan`, `notes`, `foraging-calendar`, `forecast` even when arrived from a list. | S |
 | 4.7 | `inbox/page.tsx:109`, `inbox/[id]:122`, `settings/emails:24`, `settings/suggestions:26`, `weekly-update:59`, `deliveries/[date]:118`, `reports/page.tsx` cards | `<a href>` (full reload) instead of `<Link>`. | S |
-| 4.8 | Empty states | Shared `EmptyState` used in 5 places; hand-rolled in `history`, `receiver/archive`, `orders/[date]:283`; bare `<p>` in `events`, `order/forecast`, `microgreens/harvests`, `microgreens/crops`, `planter-boxes`, `forecast`, `availability`. | S |
-| 4.9 | Touch targets under 44px | `category-section.tsx:113` Remove (32px), `OnboardingTour.tsx:84` close (36px), `:126` Skip (32px), review page back chevron (bare glyph). | S |
-| 4.10 | `ChefNav.tsx:51-57` | Sign-out sits in the tab bar next to Order/Calendar/Events/History, guarded by a native `confirm()`. Move to a profile/menu row. | S |
+| ~~4.8~~ | Empty states | **Done** on history, receiver archive, orders/[date], microgreens harvests, planter boxes. | Shared `EmptyState` used in 5 places; hand-rolled in `history`, `receiver/archive`, `orders/[date]:283`; bare `<p>` in `events`, `order/forecast`, `microgreens/harvests`, `microgreens/crops`, `planter-boxes`, `forecast`, `availability`. | S |
+| ~~4.9~~ | Touch targets | **Done.** | `category-section.tsx:113` Remove (32px), `OnboardingTour.tsx:84` close (36px), `:126` Skip (32px), review page back chevron (bare glyph). | S |
+| ~~4.10~~ | `ChefNav.tsx` | **Done** — sign-out is a card at the bottom of /history. | Sign-out sits in the tab bar next to Order/Calendar/Events/History, guarded by a native `confirm()`. Move to a profile/menu row. | S |
 | 4.11 | Chef page chrome | `page-header` on `/order`, `/history`, `/receiver`; `EditorialHero` on `/calendar`, `/events`, `/events/order`, `/receiver/archive`. Receiver and harvester get no nav at all. | M |
 | 4.12 | `history/page.tsx:37` | `searchParams` typed as a plain object; every sibling types it as a `Promise` (Next 15 hazard). | S |
 | 4.13 | `BottomNav.tsx` `isActive` | Prefix match lights both "Reports" and "Executive P&L" rows on `/admin/reports/executive`. | S |

@@ -55,7 +55,7 @@ export default function OrderReviewPage() {
   if (!orderData) {
     return (
       <main className="min-h-screen bg-farm-cream flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Loading...</p>
+        <p className="text-farm-muted text-sm">Loading...</p>
       </main>
     );
   }
@@ -219,7 +219,7 @@ export default function OrderReviewPage() {
           <button
             onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
             disabled={isSubmitting}
-            className="btn-ghost flex-1 bg-gray-50 hover:bg-gray-100 text-sm py-3"
+            className="btn-ghost flex-1 bg-white border border-farm-dark/10 text-sm py-3"
           >
             Back
           </button>

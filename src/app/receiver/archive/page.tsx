@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { formatDeliveryDate, todayPacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -100,18 +101,11 @@ export default async function ReceiverArchivePage() {
 
       <div className="px-4 py-6 max-w-3xl mx-auto">
         {dates.length === 0 ? (
-          <div className="text-center py-12 bg-white border border-farm-dark/5 rounded-2xl shadow-sm">
-            <img
-              src="/assets/pressfarm/flowers/rosemary.png"
-              alt=""
-              aria-hidden="true"
-              className="mx-auto h-20 w-auto mb-4 opacity-90"
-            />
-            <p className="font-display text-lg text-farm-dark">Nothing in the archive yet</p>
-            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
-              Past deliveries appear here as they roll off the live dashboard.
-            </p>
-          </div>
+          <EmptyState
+            flower="rosemary"
+            title="Nothing in the archive yet"
+            body="Past deliveries appear here as they roll off the live dashboard."
+          />
         ) : (
           <div className="space-y-6">
             {monthKeys.map((monthKey) => {

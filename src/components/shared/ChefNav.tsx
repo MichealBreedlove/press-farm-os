@@ -1,24 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, ClipboardList, Clock, LogOut } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { usePathname } from "next/navigation";
+import { CalendarDays, ClipboardList, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Chef bottom tabs. Sign-out is NOT here on purpose — it lives at the bottom
+ * of /history, so a mis-tap while ordering can't drop a chef mid-order.
+ */
 export function ChefNav() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  async function handleSignOut() {
-    // Bottom-nav placement makes accidental taps easy — confirm first so a
-    // mis-scroll doesn't drop a chef out of an in-progress order.
-    if (!window.confirm("Sign out of Press Farm?")) return;
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
   // "Order" is /order for chefs and /events/order for the Events account
   // (/order redirects the Events account there), so both paths light it up.
   const tabs = [
@@ -51,13 +43,6 @@ export function ChefNav() {
           );
         })}
 
-        <button
-          onClick={handleSignOut}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-farm-muted hover:text-red-500 transition-colors min-h-[44px]"
-        >
-          <LogOut className="w-5 h-5" strokeWidth={1.5} />
-          <span>Sign Out</span>
-        </button>
       </div>
     </nav>
   );

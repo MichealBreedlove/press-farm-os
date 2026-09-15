@@ -119,11 +119,6 @@ export default async function InboxDetailPage({ params }: { params: { id: string
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/admin/inbox" className="text-white/70 hover:text-white min-h-0 min-w-0">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
           <h1 className="page-title">Reply</h1>
         </div>
       </header>

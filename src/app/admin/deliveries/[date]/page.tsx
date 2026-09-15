@@ -116,11 +116,6 @@ export default async function AdminDeliveryLogPage({
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/admin/deliveries" className="text-white/70 hover:text-white">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
           <div>
             <h1 className="page-title">Log Delivery</h1>
             <p className="text-xs text-white/60">

@@ -112,7 +112,7 @@ export function CategorySection({
                       <button
                         type="button"
                         onClick={() => onCloseSplit?.(item.id)}
-                        className="text-xs text-farm-muted hover:text-red-700 min-h-[32px] px-2"
+                        className="text-xs text-farm-muted hover:text-red-700 min-h-[44px] min-w-[44px] px-2 inline-flex items-center justify-center"
                       >
                         Remove
                       </button>

@@ -70,7 +70,7 @@ export function OnboardingTour() {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-farm-dark/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
       onClick={close}
     >
       <div
@@ -81,7 +81,7 @@ export function OnboardingTour() {
           <h2 className="font-display text-lg font-semibold text-farm-dark">{current.title}</h2>
           <button
             onClick={close}
-            className="text-farm-muted hover:text-farm-muted/90 min-h-[36px] min-w-[36px] flex items-center justify-center -mr-2 -mt-2"
+            className="text-farm-muted hover:text-farm-dark min-h-[44px] min-w-[44px] flex items-center justify-center -mr-3 -mt-3"
             aria-label="Skip tour"
           >
             <X className="w-4 h-4" />
@@ -123,7 +123,7 @@ export function OnboardingTour() {
         {!isLast && (
           <button
             onClick={close}
-            className="block w-full text-center text-xs text-farm-muted hover:text-farm-muted/90 mt-3 min-h-[32px]"
+            className="block w-full text-center text-xs text-farm-muted hover:text-farm-dark mt-3 min-h-[44px]"
           >
             Skip tour
           </button>

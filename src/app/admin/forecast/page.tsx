@@ -134,7 +134,6 @@ export default async function ForecastPage({
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/admin/dashboard" className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-white/70 hover:text-white">←</Link>
           <div>
             <h1 className="page-title">Harvest Forecast</h1>
             <p className="text-xs text-white/60">For {formatDate(targetDate)} ({DAY_NAMES[targetDay]})</p>

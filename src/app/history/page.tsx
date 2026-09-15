@@ -5,6 +5,8 @@ import { formatDeliveryDate } from "@/lib/utils";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus } from "@/types";
 import { HistoryFilters } from "./HistoryFilters";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { SignOutButton } from "@/components/shared/SignOutButton";
 
 const STATUS_FILTERS: OrderStatus[] = ["submitted", "in_progress", "fulfilled", "cancelled"];
 
@@ -150,24 +152,20 @@ export default async function HistoryPage({
           statusOptions={STATUS_FILTERS.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] ?? s }))}
         />
         {!orders || orders.length === 0 ? (
-          <div className="text-center py-12">
-            <img
-              src="/assets/pressfarm/flowers/squash-bud.png"
-              alt=""
-              aria-hidden="true"
-              className="mx-auto h-24 w-auto mb-4 opacity-90"
+          statusFilter || monthFilter ? (
+            <EmptyState
+              flower="squash-bud"
+              title="No orders match this filter"
+              cta={{ label: "Clear filters", href: "/history" }}
             />
-            <h3 className="text-base font-semibold text-farm-dark">
-              {statusFilter || monthFilter ? "No orders match this filter" : "No past orders yet"}
-            </h3>
-            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
-              {statusFilter || monthFilter ? (
-                <Link href="/history" className="text-farm-green font-medium hover:underline">Clear filters</Link>
-              ) : (
-                <>Once you place an order, it&apos;ll show up here.</>
-              )}
-            </p>
-          </div>
+          ) : (
+            <EmptyState
+              flower="squash-bud"
+              title="No past orders yet"
+              body="Once you place an order, it'll show up here."
+              cta={{ label: "Place an order", href: "/order" }}
+            />
+          )
         ) : (
           <ul className="space-y-2">
             {orders.map((order: any) => {
@@ -255,6 +253,12 @@ export default async function HistoryPage({
             )}
           </nav>
         )}
+
+        {/* Sign-out lives here (not in the tab bar) so a mis-tap while
+            ordering can't drop a chef out mid-order. */}
+        <div className="mt-8">
+          <SignOutButton />
+        </div>
       </div>
     </main>
   );

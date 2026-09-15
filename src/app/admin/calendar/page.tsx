@@ -55,11 +55,6 @@ export default async function AdminCalendarPage({ searchParams }: Props) {
     <main className="pb-24">
       <header className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/admin/dashboard" className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-white/70 hover:text-white">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
           <h1 className="page-title">Calendar</h1>
         </div>
       </header>

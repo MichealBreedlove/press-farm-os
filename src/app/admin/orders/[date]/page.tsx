@@ -15,6 +15,7 @@ import { SendToReceiverBar } from "./SendToReceiverBar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { OrderActivity } from "@/components/shared/OrderActivity";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
@@ -234,19 +235,12 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         )}
 
         {orders.length === 0 && (
-          <div className="text-center py-10">
-            <img src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
-            <h3 className="text-base font-semibold text-farm-dark">No orders yet</h3>
-            <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">
-              Chefs haven&apos;t placed orders for this date yet. They&apos;ll show up here once submitted.
-            </p>
-            <Link
-              href="/admin/availability"
-              className="btn-secondary inline-flex items-center mt-5 px-4 text-sm"
-            >
-              Check availability
-            </Link>
-          </div>
+          <EmptyState
+            flower="pea-flower"
+            title="No orders yet"
+            body="Chefs haven't placed orders for this date yet. They'll show up here once submitted."
+            cta={{ label: "Check availability", href: "/admin/availability" }}
+          />
         )}
 
         {orders.map((order) => {
