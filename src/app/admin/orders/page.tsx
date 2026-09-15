@@ -10,20 +10,58 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import Link from "next/link";
 import { Fragment } from "react";
 import type { OrderStatus } from "@/types";
+import { ExplorerView } from "./ExplorerView";
+import { OrdersViewSwitch } from "./OrdersViewSwitch";
 
 interface AdminOrdersPageProps {
-  searchParams: Promise<{ date?: string; status?: string }>;
+  searchParams: Promise<{
+    date?: string;
+    status?: string;
+    view?: string;
+    period?: string | string[];
+    restaurant?: string | string[];
+    q?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
+  }>;
 }
 
 /**
- * /admin/orders — Orders dashboard (server component)
+ * /admin/orders — Orders (server component)
  *
- * Shows orders for the next upcoming (or selected) delivery date.
- * Per-restaurant order cards. Date switcher. Close/open ordering toggle.
+ * Two views on one route, switched by ?view=:
+ *   - "date" (default): orders for the next upcoming (or selected) delivery
+ *     date. Per-restaurant order cards, date switcher, open/close toggle.
+ *   - "explore": period / restaurant / item filters with per-item rollups
+ *     and an order browser (the former /admin/orders/explorer).
  */
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
-  const { date: dateParam, status: statusFilter } = await searchParams;
+  const sp = await searchParams;
+  const { date: dateParam, status: statusFilter } = sp;
+  const view = sp.view === "explore" ? "explore" : "date";
   const supabase = await createClient();
+
+  if (view === "explore") {
+    return (
+      <main className="pb-24">
+        <header className="page-header sticky top-0 z-30">
+          <h1 className="page-title">Orders</h1>
+        </header>
+        <EditorialHero
+          eyebrow="Daily Operations"
+          title="Orders"
+          subtitle="Filter by period and restaurant · see what was ordered · track how much of any item you brought in"
+          flower="gem-marigold"
+          backHref="/admin/dashboard"
+        />
+        <div className="px-4 pt-4 max-w-3xl mx-auto">
+          <OrdersViewSwitch view="explore" />
+        </div>
+        <ExplorerView searchParams={sp} />
+      </main>
+    );
+  }
+
   // Farm-local today — UTC flips at 4–5pm Pacific and would skip "today"
   // in the default-date pick during the evening ordering window.
   const today = todayPacific();
@@ -112,17 +150,10 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         subtitle={orderSummary}
         flower="squash-blossom"
         backHref="/admin/dashboard"
-        accessory={
-          <Link
-            href="/admin/orders/explorer"
-            className="text-xs font-medium text-farm-green border border-farm-green/30 rounded-lg px-3 py-2 hover:bg-farm-green/5 whitespace-nowrap"
-          >
-            Explorer
-          </Link>
-        }
       />
 
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-4">
+        <OrdersViewSwitch view="date" dateParam={activeDate} />
         {restaurants.map((restaurant) => {
           // A restaurant can have MORE than one order for a date only for the
           // Events team — they place a separate order per event (migration 070).

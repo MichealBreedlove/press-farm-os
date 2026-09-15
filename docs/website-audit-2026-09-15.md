@@ -126,9 +126,9 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 ## Suggested order of work
 
 1. ~~**Quick wins**~~ — **Done (commit on this branch):** 1.1, 1.2, 1.5, 3.15, 4.1, 4.2, 4.7, 4.13. 1.8 (`/admin/forecast`) was **kept**: on a closer read it forecasts *order demand per item from the last 8 weeks*, which the calendar does not do. Its broken classes and off-palette colour were fixed instead.
-2. **Calendar consolidation** (2.1): drop the deliveries-page calendar, add microgreens tray stages as a layer.
-3. **Chef ordering flow** (3.12, 3.13, 3.14): date chips, reorder, filters.
-4. **Orders + Explorer merge** (2.2), then nav from one constant (2.9).
+2. ~~**Calendar consolidation**~~ — **Done.** Deliveries page lost its own calendar; "Log a Delivery" is first. Microgreens calendar kept.
+3. ~~**Chef ordering flow**~~ — **Done.** Date chips, "Order again", category + Last-order chips, history status/month filters (3.12, 3.13, 3.14, 3.17).
+4. ~~**Orders + Explorer merge**~~ — **Done.** `/admin/orders?view=explore` (old URL redirects). BottomNav sheet, dashboard cards and Settings hub render from `src/lib/admin-nav.ts` (2.2, 2.9). Microgreens, Inbox and Tasks now appear on the dashboard too.
 5. **Reports + Growing hubs** (2.6, 2.7) — largest, lowest urgency.
 
 Decisions still needed from Micheal: 1.4 (delete the shared-account provisioning page or move to a script), 2.6 (which report pages can go).

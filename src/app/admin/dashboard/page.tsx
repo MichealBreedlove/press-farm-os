@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { SendDigestButton } from "./SendDigestButton";
 import { RefreshButton } from "./RefreshButton";
 import { WeatherWidget } from "@/components/shared/WeatherWidget";
-import { SEEDS_ENABLED } from "@/lib/constants";
+import { adminNavFor } from "@/lib/admin-nav";
 import { listTodayTasks } from "@/lib/tasks/queries";
 import { TodayWidget } from "@/components/admin/tasks/TodayWidget";
 import type { FarmTask } from "@/types/database";
@@ -154,68 +154,25 @@ export default async function AdminDashboardPage() {
     // migration not applied — widget shows empty
   }
 
-  // Each function gets a brand flower instead of a colored icon tile.
-  // Mapping is loose-symbolic: signature crops for hero functions, supporting
-  // botanicals for utility functions.
-  const sections: { title: string; eyebrow: string; cards: DashCard[] }[] = [
-    {
-      title: "Daily Operations",
-      eyebrow: "The day's work",
-      cards: [
-        { href: "/admin/orders", title: "Orders", description: `${pendingOrders ?? 0} pending`, flower: "squash-blossom" },
-        { href: "/admin/availability", title: "Availability", description: "What's ready to harvest", flower: "calendula" },
-        { href: "/admin/deliveries", title: "Deliveries", description: "Log & calendar", flower: "marigold" },
-        { href: "/admin/calendar", title: "Calendar", description: "Month-at-a-glance", flower: "anise-hyssop" },
-        {
-          href: "/admin/weekly-update",
-          title: "Weekly Update",
-          description: "Chef email — edit before Monday",
-          flower: "chamomile",
-        },
-        {
-          href: "/admin/event-requests",
-          title: "Event Requests",
-          description: (pendingEventRequests ?? 0) > 0
-            ? `${pendingEventRequests} pending review`
-            : "Advance order requests",
-          flower: "borage",
-        },
-      ],
-    },
-    {
-      title: "Farm Management",
-      eyebrow: "Behind the harvest",
-      cards: [
-        { href: "/admin/items", title: "Items", description: "Catalog & photos", flower: "nasturtium" },
-        { href: "/admin/crop-plan", title: "Crop Plan", description: "Seasonal schedule", flower: "squash-bud" },
-        { href: "/admin/planter-boxes", title: "Planter Boxes", description: "Self-harvest production value", flower: "rosemary" },
-        ...(SEEDS_ENABLED
-          ? [{ href: "/admin/seeds", title: "Seeds", description: "On-hand inventory", flower: "calendula" }]
-          : []),
-        { href: "/admin/labor", title: "Labor", description: "Track hours", flower: "lavender" },
-        { href: "/admin/expenses", title: "Expenses", description: "Track costs", flower: "chive-blossom" },
-        { href: "/admin/notes", title: "Notes", description: "Field observations", flower: "pansy" },
-        { href: "/admin/forecast", title: "Forecast", description: "Predict next harvest", flower: "bachelor-button" },
-        { href: "/admin/foraging-calendar", title: "Foraging", description: "Wild harvest by season", flower: "green-leaf" },
-      ],
-    },
-    {
-      title: "Reports & Analytics",
-      eyebrow: "By the numbers",
-      cards: [
-        { href: "/admin/reports", title: "Reports", description: "Revenue & P&L", flower: "green-leaf" },
-        { href: "/admin/reports/executive", title: "Executive", description: "Print summary", flower: "gem-marigold" },
-      ],
-    },
-    {
-      title: "Settings",
-      eyebrow: "Configuration",
-      cards: [
-        { href: "/admin/settings/users", title: "Users", description: "Manage accounts", flower: "pansy" },
-        { href: "/admin/settings", title: "Settings", description: "App config", flower: "fennel" },
-      ],
-    },
-  ];
+  // Nav cards come from the shared admin directory (src/lib/admin-nav.ts) —
+  // the same list BottomNav's More sheet and the Settings hub render — with
+  // live counts swapped into a few captions.
+  const liveDescriptions: Record<string, string> = {
+    "/admin/orders": `${pendingOrders ?? 0} pending`,
+    "/admin/event-requests":
+      (pendingEventRequests ?? 0) > 0 ? `${pendingEventRequests} pending review` : "Past chef requests",
+    "/admin/tasks": todayTasks.length > 0 ? `${todayTasks.length} due today` : "Nothing due today",
+  };
+  const sections: { title: string; eyebrow: string; cards: DashCard[] }[] = adminNavFor("dashboard").map((s) => ({
+    title: s.title,
+    eyebrow: s.eyebrow,
+    cards: s.links.map((l) => ({
+      href: l.href,
+      title: l.label,
+      description: liveDescriptions[l.href] ?? l.description,
+      flower: l.flower,
+    })),
+  }));
 
   const monthName = new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long" });
   const todayDate = new Date();

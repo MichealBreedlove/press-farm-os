@@ -2,19 +2,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { adminNavFor } from "@/lib/admin-nav";
 
-interface NavCard {
-  href: string;
-  title: string;
-  description: string;
-}
-
-const NAV_CARDS: NavCard[] = [
-  { href: "/admin/settings/users", title: "User Management", description: "Invite chefs, manage accounts, assign restaurants" },
-  { href: "/admin/settings/emails", title: "Email Settings", description: "Configure email addresses for notifications and reminders" },
-  { href: "/admin/settings/suggestions", title: "Suggestion Box", description: "Ideas and feedback for improving the system" },
-  { href: "/admin/settings/data-check", title: "Data Check", description: "Verify item counts, deliveries, and import completeness" },
-];
+// Cards come from the shared admin directory so this hub, the dashboard and
+// BottomNav's sheet never drift apart.
+const NAV_CARDS = adminNavFor("settings").find((s) => s.key === "settings")?.links ?? [];
 
 export default async function AdminSettingsPage() {
   const supabase = await createClient();
@@ -42,7 +34,7 @@ export default async function AdminSettingsPage() {
             className="flex items-center justify-between card-interactive px-4 py-4"
           >
             <div>
-              <p className="text-sm font-semibold text-farm-dark">{card.title}</p>
+              <p className="text-sm font-semibold text-farm-dark">{card.label}</p>
               <p className="text-xs text-farm-muted mt-0.5">{card.description}</p>
             </div>
             <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

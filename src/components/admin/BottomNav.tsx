@@ -4,100 +4,63 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Home,
-  ClipboardList,
-  PackageOpen,
-  Sprout,
+  AtSign,
   BarChart3,
-  Mail,
-  CheckSquare,
-  LogOut,
-  Menu,
-  X,
-  Leaf,
+  Bean,
+  Boxes,
   CalendarDays,
   CalendarHeart,
-  Newspaper,
   Carrot,
-  Map,
-  Boxes,
-  Bean,
+  CheckSquare,
+  ClipboardList,
   Clock,
-  Receipt,
-  StickyNote,
-  TrendingUp,
-  TreePine,
   FileText,
-  Users,
+  Home,
+  Leaf,
+  Lightbulb,
+  LogOut,
+  Mail,
+  Map,
+  Menu,
+  Newspaper,
+  PackageOpen,
+  Receipt,
   Settings,
+  ShieldCheck,
+  Sprout,
+  StickyNote,
+  TreePine,
+  TrendingUp,
+  Users,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { SEEDS_ENABLED } from "@/lib/constants";
+import { ADMIN_TABS, adminNavFor, adminNavHrefs } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS: { label: string; Icon: LucideIcon; href: string }[] = [
-  { label: "Home", Icon: Home, href: "/admin/dashboard" },
-  { label: "Tasks", Icon: CheckSquare, href: "/admin/tasks" },
-  { label: "Orders", Icon: ClipboardList, href: "/admin/orders" },
-  { label: "Avail", Icon: Leaf, href: "/admin/availability" },
-  { label: "Deliveries", Icon: PackageOpen, href: "/admin/deliveries" },
-];
+/** Icon name (from src/lib/admin-nav.ts) → component. Unknown names fall
+ *  back to a generic dot so a typo never crashes the nav. */
+const ICONS: Record<string, LucideIcon> = {
+  AtSign, BarChart3, Bean, Boxes, CalendarDays, CalendarHeart, Carrot, CheckSquare,
+  ClipboardList, Clock, FileText, Home, Leaf, Lightbulb, Mail, Map, Newspaper,
+  PackageOpen, Receipt, Settings, ShieldCheck, Sprout, StickyNote, TreePine,
+  TrendingUp, Users,
+};
+const iconFor = (name: string): LucideIcon => ICONS[name] ?? Menu;
+
+const NAV_ITEMS = ADMIN_TABS.map((t) => ({ label: t.label, Icon: iconFor(t.icon), href: t.href }));
 
 /**
- * Full admin directory for the More sheet — every /admin page, grouped the
- * same way as the dashboard nav cards, so anything is reachable in two taps
- * from anywhere without a round-trip through Home.
+ * Full admin directory for the More sheet — generated from ADMIN_NAV_SECTIONS
+ * (the same list the dashboard cards and Settings hub render from), so
+ * anything is reachable in two taps from anywhere without a round-trip
+ * through Home.
  */
-const MENU_SECTIONS: {
-  eyebrow: string;
-  links: { label: string; Icon: LucideIcon; href: string }[];
-}[] = [
-  {
-    eyebrow: "Daily Operations",
-    links: [
-      { label: "Orders", Icon: ClipboardList, href: "/admin/orders" },
-      { label: "Availability", Icon: Leaf, href: "/admin/availability" },
-      { label: "Deliveries", Icon: PackageOpen, href: "/admin/deliveries" },
-      { label: "Tasks", Icon: CheckSquare, href: "/admin/tasks" },
-      { label: "Inbox", Icon: Mail, href: "/admin/inbox" },
-      { label: "Calendar", Icon: CalendarDays, href: "/admin/calendar" },
-      { label: "Weekly Update", Icon: Newspaper, href: "/admin/weekly-update" },
-      { label: "Event Requests", Icon: CalendarHeart, href: "/admin/event-requests" },
-    ],
-  },
-  {
-    eyebrow: "Farm Management",
-    links: [
-      { label: "Items", Icon: Carrot, href: "/admin/items" },
-      { label: "Microgreens", Icon: Sprout, href: "/admin/microgreens" },
-      { label: "Crop Plan", Icon: Map, href: "/admin/crop-plan" },
-      { label: "Planter Boxes", Icon: Boxes, href: "/admin/planter-boxes" },
-      ...(SEEDS_ENABLED
-        ? [{ label: "Seeds", Icon: Bean, href: "/admin/seeds" }]
-        : []),
-      { label: "Labor", Icon: Clock, href: "/admin/labor" },
-      { label: "Expenses", Icon: Receipt, href: "/admin/expenses" },
-      { label: "Notes", Icon: StickyNote, href: "/admin/notes" },
-      { label: "Forecast", Icon: TrendingUp, href: "/admin/forecast" },
-      { label: "Foraging", Icon: TreePine, href: "/admin/foraging-calendar" },
-    ],
-  },
-  {
-    eyebrow: "Reports & Analytics",
-    links: [
-      { label: "Reports", Icon: BarChart3, href: "/admin/reports" },
-      { label: "Executive P&L", Icon: FileText, href: "/admin/reports/executive" },
-    ],
-  },
-  {
-    eyebrow: "Settings",
-    links: [
-      { label: "Users", Icon: Users, href: "/admin/settings/users" },
-      { label: "Settings", Icon: Settings, href: "/admin/settings" },
-    ],
-  },
-];
+const MENU_SECTIONS = adminNavFor("sheet").map((s) => ({
+  eyebrow: s.title,
+  links: s.links.map((l) => ({ label: l.label, Icon: iconFor(l.icon), href: l.href })),
+}));
 
 interface BottomNavProps {
   /** Count of unread inbound replies — badge on the Inbox row + dot on More. */
@@ -137,10 +100,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
 
   // Most-specific match wins: on /admin/reports/executive only the
   // "Executive P&L" row lights up, not "Reports" as well.
-  const allHrefs = [
-    ...NAV_ITEMS.map((n) => n.href),
-    ...MENU_SECTIONS.flatMap((s) => s.links.map((l) => l.href)),
-  ];
+  const allHrefs = adminNavHrefs();
   const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
   const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0] ?? null;
   const isActive = (href: string) => matches(href) && href === bestMatch;
