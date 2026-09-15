@@ -24,6 +24,9 @@ export interface AdminNavLink {
   description: string;
   /** Surfaces this link is omitted from. Default: shown everywhere its section is. */
   hideFrom?: AdminSurface[];
+  /** Extra path prefixes that count as "inside" this link for active-state
+   *  highlighting (e.g. Growing owns /admin/crop-plan, /admin/microgreens…). */
+  matches?: string[];
 }
 
 export interface AdminNavSection {
@@ -55,12 +58,14 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     eyebrow: "Behind the harvest",
     links: [
       { href: "/admin/items", label: "Items", icon: "Carrot", flower: "nasturtium", description: "Catalog & photos" },
-      { href: "/admin/microgreens", label: "Microgreens", icon: "Sprout", flower: "dill", description: "Trays, sow plan, harvests" },
-      { href: "/admin/crop-plan", label: "Crop Plan", icon: "Map", flower: "squash-bud", description: "Seasonal schedule" },
-      { href: "/admin/planter-boxes", label: "Planter Boxes", icon: "Boxes", flower: "rosemary", description: "Self-harvest production value" },
-      ...(SEEDS_ENABLED
-        ? [{ href: "/admin/seeds", label: "Seeds", icon: "Bean", flower: "calendula", description: "On-hand inventory" }]
-        : []),
+      {
+        href: "/admin/growing",
+        label: "Growing",
+        icon: "Sprout",
+        flower: "pea-flower",
+        description: "Crop plan · planter boxes · seeds · microgreens",
+        matches: ["/admin/crop-plan", "/admin/planter-boxes", "/admin/microgreens", ...(SEEDS_ENABLED ? ["/admin/seeds"] : [])],
+      },
       { href: "/admin/labor", label: "Labor", icon: "Clock", flower: "lavender", description: "Track hours" },
       { href: "/admin/expenses", label: "Expenses", icon: "Receipt", flower: "chive-blossom", description: "Track costs" },
       { href: "/admin/notes", label: "Notes", icon: "StickyNote", flower: "pansy", description: "Field observations" },
@@ -108,9 +113,21 @@ export function adminNavFor(surface: AdminSurface): AdminNavSection[] {
   })).filter((s) => s.links.length > 0);
 }
 
-/** Every admin href the nav knows about (for most-specific active matching). */
-export function adminNavHrefs(): string[] {
-  return Array.from(
-    new Set([...ADMIN_TABS.map((t) => t.href), ...ADMIN_NAV_SECTIONS.flatMap((s) => s.links.map((l) => l.href))]),
-  );
+/**
+ * Which nav href should light up for a pathname. Most-specific match wins,
+ * across every link's own href plus its `matches` prefixes — so
+ * /admin/reports/executive lights "Executive P&L" (not "Reports"), and
+ * /admin/microgreens/trays lights "Growing".
+ */
+export function resolveActiveHref(pathname: string): string | null {
+  const candidates: { path: string; href: string }[] = [
+    ...ADMIN_TABS.map((t) => ({ path: t.href, href: t.href })),
+    ...ADMIN_NAV_SECTIONS.flatMap((s) =>
+      s.links.flatMap((l) => [{ path: l.href, href: l.href }, ...(l.matches ?? []).map((m) => ({ path: m, href: l.href }))]),
+    ),
+  ];
+  const hit = candidates
+    .filter((c) => pathname === c.path || pathname.startsWith(c.path + "/"))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  return hit?.href ?? null;
 }

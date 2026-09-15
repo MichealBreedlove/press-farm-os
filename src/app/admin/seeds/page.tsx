@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect, notFound } from "next/navigation";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { GrowingTabs } from "@/components/admin/GrowingTabs";
 import { SEEDS_ENABLED } from "@/lib/constants";
 import { SeedsClient } from "./SeedsClient";
 import type { SeedWithItem } from "@/types";
@@ -43,12 +44,13 @@ export default async function AdminSeedsPage() {
         <h1 className="page-title">Seeds</h1>
       </header>
       <EditorialHero
-        eyebrow="Farm Management"
+        eyebrow="Growing"
         title="Seed Inventory"
         subtitle={subtitle}
         flower="calendula"
-        backHref="/admin/dashboard"
+        backHref="/admin/growing"
       />
+      <GrowingTabs active="seeds" />
 
       <div className="px-4 py-4 max-w-3xl mx-auto">
         <SeedsClient

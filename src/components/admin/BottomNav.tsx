@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { ADMIN_TABS, adminNavFor, adminNavHrefs } from "@/lib/admin-nav";
+import { ADMIN_TABS, adminNavFor, resolveActiveHref } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 
 /** Icon name (from src/lib/admin-nav.ts) → component. Unknown names fall
@@ -100,10 +100,8 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
 
   // Most-specific match wins: on /admin/reports/executive only the
   // "Executive P&L" row lights up, not "Reports" as well.
-  const allHrefs = adminNavHrefs();
-  const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
-  const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0] ?? null;
-  const isActive = (href: string) => matches(href) && href === bestMatch;
+  const activeHref = resolveActiveHref(pathname);
+  const isActive = (href: string) => href === activeHref;
 
   // Tabs highlight most-specific-first so /admin/reports/executive doesn't
   // light up the Reports tab AND the sheet's Executive row differently.

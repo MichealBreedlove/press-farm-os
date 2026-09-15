@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { GrowingTabs } from "@/components/admin/GrowingTabs";
 import { Flower2 } from "lucide-react";
 import { plantingAccrual, valueByMonth } from "@/lib/production-value/accrual";
 import { todayPacific } from "@/lib/utils";
@@ -42,13 +43,14 @@ export default async function PlanterBoxesPage() {
   return (
     <main className="pb-24">
       <EditorialHero
-        eyebrow="Production"
+        eyebrow="Growing"
         title="Planter Boxes"
         subtitle={`${boxes.length} boxes · ${money(grandTotal)} production value to date`}
         flower="nasturtium"
-        backHref="/admin/dashboard"
+        backHref="/admin/growing"
       />
-      <div className="px-4 max-w-3xl mx-auto">
+      <GrowingTabs active="planter-boxes" />
+      <div className="px-4 pt-6 max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Link href="/admin/planter-boxes/new" className="btn-primary inline-block">+ New box</Link>
           <Link href="/admin/reports/production-value" className="text-sm text-farm-green hover:underline">

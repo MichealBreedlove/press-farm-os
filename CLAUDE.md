@@ -51,6 +51,7 @@ src/
       deliveries/                # Log + [date] detail + finalize (+ data/)
       expenses/                  # Farm expense log (+ data/)
       labor/                     # Time tracking + weekly timesheet email
+      growing/                   # Hub: overview + shared tabs over crop-plan / planter-boxes / seeds / microgreens
       crop-plan/                 # Plantings + crop plan
       forecast/                  # Production forecasting
       seeds/                     # Seed inventory + sowings + germination tests

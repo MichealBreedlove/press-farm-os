@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { GrowingTabs } from "@/components/admin/GrowingTabs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { addDaysISO, todayPacific } from "@/lib/utils";
 import { computeSowPlan } from "@/lib/microgreens/sowPlan";
@@ -43,11 +44,13 @@ export default async function MicrogreensDashboardPage() {
   return (
     <main className="pb-24">
       <EditorialHero
-        eyebrow="Production"
+        eyebrow="Growing"
         title="Microgreens"
         subtitle={`${(crops ?? []).length} crops · ${(trays ?? []).filter((t: any) => !["terminated","lost"].includes(t.status)).length} trays in flight`}
+        backHref="/admin/growing"
       />
-      <div className="px-4 max-w-3xl mx-auto space-y-6">
+      <GrowingTabs active="microgreens" />
+      <div className="px-4 pt-6 max-w-3xl mx-auto space-y-6">
         <nav className="flex flex-wrap gap-2">
           {([
             ["Crops", "/admin/microgreens/crops"],

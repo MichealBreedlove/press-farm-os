@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CropPlanTimeline } from "./CropPlanTimeline";
 import { CropRecommendations } from "./CropRecommendations";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { GrowingTabs } from "@/components/admin/GrowingTabs";
 
 export default async function CropPlanPage() {
   const supabase = await createClient();
@@ -45,12 +46,13 @@ export default async function CropPlanPage() {
         </div>
       </header>
       <EditorialHero
-        eyebrow="Farm Management"
+        eyebrow="Growing"
         title="Crop Plan"
         subtitle="Seasonal calendar — what to plant when"
         flower="squash-bud"
-        backHref="/admin/dashboard"
+        backHref="/admin/growing"
       />
+      <GrowingTabs active="crop-plan" />
       <CropRecommendations />
       <CropPlanTimeline
         plantings={plantings ?? []}
