@@ -21,6 +21,7 @@ export async function getCalendarMonth(year: number, month: number): Promise<Cal
     { data: notes },
     { data: eventRequests },
     { data: labor },
+    { data: eventOrders },
     { data: restaurantRows },
     harvest,
   ] = await Promise.all([
@@ -77,6 +78,15 @@ export async function getCalendarMonth(year: number, month: number): Promise<Cal
       .gte("date", from)
       .lte("date", to)
       .limit(500),
+    // Events-team orders land on the calendar on their EVENT date (they
+    // also show under delivery_date in the orders layer).
+    admin
+      .from("orders")
+      .select("id, event_date, event_name, delivery_date, status, restaurant:restaurants(name), order_items(id)")
+      .not("event_date", "is", null)
+      .gte("event_date", from)
+      .lte("event_date", to)
+      .limit(200),
     admin.from("restaurants").select("name").order("name", { ascending: true }),
     getCalendarEvents(from, to).catch(() => []),
   ]);
@@ -134,6 +144,7 @@ export async function getCalendarMonth(year: number, month: number): Promise<Cal
     notes: notes ?? [],
     eventRequests: eventRequests ?? [],
     labor: labor ?? [],
+    eventOrders: eventOrders ?? [],
     harvest,
     restaurants: ((restaurantRows ?? []) as Array<{ name: string }>).map((r) => r.name),
   };

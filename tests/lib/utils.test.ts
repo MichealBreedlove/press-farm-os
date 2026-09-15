@@ -13,6 +13,7 @@ import {
   toISODate,
   getNextDeliveryDates,
   minOrderableDatePacific,
+  closesTodayPacific,
   addDaysISO,
   formatTimePacific,
   formatDateTimePacific,
@@ -185,16 +186,21 @@ describe("getNextDeliveryDates", () => {
 
 describe("minOrderableDatePacific", () => {
   // Instants are constructed in UTC; July is PDT (UTC-7), January is PST (UTC-8).
-  it("returns today before the 5pm Pacific cutoff", () => {
+  // Cutoff is 3:30 PM Pacific = 22:30Z in PDT, 23:30Z in PST.
+  it("returns today before the 3:30 PM Pacific cutoff", () => {
     // 8:00am PDT
     expect(minOrderableDatePacific(new Date("2026-07-23T15:00:00Z"))).toBe("2026-07-23");
-    // 4:59pm PDT — one minute before cutoff
-    expect(minOrderableDatePacific(new Date("2026-07-23T23:59:00Z"))).toBe("2026-07-23");
+    // 3:29pm PDT — one minute before cutoff
+    expect(minOrderableDatePacific(new Date("2026-07-23T22:29:00Z"))).toBe("2026-07-23");
+    // 3:00pm PDT — same hour as the cutoff, minutes matter
+    expect(minOrderableDatePacific(new Date("2026-07-23T22:00:00Z"))).toBe("2026-07-23");
   });
 
-  it("rolls to tomorrow at and after 5pm Pacific", () => {
-    // exactly 5:00pm PDT
-    expect(minOrderableDatePacific(new Date("2026-07-24T00:00:00Z"))).toBe("2026-07-24");
+  it("rolls to tomorrow at and after 3:30 PM Pacific", () => {
+    // exactly 3:30pm PDT
+    expect(minOrderableDatePacific(new Date("2026-07-23T22:30:00Z"))).toBe("2026-07-24");
+    // 4:59pm PDT — used to be orderable under the old 5pm rule
+    expect(minOrderableDatePacific(new Date("2026-07-23T23:59:00Z"))).toBe("2026-07-24");
     // 11:30pm PDT — the late-night order case: must land on the NEXT day
     expect(minOrderableDatePacific(new Date("2026-07-24T06:30:00Z"))).toBe("2026-07-24");
   });
@@ -205,10 +211,10 @@ describe("minOrderableDatePacific", () => {
   });
 
   it("is not fooled by UTC already being tomorrow during the evening window (PST)", () => {
-    // 4:30pm PST on Jan 15 = 00:30 UTC on Jan 16 — still before cutoff
-    expect(minOrderableDatePacific(new Date("2026-01-16T00:30:00Z"))).toBe("2026-01-15");
-    // 5:30pm PST on Jan 15 → rolls to Jan 16
-    expect(minOrderableDatePacific(new Date("2026-01-16T01:30:00Z"))).toBe("2026-01-16");
+    // 3:00pm PST on Jan 15 = 23:00 UTC on Jan 15 — still before cutoff
+    expect(minOrderableDatePacific(new Date("2026-01-15T23:00:00Z"))).toBe("2026-01-15");
+    // 4:30pm PST on Jan 15 = 00:30 UTC on Jan 16 → past cutoff, rolls to Jan 16
+    expect(minOrderableDatePacific(new Date("2026-01-16T00:30:00Z"))).toBe("2026-01-16");
   });
 
   it("rolls across month and year boundaries", () => {
@@ -216,6 +222,16 @@ describe("minOrderableDatePacific", () => {
     expect(minOrderableDatePacific(new Date("2026-08-01T01:00:00Z"))).toBe("2026-08-01");
     // 6:00pm PST on Dec 31 → Jan 1
     expect(minOrderableDatePacific(new Date("2027-01-01T02:00:00Z"))).toBe("2027-01-01");
+  });
+});
+
+describe("closesTodayPacific", () => {
+  it("is true only for today's date while today is still orderable", () => {
+    const morning = new Date("2026-07-23T15:00:00Z"); // 8am PDT
+    expect(closesTodayPacific("2026-07-23", morning)).toBe(true);
+    expect(closesTodayPacific("2026-07-25", morning)).toBe(false);
+    const afternoon = new Date("2026-07-23T22:45:00Z"); // 3:45pm PDT
+    expect(closesTodayPacific("2026-07-23", afternoon)).toBe(false);
   });
 });
 

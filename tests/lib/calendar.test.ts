@@ -22,6 +22,7 @@ function emptyRows(over: Partial<CalendarRawRows> = {}): CalendarRawRows {
     notes: [],
     eventRequests: [],
     labor: [],
+    eventOrders: [],
     harvest: [],
     restaurants: [],
     ...over,
@@ -135,6 +136,26 @@ describe("buildCalendarMonth", () => {
           { date: "2026-09-02", hours: 3.5, worker_name: "Ana" },
           { date: "2026-09-02", hours: 2, worker_name: "Luis" },
         ],
+        eventOrders: [
+          {
+            id: "eo1",
+            event_date: "2026-09-20",
+            event_name: "Harvest Dinner",
+            delivery_date: "2026-09-17",
+            status: "submitted",
+            restaurant: { name: "Events" },
+            order_items: [{ id: "a" }, { id: "b" }, { id: "c" }],
+          },
+          {
+            id: "eoX",
+            event_date: "2026-10-02",
+            event_name: "Next month",
+            delivery_date: "2026-09-30",
+            status: "submitted",
+            restaurant: { name: "Events" },
+            order_items: [],
+          },
+        ],
         harvest: [
           {
             date: "2026-09-10",
@@ -173,12 +194,27 @@ describe("buildCalendarMonth", () => {
     expect(d2.notes).toHaveLength(1);
     expect(d2.labor).toEqual({ hours: 9.75, workers: ["Ana", "Luis"], entries: 3 });
 
-    expect(m.days["2026-09-20"].eventRequests[0]).toMatchObject({
+    // Event date 09-20 carries both the legacy chef request and the
+    // Events-team order (keyed on event_date, not delivery_date).
+    const d20 = m.days["2026-09-20"].eventRequests;
+    expect(d20).toHaveLength(2);
+    expect(d20.find((e) => e.kind === "request")).toMatchObject({
       itemName: "Squash Blossoms",
       restaurant: "Press",
       quantity: 40,
       unit: "ea",
+      deliveryDate: null,
     });
+    expect(d20.find((e) => e.kind === "order")).toMatchObject({
+      id: "eo1",
+      eventName: "Harvest Dinner",
+      restaurant: "Events",
+      itemName: "3 lines",
+      deliveryDate: "2026-09-17",
+      status: "submitted",
+    });
+    // The October event order is dropped even though it delivers in September.
+    expect(m.days["2026-09-30"]).toBeUndefined();
     expect(m.days["2026-09-10"].harvest[0].name).toBe("Squash Blossoms");
     expect(m.restaurants).toEqual(["Events", "Press", "Under-Study"]);
   });

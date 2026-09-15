@@ -138,12 +138,30 @@ export function buildCalendarMonth(
     if (!inRange(e.needed_by_date)) continue;
     ensure(e.needed_by_date).eventRequests.push({
       id: e.id,
+      kind: "request",
       eventName: e.event_name ?? null,
       restaurant: relName(e.restaurant),
       itemName: relName(e.item),
       quantity: Number(e.quantity),
       unit: e.unit,
       status: e.status,
+      deliveryDate: null,
+    });
+  }
+
+  for (const o of rows.eventOrders) {
+    if (!inRange(o.event_date)) continue;
+    const lines = (o.order_items ?? []).length;
+    ensure(o.event_date).eventRequests.push({
+      id: o.id,
+      kind: "order",
+      eventName: o.event_name ?? null,
+      restaurant: relName(o.restaurant),
+      itemName: `${lines} line${lines === 1 ? "" : "s"}`,
+      quantity: lines,
+      unit: "lines",
+      status: o.status,
+      deliveryDate: o.delivery_date,
     });
   }
 
@@ -173,6 +191,9 @@ export function buildCalendarMonth(
         a.title.localeCompare(b.title),
     );
     day.harvest.sort((a, b) => a.name.localeCompare(b.name));
+    day.eventRequests.sort(
+      (a, b) => (a.eventName ?? "").localeCompare(b.eventName ?? "") || a.restaurant.localeCompare(b.restaurant),
+    );
     if (day.labor) day.labor.hours = Math.round(day.labor.hours * 100) / 100;
   }
 

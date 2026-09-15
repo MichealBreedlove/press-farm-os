@@ -65,12 +65,18 @@ export interface CalendarNote {
 
 export interface CalendarEventRequest {
   id: string;
+  /** "order" = an Events-team order shown on its event date;
+   *  "request" = a legacy chef request from the retired /events queue. */
+  kind: "order" | "request";
   eventName: string | null;
   restaurant: string;
+  /** Request: the item asked for. Order: "N lines". */
   itemName: string;
   quantity: number;
   unit: string;
   status: string;
+  /** Order only — the delivery date the order ships on. */
+  deliveryDate: string | null;
 }
 
 export interface CalendarLabor {
@@ -158,6 +164,16 @@ export interface CalendarRawRows {
     restaurant: { name: string } | { name: string }[] | null;
   }>;
   labor: Array<{ date: string; hours: number | null; worker_name: string }>;
+  /** Events-team orders with an event_date inside the month (keyed on that date). */
+  eventOrders: Array<{
+    id: string;
+    event_date: string;
+    event_name: string | null;
+    delivery_date: string;
+    status: string;
+    restaurant: { name: string } | { name: string }[] | null;
+    order_items: Array<{ id: string }> | null;
+  }>;
   harvest: ForecastCalendarEvent[];
   restaurants: string[];
 }

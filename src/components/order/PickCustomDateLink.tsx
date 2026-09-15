@@ -22,8 +22,8 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
   const [isPending, startTransition] = useTransition();
   const navStarted = useRef(false);
 
-  // Earliest orderable date, farm-local. Before 5pm Pacific that's today;
-  // after 5pm today's harvest is done, so the picker greys out today and
+  // Earliest orderable date, farm-local. Before 3:30 PM Pacific that's today;
+  // after that today's harvest is done, so the picker greys out today and
   // the earliest choice becomes tomorrow.
   const minDate = minOrderableDatePacific();
 

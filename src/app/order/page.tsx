@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDeliveryDate, minOrderableDatePacific } from "@/lib/utils";
+import { formatDeliveryDate, minOrderableDatePacific, closesTodayPacific, ORDER_CUTOFF_LABEL } from "@/lib/utils";
 import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
@@ -60,8 +60,8 @@ export default async function OrderPage({
   }
 
   const restaurant = restaurantUser.restaurants;
-  // Earliest orderable date, farm-local. Before 5pm Pacific that's today;
-  // after 5pm it rolls to tomorrow — today's harvest is done, so a late-night
+  // Earliest orderable date, farm-local. Before 3:30 PM Pacific that's today;
+  // after that it rolls to tomorrow — today's harvest is done, so a late
   // order must land on the NEXT harvest day, not a still-open same-day date.
   const minOrderable = minOrderableDatePacific();
 
@@ -244,6 +244,11 @@ export default async function OrderPage({
       <header className="page-header">
         <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
         <p className="text-base sm:text-sm font-semibold sm:font-medium text-white/90">{restaurant.name}</p>
+        {closesTodayPacific(deliveryDate.date) && (
+          <p className="mt-1 text-xs text-white/80">
+            Ordering for today closes at {ORDER_CUTOFF_LABEL}. After that, orders go to the next delivery day.
+          </p>
+        )}
       </header>
 
       {/* Off-schedule order affordance — sits just below the header so

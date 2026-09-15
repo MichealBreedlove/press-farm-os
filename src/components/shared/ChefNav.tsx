@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, CalendarHeart, ClipboardList, Clock, LogOut } from "lucide-react";
+import { CalendarDays, ClipboardList, Clock, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -19,19 +19,22 @@ export function ChefNav() {
     router.push("/login");
   }
 
+  // "Order" is /order for chefs and /events/order for the Events account
+  // (/order redirects the Events account there), so both paths light it up.
   const tabs = [
-    { label: "Order", Icon: ClipboardList, href: "/order" },
-    { label: "Calendar", Icon: CalendarDays, href: "/calendar" },
-    { label: "Events", Icon: CalendarHeart, href: "/events" },
-    { label: "History", Icon: Clock, href: "/history" },
+    { label: "Order", Icon: ClipboardList, href: "/order", alsoActive: ["/events"] },
+    { label: "Calendar", Icon: CalendarDays, href: "/calendar", alsoActive: [] as string[] },
+    { label: "History", Icon: Clock, href: "/history", alsoActive: [] as string[] },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-nav z-50 safe-bottom"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="flex items-stretch h-16">
-        {tabs.map(({ label, Icon, href }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
+        {tabs.map(({ label, Icon, href, alsoActive }) => {
+          const isActive = [href, ...alsoActive].some(
+            (p) => pathname === p || pathname.startsWith(p + "/"),
+          );
           return (
             <Link
               key={href}

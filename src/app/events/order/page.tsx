@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDeliveryDate, todayPacific, minOrderableDatePacific } from "@/lib/utils";
+import { formatDeliveryDate, todayPacific, minOrderableDatePacific, ORDER_CUTOFF_LABEL } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
@@ -49,7 +49,7 @@ export default async function EventOrderPage({
   if (restaurant.slug !== "events") redirect("/order");
 
   // `today` stays the min for the EVENT date (an event tonight is fine);
-  // the DELIVERY date list respects the 5pm cutoff — after 5pm Pacific
+  // the DELIVERY date list respects the 3:30 PM cutoff — after that
   // today's harvest is done, so the earliest deliverable date is tomorrow.
   const today = todayPacific();
   const minOrderable = minOrderableDatePacific();
@@ -106,7 +106,7 @@ export default async function EventOrderPage({
       <EditorialHero
         eyebrow="Events Team"
         title="Place an Event Order"
-        subtitle="Pick the event date and the delivery date, then order from what's available."
+        subtitle={`Pick the event date and the delivery date, then order from what's available. Same-day delivery closes at ${ORDER_CUTOFF_LABEL}.`}
         flower="marigold"
       />
       <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">

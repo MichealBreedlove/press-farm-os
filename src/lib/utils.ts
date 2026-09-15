@@ -158,28 +158,41 @@ export function formatDateTimePacific(
 }
 
 /**
- * Chef ordering cutoff, farm-local (America/Los_Angeles). At/after this hour,
+ * Chef ordering cutoff, farm-local (America/Los_Angeles). At/after this time,
  * TODAY's date is no longer orderable — harvest for today already happened, so
- * an evening order must land on the next harvest day.
+ * an afternoon/evening order must land on the next harvest day.
+ * (Micheal, 2026-09-15: moved from 5:00 PM to 3:30 PM.)
  */
-export const ORDER_CUTOFF_HOUR_PACIFIC = 17; // 5:00 PM
+export const ORDER_CUTOFF_HOUR_PACIFIC = 15;
+export const ORDER_CUTOFF_MINUTE_PACIFIC = 30;
+/** Human label for the cutoff, for chef-facing copy. */
+export const ORDER_CUTOFF_LABEL = "3:30 PM";
 
 /**
  * Earliest delivery date (YYYY-MM-DD) a chef may order for right now.
- * Before 5pm Pacific this is today; at/after 5pm it's tomorrow, so a
- * late-night order can never target a harvest day that's already over.
- * `now` is injectable for tests.
+ * Before the cutoff (3:30 PM Pacific) this is today; at/after it it's
+ * tomorrow, so a late order can never target a harvest day that's already
+ * over. `now` is injectable for tests.
  */
 export function minOrderableDatePacific(now: Date = new Date()): string {
   const today = now.toLocaleDateString("en-CA", { timeZone: FARM_TIMEZONE });
-  const hour = Number(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: FARM_TIMEZONE,
-      hour: "numeric",
-      hourCycle: "h23",
-    }).format(now),
-  );
-  return hour < ORDER_CUTOFF_HOUR_PACIFIC ? today : addDaysISO(today, 1);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: FARM_TIMEZONE,
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  const minutesNow = hour * 60 + minute;
+  const cutoff = ORDER_CUTOFF_HOUR_PACIFIC * 60 + ORDER_CUTOFF_MINUTE_PACIFIC;
+  return minutesNow < cutoff ? today : addDaysISO(today, 1);
+}
+
+/** True when `dateStr` is still orderable today but will close at the cutoff. */
+export function closesTodayPacific(dateStr: string, now: Date = new Date()): boolean {
+  const today = now.toLocaleDateString("en-CA", { timeZone: FARM_TIMEZONE });
+  return dateStr === today && minOrderableDatePacific(now) === today;
 }
 
 /**

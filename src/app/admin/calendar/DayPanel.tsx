@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { CalendarDay, CalendarLayer } from "@/lib/calendar";
-import { cn, formatDeliveryDate } from "@/lib/utils";
+import { cn, formatDateShort, formatDeliveryDate } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { TASK_TYPE_ICONS, PRIORITY_COLORS, PRIORITY_LABELS } from "@/lib/tasks/constants";
@@ -556,20 +556,37 @@ export function DayPanel({ day, todayIso, layers, onClose, onChanged }: Props) {
               }
             />
             <ul className="space-y-1.5">
-              {day.eventRequests.map((e) => (
-                <li key={e.id} className="flex items-center gap-2 rounded-lg border border-farm-dark/5 px-3 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm text-farm-dark truncate">
-                      {e.quantity} {e.unit} {e.itemName}
+              {day.eventRequests.map((e) =>
+                e.kind === "order" && e.deliveryDate ? (
+                  <li key={e.id}>
+                    <Link
+                      href={`/admin/orders/${e.deliveryDate}`}
+                      className="flex items-center gap-2 rounded-lg border border-farm-dark/5 border-l-2 border-l-pf-master-violet px-3 py-2 min-h-[44px] hover:bg-farm-cream/40 transition-colors"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm text-farm-dark truncate">{e.eventName ?? "Event order"}</span>
+                        <span className="block text-[11px] text-farm-muted truncate">
+                          {e.restaurant} · {e.itemName} · delivers {formatDateShort(e.deliveryDate)}
+                        </span>
+                      </span>
+                      <StatusPill status={e.status as OrderStatus} />
+                    </Link>
+                  </li>
+                ) : (
+                  <li key={e.id} className="flex items-center gap-2 rounded-lg border border-farm-dark/5 px-3 py-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm text-farm-dark truncate">
+                        {e.quantity} {e.unit} {e.itemName}
+                      </span>
+                      <span className="block text-[11px] text-farm-muted truncate">
+                        {e.restaurant}
+                        {e.eventName && ` · ${e.eventName}`} · request
+                      </span>
                     </span>
-                    <span className="block text-[11px] text-farm-muted truncate">
-                      {e.restaurant}
-                      {e.eventName && ` · ${e.eventName}`}
-                    </span>
-                  </span>
-                  <span className={REQUEST_STATUS_CLASS[e.status] ?? "badge-gray"}>{e.status}</span>
-                </li>
-              ))}
+                    <span className={REQUEST_STATUS_CLASS[e.status] ?? "badge-gray"}>{e.status}</span>
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         )}
