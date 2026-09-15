@@ -60,6 +60,14 @@ interface Props {
    * this Client Component without violating React Server Components rules.
    */
   cellHrefBase?: string;
+  /**
+   * Optional allow-list of ISO dates that may be linked (e.g. open delivery
+   * dates the chef can still order for). When provided, only these cells
+   * link — a harvest-window day that isn't a delivery date stays inert
+   * instead of bouncing the chef to a different date on /order. These
+   * cells also get a delivery-day ring so they read as tappable.
+   */
+  linkableDates?: string[];
 }
 
 const DAY_HEADERS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -76,7 +84,9 @@ export function ForecastCalendar({
   todayHref,
   todayIso,
   cellHrefBase,
+  linkableDates,
 }: Props) {
+  const linkable = linkableDates ? new Set(linkableDates) : null;
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -161,15 +171,21 @@ export function ForecastCalendar({
           const dayNum = parseInt(iso.slice(8, 10));
           const dayEvents = eventsByDate[iso] ?? [];
           const isToday = iso === todayIso;
+          const isLinkable = linkable ? linkable.has(iso) : dayEvents.length > 0;
           const base =
             "min-h-[72px] border-r border-b border-farm-dark/5 last:border-r-0 p-1.5 flex flex-col gap-1";
 
           const inner = (
             <>
               <span
-                className={`text-xs leading-none ${
-                  isToday ? "font-bold text-farm-green" : "text-farm-dark/70"
+                className={`text-xs leading-none inline-flex items-center justify-center w-6 h-6 -m-1 rounded-full ${
+                  isToday
+                    ? "font-bold text-farm-green"
+                    : linkable?.has(iso)
+                      ? "font-semibold text-farm-dark ring-1 ring-farm-green/40"
+                      : "text-farm-dark/70"
                 }`}
+                title={linkable?.has(iso) ? "Delivery day — tap to order" : undefined}
               >
                 {dayNum}
               </span>
@@ -196,7 +212,7 @@ export function ForecastCalendar({
             isToday ? "bg-farm-cream/40 ring-1 ring-inset ring-farm-green/30" : ""
           }`;
 
-          if (cellHrefBase && dayEvents.length > 0) {
+          if (cellHrefBase && isLinkable) {
             return (
               <Link
                 key={cell.key}

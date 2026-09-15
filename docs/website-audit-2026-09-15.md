@@ -54,7 +54,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 | 1.5 | `/admin/ui-kit` from BottomNav + dashboard cards | 564-line brand reference is a developer artifact. Keep the page, drop it from operator nav. | S |
 | 1.6 | `/admin/items/audit` + `/admin/items/bulk-fill` links in `ItemsClient.tsx` | One-shot AI cleanup utilities permanently in the catalog toolbar. Move under Settings → Data tools. | S |
 | 1.7 | `/order/confirmed` | Only says "submitted" then links to `/order` or `/history`. Cannot link the order it just placed (only has a date string in sessionStorage). Replace with redirect to `/history/[orderId]` + success banner. | M |
-| 1.8 | `/admin/forecast` | Same question as the calendar's harvest layer ("what's coming"), as a flat list. Also has a literal 📊 and `text-blue-900`. | S |
+| ~~1.8~~ | `/admin/forecast` | **Kept.** It answers "how much of each item will chefs order next Thu/Sat/Mon" from delivery history, not "what's growing". Emoji + `text-blue-900` fixed. | — |
 
 ## 2. Combine (duplicate surfaces)
 
@@ -125,7 +125,7 @@ Files: `src/app/admin/calendar/{page,CalendarClient,DayPanel,layers}.tsx`, `src/
 
 ## Suggested order of work
 
-1. **Quick wins, one PR** (all S): 1.1, 1.2, 1.5, 1.8, 3.15, 4.1, 4.2, 4.7, 4.13. Removes ~1,000 dead lines and fixes visible bugs.
+1. ~~**Quick wins**~~ — **Done (commit on this branch):** 1.1, 1.2, 1.5, 3.15, 4.1, 4.2, 4.7, 4.13. 1.8 (`/admin/forecast`) was **kept**: on a closer read it forecasts *order demand per item from the last 8 weeks*, which the calendar does not do. Its broken classes and off-palette colour were fixed instead.
 2. **Calendar consolidation** (2.1): drop the deliveries-page calendar, add microgreens tray stages as a layer.
 3. **Chef ordering flow** (3.12, 3.13, 3.14): date chips, reorder, filters.
 4. **Orders + Explorer merge** (2.2), then nav from one constant (2.9).

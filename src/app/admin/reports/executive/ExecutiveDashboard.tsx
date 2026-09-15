@@ -158,7 +158,7 @@ function CompactPL({ years, byYear }: { years: string[]; byYear: Record<string, 
         <span className="text-[9px] text-farm-muted print:text-[7px]">All figures USD</span>
       </div>
       {/* Header */}
-      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "80px").join(" ")}` }}>
         <span />
         {years.map((y) => (
           <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>
@@ -208,7 +208,7 @@ function CompactRestaurant({ years, allRestaurants, restByYear }: {
       <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
         <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Revenue by Restaurant</span>
       </div>
-      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "64px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40 border-b border-gray-50" style={{ gridTemplateColumns: `1fr ${years.map(() => "64px").join(" ")}` }}>
         <span />
         {years.map((y) => <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>{y}</span>)}
       </div>
@@ -239,7 +239,7 @@ function CompactBenchmarks({ years, byYear }: { years: string[]; byYear: Record<
       <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
         <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Benchmarks vs Industry</span>
       </div>
-      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: `1fr 44px ${years.map(() => "52px").join(" ")}` }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40 border-b border-gray-50" style={{ gridTemplateColumns: `1fr 44px ${years.map(() => "52px").join(" ")}` }}>
         <span />
         <span className="text-center text-farm-muted">Tgt</span>
         {years.map((y) => <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>{y}</span>)}
@@ -270,7 +270,7 @@ function CompactTopItems({ items, title, sortKey }: {
       <div className="px-3 py-1.5 bg-farm-cream/40 border-b border-farm-dark/5">
         <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">{title}</span>
       </div>
-      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50 font-semibold text-farm-muted" style={{ gridTemplateColumns: "16px 1fr 52px 40px" }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40 border-b border-gray-50 font-semibold text-farm-muted" style={{ gridTemplateColumns: "16px 1fr 52px 40px" }}>
         <span>#</span>
         <span>Item</span>
         <span className="text-right">Rev</span>
@@ -302,7 +302,7 @@ function CompactExpenses({ categories, years }: { categories: ExecutiveData["exp
         <span className="font-semibold text-farm-dark/80 text-xs print:text-[8px]">Expenses</span>
         <span className="font-semibold text-red-600 text-xs print:text-[8px]">{fmt(total)}</span>
       </div>
-      <div className="grid px-3 py-1 bg-farm-cream/40/50 border-b border-gray-50" style={{ gridTemplateColumns: cols }}>
+      <div className="grid px-3 py-1 bg-farm-cream/40 border-b border-gray-50" style={{ gridTemplateColumns: cols }}>
         <span />
         {years.map((y) => (
           <span key={y} className="text-right font-semibold" style={{ color: yc(y) }}>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { todayPacific } from "@/lib/utils";
+import { todayPacific, minOrderableDatePacific } from "@/lib/utils";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import {
   ForecastCalendar,
@@ -53,12 +53,22 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
 
   const todayIso = todayStr;
 
-  // Calendar events for the grid + windows for the readable agenda.
-  const [events, fieldWindows, microgreenWindows] = await Promise.all([
+  // Calendar events for the grid + windows for the readable agenda, plus
+  // the open delivery dates a chef can still order for — those are the only
+  // cells that link to /order (anything else would be silently redirected).
+  const [events, fieldWindows, microgreenWindows, { data: openDates }] = await Promise.all([
     getCalendarEvents(monthStart, monthEnd),
     getFieldCropWindows(monthStart, monthEnd),
     getMicrogreenWindows(monthStart, monthEnd),
+    (supabase as any)
+      .from("delivery_dates")
+      .select("date")
+      .eq("ordering_open", true)
+      .gte("date", minOrderableDatePacific())
+      .gte("date", monthStart)
+      .lte("date", monthEnd),
   ]);
+  const linkableDates: string[] = ((openDates ?? []) as Array<{ date: string }>).map((d) => d.date);
 
   const eventsByDate: Record<string, ForecastCalendarEvent[]> = {};
   for (const e of events) (eventsByDate[e.date] ??= []).push(e);
@@ -90,7 +100,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
       <EditorialHero
         eyebrow="From the Field"
         title="Harvest Calendar"
-        subtitle="What's coming up — field crops, plus microgreens we've seeded and when they'll be ready."
+        subtitle="What's coming up — field crops, plus microgreens we've seeded and when they'll be ready. Ringed days are open delivery dates: tap one to order."
         flower="anise-hyssop"
       />
 
@@ -107,6 +117,7 @@ export default async function ChefCalendarPage({ searchParams }: Props) {
           todayHref="/calendar"
           todayIso={todayIso}
           cellHrefBase="/order"
+          linkableDates={linkableDates}
         />
 
         {/* Readable agenda — easier than the grid on a phone */}

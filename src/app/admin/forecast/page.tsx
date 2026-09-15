@@ -150,9 +150,9 @@ export default async function ForecastPage({
       />
 
       <div className="px-4 py-5 space-y-4">
-        <div className="card p-4 bg-farm-cream/60/40 border-farm-green/15">
-          <p className="text-sm text-blue-900">
-            📊 Based on the average of recent <strong>{DAY_NAMES[targetDay]}</strong> deliveries (past 8 weeks).
+        <div className="card p-4 bg-farm-cream/40 border-farm-green/15">
+          <p className="text-sm text-farm-dark">
+            Based on the average of recent <strong>{DAY_NAMES[targetDay]}</strong> deliveries (past 8 weeks).
           </p>
           <p className="text-xs text-farm-green mt-1.5">
             Use this as a guide for what to harvest. Actual orders may vary.

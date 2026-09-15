@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -130,7 +131,7 @@ export default async function AdminReportsPage() {
 
       {/* Drill-down CTAs */}
       <div className="px-4 pt-4 space-y-2">
-        <a
+        <Link
           href="/admin/reports/executive"
           className="card-interactive flex items-center justify-between px-4 py-4"
         >
@@ -141,9 +142,9 @@ export default async function AdminReportsPage() {
           <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/admin/reports/crops"
           className="card-interactive flex items-center justify-between px-4 py-4"
         >
@@ -154,9 +155,9 @@ export default async function AdminReportsPage() {
           <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/admin/reports/production-value"
           className="card-interactive flex items-center justify-between px-4 py-4"
         >
@@ -167,9 +168,9 @@ export default async function AdminReportsPage() {
           <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/admin/reports/labor-efficiency"
           className="card-interactive flex items-center justify-between px-4 py-4"
         >
@@ -180,7 +181,7 @@ export default async function AdminReportsPage() {
           <svg className="w-5 h-5 text-farm-muted/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </a>
+        </Link>
       </div>
 
       <ReportsDashboard

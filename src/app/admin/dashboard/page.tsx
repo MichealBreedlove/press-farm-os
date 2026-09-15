@@ -213,7 +213,6 @@ export default async function AdminDashboardPage() {
       cards: [
         { href: "/admin/settings/users", title: "Users", description: "Manage accounts", flower: "pansy" },
         { href: "/admin/settings", title: "Settings", description: "App config", flower: "fennel" },
-        { href: "/admin/ui-kit", title: "UI Kit", description: "Brand reference", flower: "allium" },
       ],
     },
   ];

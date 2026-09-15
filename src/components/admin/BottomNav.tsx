@@ -30,7 +30,6 @@ import {
   FileText,
   Users,
   Settings,
-  Palette,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -96,7 +95,6 @@ const MENU_SECTIONS: {
     links: [
       { label: "Users", Icon: Users, href: "/admin/settings/users" },
       { label: "Settings", Icon: Settings, href: "/admin/settings" },
-      { label: "UI Kit", Icon: Palette, href: "/admin/ui-kit" },
     ],
   },
 ];
@@ -137,8 +135,15 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
     router.push("/login");
   }
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + "/");
+  // Most-specific match wins: on /admin/reports/executive only the
+  // "Executive P&L" row lights up, not "Reports" as well.
+  const allHrefs = [
+    ...NAV_ITEMS.map((n) => n.href),
+    ...MENU_SECTIONS.flatMap((s) => s.links.map((l) => l.href)),
+  ];
+  const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const bestMatch = allHrefs.filter(matches).sort((a, b) => b.length - a.length)[0] ?? null;
+  const isActive = (href: string) => matches(href) && href === bestMatch;
 
   // Tabs highlight most-specific-first so /admin/reports/executive doesn't
   // light up the Reports tab AND the sheet's Executive row differently.

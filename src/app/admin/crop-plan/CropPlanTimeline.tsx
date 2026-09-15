@@ -215,7 +215,7 @@ export function CropPlanTimeline({
                     type="button"
                     aria-expanded={isExpanded}
                     onClick={() => toggleExpand(cropName)}
-                    className="w-full text-left flex items-center hover:bg-farm-cream/40/50 cursor-pointer min-w-[600px]"
+                    className="w-full text-left flex items-center hover:bg-farm-cream/40 cursor-pointer min-w-[600px]"
                   >
                     <div className="w-24 sm:w-40 flex-shrink-0 px-3 py-2.5 flex items-center gap-2">
                       {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-farm-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-farm-muted" />}
@@ -270,7 +270,7 @@ export function CropPlanTimeline({
                   {isExpanded && cropPlantings.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center bg-farm-cream/40/30 hover:bg-farm-cream/60/50 cursor-pointer border-t border-gray-50 min-w-[600px]"
+                      className="flex items-center bg-farm-cream/30 hover:bg-farm-cream/50 cursor-pointer border-t border-gray-50 min-w-[600px]"
                       onClick={() => setSelectedPlanting(p)}
                     >
                       <div className="w-24 sm:w-40 flex-shrink-0 pl-8 pr-3 py-2">
