@@ -63,8 +63,10 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and API calls
+  // Skip non-GET requests, cross-origin requests (Supabase, font CDN — the
+  // page handler below would cache and replay them), and API calls
   if (request.method !== "GET") return;
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/auth/")) return;
 
