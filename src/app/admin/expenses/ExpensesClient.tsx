@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { splitExpenseCategory } from "@/lib/expenses";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 
 interface Expense {
@@ -15,13 +16,14 @@ interface Expense {
 }
 
 interface Props {
-  month: string;
+  /** Pre-fill for new expenses — today when viewing the current month. */
+  defaultDate: string;
   expenses: Expense[];
   totalByCategory: Record<string, number>;
   grandTotal: number;
 }
 
-export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }: Props) {
+export function ExpensesClient({ defaultDate, expenses, totalByCategory, grandTotal }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    date: `${month}-01`,
+    date: defaultDate,
     categories: [EXPENSE_CATEGORIES[0]] as string[],
     description: "",
     vendor: "",
@@ -42,7 +44,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   const knownVendors = Array.from(new Set(expenses.map((e) => e.vendor).filter(Boolean))) as string[];
 
   function resetForm() {
-    setForm({ date: `${month}-01`, categories: [EXPENSE_CATEGORIES[0]], description: "", vendor: "", amount: "" });
+    setForm({ date: defaultDate, categories: [EXPENSE_CATEGORIES[0]], description: "", vendor: "", amount: "" });
     setEditingId(null);
     setShowForm(false);
     setError(null);
@@ -59,7 +61,10 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   function startEdit(exp: Expense) {
     setForm({
       date: exp.date,
-      categories: exp.category ? exp.category.split(", ") : [EXPENSE_CATEGORIES[0]],
+      categories: (() => {
+        const cats = splitExpenseCategory(exp.category);
+        return cats.length > 0 ? cats : ["Other"];
+      })(),
       description: exp.description ?? "",
       vendor: exp.vendor ?? "",
       amount: String(exp.amount),
@@ -72,6 +77,11 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const amount = parseFloat(form.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Enter an amount greater than $0");
+      return;
+    }
     setSaving(true);
     try {
       const body = {
@@ -79,7 +89,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
         category: form.categories.join(", "),
         description: form.description || null,
         vendor: form.vendor || null,
-        amount: parseFloat(form.amount),
+        amount,
       };
 
       const url = editingId ? `/api/expenses/${editingId}` : "/api/expenses";
@@ -91,8 +101,8 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const j = await res.json();
-        throw new Error(j.error ?? "Failed to save");
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Failed to save (${res.status})`);
       }
       resetForm();
       startTransition(() => router.refresh());
@@ -106,8 +116,14 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
   async function handleDelete(id: string) {
     if (!confirm("Delete this expense?")) return;
     setDeleting(id);
+    setError(null);
     try {
-      await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Failed to delete (${res.status})`);
+      }
+      if (editingId === id) resetForm();
       startTransition(() => router.refresh());
     } catch (err: any) {
       setError(err.message);
@@ -116,7 +132,11 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
     }
   }
 
-  const categoriesWithData = EXPENSE_CATEGORIES.filter((c) => totalByCategory[c]);
+  // Every stored category string gets a card — including multi-category
+  // expenses ("Seeds, Soil"), so the cards always add up to the total.
+  const categoriesWithData = Object.keys(totalByCategory)
+    .filter((c) => totalByCategory[c])
+    .sort((a, b) => totalByCategory[b] - totalByCategory[a]);
 
   return (
     <div className="space-y-4">
@@ -139,6 +159,8 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
         <span className="text-sm font-medium text-orange-800">Total Expenses</span>
         <span className="text-lg font-bold text-orange-900">${grandTotal.toFixed(2)}</span>
       </div>
+
+      {error && !showForm && <p className="text-xs text-red-600">{error}</p>}
 
       {/* Add button */}
       {!showForm && (
@@ -222,7 +244,7 @@ export function ExpensesClient({ month, expenses, totalByCategory, grandTotal }:
 
           {error && <p className="text-xs text-red-600">{error}</p>}
 
-          <button type="submit" disabled={saving} className="btn-primary w-full">
+          <button type="submit" disabled={saving || isPending} className="btn-primary w-full">
             {saving ? "Saving..." : editingId ? "Update Expense" : "Save Expense"}
           </button>
         </form>

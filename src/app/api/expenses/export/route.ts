@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { todayPacific } from "@/lib/utils";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 /**
  * GET /api/expenses/export?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -25,16 +26,18 @@ export async function GET(request: Request) {
   const to = searchParams.get("to");
 
   const admin = createAdminClient();
-  let query = admin
-    .from("farm_expenses")
-    .select("id, date, vendor, category, description, amount, receipt_url")
-    .order("date", { ascending: false });
-
-  if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) query = query.gte("date", from);
-  if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) query = query.lte("date", to);
-
-  const { data: expenses, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Paginated — a plain select silently stops at PostgREST's 1,000-row cap.
+  const { data: expenses, error } = await fetchAllRows((lo, hi) => {
+    let query = admin
+      .from("farm_expenses")
+      .select("id, date, vendor, category, description, amount, receipt_url")
+      .order("date", { ascending: false })
+      .order("id");
+    if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) query = query.gte("date", from);
+    if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) query = query.lte("date", to);
+    return query.range(lo, hi);
+  });
+  if (error) return NextResponse.json({ error: (error as { message?: string }).message ?? "Export failed" }, { status: 500 });
 
   function csvEscape(value: unknown): string {
     if (value === null || value === undefined) return "";

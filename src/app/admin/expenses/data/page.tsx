@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { ExpensesDataClient } from "./ExpensesDataClient";
+import { fetchAllRows } from "@/lib/fetch-all";
 
 export default async function ExpensesDataPage() {
   const supabase = await createClient();
@@ -20,8 +21,10 @@ export default async function ExpensesDataPage() {
     admin.from("farm_expenses").select("date").order("date", { ascending: false }).limit(1),
   ]);
 
-  // Sum total amount (small dataset; fine to fetch and reduce)
-  const { data: amounts } = await admin.from("farm_expenses").select("amount");
+  // Sum total amount — paginated so the stat can't silently stop at 1,000 rows
+  const { data: amounts } = await fetchAllRows((lo, hi) =>
+    admin.from("farm_expenses").select("amount").order("id").range(lo, hi),
+  );
   const totalAmount = ((amounts ?? []) as Array<{ amount: number | string }>).reduce(
     (sum, r) => sum + (typeof r.amount === "number" ? r.amount : parseFloat(String(r.amount)) || 0),
     0,

@@ -3,9 +3,7 @@ import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import * as XLSX from "xlsx";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
-
-const VALID_CATEGORIES = new Set<string>(EXPENSE_CATEGORIES);
+import { normalizeExpenseCategory } from "@/lib/expenses";
 
 interface ParsedRow {
   id?: string;            // optional — present means update, missing means insert
@@ -112,9 +110,9 @@ export async function POST(request: Request) {
     }
 
     const categoryRaw = pick(raw, "Category", "category");
-    // Normalize: title-case and check enum; default to "Other" if unknown
-    const titleCased = categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1).toLowerCase();
-    const category = VALID_CATEGORIES.has(titleCased) ? titleCased : "Other";
+    // Normalize case-insensitively, keeping multi-category values ("Seeds, Soil"
+    // — what the export writes) intact; default to "Other" if unknown.
+    const category = normalizeExpenseCategory(categoryRaw) ?? "Other";
 
     const idRaw = pick(raw, "ID", "Id", "id");
     const id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idRaw) ? idRaw : undefined;

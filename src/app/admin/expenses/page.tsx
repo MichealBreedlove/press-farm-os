@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ExpensesClient } from "./ExpensesClient";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { todayPacific } from "@/lib/utils";
+import { isValidMonth } from "@/lib/expenses";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -16,7 +17,8 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const currentMonth = monthParam ?? todayPacific().slice(0, 7);
+  const today = todayPacific();
+  const currentMonth = isValidMonth(monthParam) ? monthParam : today.slice(0, 7);
 
   const [year, mon] = currentMonth.split("-").map(Number);
   const start = `${currentMonth}-01`;
@@ -29,7 +31,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
   const fmtMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   const prevMonth = fmtMonth(prevDate);
   const nextMonth = fmtMonth(nextDate);
-  const isCurrentMonth = currentMonth === todayPacific().slice(0, 7);
+  const isCurrentMonth = currentMonth === today.slice(0, 7);
 
   const monthLabel = new Date(year, mon - 1, 1).toLocaleDateString("en-US", {
     month: "long",
@@ -45,8 +47,9 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
     .lte("date", end)
     .order("date", { ascending: false });
 
+  // decimal(10,2) can come back as a string — coerce so math + toFixed() are safe.
   const expenses: { id: string; date: string; category: string; description: string | null; amount: number; vendor: string | null }[] =
-    expensesRaw ?? [];
+    (expensesRaw ?? []).map((e) => ({ ...e, amount: Number(e.amount) || 0 }));
 
   // Aggregate by category
   const totalByCategory: Record<string, number> = {};
@@ -107,7 +110,7 @@ export default async function AdminExpensesPage({ searchParams }: Props) {
           </Link>
         </div>
         <ExpensesClient
-          month={currentMonth}
+          defaultDate={isCurrentMonth ? today : `${currentMonth}-01`}
           expenses={expenses}
           totalByCategory={totalByCategory}
           grandTotal={grandTotal}
