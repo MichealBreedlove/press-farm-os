@@ -8,6 +8,7 @@ import {
   mergeMonthMaps,
   daysInclusive,
   addDays,
+  seasonEndFor,
   PRODUCTION_VALUE_SPLIT_DEFAULT,
 } from "@/lib/production-value/accrual";
 
@@ -175,5 +176,32 @@ describe("mergeMonthMaps", () => {
         { "2026-01": 2, "2026-03": 7 },
       ]),
     ).toEqual({ "2026-01": 12, "2026-02": 5, "2026-03": 7 });
+  });
+});
+
+describe("seasonEndFor", () => {
+  it("picks the latest end date still ahead this year", () => {
+    expect(seasonEndFor(["2026-09-13", "2026-11-22", null, "2026-10-01"], "2026-09-26")).toBe("2026-11-22");
+  });
+  it("ignores past dates and next-year dates", () => {
+    expect(seasonEndFor(["2026-09-13", "2027-03-01", undefined], "2026-09-26")).toBeNull();
+  });
+  it("includes an end date of today", () => {
+    expect(seasonEndFor(["2026-09-26"], "2026-09-26")).toBe("2026-09-26");
+  });
+});
+
+describe("season projection", () => {
+  it("counts the rest of the season for annuals and perennials", () => {
+    const today = "2026-09-26";
+    const end = "2026-11-22";
+    const annual = { lifecycle: "annual" as const, valueAmount: 206, plantedDate: "2026-05-01", endDate: end, seasonalMonths: [] };
+    const perennial = { lifecycle: "perennial_evergreen" as const, valueAmount: 365 / 12, plantedDate: "2026-11-01", endDate: end, seasonalMonths: [] };
+    const sum = (m: Record<string, number>) => Object.values(m).reduce((s, v) => s + v, 0);
+    // annual: $1/day over 206 days; perennial: $1/day
+    expect(round(sum(valueByMonth(plantingAccrual({ ...annual, today })!, today)))).toBe(149);
+    expect(round(sum(valueByMonth(plantingAccrual({ ...annual, today: end })!, end)))).toBe(206);
+    expect(plantingAccrual({ ...perennial, today })).toBeNull(); // not started yet
+    expect(round(sum(valueByMonth(plantingAccrual({ ...perennial, today: end })!, end)))).toBe(22);
   });
 });

@@ -16,6 +16,7 @@ import {
   plantingAccrual,
   valueByMonth,
   mergeMonthMaps,
+  seasonEndFor,
   PRODUCTION_VALUE_SPLIT_DEFAULT,
   type ProductionSplit,
   type DailyAccrual,
@@ -48,6 +49,10 @@ export interface ProductionValueData {
   /** restaurant split applied to the grand total */
   split: ProductionSplit;
   byRestaurant: ProductionSplit;
+  /** latest planting end date still ahead this year (projection horizon), or null */
+  seasonEnd: string | null;
+  /** to-date total + planter-box value still to accrue through seasonEnd (null if no seasonEnd) */
+  projectedTotal: number | null;
 }
 
 /** Read the 75/25 split from farm_settings, falling back to the code default. */
@@ -97,6 +102,8 @@ export async function getProductionValue(today?: string): Promise<ProductionValu
   ]);
 
   const items: ProductionLineItem[] = [];
+  const seasonEnd = seasonEndFor((plantings ?? []).map((p: any) => p.end_date), cap);
+  let boxProjected = 0;
 
   for (const t of trays ?? []) {
     const crop = (t.microgreen_batches as any)?.microgreen_crops;
@@ -124,6 +131,19 @@ export async function getProductionValue(today?: string): Promise<ProductionValu
       seasonalMonths: p.seasonal_months,
       today: cap,
     });
+    if (seasonEnd) {
+      // Same accrual, but "today" moved to the season end so the rest of the
+      // season counts. Perennials clamp to today, so rebuild rather than reuse.
+      const proj = plantingAccrual({
+        lifecycle: p.lifecycle,
+        valueAmount: Number(p.value_amount),
+        plantedDate: p.planted_date,
+        endDate: p.end_date,
+        seasonalMonths: p.seasonal_months,
+        today: seasonEnd,
+      });
+      if (proj) boxProjected += sumMap(valueByMonth(proj, seasonEnd));
+    }
     if (!acc) continue;
     const byMonth = valueByMonth(acc, cap);
     const total = sumMap(byMonth);
@@ -161,6 +181,8 @@ export async function getProductionValue(today?: string): Promise<ProductionValu
     boxTotal,
     split,
     byRestaurant: { press: total * split.press, understudy: total * split.understudy },
+    seasonEnd,
+    projectedTotal: seasonEnd ? microTotal + boxProjected : null,
   };
 }
 

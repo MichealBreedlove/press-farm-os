@@ -8,6 +8,11 @@ export const dynamic = "force-dynamic";
 
 const money = (n: number) => "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
+function shortDay(d: string): string {
+  const [y, mo, day] = d.split("-").map(Number);
+  return new Date(y, mo - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function monthLabel(m: string): string {
   const [y, mo] = m.split("-").map(Number);
   return new Date(y, mo - 1, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
@@ -36,15 +41,26 @@ export default async function ProductionValueReportPage() {
 
       <div className="px-4 max-w-3xl mx-auto space-y-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <Card label="Total to date" value={money(data.total)} dark />
+          {data.projectedTotal !== null && data.seasonEnd && (
+            <Card label={`Projected by ${shortDay(data.seasonEnd)}`} value={money(data.projectedTotal)} />
+          )}
           <Card label="Microgreens" value={money(data.microTotal)} />
           <Card label="Planter boxes" value={money(data.boxTotal)} />
-          <Card label="Press / Under-Study" value={`${money(data.byRestaurant.press)} / ${money(data.byRestaurant.understudy)}`} small />
+          <Card
+            label="Press / Under-Study"
+            value={`${money(data.byRestaurant.press)} / ${money(data.byRestaurant.understudy)}`}
+            small
+            className={data.projectedTotal !== null ? "col-span-2 sm:col-span-1" : undefined}
+          />
         </div>
 
         <p className="text-xs text-farm-muted">
           Split {Math.round(data.split.press * 100)}% Press / {Math.round(data.split.understudy * 100)}% Under-Study.
+          {data.projectedTotal !== null && data.seasonEnd && (
+            <> Projected adds the planter-box value still to accrue through {shortDay(data.seasonEnd)} (latest planting end date); microgreens stay at to-date.</>
+          )}{" "}
           This value is tracked separately and never written to deliveries, so chef order
           and delivery reports are unaffected.
         </p>
@@ -114,9 +130,9 @@ export default async function ProductionValueReportPage() {
   );
 }
 
-function Card({ label, value, dark, small }: { label: string; value: string; dark?: boolean; small?: boolean }) {
+function Card({ label, value, dark, small, className }: { label: string; value: string; dark?: boolean; small?: boolean; className?: string }) {
   return (
-    <div className={`rounded-lg px-3 py-2.5 ${dark ? "bg-[#212326] text-white" : "bg-white border border-farm-dark/5"}`}>
+    <div className={`rounded-lg px-3 py-2.5 ${dark ? "bg-[#212326] text-white" : "bg-white border border-farm-dark/5"} ${className ?? ""}`}>
       <p className={`text-[9px] uppercase tracking-wider ${dark ? "text-farm-muted" : "text-farm-muted"}`}>{label}</p>
       <p className={`${small ? "text-xs" : "text-lg"} font-bold leading-tight mt-0.5 ${dark ? "text-[#F0B530]" : "text-farm-dark"}`}>{value}</p>
     </div>

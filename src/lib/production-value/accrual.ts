@@ -125,6 +125,20 @@ export function plantingAccrual(input: {
   return acc;
 }
 
+/**
+ * The current season's end for projections: the latest planting end date that
+ * is still ahead of `today` within today's calendar year, or null if none.
+ */
+export function seasonEndFor(endDates: Array<string | null | undefined>, today: string): string | null {
+  const yearEnd = `${today.slice(0, 4)}-12-31`;
+  let best: string | null = null;
+  for (const d of endDates) {
+    if (!d || d < today || d > yearEnd) continue;
+    if (!best || d > best) best = d;
+  }
+  return best;
+}
+
 // ── Aggregation ──────────────────────────────────────────────────────────────
 
 /**
