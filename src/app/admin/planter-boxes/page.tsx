@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { GrowingTabs } from "@/components/admin/GrowingTabs";
 import { Flower2 } from "lucide-react";
 import { plantingAccrual, valueByMonth } from "@/lib/production-value/accrual";
-import { todayPacific } from "@/lib/utils";
+import { compareNatural, todayPacific } from "@/lib/utils";
 
 export const dynamic = "force-dynamic"; // production value is relative to today
 
@@ -32,7 +32,7 @@ export default async function PlanterBoxesPage() {
     .from("planter_boxes")
     .select("*, planter_box_plantings(*)")
     .order("name");
-  const boxes = (data ?? []) as any[];
+  const boxes = ((data ?? []) as any[]).sort((a, b) => compareNatural(a.name, b.name));
 
   const enriched = boxes.map((b) => {
     const plantings = b.planter_box_plantings ?? [];
