@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { comparePlanterBoxes } from "@/lib/utils";
 
 export async function GET() {
   const supabase = await createClient();
@@ -16,7 +17,8 @@ export async function GET() {
     .order("name");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ boxes: data });
+  const boxes = (data ?? []).sort(comparePlanterBoxes);
+  return NextResponse.json({ boxes });
 }
 
 export async function POST(req: Request) {

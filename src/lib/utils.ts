@@ -264,3 +264,21 @@ export function priceForUnit(
   if (u && map && typeof map[u] === "number") return map[u];
   return item.default_price ?? null;
 }
+
+// Natural (numeric-aware) name comparison: "ST2" before "ST10", "U9" before "U10".
+// Postgres ORDER BY name is plain text order, which interleaves the tens.
+const naturalCollator = new Intl.Collator("en-US", { numeric: true, sensitivity: "base" });
+export function compareNatural(a: string, b: string): number {
+  return naturalCollator.compare(a ?? "", b ?? "");
+}
+
+// Planter-box list order: walking order (sort_order, nulls last), then natural name.
+export function comparePlanterBoxes(
+  a: { sort_order?: number | null; name: string },
+  b: { sort_order?: number | null; name: string },
+): number {
+  const sa = a.sort_order ?? Number.POSITIVE_INFINITY;
+  const sb = b.sort_order ?? Number.POSITIVE_INFINITY;
+  if (sa !== sb) return sa < sb ? -1 : 1;
+  return compareNatural(a.name, b.name);
+}
