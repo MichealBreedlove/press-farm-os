@@ -31,6 +31,7 @@ export default async function PlanterBoxesPage() {
   const { data } = await (admin as any)
     .from("planter_boxes")
     .select("*, planter_box_plantings(*)")
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name");
   const boxes = (data ?? []) as any[];
 

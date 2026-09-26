@@ -12,6 +12,7 @@ export async function GET() {
   const { data, error } = await (admin as any)
     .from("planter_boxes")
     .select("*, planter_box_plantings(*)")
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("name");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -33,6 +34,18 @@ export async function POST(req: Request) {
   const farm_id = farms?.[0]?.id;
   if (!farm_id) return NextResponse.json({ error: "No farm configured" }, { status: 500 });
 
+  // New boxes go to the end of the walking order (sort_order drives the list page).
+  let sort_order: number | null = typeof body.sort_order === "number" ? body.sort_order : null;
+  if (sort_order === null) {
+    const { data: last } = await (admin as any)
+      .from("planter_boxes")
+      .select("sort_order")
+      .not("sort_order", "is", null)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+    sort_order = (last?.[0]?.sort_order ?? 0) + 1;
+  }
+
   const { data, error } = await (admin as any)
     .from("planter_boxes")
     .insert({
@@ -42,6 +55,7 @@ export async function POST(req: Request) {
       size: body.size ?? null,
       notes: body.notes ?? null,
       is_active: body.is_active ?? true,
+      sort_order,
     })
     .select()
     .single();
