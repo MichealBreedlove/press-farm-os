@@ -41,7 +41,7 @@ const EMAIL_FIELDS = [
   {
     key: "email_partner_report",
     label: "Partner / Chef Phil Report",
-    description: "Recipient of the monthly + quarterly partner report — value of produce delivered, top crops, and a preview of what's coming. Leave blank to skip these sends.",
+    description: "Recipient of the monthly, quarterly + year-end partner report — value of produce delivered, top crops, and a preview of what's coming. Leave blank to skip these sends.",
     placeholder: "phil@example.com",
   },
   {
@@ -130,6 +130,8 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
   const [quarter, setQuarter] = useState<number>(defaultQuarter);
   const [quarterYear, setQuarterYear] = useState<number>(defaultQYear);
   const yearOptions = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+  const [annualYear, setAnnualYear] = useState<number>(now.getFullYear() - 1);
+  const annualIsPartial = annualYear === now.getFullYear();
 
   function set(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -137,7 +139,7 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
   }
 
   async function sendNow(
-    kind: "forecast" | "partner-monthly" | "partner-quarterly",
+    kind: "forecast" | "partner-monthly" | "partner-quarterly" | "partner-annual" | "partner-annual-preview",
   ) {
     setSending(kind);
     setSendResult(null);
@@ -152,7 +154,9 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
           body: JSON.stringify(
             kind === "partner-quarterly"
               ? { period: "quarterly", year: quarterYear, quarter }
-              : { period: "monthly" },
+              : kind === "partner-annual" || kind === "partner-annual-preview"
+                ? { period: "annual", year: annualYear, preview: kind === "partner-annual-preview" }
+                : { period: "monthly" },
           ),
         });
       }
@@ -165,7 +169,10 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
         setSendResult({ kind: "ok", msg: `Forecast sent to ${data?.emailsSent ?? 0} chef${data?.emailsSent === 1 ? "" : "s"}.` });
       } else {
         const label = data?.periodLabel ? ` (${data.periodLabel})` : "";
-        setSendResult({ kind: "ok", msg: `${kind === "partner-quarterly" ? "Quarterly" : "Monthly"} partner report sent to ${data?.to ?? "partner"}${label}.` });
+        const which =
+          kind === "partner-quarterly" ? "Quarterly" : kind.startsWith("partner-annual") ? "Year-end" : "Monthly";
+        const previewNote = kind === "partner-annual-preview" ? " as a preview — nothing went to the partner" : "";
+        setSendResult({ kind: "ok", msg: `${which} partner report sent to ${data?.to ?? "partner"}${label}${previewNote}.` });
       }
     } catch (err) {
       setSendResult({ kind: "err", msg: String(err) });
@@ -434,6 +441,42 @@ export function EmailSettingsClient({ settings, farmId }: { settings: Record<str
             >
               {sending === "partner-quarterly" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Send Q{quarter} {quarterYear} Partner Report
+            </button>
+          </div>
+          <div className="rounded-lg border border-farm-dark/10 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-farm-muted whitespace-nowrap">Year-end</label>
+              <select
+                value={annualYear}
+                onChange={(e) => setAnnualYear(parseInt(e.target.value, 10))}
+                className="input-field flex-1 py-1.5"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}{y === now.getFullYear() ? " (so far)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-farm-muted">
+              Sends automatically on Jan 2 for the year just ended. Preview goes only to the admin email.
+            </p>
+            <button
+              onClick={() => sendNow("partner-annual-preview")}
+              disabled={sending !== null}
+              className="btn-secondary w-full flex items-center justify-center gap-2"
+            >
+              {sending === "partner-annual-preview" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Preview {annualYear}{annualIsPartial ? " So Far" : ""} Year-End Report to Me
+            </button>
+            <button
+              onClick={() => sendNow("partner-annual")}
+              disabled={sending !== null || annualIsPartial}
+              title={annualIsPartial ? "The year isn't over yet — use Preview" : undefined}
+              className="btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {sending === "partner-annual" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send {annualYear} Year-End Report to Partner
             </button>
           </div>
         </div>

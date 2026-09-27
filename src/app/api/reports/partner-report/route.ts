@@ -4,11 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvailabilityBuckets } from "@/lib/forecasting";
 import { sendPartnerReportEmail } from "@/lib/email";
-import { formatCurrency, todayPacific } from "@/lib/utils";
-import type { PartnerReportLine } from "@/emails/partner-report";
+import { formatCurrency, formatCurrencyWhole, todayPacific } from "@/lib/utils";
+import { fetchAllRows } from "@/lib/fetch-all";
+import { getProductionValue } from "@/lib/production-value/server";
+import { yearRange, priorYearSpan, pctChange, buildMonthBars } from "@/lib/partner-report";
+import { ADMIN_EMAIL, CATEGORY_LABELS } from "@/lib/constants";
+import type { PartnerReportLine, PartnerReportAnnual, PartnerReportPeriod } from "@/emails/partner-report";
 import type { ForecastEmailEntry } from "@/emails/availability-forecast";
+import type { ItemCategory } from "@/types";
 
-type Period = "monthly" | "quarterly";
+type Period = PartnerReportPeriod;
 interface PeriodRange {
   start: string;
   end: string;
@@ -16,7 +21,7 @@ interface PeriodRange {
 }
 
 /**
- * Partner / Chef Phil report (monthly + quarterly).
+ * Partner / Chef Phil report (monthly + quarterly + annual).
  *
  *   GET  — Vercel Cron. The `type` query param selects what to send:
  *            • `type=monthly` (1st of each month) → previous calendar month.
@@ -25,11 +30,17 @@ interface PeriodRange {
  *              Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec.
  *          Requires `Authorization: Bearer ${CRON_SECRET}` (fail-closed in
  *          prod, unsigned OK in local dev).
+ *            • `type=annual` (Jan 2) → the previous calendar year: adds
+ *              year-over-year, month-by-month, categories and self-harvest.
  *   POST — Manual admin trigger. Body:
  *            • { period: 'quarterly', year, quarter }  (year/quarter optional —
  *              default to the most recent COMPLETED quarter)
  *            • { period: 'monthly', year, month }      (optional — default to
  *              the previous month)
+ *            • { period: 'annual', year }              (optional — default to
+ *              the previous year; the current year gives a year-to-date report)
+ *            • any of the above + `preview: true` → sends ONLY to the admin
+ *              address (farm_settings.email_admin), subject prefixed [PREVIEW].
  *
  * Recipient is read from farm_settings.email_partner_report. If unset, the send
  * is skipped and a clear message is returned (graceful no-op).
@@ -97,7 +108,10 @@ export async function GET(request: Request) {
   let period: Period;
   let range: PeriodRange;
   const quarterMatch = /^q([1-4])$/.exec(type);
-  if (quarterMatch) {
+  if (type === "annual") {
+    period = "annual";
+    range = yearRange(now.getFullYear() - 1, todayPacific());
+  } else if (quarterMatch) {
     // Fired on the last day of the quarter — report that quarter of this year.
     period = "quarterly";
     range = quarterRange(now.getFullYear(), parseInt(quarterMatch[1], 10));
@@ -117,11 +131,17 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
 
   const body = await request.json().catch(() => ({} as any));
-  const period: Period = body?.period === "quarterly" ? "quarterly" : "monthly";
+  const period: Period =
+    body?.period === "quarterly" ? "quarterly" : body?.period === "annual" ? "annual" : "monthly";
+  const preview = body?.preview === true;
   const now = new Date();
 
   let range: PeriodRange;
-  if (period === "quarterly") {
+  if (period === "annual") {
+    let year = Number(body?.year);
+    if (!Number.isInteger(year) || year < 2000 || year > now.getFullYear()) year = now.getFullYear() - 1;
+    range = yearRange(year, todayPacific());
+  } else if (period === "quarterly") {
     let year = Number(body?.year);
     let quarter = Number(body?.quarter);
     if (!Number.isInteger(year) || !Number.isInteger(quarter) || quarter < 1 || quarter > 4) {
@@ -137,21 +157,26 @@ export async function POST(request: Request) {
     range = monthRange(year, month);
   }
 
-  const result = await buildAndSend(period, range);
-  return NextResponse.json({ success: true, period, periodLabel: range.label, ...(result as object) });
+  const result = await buildAndSend(period, range, { preview });
+  return NextResponse.json({ success: true, period, periodLabel: range.label, preview, ...(result as object) });
 }
 
-async function buildAndSend(period: Period, { start, end, label }: PeriodRange) {
+async function buildAndSend(
+  period: Period,
+  { start, end, label }: PeriodRange,
+  { preview = false }: { preview?: boolean } = {},
+) {
   const admin = createAdminClient();
 
-  // Partner recipient from farm_settings — graceful skip when unset.
+  // Partner recipient from farm_settings — graceful skip when unset. A preview
+  // goes only to the admin address, never to the partner.
   const { data: setting } = await admin
     .from("farm_settings")
     .select("value")
-    .eq("key", "email_partner_report")
+    .eq("key", preview ? "email_admin" : "email_partner_report")
     .maybeSingle();
 
-  const toEmail: string | null = setting?.value || null;
+  const toEmail: string | null = setting?.value || (preview ? ADMIN_EMAIL : null);
 
   if (!toEmail) {
     return {
@@ -164,50 +189,136 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
 
   // Deliveries in the period (value + restaurant). Strictly bounded to the
   // period's calendar start/end, so a quarter only ever holds its 3 months.
-  const { data: deliveries } = await admin
-    .from("deliveries")
-    .select("id, delivery_date, total_value, restaurants(name)")
-    .gte("delivery_date", start)
-    .lte("delivery_date", end);
+  // Paginated: a full year runs past Supabase's silent 1,000-row cap.
+  const { data: deliveryRows } = await fetchAllRows<any>((from, to) =>
+    admin
+      .from("deliveries")
+      .select("id, delivery_date, total_value, restaurants(name)")
+      .gte("delivery_date", start)
+      .lte("delivery_date", end)
+      .order("id")
+      .range(from, to),
+  );
 
-  const deliveryRows = deliveries ?? [];
-  const totalValue = deliveryRows.reduce((s: number, d: any) => s + (d.total_value ?? 0), 0);
+  const totalValue = deliveryRows.reduce((s: number, d: any) => s + Number(d.total_value ?? 0), 0);
   const deliveryCount = deliveryRows.length;
 
   // By-restaurant breakdown.
   const byRestaurantMap: Record<string, number> = {};
   for (const d of deliveryRows) {
     const name = (d.restaurants as any)?.name ?? "Unknown";
-    byRestaurantMap[name] = (byRestaurantMap[name] ?? 0) + (d.total_value ?? 0);
+    byRestaurantMap[name] = (byRestaurantMap[name] ?? 0) + Number(d.total_value ?? 0);
   }
   const byRestaurant: PartnerReportLine[] = Object.entries(byRestaurantMap)
     .sort((a, b) => b[1] - a[1])
     .map(([label, value]) => ({ label, value: formatCurrency(value) }));
 
-  // Top crops by total delivered value over the period.
-  const deliveryIds = deliveryRows.map((d: any) => d.id).filter(Boolean);
-  const topItems: PartnerReportLine[] = [];
-  if (deliveryIds.length > 0) {
-    const { data: items } = await admin
+  // Line items over the period, filtered through the parent delivery's date
+  // (an `.in(ids)` list of a year's deliveries would blow the URL length).
+  const { data: itemRows } = await fetchAllRows<any>((from, to) =>
+    admin
       .from("delivery_items")
-      .select("quantity, unit, line_total, items(name)")
-      .in("delivery_id", deliveryIds);
+      .select("id, quantity, unit, line_total, items(name, category), deliveries!inner(delivery_date)")
+      .gte("deliveries.delivery_date", start)
+      .lte("deliveries.delivery_date", end)
+      .order("id")
+      .range(from, to),
+  );
 
-    const itemMap: Record<string, { value: number; qty: number; unit: string | null }> = {};
-    for (const it of items ?? []) {
-      const name = (it.items as any)?.name ?? "Item";
-      const lineValue = it.line_total ?? 0;
-      if (!itemMap[name]) itemMap[name] = { value: 0, qty: 0, unit: it.unit ?? null };
-      itemMap[name].value += lineValue;
-      itemMap[name].qty += it.quantity ?? 0;
+  // Top crops by total delivered value over the period.
+  const itemMap: Record<string, { value: number; qty: number; unit: string | null }> = {};
+  const categoryMap: Record<string, { value: number; items: Set<string> }> = {};
+  for (const it of itemRows) {
+    const name = (it.items as any)?.name ?? "Item";
+    const category = (it.items as any)?.category ?? "other";
+    const lineValue = Number(it.line_total ?? 0);
+    if (!itemMap[name]) itemMap[name] = { value: 0, qty: 0, unit: it.unit ?? null };
+    itemMap[name].value += lineValue;
+    itemMap[name].qty += Number(it.quantity ?? 0);
+    if (!categoryMap[category]) categoryMap[category] = { value: 0, items: new Set() };
+    categoryMap[category].value += lineValue;
+    categoryMap[category].items.add(name);
+  }
+  const topItems: PartnerReportLine[] = [];
+  for (const [name, agg] of Object.entries(itemMap)
+    .sort((a, b) => b[1].value - a[1].value)
+    .slice(0, period === "annual" ? 10 : 8)) {
+    topItems.push({
+      label: name,
+      value: formatCurrency(agg.value),
+      sub: `${agg.qty % 1 === 0 ? agg.qty : agg.qty.toFixed(1)}${agg.unit ? ` ${agg.unit.toUpperCase()}` : ""}`,
+    });
+  }
+
+  let annual: PartnerReportAnnual | null = null;
+  if (period === "annual") {
+    const year = Number(start.slice(0, 4));
+    const partialThrough = end < `${year}-12-31` ? end : null;
+
+    // Year-over-year: the same span one year earlier (a year-to-date report
+    // compares against the same stretch last year, not last year's full total).
+    const prior = priorYearSpan({ start, end });
+    const { data: priorRows } = await fetchAllRows<any>((from, to) =>
+      admin
+        .from("deliveries")
+        .select("id, total_value")
+        .gte("delivery_date", prior.start)
+        .lte("delivery_date", prior.end)
+        .order("id")
+        .range(from, to),
+    );
+    const priorTotal = priorRows.reduce((s: number, d: any) => s + Number(d.total_value ?? 0), 0);
+    const change = pctChange(totalValue, priorTotal);
+    const comparison =
+      change === null
+        ? null
+        : `${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs. ${partialThrough ? `the same stretch of ${year - 1}` : year - 1} (${formatCurrencyWhole(priorTotal)})`;
+
+    const byMonth: Record<string, number> = {};
+    for (const d of deliveryRows) {
+      const key = String(d.delivery_date).slice(0, 7);
+      byMonth[key] = (byMonth[key] ?? 0) + Number(d.total_value ?? 0);
     }
-    for (const [name, agg] of Object.entries(itemMap).sort((a, b) => b[1].value - a[1].value).slice(0, 8)) {
-      topItems.push({
-        label: name,
-        value: formatCurrency(agg.value),
-        sub: `${agg.qty % 1 === 0 ? agg.qty : agg.qty.toFixed(1)}${agg.unit ? ` ${agg.unit.toUpperCase()}` : ""}`,
-      });
+
+    const byCategory: PartnerReportLine[] = Object.entries(categoryMap)
+      .sort((a, b) => b[1].value - a[1].value)
+      .map(([cat, agg]) => ({
+        label: CATEGORY_LABELS[cat as ItemCategory] ?? cat,
+        value: formatCurrencyWhole(agg.value),
+        sub: `${agg.items.size} ${agg.items.size === 1 ? "item" : "items"}`,
+      }));
+
+    // Self-harvest (planter boxes + microgreens) accrued within this year only.
+    let selfHarvest: PartnerReportAnnual["selfHarvest"] = null;
+    try {
+      const pv = await getProductionValue(end);
+      const inYear = (m: Record<string, number>) =>
+        Object.entries(m).reduce((s, [k, v]) => (k.startsWith(`${year}-`) ? s + v : s), 0);
+      const boxes = inYear(pv.boxByMonth);
+      const micro = inYear(pv.microByMonth);
+      if (boxes + micro > 0) {
+        selfHarvest = {
+          boxes: formatCurrencyWhole(boxes),
+          microgreens: formatCurrencyWhole(micro),
+          total: formatCurrencyWhole(boxes + micro),
+          grandTotal: formatCurrencyWhole(totalValue + boxes + micro),
+        };
+      }
+    } catch (err) {
+      // Self-harvest is a nice-to-have section — never block the report on it.
+      console.error("[PARTNER REPORT] production value failed:", err);
     }
+
+    annual = {
+      comparison,
+      itemCount: Object.keys(itemMap).length,
+      months: buildMonthBars(year, byMonth, partialThrough),
+      byCategory,
+      selfHarvest,
+      throughLabel: partialThrough
+        ? new Date(`${partialThrough}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        : null,
+    };
   }
 
   // Forward-looking teaser — next 2wk + 4wk windows from the availability forecast.
@@ -249,6 +360,8 @@ async function buildAndSend(period: Period, { start, end, label }: PeriodRange) 
     topItems,
     byRestaurant,
     comingSoon,
+    annual,
+    subjectPrefix: preview ? "[PREVIEW] " : undefined,
   });
 
   return { sent: true, to: toEmail, period, periodLabel: label, totalValue, deliveryCount };

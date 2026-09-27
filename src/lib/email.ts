@@ -15,7 +15,11 @@ import ShortageNotice from "@/emails/shortage-notice";
 import EventRequestAccepted from "@/emails/event-request-accepted";
 import AvailabilityPublished from "@/emails/availability-published";
 import AvailabilityForecast, { type ForecastEmailSection, type ForecastEmailEntry } from "@/emails/availability-forecast";
-import PartnerReport, { type PartnerReportLine } from "@/emails/partner-report";
+import PartnerReport, {
+  type PartnerReportLine,
+  type PartnerReportAnnual,
+  type PartnerReportPeriod,
+} from "@/emails/partner-report";
 
 // ---- Types ----
 
@@ -399,40 +403,66 @@ export async function sendAvailabilityForecastEmail(
 export interface PartnerReportEmailParams {
   toEmail: string;
   partnerName: string;
-  period: "monthly" | "quarterly";
-  /** Already-formatted period label, e.g. "April 2026" or "Q2 2026". */
+  period: PartnerReportPeriod;
+  /** Already-formatted period label, e.g. "April 2026", "Q2 2026" or "2025". */
   periodLabel: string;
   totalValue: string;
   deliveryCount: number;
   topItems: PartnerReportLine[];
   byRestaurant: PartnerReportLine[];
   comingSoon: ForecastEmailEntry[];
+  /** Annual-only sections (year-end report). */
+  annual?: PartnerReportAnnual | null;
+  /** Prepended to the subject, e.g. "[PREVIEW] " for an admin-only preview send. */
+  subjectPrefix?: string;
 }
 
 /**
- * Sent to a partner chef (e.g. Phil) with a monthly or quarterly summary of the
- * value of produce delivered + top crops + by-kitchen breakdown, plus a
- * forward-looking teaser. Partner-facing framing — no expense/margin jargon.
+ * Sent to a partner chef (e.g. Phil) with a monthly, quarterly or annual summary
+ * of the value of produce delivered + top crops + by-kitchen breakdown, plus a
+ * forward-looking teaser (the annual report adds month-by-month, categories and
+ * self-harvest). Partner-facing framing — no expense/margin jargon.
  * Never throws into the request.
  */
 export async function sendPartnerReportEmail(
   params: PartnerReportEmailParams,
 ): Promise<void> {
-  const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon } = params;
-  const periodWord = period === "quarterly" ? "Quarter" : "Month";
-  const subject = `Press Farm — your ${periodWord.toLowerCase()} from the farm, ${periodLabel}`;
+  const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon, annual, subjectPrefix } = params;
+  const periodWord = period === "annual" ? "year" : period === "quarterly" ? "quarter" : "month";
+  const subject = `${subjectPrefix ?? ""}Press Farm — your ${periodWord} from the farm, ${periodLabel}`;
+  const yearly = period === "annual" && annual ? annual : null;
 
   const fallbackLines = [
     `Hello Chef ${partnerName},`,
     ``,
     `${periodLabel} in review.`,
     `Produce delivered: ${totalValue} across ${deliveryCount} ${deliveryCount === 1 ? "delivery" : "deliveries"}.`,
+    ...(yearly?.comparison ? [yearly.comparison] : []),
     ``,
     `By kitchen:`,
     ...byRestaurant.map((r) => `  ${r.label}: ${r.value}`),
+    ...(yearly
+      ? [
+          ``,
+          `Month by month:`,
+          ...yearly.months.filter((m) => !m.future).map((m) => `  ${m.label}: $${Math.round(m.value).toLocaleString("en-US")}`),
+        ]
+      : []),
     ``,
     `Top crops:`,
     ...topItems.map((t) => `  ${t.label}${t.sub ? ` (${t.sub})` : ""}: ${t.value}`),
+    ...(yearly && yearly.byCategory.length
+      ? [``, `What we grew:`, ...yearly.byCategory.map((c) => `  ${c.label}: ${c.value}`)]
+      : []),
+    ...(yearly?.selfHarvest
+      ? [
+          ``,
+          `Picked by your teams:`,
+          `  Planter boxes: ${yearly.selfHarvest.boxes}`,
+          `  Greenhouse microgreens: ${yearly.selfHarvest.microgreens}`,
+          `  Self-harvest total: ${yearly.selfHarvest.total}`,
+        ]
+      : []),
     ``,
     `Coming soon from the farm:`,
     ...(comingSoon.length
@@ -456,6 +486,7 @@ export async function sendPartnerReportEmail(
       topItems,
       byRestaurant,
       comingSoon,
+      annual,
     }) as React.ReactElement,
     fallbackText,
     from: FROM_ADDRESSES.partnerReport,

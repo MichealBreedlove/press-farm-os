@@ -29,6 +29,10 @@
       "schedule": "0 9 1 * *"
     },
     {
+      "path": "/api/reports/partner-report?type=annual",
+      "schedule": "0 17 2 1 *"
+    },
+    {
       "path": "/api/reports/partner-report?type=q1",
       "schedule": "0 23 31 3 *"
     },
