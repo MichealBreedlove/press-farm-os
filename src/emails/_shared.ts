@@ -260,8 +260,12 @@ export const styles = {
 
 /** New master squash blossom illustration */
 export const FLORAL_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png`;
-/** Full master mandala (use for hero email moments) */
-export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-mandala-only.png`;
+/**
+ * Full master mandala (use for hero email moments). Email-sized copy: 240px
+ * (2× the 120px display) and ~31KB — the 1024px/1.5MB master was skipped by
+ * some mail clients (e.g. Outlook), so the mandala never rendered.
+ */
+export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-mandala-email.png`;
 /** Stacked lockup with PRESS FARM + tagline rendered as image */
 export const STACKED_LOCKUP_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-stacked-lockup.png`;
 /** Bank Gothic LT "PRESS FARM" wordmark rendered as PNG (email clients can't load custom fonts) */
