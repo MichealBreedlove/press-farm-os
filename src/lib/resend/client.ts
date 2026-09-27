@@ -1,5 +1,6 @@
 import { Resend } from "resend";
-import { REPLY_TO_ADDRESS } from "@/lib/constants";
+import { render } from "@react-email/render";
+import { APP_URL, REPLY_TO_ADDRESS } from "@/lib/constants";
 
 /**
  * Resend email client — lazy singleton.
@@ -95,6 +96,44 @@ function applyReplyTo(payload: ResendSendPayload): ResendSendPayload {
 }
 
 /**
+ * Inline our own brand images (mandala, wordmark, …) as CID attachments.
+ *
+ * Corporate inboxes behind link/image scanners (pressnapavalley.com runs
+ * Outlook + Check Point) strip EVERY remotely hosted image from external
+ * mail — the mandala and wordmark never rendered there. Images attached to
+ * the message and referenced as `cid:` are part of the email itself, so they
+ * display. Any `<img src>` pointing at APP_URL/assets/... is swapped for a
+ * cid reference, and Resend fetches the file from `path` at send time.
+ * React payloads are rendered to HTML first so the swap can happen.
+ */
+export async function inlineBrandImages(payload: ResendSendPayload): Promise<ResendSendPayload> {
+  const p = payload as any;
+  let html: string | undefined = p.html;
+  if (!html && p.react) html = await render(p.react);
+  if (!html) return payload;
+
+  const escaped = APP_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`src="(${escaped}/assets/[^"?#]+\\.(?:png|jpe?g|gif))"`, "g");
+  const cids = new Map<string, string>();
+  html = html.replace(re, (_m, url: string) => {
+    if (!cids.has(url)) cids.set(url, `pf-img-${cids.size + 1}`);
+    return `src="cid:${cids.get(url)}"`;
+  });
+  if (cids.size === 0) return payload;
+
+  const attachments = [
+    ...((p.attachments as any[]) ?? []),
+    ...Array.from(cids.entries()).map(([url, cid]) => ({
+      path: url,
+      filename: url.split("/").pop(),
+      inlineContentId: cid,
+    })),
+  ];
+  const { react: _react, ...rest } = p;
+  return { ...rest, html, attachments } as ResendSendPayload;
+}
+
+/**
  * Wrapper around `resend.emails.send` that applies EMAIL_OVERRIDE_TO when set
  * and stamps a default Reply-To header. Every outbound send in the app MUST
  * go through this helper — never call `getResendClient().emails.send` directly.
@@ -103,7 +142,14 @@ export async function safeResendSend(
   payload: ResendSendPayload,
   options?: ResendSendOptions,
 ) {
-  const final = applyOverride(applyReplyTo(payload));
+  let prepared = payload;
+  try {
+    prepared = await inlineBrandImages(payload);
+  } catch (err) {
+    // Inlining is cosmetic — never block a send on it.
+    console.error("[EMAIL] inlineBrandImages failed, sending with remote images:", err);
+  }
+  const final = applyOverride(applyReplyTo(prepared));
   return getResendClient().emails.send(final, options);
 }
 
