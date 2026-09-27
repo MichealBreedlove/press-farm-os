@@ -262,10 +262,11 @@ export const styles = {
 export const FLORAL_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom.png`;
 /**
  * Full master mandala (use for hero email moments). Email-sized copy: 240px
- * (2× the 120px display) and ~31KB — the 1024px/1.5MB master was skipped by
- * some mail clients (e.g. Outlook), so the mandala never rendered.
+ * (2× the 120px display), truecolor RGBA PNG. The 1024px/1.5MB master was
+ * skipped by Outlook, and a palette (indexed + tRNS) PNG didn't render there
+ * either — keep this colortype 6 like the wordmark, which renders everywhere.
  */
-export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-mandala-email.png`;
+export const MANDALA_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-mandala-240.png`;
 /** Stacked lockup with PRESS FARM + tagline rendered as image */
 export const STACKED_LOCKUP_URL = `${APP_URL}/assets/pressfarm/logo/png/pressfarm-stacked-lockup.png`;
 /** Bank Gothic LT "PRESS FARM" wordmark rendered as PNG (email clients can't load custom fonts) */
