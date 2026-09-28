@@ -480,7 +480,7 @@ export function WeeklyUpdateClient({
       <SectionCard
         icon={<Flower2 className="w-5 h-5" />}
         title="Restaurant Planter Beds"
-        description="Pre-filled from active planter box plantings."
+        description="Pre-filled from active planter box plantings. Notes stay blank unless you type one."
       >
         <RowsEditor
           rows={data.planterBeds as unknown as Record<string, string>[]}

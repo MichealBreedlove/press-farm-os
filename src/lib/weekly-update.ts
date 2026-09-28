@@ -245,7 +245,7 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   // ---- Restaurant planter beds ------------------------------------------
   const { data: bedRows } = await (admin as any)
     .from("planter_box_plantings")
-    .select("name, planted_date, notes, status, planter_boxes(name, is_active)")
+    .select("name, planted_date, status, planter_boxes(name, is_active)")
     .eq("status", "active");
   const planterBeds: WeeklyUpdateBedRow[] = (bedRows ?? [])
     .filter((r: any) => r.planter_boxes?.is_active !== false)
@@ -254,7 +254,9 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
       name: r.name,
       bed: r.planter_boxes?.name ?? "—",
       planted: r.planted_date ? shortDate(r.planted_date) : "—",
-      notes: r.notes ?? "",
+      // Planting notes are internal (production-value estimates) — never
+      // pre-fill them into a chef-facing email. Admin can still type one.
+      notes: "",
     }));
 
   // ---- Incoming timeline -------------------------------------------------
