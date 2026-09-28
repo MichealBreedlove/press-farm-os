@@ -9,7 +9,7 @@ import { fetchAllRows } from "@/lib/fetch-all";
 import { getProductionValue } from "@/lib/production-value/server";
 import { yearRange, priorYearSpan, pctChange, buildMonthBars } from "@/lib/partner-report";
 import { ADMIN_EMAIL, CATEGORY_LABELS } from "@/lib/constants";
-import type { PartnerReportLine, PartnerReportAnnual, PartnerReportPeriod } from "@/emails/partner-report";
+import type { PartnerReportLine, PartnerReportAnnual, PartnerReportPeriod, PartnerSelfHarvest } from "@/emails/partner-report";
 import type { ForecastEmailEntry } from "@/emails/availability-forecast";
 import type { ItemCategory } from "@/types";
 
@@ -250,6 +250,39 @@ async function buildAndSend(
     });
   }
 
+  // Self-harvest (planter boxes + microgreens) within the period, by month.
+  // It's part of what the farm produced, so it's folded into the headline
+  // total for every period type. Period ranges are whole calendar months
+  // (a partial year is capped at `end` by getProductionValue itself).
+  const startMonth = start.slice(0, 7);
+  const endMonth = end.slice(0, 7);
+  const inPeriod = (k: string) => k >= startMonth && k <= endMonth;
+  let selfHarvest: PartnerSelfHarvest | null = null;
+  const selfHarvestByMonth: Record<string, number> = {};
+  try {
+    const pv = await getProductionValue(end);
+    const sumIn = (m: Record<string, number>) =>
+      Object.entries(m).reduce((s, [k, v]) => (inPeriod(k) ? s + v : s), 0);
+    const boxes = sumIn(pv.boxByMonth);
+    const micro = sumIn(pv.microByMonth);
+    for (const src of [pv.boxByMonth, pv.microByMonth]) {
+      for (const [k, v] of Object.entries(src)) {
+        if (inPeriod(k)) selfHarvestByMonth[k] = (selfHarvestByMonth[k] ?? 0) + v;
+      }
+    }
+    if (boxes + micro > 0) {
+      selfHarvest = {
+        boxes: formatCurrencyWhole(boxes),
+        microgreens: formatCurrencyWhole(micro),
+        total: formatCurrencyWhole(boxes + micro),
+        grandTotal: formatCurrencyWhole(totalValue + boxes + micro),
+      };
+    }
+  } catch (err) {
+    // Self-harvest is a nice-to-have — never block the report on it.
+    console.error("[PARTNER REPORT] production value failed:", err);
+  }
+
   let annual: PartnerReportAnnual | null = null;
   if (period === "annual") {
     const year = Number(start.slice(0, 4));
@@ -269,12 +302,15 @@ async function buildAndSend(
     );
     const priorTotal = priorRows.reduce((s: number, d: any) => s + Number(d.total_value ?? 0), 0);
     const change = pctChange(totalValue, priorTotal);
+    // Deliveries only: planter-box tracking started in 2026, so comparing
+    // totals against a year with no self-harvest data would overstate growth.
     const comparison =
       change === null
         ? null
-        : `${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs. ${partialThrough ? `the same stretch of ${year - 1}` : year - 1} (${formatCurrencyWhole(priorTotal)})`;
+        : `Deliveries ${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs. ${partialThrough ? `the same stretch of ${year - 1}` : year - 1} (${formatCurrencyWhole(priorTotal)})`;
 
-    const byMonth: Record<string, number> = {};
+    // Month bars show total production: deliveries + self-harvest.
+    const byMonth: Record<string, number> = { ...selfHarvestByMonth };
     for (const d of deliveryRows) {
       const key = String(d.delivery_date).slice(0, 7);
       byMonth[key] = (byMonth[key] ?? 0) + Number(d.total_value ?? 0);
@@ -288,33 +324,11 @@ async function buildAndSend(
         sub: `${agg.items.size} ${agg.items.size === 1 ? "item" : "items"}`,
       }));
 
-    // Self-harvest (planter boxes + microgreens) accrued within this year only.
-    let selfHarvest: PartnerReportAnnual["selfHarvest"] = null;
-    try {
-      const pv = await getProductionValue(end);
-      const inYear = (m: Record<string, number>) =>
-        Object.entries(m).reduce((s, [k, v]) => (k.startsWith(`${year}-`) ? s + v : s), 0);
-      const boxes = inYear(pv.boxByMonth);
-      const micro = inYear(pv.microByMonth);
-      if (boxes + micro > 0) {
-        selfHarvest = {
-          boxes: formatCurrencyWhole(boxes),
-          microgreens: formatCurrencyWhole(micro),
-          total: formatCurrencyWhole(boxes + micro),
-          grandTotal: formatCurrencyWhole(totalValue + boxes + micro),
-        };
-      }
-    } catch (err) {
-      // Self-harvest is a nice-to-have section — never block the report on it.
-      console.error("[PARTNER REPORT] production value failed:", err);
-    }
-
     annual = {
       comparison,
       itemCount: Object.keys(itemMap).length,
       months: buildMonthBars(year, byMonth, partialThrough),
       byCategory,
-      selfHarvest,
       throughLabel: partialThrough
         ? new Date(`${partialThrough}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })
         : null,
@@ -360,6 +374,7 @@ async function buildAndSend(
     topItems,
     byRestaurant,
     comingSoon,
+    selfHarvest,
     annual,
     subjectPrefix: preview ? "[PREVIEW] " : undefined,
   });

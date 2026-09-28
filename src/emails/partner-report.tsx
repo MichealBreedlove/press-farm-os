@@ -26,6 +26,20 @@ export interface PartnerReportLine {
 
 export type PartnerReportPeriod = "monthly" | "quarterly" | "annual";
 
+/**
+ * Production value the chefs picked themselves (planter boxes + microgreens)
+ * over the period. Counted INTO the headline farm-production total alongside
+ * deliveries — the two streams never overlap.
+ */
+export interface PartnerSelfHarvest {
+  boxes: string;
+  microgreens: string;
+  /** boxes + microgreens */
+  total: string;
+  /** deliveries + self-harvest — the headline number */
+  grandTotal: string;
+}
+
 /** Extra sections only the annual (year-end) report carries. */
 export interface PartnerReportAnnual {
   /** e.g. "+17.7% vs. 2025 ($72,158)" — null when there's no prior-year baseline */
@@ -36,8 +50,6 @@ export interface PartnerReportAnnual {
   months: MonthBar[];
   /** delivered value by catalog category, pre-formatted */
   byCategory: PartnerReportLine[];
-  /** self-harvest (planter boxes + microgreens) — null when there's none */
-  selfHarvest: { boxes: string; microgreens: string; total: string; grandTotal: string } | null;
   /** e.g. "Sep 27" when the year isn't finished yet, else null */
   throughLabel: string | null;
 }
@@ -58,6 +70,8 @@ interface PartnerReportProps {
   byRestaurant: PartnerReportLine[];
   /** Forward-looking teaser entries (next 2–4 weeks). */
   comingSoon: ForecastEmailEntry[];
+  /** Self-harvest over the period — folded into the headline total. */
+  selfHarvest?: PartnerSelfHarvest | null;
   /** Annual-only sections; ignored for monthly/quarterly. */
   annual?: PartnerReportAnnual | null;
 }
@@ -120,7 +134,8 @@ const microBadge = {
 /**
  * partner-report.tsx — Partner-facing summary for Chef Phil.
  *
- * Monthly, quarterly or annual. Leads with the value of produce delivered, top crops,
+ * Monthly, quarterly or annual. Leads with total farm production (deliveries +
+ * what the chefs picked from the planter beds and greenhouse), top crops,
  * and a by-restaurant breakdown, then a short "Coming soon from the farm"
  * teaser built from the availability forecast. Framed for a chef/partner, not
  * internal finance jargon — no expense/margin lines.
@@ -134,6 +149,7 @@ export default function PartnerReport({
   topItems,
   byRestaurant,
   comingSoon,
+  selfHarvest,
   annual,
 }: PartnerReportProps) {
   const periodWord = PERIOD_WORD[period];
@@ -161,16 +177,22 @@ export default function PartnerReport({
               <Text style={styles.paragraph}>
                 {yearly
                   ? <>A look back at everything Press Farm grew for your kitchens this year{yearly.throughLabel ? " so far" : ""}: what went out on the truck, what your teams picked straight from the beds and greenhouse, and what&apos;s on its way.</>
-                  : <>A look back at everything Press Farm grew for your kitchens this {periodWord.toLowerCase()}, and a preview of what&apos;s on its way.</>}
+                  : <>A look back at everything Press Farm grew for your kitchens this {periodWord.toLowerCase()}{selfHarvest ? ": what went out on the truck, what your teams picked straight from the beds and greenhouse," : ","} and a preview of what&apos;s on its way.</>}
               </Text>
 
               <div style={styles.highlightBox}>
-                <Text style={styles.highlightLabel}>Produce delivered</Text>
-                <Text style={styles.highlightValue}>{totalValue}</Text>
+                <Text style={styles.highlightLabel}>{selfHarvest ? "Total farm production" : "Produce delivered"}</Text>
+                <Text style={styles.highlightValue}>{selfHarvest ? selfHarvest.grandTotal : totalValue}</Text>
                 <Text style={{ ...styles.highlightLabel, marginTop: "4px" }}>
+                  {selfHarvest ? `${totalValue} delivered ` : ""}
                   across {deliveryCount} {deliveryCount === 1 ? "delivery" : "deliveries"}
                   {yearly && yearly.itemCount > 0 ? ` · ${yearly.itemCount} different items` : ""}
                 </Text>
+                {selfHarvest && (
+                  <Text style={{ ...styles.highlightLabel, marginTop: "0" }}>
+                    + {selfHarvest.total} picked from the beds &amp; greenhouse
+                  </Text>
+                )}
                 {yearly?.comparison && (
                   <Text style={{ ...styles.highlightLabel, marginTop: "8px", color: colors.green, fontWeight: 700 }}>
                     {yearly.comparison}
@@ -225,6 +247,11 @@ export default function PartnerReport({
                       Through {yearly.throughLabel}; the rest of the year fills in on the final report.
                     </Text>
                   )}
+                  {selfHarvest && (
+                    <Text style={{ ...styles.paragraphMuted, fontSize: "12px", marginTop: yearly.throughLabel ? "0" : "6px" }}>
+                      Each month includes what your teams picked from the beds and greenhouse.
+                    </Text>
+                  )}
                 </>
               )}
 
@@ -258,23 +285,23 @@ export default function PartnerReport({
                 </>
               )}
 
-              {yearly?.selfHarvest && (
+              {selfHarvest && (
                 <>
                   <Text style={styles.h2}>Picked by Your Teams</Text>
                   <Text style={styles.paragraph}>
-                    Beyond deliveries, your chefs harvested straight from the restaurant planter beds and the
-                    greenhouse. We track that value separately so it never double-counts with deliveries.
+                    On top of deliveries, your chefs harvested straight from the restaurant planter beds and
+                    the greenhouse. It&apos;s all part of what the farm produced, and it&apos;s counted in the
+                    total above.
                   </Text>
                   <LineRows
                     rows={[
-                      { label: "Planter boxes", value: yearly.selfHarvest.boxes },
-                      { label: "Greenhouse microgreens", value: yearly.selfHarvest.microgreens },
-                      { label: "Self-harvest total", value: yearly.selfHarvest.total },
+                      { label: "Planter boxes", value: selfHarvest.boxes },
+                      { label: "Greenhouse microgreens", value: selfHarvest.microgreens },
+                      { label: "Picked by your teams", value: selfHarvest.total },
+                      { label: "Delivered", value: totalValue },
+                      { label: "Total farm production", value: selfHarvest.grandTotal },
                     ]}
                   />
-                  <Text style={{ ...styles.paragraphMuted, fontSize: "12px", marginTop: "6px" }}>
-                    Delivered + self-harvested: {yearly.selfHarvest.grandTotal} from the farm this year.
-                  </Text>
                 </>
               )}
 

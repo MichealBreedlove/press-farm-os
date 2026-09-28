@@ -18,6 +18,7 @@ import AvailabilityForecast, { type ForecastEmailSection, type ForecastEmailEntr
 import PartnerReport, {
   type PartnerReportLine,
   type PartnerReportAnnual,
+  type PartnerSelfHarvest,
   type PartnerReportPeriod,
 } from "@/emails/partner-report";
 
@@ -411,6 +412,8 @@ export interface PartnerReportEmailParams {
   topItems: PartnerReportLine[];
   byRestaurant: PartnerReportLine[];
   comingSoon: ForecastEmailEntry[];
+  /** Self-harvest (planter boxes + microgreens) — folded into the headline total. */
+  selfHarvest?: PartnerSelfHarvest | null;
   /** Annual-only sections (year-end report). */
   annual?: PartnerReportAnnual | null;
   /** Prepended to the subject, e.g. "[PREVIEW] " for an admin-only preview send. */
@@ -427,7 +430,7 @@ export interface PartnerReportEmailParams {
 export async function sendPartnerReportEmail(
   params: PartnerReportEmailParams,
 ): Promise<void> {
-  const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon, annual, subjectPrefix } = params;
+  const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon, selfHarvest, annual, subjectPrefix } = params;
   const periodWord = period === "annual" ? "year" : period === "quarterly" ? "quarter" : "month";
   const subject = `${subjectPrefix ?? ""}Press Farm — your ${periodWord} from the farm, ${periodLabel}`;
   const yearly = period === "annual" && annual ? annual : null;
@@ -436,7 +439,9 @@ export async function sendPartnerReportEmail(
     `Hello Chef ${partnerName},`,
     ``,
     `${periodLabel} in review.`,
+    ...(selfHarvest ? [`Total farm production: ${selfHarvest.grandTotal}.`] : []),
     `Produce delivered: ${totalValue} across ${deliveryCount} ${deliveryCount === 1 ? "delivery" : "deliveries"}.`,
+    ...(selfHarvest ? [`Picked by your teams from the beds + greenhouse: ${selfHarvest.total}.`] : []),
     ...(yearly?.comparison ? [yearly.comparison] : []),
     ``,
     `By kitchen:`,
@@ -454,13 +459,15 @@ export async function sendPartnerReportEmail(
     ...(yearly && yearly.byCategory.length
       ? [``, `What we grew:`, ...yearly.byCategory.map((c) => `  ${c.label}: ${c.value}`)]
       : []),
-    ...(yearly?.selfHarvest
+    ...(selfHarvest
       ? [
           ``,
-          `Picked by your teams:`,
-          `  Planter boxes: ${yearly.selfHarvest.boxes}`,
-          `  Greenhouse microgreens: ${yearly.selfHarvest.microgreens}`,
-          `  Self-harvest total: ${yearly.selfHarvest.total}`,
+          `Farm production:`,
+          `  Planter boxes: ${selfHarvest.boxes}`,
+          `  Greenhouse microgreens: ${selfHarvest.microgreens}`,
+          `  Picked by your teams: ${selfHarvest.total}`,
+          `  Delivered: ${totalValue}`,
+          `  Total farm production: ${selfHarvest.grandTotal}`,
         ]
       : []),
     ``,
@@ -486,6 +493,7 @@ export async function sendPartnerReportEmail(
       topItems,
       byRestaurant,
       comingSoon,
+      selfHarvest,
       annual,
     }) as React.ReactElement,
     fallbackText,
