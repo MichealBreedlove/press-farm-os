@@ -31,6 +31,8 @@ interface OrderFormProps {
   /** Items whose regular/event split is open (event-portion quantities live
    *  under EVENT_MENU_KEY_PREFIX keys), hydrated when editing. */
   initialSplitOpen?: Record<string, boolean>;
+  /** Per-row "Add a note..." text (keyed like itemNotes), hydrated when editing. */
+  initialItemNotes?: Record<string, string>;
   initialNotes?: string;
   editingOrderId?: string;
   /** Set when the form was prefilled from a past order (?reorder=). */
@@ -72,6 +74,10 @@ export interface OrderFormData {
     quantity: number;
     unitPrice: number | null;
     itemNote: string;
+    /** Just what the chef typed in the line's "Add a note..." box — persisted
+     *  to order_items.notes. (itemNote above also folds in color/variety for
+     *  display.) */
+    chefNote: string;
   }[];
   freeformNotes: string;
   editingOrderId?: string;
@@ -92,6 +98,7 @@ export function OrderForm({
   initialVarieties = {},
   initialEventChecked = {},
   initialSplitOpen = {},
+  initialItemNotes = {},
   initialNotes = "",
   editingOrderId,
   reorderNotice,
@@ -104,8 +111,9 @@ export function OrderForm({
     quantities: initialQuantities,
     itemColors: initialColors,
     itemVarieties: initialVarieties,
+    itemNotes: initialItemNotes,
   });
-  const { quantities, itemNotes, itemColors, itemVarieties, setQuantities, setItemColors, setItemVarieties } = picker;
+  const { quantities, itemNotes, itemColors, itemVarieties, setQuantities, setItemColors, setItemVarieties, setItemNotes } = picker;
   const [eventChecked, setEventChecked] = useState<Record<string, boolean>>(initialEventChecked);
   const [splitOpen, setSplitOpen] = useState<Record<string, boolean>>(initialSplitOpen);
   const [freeformNotes, setFreeformNotes] = useState(initialNotes);
@@ -142,6 +150,7 @@ export function OrderForm({
       const restoredQuantities: Record<string, number> = {};
       const restoredColors: Record<string, string[]> = {};
       const restoredVarieties: Record<string, string[]> = {};
+      const restoredNotes: Record<string, string> = {};
       const restoredEventChecked: Record<string, boolean> = {};
       const restoredSplitOpen: Record<string, boolean> = {};
       // Pre-pass: an item with BOTH regular and events lines was split —
@@ -165,10 +174,14 @@ export function OrderForm({
         // or the restored key won't line up with the keys the form renders.
         const hasMulti = resolveUnits(ai.item, ai.available_units).length > 1;
         let key = buildOrderKey(aiId, { unit, size, hasMultiUnits: hasMulti });
+        // Row notes are keyed by the row id (the event-portion copy of a
+        // split item uses the prefixed id), not the per-unit quantity key.
+        let noteKey = aiId;
         if (it.menuSection === "events") {
           if (aiIdsWithRegular.has(aiId)) {
             // Split line — event portion lives under the prefixed keys.
             key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+            noteKey = `${EVENT_MENU_KEY_PREFIX}${aiId}`;
             restoredSplitOpen[aiId] = true;
           } else {
             // Whole item was for the event — restore as the checkmark.
@@ -182,6 +195,9 @@ export function OrderForm({
         if (it.varietyKey) {
           restoredVarieties[key] = String(it.varietyKey).split(",").filter(Boolean);
         }
+        if (typeof it.chefNote === "string" && it.chefNote) {
+          restoredNotes[noteKey] = it.chefNote;
+        }
       }
       if (Object.keys(restoredQuantities).length > 0) {
         setQuantities(restoredQuantities);
@@ -191,6 +207,9 @@ export function OrderForm({
       }
       if (Object.keys(restoredVarieties).length > 0) {
         setItemVarieties(restoredVarieties);
+      }
+      if (Object.keys(restoredNotes).length > 0) {
+        setItemNotes(restoredNotes);
       }
       if (Object.keys(restoredEventChecked).length > 0) {
         setEventChecked(restoredEventChecked);
@@ -358,6 +377,7 @@ export function OrderForm({
           quantity,
           unitPrice,
           itemNote: note,
+          chefNote: itemNote.trim(),
         };
       },
     );

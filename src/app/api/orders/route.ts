@@ -4,7 +4,7 @@ import { requireAdmin, requireUser } from "@/lib/api-auth";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
-import { planOrderItemMerge, resolveStaleAvailabilityIds } from "@/lib/orders";
+import { planOrderItemMerge, resolveStaleAvailabilityIds, type MergeUpdate } from "@/lib/orders";
 import { minOrderableDatePacific, ORDER_CUTOFF_LABEL, FARM_TIMEZONE } from "@/lib/utils";
 
 /**
@@ -74,6 +74,8 @@ export async function POST(request: Request) {
       /** Order-form section the line came from. 'events' keeps an Events-menu
        *  line distinct from the Regular-menu line for the same item. */
       menu_section?: string | null;
+      /** What the chef typed in this line's "Add a note..." box. */
+      notes?: string | null;
     }[];
     freeform_notes?: string;
     /** When set, this is an explicit edit — replace existing items.
@@ -375,6 +377,7 @@ export async function POST(request: Request) {
         color_key: item.color_key ?? null,
         variety_key: item.variety_key ?? null,
         menu_section: menuSection,
+        notes: typeof item.notes === "string" ? item.notes.trim().slice(0, 500) || null : null,
         // Accountability: who added this line. Stamped on every insert.
         created_by: user.id,
       };
@@ -395,7 +398,7 @@ export async function POST(request: Request) {
   // be overwritten. The function re-checks the chef-editable statuses inside
   // the transaction and raises ORDER_LOCKED if the order moved on.
   let linesToInsert: typeof incomingLines = incomingLines;
-  let linesToUpdate: { id: string; quantity_requested: number }[] = [];
+  let linesToUpdate: MergeUpdate[] = [];
 
   if (isMerge) {
     // Merge: sum qty into matching existing lines (same availId+unit+size+
@@ -403,7 +406,7 @@ export async function POST(request: Request) {
     // lines stay put.
     // (planOrderItemMerge is the unit-tested core — see src/lib/orders.ts.)
     const { data: existingItems } = await (supabase.from("order_items") as any)
-      .select("id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested")
+      .select("id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested, notes")
       .eq("order_id", existingOrder!.id);
 
     const { toInsert, toUpdate } = planOrderItemMerge(existingItems ?? [], incomingLines);
@@ -520,12 +523,16 @@ export async function POST(request: Request) {
       };
     });
 
-    // 1. Admin notification
+    // 1. Admin notification — per-line chef notes ride on the item name so
+    // they reach the farm even before anyone opens the order page.
     await sendOrderSubmittedEmail({
       restaurantName: restaurant?.name ?? "Unknown restaurant",
       chefName: chefProfile?.full_name ?? "Chef",
       deliveryDate: delivery_date,
-      items: emailItems,
+      items: emailItems.map((ei, i) => {
+        const note = orderItems[i]?.notes;
+        return note ? { ...ei, itemName: `${ei.itemName} — note: "${note}"` } : ei;
+      }),
       freeformNotes: freeform_notes,
       submittedAt: new Date().toLocaleString("en-US", { timeZone: FARM_TIMEZONE }),
     });

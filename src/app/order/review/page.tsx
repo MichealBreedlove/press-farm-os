@@ -84,6 +84,8 @@ export default function OrderReviewPage() {
             color_key: item.colorKey,
             variety_key: item.varietyKey,
             menu_section: item.menuSection,
+            // Older sessionStorage payloads predate chefNote — send nothing.
+            notes: item.chefNote || undefined,
           })),
           freeform_notes: freeformNotes || undefined,
           // Tells the API "this is an explicit edit — replace items".
@@ -182,6 +184,11 @@ export default function OrderReviewPage() {
                             </span>
                           ))}
                         </div>
+                      )}
+                      {item.chefNote && (
+                        <p className="text-xs text-farm-dark/80 italic mt-1 whitespace-pre-wrap break-words">
+                          &ldquo;{item.chefNote}&rdquo;
+                        </p>
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">

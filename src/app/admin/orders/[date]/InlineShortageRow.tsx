@@ -19,6 +19,8 @@ interface OrderItemForRow {
   varietyKey?: string | null;
   /** True when this line was ordered under the Events Menu (vs Regular). */
   isEvent?: boolean;
+  /** Chef's per-line note ("extra small please"). */
+  notes?: string | null;
   quantityRequested: number;
   quantityFulfilled: number | null;
   isShorted: boolean;
@@ -332,6 +334,11 @@ export function InlineShortageRow({ orderId, orderItem, canEdit, catalogItems }:
                 </span>
               ))}
             </div>
+          )}
+          {orderItem.notes && (
+            <p className="text-xs text-farm-dark mt-1 px-2 py-1 rounded bg-amber-100/70 border-l-2 border-amber-700 whitespace-pre-wrap break-words">
+              <span className="font-semibold text-amber-800">Chef note:</span> {orderItem.notes}
+            </p>
           )}
           {isShorted && orderItem.shortageReason && !expanded && (
             <p className="text-xs text-orange-600 mt-0.5">{orderItem.shortageReason}</p>

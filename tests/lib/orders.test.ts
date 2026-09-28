@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  mergeLineNotes,
   orderLineKey,
   planOrderItemMerge,
   resolveStaleAvailabilityIds,
@@ -38,7 +39,7 @@ describe("planOrderItemMerge", () => {
     const incoming = [{ availability_item_id: "a", unit_type: "lg", quantity_requested: 2 }];
     const { toInsert, toUpdate } = planOrderItemMerge(existing, incoming);
     expect(toInsert).toEqual([]);
-    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 5 }]);
+    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 5, notes: null }]);
   });
 
   it("appends an unmatched incoming line", () => {
@@ -71,7 +72,7 @@ describe("planOrderItemMerge", () => {
       { availability_item_id: "c", unit_type: "ea", quantity_requested: 9 }, // new
     ];
     const { toInsert, toUpdate } = planOrderItemMerge(existing, incoming);
-    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 3 }]);
+    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 3, notes: null }]);
     expect(toInsert).toEqual([{ availability_item_id: "c", unit_type: "ea", quantity_requested: 9 }]);
   });
 
@@ -81,7 +82,7 @@ describe("planOrderItemMerge", () => {
     ];
     const incoming = [{ availability_item_id: "a", quantity_requested: 2 }];
     const { toUpdate } = planOrderItemMerge(existing, incoming);
-    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 5 }]);
+    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 5, notes: null }]);
   });
 
   it("keeps different varieties of the same item as separate lines", () => {
@@ -151,5 +152,40 @@ describe("resolveStaleAvailabilityIds", () => {
     );
     expect(r.remap.size).toBe(0);
     expect(r.unresolved).toEqual(["ghost", "old-carrot"]);
+  });
+});
+
+/**
+ * Chef per-line notes ride along with a merge: a follow-up submission's note
+ * is appended to the stored one; no new note leaves the stored note alone.
+ */
+describe("mergeLineNotes", () => {
+  it("returns null when there's no new note (RPC keeps the stored one)", () => {
+    expect(mergeLineNotes("extra small", null)).toBeNull();
+    expect(mergeLineNotes("extra small", "  ")).toBeNull();
+    expect(mergeLineNotes(null, undefined)).toBeNull();
+  });
+  it("uses the new note when none was stored", () => {
+    expect(mergeLineNotes(null, " no stems ")).toBe("no stems");
+  });
+  it("appends a different follow-up note", () => {
+    expect(mergeLineNotes("extra small", "no stems")).toBe("extra small / no stems");
+  });
+  it("does not duplicate an identical note", () => {
+    expect(mergeLineNotes("extra small", "extra small")).toBeNull();
+  });
+});
+
+describe("planOrderItemMerge notes", () => {
+  it("carries the merged note onto a matched line and the raw note onto an insert", () => {
+    const existing: ExistingOrderLine[] = [
+      { id: "x1", availability_item_id: "a", quantity_requested: 2, notes: "tiny ones" },
+    ];
+    const { toInsert, toUpdate } = planOrderItemMerge(existing, [
+      { availability_item_id: "a", quantity_requested: 1, notes: "for the amuse" },
+      { availability_item_id: "b", quantity_requested: 4, notes: "no stems" },
+    ]);
+    expect(toUpdate).toEqual([{ id: "x1", quantity_requested: 3, notes: "tiny ones / for the amuse" }]);
+    expect(toInsert).toEqual([{ availability_item_id: "b", quantity_requested: 4, notes: "no stems" }]);
   });
 });

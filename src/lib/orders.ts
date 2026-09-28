@@ -17,6 +17,8 @@ export interface MergeableLine {
   variety_key?: string | null;
   menu_section?: string | null;
   quantity_requested: number;
+  /** Chef's per-line note. Not part of the merge identity. */
+  notes?: string | null;
 }
 
 export interface ExistingOrderLine extends MergeableLine {
@@ -40,6 +42,24 @@ export function orderLineKey(l: MergeableLine): string {
   ].join("|");
 }
 
+/** An update to an existing line. `notes: null` = leave the stored note. */
+export interface MergeUpdate {
+  id: string;
+  quantity_requested: number;
+  notes: string | null;
+}
+
+/**
+ * Combine a line's stored note with a follow-up submission's note. Returns
+ * null when there's nothing new to write (the RPC keeps the stored note).
+ */
+export function mergeLineNotes(prior?: string | null, next?: string | null): string | null {
+  const p = (prior ?? "").trim();
+  const n = (next ?? "").trim();
+  if (!n || n === p) return null;
+  return p ? `${p} / ${n}` : n;
+}
+
 /**
  * Plan a merge of incoming lines against the order's existing lines.
  *
@@ -52,12 +72,12 @@ export function orderLineKey(l: MergeableLine): string {
 export function planOrderItemMerge<T extends MergeableLine>(
   existing: ExistingOrderLine[],
   incoming: T[],
-): { toInsert: T[]; toUpdate: { id: string; quantity_requested: number }[] } {
+): { toInsert: T[]; toUpdate: MergeUpdate[] } {
   const existingByKey = new Map<string, ExistingOrderLine>();
   for (const ei of existing) existingByKey.set(orderLineKey(ei), ei);
 
   const toInsert: T[] = [];
-  const toUpdate: { id: string; quantity_requested: number }[] = [];
+  const toUpdate: MergeUpdate[] = [];
 
   for (const line of incoming) {
     const match = existingByKey.get(orderLineKey(line));
@@ -65,6 +85,7 @@ export function planOrderItemMerge<T extends MergeableLine>(
       toUpdate.push({
         id: match.id,
         quantity_requested: Number(match.quantity_requested ?? 0) + Number(line.quantity_requested),
+        notes: mergeLineNotes(match.notes, line.notes),
       });
     } else {
       toInsert.push(line);

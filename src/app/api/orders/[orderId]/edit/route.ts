@@ -84,7 +84,7 @@ export async function PUT(
       id, restaurant_id, delivery_date, freeform_notes,
       order_items(
         id, availability_item_id, quantity_requested, unit_price_at_order,
-        unit_type, size_label, color_key, variety_key, menu_section,
+        unit_type, size_label, color_key, variety_key, menu_section, notes,
         availability_item:availability_items(id, item_id)
       )
     `,
@@ -192,6 +192,7 @@ export async function PUT(
     menu_section: string | null;
     quantity_requested: number;
     unit_price_at_order: number;
+    notes: string | null; // chef's per-line note, carried with the line
     _existingId?: string; // present → carried over from a current line
   }
   const desiredLines: DesiredLine[] = [];
@@ -217,6 +218,7 @@ export async function PUT(
       quantity_requested: qty,
       unit_price_at_order:
         typeof cur.unit_price_at_order === "number" ? cur.unit_price_at_order : 0,
+      notes: cur.notes ?? null,
       _existingId: kept.id,
     });
   }
@@ -244,6 +246,7 @@ export async function PUT(
       color_key: null,
       variety_key: null,
       menu_section: null,
+      notes: null,
       quantity_requested: qty,
       unit_price_at_order: resolveOrderUnitPrice(
         {
@@ -280,7 +283,7 @@ export async function PUT(
       .select(
         `
         id, freeform_notes,
-        order_items(id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested)
+        order_items(id, availability_item_id, unit_type, size_label, color_key, variety_key, menu_section, quantity_requested, notes)
       `,
       )
       .eq("restaurant_id", restaurantId)
@@ -304,6 +307,7 @@ export async function PUT(
         variety_key: l.variety_key ?? null,
         menu_section: l.menu_section ?? null,
         quantity_requested: Number(l.quantity_requested ?? 0),
+        notes: l.notes ?? null,
       }),
     );
 
@@ -312,7 +316,11 @@ export async function PUT(
     for (const u of toUpdate) {
       await (admin as any)
         .from("order_items")
-        .update({ quantity_requested: u.quantity_requested })
+        .update(
+          u.notes != null
+            ? { quantity_requested: u.quantity_requested, notes: u.notes }
+            : { quantity_requested: u.quantity_requested },
+        )
         .eq("id", u.id);
     }
     if (toInsert.length > 0) {
@@ -327,6 +335,7 @@ export async function PUT(
           color_key: l.color_key,
           variety_key: l.variety_key,
           menu_section: l.menu_section,
+          notes: l.notes,
           created_by: auth.user.id,
         })),
       );

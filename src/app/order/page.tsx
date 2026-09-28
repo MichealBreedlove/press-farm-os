@@ -77,6 +77,7 @@ export default async function OrderPage({
   let initialVarieties: Record<string, string[]> = {};
   let initialEventChecked: Record<string, boolean> = {};
   let initialSplitOpen: Record<string, boolean> = {};
+  let initialItemNotes: Record<string, string> = {};
   let initialNotes = "";
   let targetDate: string | null = null;
 
@@ -86,7 +87,7 @@ export default async function OrderPage({
       .select(`
         id, delivery_date, freeform_notes, status,
         order_items(
-          quantity_requested, unit_type, size_label, color_key, variety_key, menu_section,
+          quantity_requested, unit_type, size_label, color_key, variety_key, menu_section, notes,
           availability_items(id, item:items(unit_type))
         )
       `)
@@ -121,10 +122,13 @@ export default async function OrderPage({
           size: persistedSize,
           hasMultiUnits,
         });
+        // Row notes key on the row id (prefixed for a split's event portion).
+        let noteKey = aiId;
         if (oi.menu_section === "events") {
           if (aiIdsWithRegular.has(aiId)) {
             // Split line — the event portion lives under the prefixed keys.
             key = `${EVENT_MENU_KEY_PREFIX}${key}`;
+            noteKey = `${EVENT_MENU_KEY_PREFIX}${aiId}`;
             initialSplitOpen[aiId] = true;
           } else {
             // Whole item was for the event — hydrate as the checkmark.
@@ -138,6 +142,9 @@ export default async function OrderPage({
         }
         if (oi.variety_key) {
           initialVarieties[key] = String(oi.variety_key).split(",").filter(Boolean);
+        }
+        if (oi.notes) {
+          initialItemNotes[noteKey] = String(oi.notes);
         }
       }
     }
@@ -172,6 +179,7 @@ export default async function OrderPage({
     initialQuantities = {};
     initialColors = {};
     initialVarieties = {};
+    initialItemNotes = {};
     initialEventChecked = {};
     initialSplitOpen = {};
     initialNotes = "";
@@ -356,6 +364,7 @@ export default async function OrderPage({
         initialVarieties={isEditing ? initialVarieties : reorderPrefill?.varieties}
         initialEventChecked={isEditing ? initialEventChecked : reorderPrefill?.eventChecked}
         initialSplitOpen={isEditing ? initialSplitOpen : reorderPrefill?.splitOpen}
+        initialItemNotes={isEditing ? initialItemNotes : undefined}
         initialNotes={isEditing ? initialNotes : undefined}
         editingOrderId={isEditing ? editOrderId : undefined}
         reorderNotice={

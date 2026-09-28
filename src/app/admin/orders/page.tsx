@@ -119,7 +119,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
       restaurant:restaurants(id, name),
       chef:profiles!orders_chef_id_fkey(id, full_name),
       edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
-      order_items(id, is_shorted)
+      order_items(id, is_shorted, notes)
     `)
     .eq("delivery_date", activeDate);
 
@@ -236,7 +236,8 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
                       {shortedCount > 0 && (
                         <span className="text-orange-600">{shortedCount} shorted</span>
                       )}
-                      {order.freeform_notes && (
+                      {(order.freeform_notes ||
+                        (order.order_items ?? []).some((oi: any) => oi.notes)) && (
                         <span className="text-farm-green">Has notes</span>
                       )}
                     </div>

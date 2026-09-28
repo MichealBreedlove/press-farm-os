@@ -56,7 +56,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
         chef:profiles!orders_chef_id_fkey(id, full_name),
         edited_by:profiles!orders_last_edited_by_fkey(id, full_name),
         order_items(
-          id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, color_key, variety_key, menu_section, picked_at,
+          id, quantity_requested, quantity_fulfilled, is_shorted, shortage_reason, unit_type, size_label, color_key, variety_key, menu_section, picked_at, notes,
           replacement_item_id, replacement_label, replacement_quantity, replacement_unit,
           availability_item:availability_items(
             id,
@@ -384,6 +384,7 @@ export default async function AdminOrdersByDatePage({ params }: AdminOrdersByDat
                               colorKey: oi.color_key ?? null,
                               varietyKey: oi.variety_key ?? null,
                               isEvent: oi.menu_section === "events",
+                              notes: oi.notes ?? null,
                               quantityRequested: oi.quantity_requested,
                               quantityFulfilled: oi.quantity_fulfilled,
                               isShorted: oi.is_shorted,
