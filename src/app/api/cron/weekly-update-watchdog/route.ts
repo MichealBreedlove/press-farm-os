@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ADMIN_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import { safeResendSend } from "@/lib/resend/client";
 import { hasSuccessfulWeeklyUpdate, upcomingMondayISO } from "@/lib/weekly-update";
+import { watchdogShouldWait } from "@/lib/weekly-update-schedule";
 
 export const maxDuration = 60;
 
@@ -22,6 +23,10 @@ export const maxDuration = 60;
  * Resend rejection, and a cron that never fired all land here the same way —
  * no successful row for this week's Monday, so the farm gets an email. An
  * in-route try/catch could never have caught the third case.
+ *
+ * Runs twice (Mon 23:30 UTC and Tue 06:45 UTC — still Monday in Pacific):
+ * when the admin pushed the send to a later slot, the first run waits and
+ * the second one checks.
  *
  * Alerts at most once per week (farm_settings.weekly_update_alert_sent_week)
  * so a broken week doesn't turn into a daily nag.
@@ -59,7 +64,11 @@ export async function GET(request: Request) {
   const { data: settingRows } = await (admin as any)
     .from("farm_settings")
     .select("key, value")
-    .in("key", ["weekly_update_alert_sent_week", "weekly_update_postponed_week"]);
+    .in("key", [
+      "weekly_update_alert_sent_week",
+      "weekly_update_postponed_week",
+      "weekly_update_send_after",
+    ]);
   const settingsMap: Record<string, string> = {};
   for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
   if (settingsMap.weekly_update_postponed_week === weekAnchor) {
@@ -68,6 +77,20 @@ export async function GET(request: Request) {
       weekOf: weekAnchor,
       alerted: false,
       message: "Postponed by admin this week.",
+    });
+  }
+  if (
+    watchdogShouldWait({
+      nowMs: Date.now(),
+      mondayISO: weekAnchor,
+      sendAfter: settingsMap.weekly_update_send_after || null,
+    })
+  ) {
+    return NextResponse.json({
+      ok: true,
+      weekOf: weekAnchor,
+      alerted: false,
+      message: "Send delayed by admin — checking again after it runs.",
     });
   }
   if (settingsMap.weekly_update_alert_sent_week === weekAnchor) {

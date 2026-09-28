@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { activeDelay, slotTimeLabel } from "@/lib/weekly-update-schedule";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -85,7 +86,12 @@ export default async function AdminDashboardPage() {
     admin
       .from("farm_settings")
       .select("key, value, updated_at")
-      .in("key", ["weekly_update_general_note", "weekly_update_recipients", "weekly_update_postponed_week"]),
+      .in("key", [
+        "weekly_update_general_note",
+        "weekly_update_recipients",
+        "weekly_update_postponed_week",
+        "weekly_update_send_after",
+      ]),
   ]);
 
   // Weekly Update reminder — the chef email goes out Monday morning. Remind
@@ -114,6 +120,12 @@ export default async function AdminDashboardPage() {
   const weeklyUpdatePostponed =
     (weeklyUpdateSettings ?? []).find((r: any) => r.key === "weekly_update_postponed_week")?.value ===
     nextMondayISO;
+  const weeklyUpdateDelay = activeDelay(
+    (weeklyUpdateSettings ?? []).find((r: any) => r.key === "weekly_update_send_after")?.value as
+      | string
+      | null,
+    nextMondayISO,
+  );
   const showWeeklyUpdateReminder = weeklyUpdateNoteStale || wuRecipientCount === 0;
   const nextMondayLabel = new Date(nextMondayISO + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "long",
@@ -287,11 +299,15 @@ export default async function AdminDashboardPage() {
               <span aria-hidden="true" className="text-2xl leading-none flex-shrink-0">📝</span>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                  Weekly Update · {weeklyUpdatePostponed ? `postponed from ${nextMondayLabel}` : `sends ${nextMondayLabel}`}
+                  Weekly Update · {weeklyUpdatePostponed
+                    ? `skipped ${nextMondayLabel}`
+                    : weeklyUpdateDelay
+                      ? `sends ${nextMondayLabel} at ${slotTimeLabel(weeklyUpdateDelay)}`
+                      : `sends ${nextMondayLabel}`}
                 </p>
                 <p className="text-sm text-amber-800 mt-1 leading-snug">
                   {weeklyUpdatePostponed
-                    ? "This week's automatic send is postponed. Send it from the Weekly Update page whenever you're ready."
+                    ? "This week's automatic send is skipped. Send it from the Weekly Update page whenever you're ready."
                     : wuRecipientCount === 0
                     ? "No recipients are selected — the Monday send will be skipped. Pick who gets it and write this week's note."
                     : "This week's note hasn't been updated yet. Refresh what's going on at the farm before it goes out Monday morning."}

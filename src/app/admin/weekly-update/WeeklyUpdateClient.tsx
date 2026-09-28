@@ -7,6 +7,7 @@ import {
   Table2, Flower2, AlertTriangle, CalendarClock, PauseCircle, PlayCircle,
 } from "lucide-react";
 import type { WeeklyUpdateData } from "@/lib/weekly-update";
+import { activeDelay, slotTimeLabel, weeklyUpdateSendSlots } from "@/lib/weekly-update-schedule";
 
 /**
  * Weekly Update editor — the full email is editable before it goes out.
@@ -150,12 +151,19 @@ export function WeeklyUpdateClient({
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
-  // Week (Monday ISO) whose automatic send is postponed. Only the current
-  // week's value counts — a stale week just reads as "not postponed".
+  // Week (Monday ISO) whose automatic send is skipped, and the later slot
+  // (ISO) the automatic send was pushed to. Each only counts for this week —
+  // a stale value just reads as "normal".
   const [postponedWeek, setPostponedWeek] = useState(settings["weekly_update_postponed_week"] ?? "");
+  const [sendAfter, setSendAfter] = useState(settings["weekly_update_send_after"] ?? "");
   const [postponing, setPostponing] = useState(false);
   const [postponeError, setPostponeError] = useState<string | null>(null);
+  const [pickingTime, setPickingTime] = useState(false);
   const isPostponed = postponedWeek === weekAnchor;
+  const delay = isPostponed ? null : activeDelay(sendAfter, weekAnchor);
+  const slots = weeklyUpdateSendSlots(weekAnchor);
+  // Only offer later slots that haven't passed yet (re-evaluated per render).
+  const laterSlots = slots.slice(1).filter((iso) => Date.parse(iso) > Date.now());
   const anchorLabel = new Date(weekAnchor + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -256,18 +264,24 @@ export function WeeklyUpdateClient({
     setSending(false);
   }
 
-  async function setPostponed(postpone: boolean) {
+  /** mode: "normal" clears both, "later" pushes to `slot`, "skip" skips the week. */
+  async function setSchedule(mode: "normal" | "later" | "skip", slot = "") {
     setPostponing(true);
     setPostponeError(null);
-    const value = postpone ? weekAnchor : "";
+    const next = {
+      weekly_update_postponed_week: mode === "skip" ? weekAnchor : "",
+      weekly_update_send_after: mode === "later" ? slot : "",
+    };
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ farm_id: farmId, settings: { weekly_update_postponed_week: value } }),
+        body: JSON.stringify({ farm_id: farmId, settings: next }),
       });
       if (!res.ok) throw new Error();
-      setPostponedWeek(value);
+      setPostponedWeek(next.weekly_update_postponed_week);
+      setSendAfter(next.weekly_update_send_after);
+      setPickingTime(false);
       router.refresh();
     } catch {
       setPostponeError("Couldn't save that — try again.");
@@ -304,49 +318,98 @@ export function WeeklyUpdateClient({
         </button>
       </div>
 
-      {/* Postpone / resume this week's automatic send */}
+      {/* When this week's automatic send goes out: on time, later, or skipped */}
       <div
-        className={`rounded-xl px-4 py-3 flex items-center gap-3 border ${
-          isPostponed ? "bg-amber-50 border-amber-700/30" : "bg-white border-farm-dark/10"
+        className={`rounded-xl px-4 py-3 border ${
+          isPostponed || delay ? "bg-amber-50 border-amber-700/30" : "bg-white border-farm-dark/10"
         }`}
       >
-        {isPostponed ? (
-          <PauseCircle className="w-5 h-5 text-amber-700 flex-shrink-0" />
-        ) : (
-          <CalendarClock className="w-5 h-5 text-farm-muted flex-shrink-0" />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold ${isPostponed ? "text-amber-800" : "text-farm-dark"}`}>
-            {isPostponed
-              ? `Postponed — ${anchorLabel}'s automatic send is off`
-              : `Sends automatically ${anchorLabel} afternoon`}
-          </p>
-          <p className={`text-[11px] mt-0.5 ${isPostponed ? "text-amber-800/80" : "text-farm-muted"}`}>
-            {isPostponed
-              ? "Send it yourself with Send Now whenever you're ready. The following week goes back to normal on its own."
-              : "Need more time? Postpone just this week — you can still send it manually any time."}
-          </p>
-          {postponeError && <p className="text-[11px] text-red-700 mt-1">{postponeError}</p>}
-        </div>
-        <button
-          type="button"
-          onClick={() => setPostponed(!isPostponed)}
-          disabled={postponing}
-          className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap min-h-[44px] px-3 rounded-lg border ${
-            isPostponed
-              ? "text-farm-green border-farm-green/30 hover:bg-farm-green/5"
-              : "text-amber-800 border-amber-700/30 hover:bg-amber-50"
-          }`}
-        >
-          {postponing ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : isPostponed ? (
-            <PlayCircle className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-3">
+          {isPostponed ? (
+            <PauseCircle className="w-5 h-5 text-amber-700 flex-shrink-0" />
           ) : (
-            <PauseCircle className="w-3.5 h-3.5" />
+            <CalendarClock className={`w-5 h-5 flex-shrink-0 ${delay ? "text-amber-700" : "text-farm-muted"}`} />
           )}
-          {isPostponed ? "Resume" : "Postpone"}
-        </button>
+          <div className="flex-1 min-w-0">
+            <p className={`text-xs font-semibold ${isPostponed || delay ? "text-amber-800" : "text-farm-dark"}`}>
+              {isPostponed
+                ? `Skipped — ${anchorLabel}'s automatic send is off`
+                : delay
+                  ? `Sending later — ${anchorLabel} at ${slotTimeLabel(delay)}`
+                  : `Sends automatically ${anchorLabel} at ${slotTimeLabel(slots[0]!)}`}
+            </p>
+            <p className={`text-[11px] mt-0.5 ${isPostponed || delay ? "text-amber-800/80" : "text-farm-muted"}`}>
+              {isPostponed
+                ? "Send it yourself with Send Now whenever you're ready. Next week goes back to normal on its own."
+                : delay
+                  ? `Instead of ${slotTimeLabel(slots[0]!)}. Whatever draft is saved at that time is what goes out. Next week is back to normal.`
+                  : "Need a few more hours? Push it later, or skip this week. Send Now always works."}
+            </p>
+            {postponeError && <p className="text-[11px] text-red-700 mt-1">{postponeError}</p>}
+          </div>
+          {postponing && <Loader2 className="w-4 h-4 animate-spin text-farm-muted flex-shrink-0" />}
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          {(isPostponed || delay) && (
+            <button
+              type="button"
+              onClick={() => setSchedule("normal")}
+              disabled={postponing}
+              className="flex items-center gap-1.5 text-xs font-semibold min-h-[44px] px-3 rounded-lg border text-farm-green border-farm-green/30 hover:bg-farm-green/5"
+            >
+              <PlayCircle className="w-3.5 h-3.5" />
+              Back to {slotTimeLabel(slots[0]!)}
+            </button>
+          )}
+          {!isPostponed && laterSlots.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPickingTime((v) => !v)}
+              disabled={postponing}
+              className="flex items-center gap-1.5 text-xs font-semibold min-h-[44px] px-3 rounded-lg border text-amber-800 border-amber-700/30 hover:bg-amber-50"
+            >
+              <CalendarClock className="w-3.5 h-3.5" />
+              {delay ? "Change time" : "Send later"}
+            </button>
+          )}
+          {!isPostponed && (
+            <button
+              type="button"
+              onClick={() => setSchedule("skip")}
+              disabled={postponing}
+              className="flex items-center gap-1.5 text-xs font-semibold min-h-[44px] px-3 rounded-lg border text-amber-800 border-amber-700/30 hover:bg-amber-50"
+            >
+              <PauseCircle className="w-3.5 h-3.5" />
+              Skip this week
+            </button>
+          )}
+        </div>
+
+        {pickingTime && !isPostponed && (
+          <div className="mt-3">
+            <p className="text-[10px] uppercase tracking-wider text-farm-muted mb-1.5">
+              Send {anchorLabel} at
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {laterSlots.map((iso) => (
+                <button
+                  key={iso}
+                  type="button"
+                  onClick={() => setSchedule("later", iso)}
+                  disabled={postponing}
+                  className={`text-xs font-semibold min-h-[44px] px-3 rounded-lg border tabular-nums ${
+                    iso === delay
+                      ? "bg-amber-700 text-white border-amber-700"
+                      : "bg-white text-farm-dark border-farm-dark/15 hover:border-amber-700/40"
+                  }`}
+                >
+                  {slotTimeLabel(iso)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <SectionCard

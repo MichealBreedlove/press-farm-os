@@ -11,6 +11,7 @@ import {
   type WeeklyUpdateData,
 } from "@/lib/weekly-update";
 import WeeklyUpdate from "@/emails/weekly-update";
+import { slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
 
 /**
  * Chef-facing "Press Farm – Weekly Update" email.
@@ -20,6 +21,10 @@ import WeeklyUpdate from "@/emails/weekly-update";
  *          Sends the saved draft when one exists for this week (so admin
  *          edits go out verbatim), otherwise builds from live data. Skips
  *          entirely if this week's update was already sent manually.
+ *          `?late=1` marks the hourly Monday-evening runs, which only send
+ *          when the admin pushed this week's send to a later time
+ *          (farm_settings.weekly_update_send_after — see
+ *          src/lib/weekly-update-schedule.ts).
  *   POST — Manual admin trigger from /admin/weekly-update. An optional
  *          `data` body sends exactly that (edited) content; without it the
  *          same draft-then-live resolution as the cron applies.
@@ -40,7 +45,8 @@ export async function GET(request: Request) {
     // Fail closed: a production deploy without CRON_SECRET must not be callable.
     return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
   }
-  return sendWeeklyUpdate({ isCron: true });
+  const isLateRun = new URL(request.url).searchParams.has("late");
+  return sendWeeklyUpdate({ isCron: true, isLateRun });
 }
 
 export async function POST(request: Request) {
@@ -54,8 +60,10 @@ export async function POST(request: Request) {
 
 async function sendWeeklyUpdate({
   isCron,
+  isLateRun = false,
   edited,
 }: {
+  isLateRun?: boolean;
   isCron: boolean;
   edited?: WeeklyUpdateData | null;
 }) {
@@ -71,21 +79,53 @@ async function sendWeeklyUpdate({
       "weekly_update_draft",
       "weekly_update_last_sent_week",
       "weekly_update_postponed_week",
+      "weekly_update_send_after",
     ]);
   const settingsMap: Record<string, string> = {};
   for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
 
   const triggeredBy = isCron ? "cron" : "manual";
 
+  // "Send later": the default run waits for the admin's chosen slot, and the
+  // hourly late runs do nothing on a normal week. Checked before logging so
+  // an ordinary Monday doesn't write seven idle rows.
+  if (isCron) {
+    const sendAfter = settingsMap.weekly_update_send_after || null;
+    const decision = weeklyUpdateCronDecision({
+      nowMs: Date.now(),
+      mondayISO: weekAnchor,
+      isLateRun,
+      sendAfter,
+    });
+    if (decision === "idle") {
+      return NextResponse.json({ success: true, skipped: true, message: "No delayed send this week." });
+    }
+    if (decision === "wait") {
+      const message = `Delayed by admin — sending at ${slotTimeLabel(sendAfter!)} instead.`;
+      // One log row for the default run is enough; the hourly waits are silent.
+      if (!isLateRun) {
+        await recordWeeklyUpdateAttempt(admin, {
+          weekOf: weekAnchor,
+          triggeredBy,
+          status: "skipped",
+          error: message,
+        });
+      }
+      return NextResponse.json({ success: true, skipped: true, message });
+    }
+  }
+
   // Cron never double-sends a week the admin already sent manually.
   if (isCron && settingsMap.weekly_update_last_sent_week === weekAnchor) {
     const message = `Already sent for week of ${weekAnchor} — skipping scheduled send.`;
-    await recordWeeklyUpdateAttempt(admin, {
-      weekOf: weekAnchor,
-      triggeredBy,
-      status: "skipped",
-      error: message,
-    });
+    if (!isLateRun) {
+      await recordWeeklyUpdateAttempt(admin, {
+        weekOf: weekAnchor,
+        triggeredBy,
+        status: "skipped",
+        error: message,
+      });
+    }
     return NextResponse.json({ success: true, skipped: true, message });
   }
 
@@ -93,12 +133,14 @@ async function sendWeeklyUpdate({
   // automatic send honors it — Send Now still goes out whenever they're ready.
   if (isCron && settingsMap.weekly_update_postponed_week === weekAnchor) {
     const message = `Postponed by admin for week of ${weekAnchor} — skipping scheduled send.`;
-    await recordWeeklyUpdateAttempt(admin, {
-      weekOf: weekAnchor,
-      triggeredBy,
-      status: "skipped",
-      error: message,
-    });
+    if (!isLateRun) {
+      await recordWeeklyUpdateAttempt(admin, {
+        weekOf: weekAnchor,
+        triggeredBy,
+        status: "skipped",
+        error: message,
+      });
+    }
     return NextResponse.json({ success: true, skipped: true, message });
   }
 

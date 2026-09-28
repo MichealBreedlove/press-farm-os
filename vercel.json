@@ -9,8 +9,20 @@
       "schedule": "30 22 * * 1"
     },
     {
+      "path": "/api/reports/weekly-update?late=1",
+      "schedule": "30 23 * * 1"
+    },
+    {
+      "path": "/api/reports/weekly-update?late=2",
+      "schedule": "30 0-5 * * 2"
+    },
+    {
       "path": "/api/cron/weekly-update-watchdog",
       "schedule": "30 23 * * 1"
+    },
+    {
+      "path": "/api/cron/weekly-update-watchdog?late=1",
+      "schedule": "45 6 * * 2"
     },
     {
       "path": "/api/cron/receiver-notify",

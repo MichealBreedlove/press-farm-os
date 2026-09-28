@@ -26,6 +26,7 @@ export default async function WeeklyUpdatePage() {
       "weekly_update_recipients",
       "weekly_update_draft",
       "weekly_update_postponed_week",
+      "weekly_update_send_after",
     ]);
   const settingsMap: Record<string, string> = {};
   for (const row of settings ?? []) settingsMap[row.key] = row.value ?? "";
