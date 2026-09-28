@@ -66,7 +66,12 @@ async function sendWeeklyUpdate({
   const { data: settingRows } = await (admin as any)
     .from("farm_settings")
     .select("key, value")
-    .in("key", ["weekly_update_recipients", "weekly_update_draft", "weekly_update_last_sent_week"]);
+    .in("key", [
+      "weekly_update_recipients",
+      "weekly_update_draft",
+      "weekly_update_last_sent_week",
+      "weekly_update_postponed_week",
+    ]);
   const settingsMap: Record<string, string> = {};
   for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
 
@@ -75,6 +80,19 @@ async function sendWeeklyUpdate({
   // Cron never double-sends a week the admin already sent manually.
   if (isCron && settingsMap.weekly_update_last_sent_week === weekAnchor) {
     const message = `Already sent for week of ${weekAnchor} — skipping scheduled send.`;
+    await recordWeeklyUpdateAttempt(admin, {
+      weekOf: weekAnchor,
+      triggeredBy,
+      status: "skipped",
+      error: message,
+    });
+    return NextResponse.json({ success: true, skipped: true, message });
+  }
+
+  // Admin hit "Postpone" on /admin/weekly-update for this week. Only the
+  // automatic send honors it — Send Now still goes out whenever they're ready.
+  if (isCron && settingsMap.weekly_update_postponed_week === weekAnchor) {
+    const message = `Postponed by admin for week of ${weekAnchor} — skipping scheduled send.`;
     await recordWeeklyUpdateAttempt(admin, {
       weekOf: weekAnchor,
       triggeredBy,

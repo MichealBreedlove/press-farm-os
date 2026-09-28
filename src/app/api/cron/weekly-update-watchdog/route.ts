@@ -55,12 +55,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, weekOf: weekAnchor, alerted: false });
   }
 
-  // ---- Don't re-alert a week we've already flagged ------------------------
+  // ---- Don't alert a week the admin postponed, or one already flagged -----
   const { data: settingRows } = await (admin as any)
     .from("farm_settings")
     .select("key, value")
-    .eq("key", "weekly_update_alert_sent_week");
-  if ((settingRows ?? [])[0]?.value === weekAnchor) {
+    .in("key", ["weekly_update_alert_sent_week", "weekly_update_postponed_week"]);
+  const settingsMap: Record<string, string> = {};
+  for (const row of settingRows ?? []) settingsMap[row.key] = row.value ?? "";
+  if (settingsMap.weekly_update_postponed_week === weekAnchor) {
+    return NextResponse.json({
+      ok: true,
+      weekOf: weekAnchor,
+      alerted: false,
+      message: "Postponed by admin this week.",
+    });
+  }
+  if (settingsMap.weekly_update_alert_sent_week === weekAnchor) {
     return NextResponse.json({
       ok: true,
       weekOf: weekAnchor,

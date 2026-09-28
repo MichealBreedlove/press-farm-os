@@ -21,7 +21,12 @@ export default async function WeeklyUpdatePage() {
   const { data: settings } = await admin
     .from("farm_settings")
     .select("key, value")
-    .in("key", ["weekly_update_general_note", "weekly_update_recipients", "weekly_update_draft"]);
+    .in("key", [
+      "weekly_update_general_note",
+      "weekly_update_recipients",
+      "weekly_update_draft",
+      "weekly_update_postponed_week",
+    ]);
   const settingsMap: Record<string, string> = {};
   for (const row of settings ?? []) settingsMap[row.key] = row.value ?? "";
 

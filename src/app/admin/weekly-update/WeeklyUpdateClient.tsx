@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Save, Check, Send, Loader2, Sprout, Users, Plus, X, Trash2, RotateCcw,
-  Table2, Flower2, AlertTriangle, CalendarClock,
+  Table2, Flower2, AlertTriangle, CalendarClock, PauseCircle, PlayCircle,
 } from "lucide-react";
 import type { WeeklyUpdateData } from "@/lib/weekly-update";
 
@@ -150,6 +150,17 @@ export function WeeklyUpdateClient({
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  // Week (Monday ISO) whose automatic send is postponed. Only the current
+  // week's value counts — a stale week just reads as "not postponed".
+  const [postponedWeek, setPostponedWeek] = useState(settings["weekly_update_postponed_week"] ?? "");
+  const [postponing, setPostponing] = useState(false);
+  const [postponeError, setPostponeError] = useState<string | null>(null);
+  const isPostponed = postponedWeek === weekAnchor;
+  const anchorLabel = new Date(weekAnchor + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   const chefEmails = new Set(chefs.map((c) => c.email));
   const customRecipients = recipients.filter((e) => !chefEmails.has(e));
@@ -245,6 +256,25 @@ export function WeeklyUpdateClient({
     setSending(false);
   }
 
+  async function setPostponed(postpone: boolean) {
+    setPostponing(true);
+    setPostponeError(null);
+    const value = postpone ? weekAnchor : "";
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ farm_id: farmId, settings: { weekly_update_postponed_week: value } }),
+      });
+      if (!res.ok) throw new Error();
+      setPostponedWeek(value);
+      router.refresh();
+    } catch {
+      setPostponeError("Couldn't save that — try again.");
+    }
+    setPostponing(false);
+  }
+
   function resetToLive() {
     setData(liveData);
     setIncomingRaw(liveData.incoming.map((g) => g.items.join(", ")));
@@ -271,6 +301,51 @@ export function WeeklyUpdateClient({
           className="flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:underline whitespace-nowrap min-h-0"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Reset to live data
+        </button>
+      </div>
+
+      {/* Postpone / resume this week's automatic send */}
+      <div
+        className={`rounded-xl px-4 py-3 flex items-center gap-3 border ${
+          isPostponed ? "bg-amber-50 border-amber-700/30" : "bg-white border-farm-dark/10"
+        }`}
+      >
+        {isPostponed ? (
+          <PauseCircle className="w-5 h-5 text-amber-700 flex-shrink-0" />
+        ) : (
+          <CalendarClock className="w-5 h-5 text-farm-muted flex-shrink-0" />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className={`text-xs font-semibold ${isPostponed ? "text-amber-800" : "text-farm-dark"}`}>
+            {isPostponed
+              ? `Postponed — ${anchorLabel}'s automatic send is off`
+              : `Sends automatically ${anchorLabel} afternoon`}
+          </p>
+          <p className={`text-[11px] mt-0.5 ${isPostponed ? "text-amber-800/80" : "text-farm-muted"}`}>
+            {isPostponed
+              ? "Send it yourself with Send Now whenever you're ready. The following week goes back to normal on its own."
+              : "Need more time? Postpone just this week — you can still send it manually any time."}
+          </p>
+          {postponeError && <p className="text-[11px] text-red-700 mt-1">{postponeError}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={() => setPostponed(!isPostponed)}
+          disabled={postponing}
+          className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap min-h-[44px] px-3 rounded-lg border ${
+            isPostponed
+              ? "text-farm-green border-farm-green/30 hover:bg-farm-green/5"
+              : "text-amber-800 border-amber-700/30 hover:bg-amber-50"
+          }`}
+        >
+          {postponing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : isPostponed ? (
+            <PlayCircle className="w-3.5 h-3.5" />
+          ) : (
+            <PauseCircle className="w-3.5 h-3.5" />
+          )}
+          {isPostponed ? "Resume" : "Postpone"}
         </button>
       </div>
 
