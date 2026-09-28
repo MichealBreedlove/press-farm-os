@@ -107,7 +107,6 @@ export default function WeeklyUpdate({
   tasksCompleted = [],
   tasksUpcoming = [],
 }: WeeklyUpdateProps) {
-  const bedHasNotes = planterBeds.some((r) => r.notes.trim() !== "");
   const noteLines = (generalNote ?? "")
     .split("\n")
     .map((l) => l.replace(/^[-•*]\s*/, "").trim())
@@ -204,7 +203,7 @@ export default function WeeklyUpdate({
                         <th style={th}>Item</th>
                         <th style={th}>Bed</th>
                         <th style={th}>Planted</th>
-                        {bedHasNotes && <th style={th}>Notes</th>}
+                        <th style={th}>Notes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -213,7 +212,7 @@ export default function WeeklyUpdate({
                           <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
                           <td style={td}>{r.bed}</td>
                           <td style={td}>{r.planted}</td>
-                          {bedHasNotes && <td style={tdMuted}>{r.notes}</td>}
+                          <td style={tdMuted}>{r.notes}</td>
                         </tr>
                       ))}
                     </tbody>
