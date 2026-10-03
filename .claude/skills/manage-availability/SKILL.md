@@ -53,18 +53,25 @@ Flags alone are not enough — a row must exist.
 
 ### The rollover-anchor trick (important)
 
-A delivery date with **no** availability_items rows **inherits** them from the
-**latest prior date that has rows** (the order form's rollover). So you do **not**
-write a row for every future Thu/Sat/Mon. Write to the **anchor date** — the most
-recent date that already has rows — and every later empty date inherits it.
+Rollover is **per restaurant**: a delivery date with **no** availability_items
+rows *for that restaurant* inherits them from **that restaurant's** latest prior
+date with rows (`fetchAvailabilityWithRollover` in `src/lib/availability.ts`), and
+the first chef load materializes them onto the new date. So you do **not** write a
+row for every future Thu/Sat/Mon — write to each restaurant's **anchor date** (its
+most recent date with rows) and every later empty date for that restaurant inherits
+it. Anchors can differ between restaurants, so never use one global
+`max(delivery_date)`: a lone row on a date where that restaurant has no other rows
+stops the rollover and leaves its form showing only that item.
 
-Find the anchor date:
+Find the anchors:
 
 ```sql
-SELECT max(delivery_date) AS anchor FROM availability_items;
+SELECT r.slug, max(a.delivery_date) AS anchor
+FROM restaurants r JOIN availability_items a ON a.restaurant_id = r.id
+GROUP BY r.slug ORDER BY r.slug;
 ```
 
-Write availability changes to that anchor date. (If Micheal wants a change for one
+Write availability changes to each restaurant's anchor date. (If Micheal wants a change for one
 specific future date that already has its own rows, write to that date instead.)
 
 ### Reference data
@@ -110,7 +117,7 @@ ON CONFLICT (farm_id, name, category) DO UPDATE SET
 
 -- Publish it as available, all restaurants, on the anchor date (rolls forward)
 INSERT INTO availability_items (item_id, restaurant_id, delivery_date, status)
-SELECT i.id, r.id, (SELECT max(delivery_date) FROM availability_items), 'available'
+SELECT i.id, r.id, (SELECT max(a2.delivery_date) FROM availability_items a2 WHERE a2.restaurant_id = r.id), 'available'
 FROM items i CROSS JOIN restaurants r
 WHERE i.name = 'ITEM NAME' AND i.category = 'flowers'
 ON CONFLICT (item_id, restaurant_id, delivery_date)
@@ -123,7 +130,7 @@ For a NEW image, do the catalog INSERT **with** `image_url` — see [Images](#im
 
 ```sql
 INSERT INTO availability_items (item_id, restaurant_id, delivery_date, status)
-SELECT i.id, r.id, (SELECT max(delivery_date) FROM availability_items), 'available'
+SELECT i.id, r.id, (SELECT max(a2.delivery_date) FROM availability_items a2 WHERE a2.restaurant_id = r.id), 'available'
 FROM items i CROSS JOIN restaurants r
 WHERE i.name = 'ITEM NAME'
   AND r.slug IN ('press','understudy')          -- ← pick restaurants
@@ -137,7 +144,8 @@ For ALL restaurants, drop the `r.slug IN (...)` filter.
 
 ```sql
 UPDATE availability_items SET status='unavailable', updated_at=now()  -- or 'limited'
-WHERE delivery_date = (SELECT max(delivery_date) FROM availability_items)
+WHERE delivery_date = (SELECT max(a2.delivery_date) FROM availability_items a2
+                       WHERE a2.restaurant_id = availability_items.restaurant_id)
   AND restaurant_id IN (SELECT id FROM restaurants WHERE slug IN ('press','understudy'))
   AND item_id = (SELECT id FROM items WHERE name='ITEM NAME' AND is_archived=false);
 ```
@@ -207,9 +215,10 @@ SELECT i.name, i.show_in_regular_menu, i.is_event_item, i.is_press_bar_item,
        i.default_price, i.unit_prices,
        a.delivery_date, r.slug AS restaurant, a.status
 FROM items i
-LEFT JOIN availability_items a ON a.item_id = i.id
-  AND a.delivery_date = (SELECT max(delivery_date) FROM availability_items)
-LEFT JOIN restaurants r ON r.id = a.restaurant_id
+CROSS JOIN restaurants r
+LEFT JOIN availability_items a ON a.item_id = i.id AND a.restaurant_id = r.id
+  AND a.delivery_date = (SELECT max(a2.delivery_date) FROM availability_items a2
+                         WHERE a2.restaurant_id = r.id)
 WHERE i.name = 'ITEM NAME'
 ORDER BY r.slug;
 ```
