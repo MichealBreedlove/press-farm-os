@@ -158,6 +158,8 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  // Later carried-over dates the server re-synced to this save.
+  const [carriedForward, setCarriedForward] = useState<string[]>([]);
   const [isSaving, startSaving] = useTransition();
   const [isDuplicating, startDuplicating] = useTransition();
   const [search, setSearch] = useState("");
@@ -339,6 +341,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
     startSaving(async () => {
       try {
         const failures: string[] = [];
+        const forwardDates = new Set<string>();
         await Promise.all(
           orderedRestaurants.map(async (r) => {
             const statusMap = statuses[r.id] ?? {};
@@ -367,15 +370,21 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ restaurant_id: r.id, delivery_date: date, items: payload }),
             });
-            if (!res.ok) failures.push(r.name);
+            if (!res.ok) {
+              failures.push(r.name);
+              return;
+            }
+            const json = await res.json().catch(() => null);
+            for (const d of json?.carried_forward ?? []) forwardDates.add(d);
           }),
         );
         if (failures.length > 0) {
           setSaveError(`Save failed for: ${failures.join(", ")}`);
           return;
         }
+        setCarriedForward(Array.from(forwardDates).sort());
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        setTimeout(() => setSaveSuccess(false), 5000);
       } catch {
         setSaveError("Save failed. Please try again.");
       }
@@ -835,6 +844,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
         {saveSuccess && (
           <p className="text-xs text-farm-green text-center font-medium">
             Saved to all {orderedRestaurants.length} restaurants
+            {carriedForward.length > 0 &&
+              ` · also updated ${carriedForward
+                .map((d) =>
+                  new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                )
+                .join(", ")}`}
           </p>
         )}
         <div className="flex gap-2">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fetchAvailabilityWithRollover, materializeRollover, remapInheritedRows } from "@/lib/availability";
+import { fetchAvailabilityWithRollover, materializeRollover, remapInheritedRows, planCarryForward } from "@/lib/availability";
 import { makeSupabaseMock } from "../helpers/supabase-mock";
 
 /**
@@ -237,5 +237,70 @@ describe("remapInheritedRows", () => {
       "2026-06-11",
     );
     expect(out).toEqual([{ id: "new-a", item_id: "a", delivery_date: "2026-06-11" }]);
+  });
+});
+
+describe("planCarryForward", () => {
+  const row = (delivery_date: string, published_at: string | null = null) => ({
+    delivery_date,
+    published_at,
+  });
+
+  it("copies forward to every later carried-over date", () => {
+    const rows = [row("2026-10-08"), row("2026-10-08"), row("2026-10-10"), row("2026-10-12")];
+    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual([
+      "2026-10-08",
+      "2026-10-10",
+      "2026-10-12",
+    ]);
+  });
+
+  it("stops at the next date the admin published", () => {
+    const rows = [
+      row("2026-10-08"),
+      row("2026-10-10"),
+      row("2026-10-10", "2026-10-04T00:00:00Z"), // one published row marks the date
+      row("2026-10-12"),
+    ];
+    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual(["2026-10-08"]);
+  });
+
+  it("skips past dates and ignores the published date itself", () => {
+    const rows = [row("2026-10-01"), row("2026-10-03"), row("2026-10-05"), row("2026-10-08")];
+    expect(planCarryForward(rows, "2026-10-01", "2026-10-05")).toEqual([
+      "2026-10-05",
+      "2026-10-08",
+    ]);
+  });
+
+  it("returns nothing when there are no later rows", () => {
+    expect(planCarryForward([], "2026-10-05", "2026-10-05")).toEqual([]);
+  });
+});
+
+describe("fetchAvailabilityWithRollover — source date", () => {
+  it("prefers the latest PUBLISHED date over a later carried-over snapshot", async () => {
+    const mk = (date: string, status: string, published_at: string | null) => ({
+      id: `${date}-a`,
+      item_id: "a",
+      restaurant_id: "r1",
+      delivery_date: date,
+      status,
+      published_at,
+      item: { is_archived: false },
+    });
+    const supabase = makeSupabaseMock({
+      availability_items: [
+        mk("2026-10-03", "unavailable", "2026-10-01T19:10:00Z"),
+        // stale snapshot materialized for a future date before the 10/03 publish
+        mk("2026-10-05", "available", null),
+      ],
+    });
+    const res = await fetchAvailabilityWithRollover(supabase, {
+      deliveryDate: "2026-10-08",
+      restaurantId: "r1",
+    });
+    expect(res.sourceDate).toBe("2026-10-03");
+    expect(res.data.map((r) => r.status)).toEqual(["unavailable"]);
   });
 });

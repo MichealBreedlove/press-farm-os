@@ -3,13 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AvailabilityItem } from "@/types";
 import { requireRole } from "@/lib/api-auth";
+import { findRolloverSourceDate } from "@/lib/availability";
 
 /**
  * POST /api/availability/duplicate — Duplicate last cycle's availability
  *
  * Body: { restaurant_id, target_date }
  *
- * Finds most recent availability for restaurant before target_date,
+ * Finds the most recent PUBLISHED availability for restaurant before target_date,
  * copies all rows to target_date. Copies: item_id, status, limited_qty, cycle_notes.
  * Admin only.
  */
@@ -42,31 +43,28 @@ export async function POST(request: Request) {
 
   const adminClient = createAdminClient() as any;
 
-  // Find the most recent delivery date before target_date that has availability rows
-  const { data: rawLastRows, error: findError } = await adminClient
-    .from("availability_items")
-    .select("delivery_date, item_id, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units")
-    .eq("restaurant_id", restaurant_id)
-    .lt("delivery_date", target_date)
-    .order("delivery_date", { ascending: false })
-    .limit(500);
-  const lastRows = rawLastRows as (Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes"> & { available_sizes: string | null; available_colors: string | null; available_varieties: string | null; available_units: string | null })[] | null;
-
-  if (findError) {
-    console.error("Find last cycle error:", findError);
-    return NextResponse.json({ error: "Failed to find last cycle" }, { status: 500 });
-  }
-
-  if (!lastRows || lastRows.length === 0) {
+  // Source = the most recent prior date the admin PUBLISHED (falling back to
+  // the latest date with any rows). Copying the latest date blindly picked
+  // up stale snapshots materialized for future dates ahead of time.
+  const mostRecentDate = await findRolloverSourceDate(adminClient, restaurant_id, target_date);
+  if (!mostRecentDate) {
     return NextResponse.json(
       { error: "No previous availability found for this restaurant" },
       { status: 404 }
     );
   }
 
-  // Get the most recent date's rows
-  const mostRecentDate = lastRows[0].delivery_date;
-  const sourceRows = lastRows.filter((r) => r.delivery_date === mostRecentDate);
+  const { data: rawSourceRows, error: findError } = await adminClient
+    .from("availability_items")
+    .select("delivery_date, item_id, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units")
+    .eq("restaurant_id", restaurant_id)
+    .eq("delivery_date", mostRecentDate);
+  const sourceRows = (rawSourceRows ?? []) as (Pick<AvailabilityItem, "delivery_date" | "item_id" | "status" | "limited_qty" | "cycle_notes"> & { available_sizes: string | null; available_colors: string | null; available_varieties: string | null; available_units: string | null })[];
+
+  if (findError) {
+    console.error("Find last cycle error:", findError);
+    return NextResponse.json({ error: "Failed to find last cycle" }, { status: 500 });
+  }
 
   // Build upsert rows for target_date
   const upsertRows = sourceRows.map((row) => ({

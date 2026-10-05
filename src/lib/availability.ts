@@ -83,15 +83,7 @@ export async function fetchAvailabilityWithRollover(
   }
 
   // No data for this date — find the most recent prior date with availability
-  const { data: priorDates } = await supabase
-    .from("availability_items")
-    .select("delivery_date")
-    .eq("restaurant_id", restaurantId)
-    .lt("delivery_date", deliveryDate)
-    .order("delivery_date", { ascending: false })
-    .limit(1);
-
-  const sourceDate = priorDates?.[0]?.delivery_date;
+  const sourceDate = await findRolloverSourceDate(supabase, restaurantId, deliveryDate);
   if (!sourceDate) {
     return { data: [], sourceDate: deliveryDate, isInherited: false };
   }
@@ -125,6 +117,72 @@ export async function fetchAvailabilityWithRollover(
     sourceDate,
     isInherited: true,
   };
+}
+
+/**
+ * The date a restaurant's availability should roll over FROM: the most
+ * recent prior date the admin actually published (published_at set),
+ * falling back to the most recent prior date with any rows.
+ *
+ * Preferring published dates matters because future dates get rows written
+ * early — materializeRollover on a chef page view, "Copy last cycle" — and
+ * those are frozen snapshots. Rolling over from one of them resurrects
+ * whatever was available when the snapshot was taken, not what the admin
+ * published since (2026-10-05: Under-Study kept showing 24 available after
+ * the admin published 13).
+ */
+export async function findRolloverSourceDate(
+  supabase: any,
+  restaurantId: string,
+  beforeDate: string,
+): Promise<string | null> {
+  const { data: published } = await supabase
+    .from("availability_items")
+    .select("delivery_date")
+    .eq("restaurant_id", restaurantId)
+    .lt("delivery_date", beforeDate)
+    .not("published_at", "is", null)
+    .order("delivery_date", { ascending: false })
+    .limit(1);
+  if (published?.[0]?.delivery_date) return published[0].delivery_date;
+
+  const { data: latest } = await supabase
+    .from("availability_items")
+    .select("delivery_date")
+    .eq("restaurant_id", restaurantId)
+    .lt("delivery_date", beforeDate)
+    .order("delivery_date", { ascending: false })
+    .limit(1);
+  return latest?.[0]?.delivery_date ?? null;
+}
+
+/**
+ * Which later dates a publish of `publishedDate` should be copied forward
+ * to: every date after it (and not in the past) that is still only carried
+ * over — no published rows — stopping at the next date the admin published
+ * themselves, since everything after that inherits from THAT date instead.
+ *
+ * Pure so it can be unit-tested.
+ */
+export function planCarryForward(
+  laterRows: { delivery_date: string; published_at: string | null }[],
+  publishedDate: string,
+  today: string,
+): string[] {
+  const publishedByDate = new Map<string, boolean>();
+  for (const r of laterRows) {
+    if (r.delivery_date <= publishedDate) continue;
+    publishedByDate.set(
+      r.delivery_date,
+      (publishedByDate.get(r.delivery_date) ?? false) || r.published_at != null,
+    );
+  }
+  const out: string[] = [];
+  for (const date of Array.from(publishedByDate.keys()).sort()) {
+    if (publishedByDate.get(date)) break;
+    if (date >= today) out.push(date);
+  }
+  return out;
 }
 
 /**

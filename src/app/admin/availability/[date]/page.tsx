@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/fetch-all";
+import { findRolloverSourceDate } from "@/lib/availability";
 import { AvailabilityEditor } from "@/components/admin/AvailabilityEditor";
 import { SendAvailabilityButton } from "../SendAvailabilityButton";
 import type { Item, Restaurant, AvailabilityItem } from "@/types";
@@ -111,22 +112,16 @@ export default async function AdminAvailabilityEditorPage({
   const missingRestaurants = restaurants.filter((r) => !restaurantsWithRows.has(r.id));
 
   for (const r of missingRestaurants) {
-    const { data: priorDateRow } = await supabase
-      .from("availability_items")
-      .select("delivery_date")
-      .eq("restaurant_id", r.id)
-      .lt("delivery_date", date)
-      .order("delivery_date", { ascending: false })
-      .limit(1)
-      .single() as any;
+    // Prefer the latest PUBLISHED date — a later carried-over snapshot can
+    // be stale (see findRolloverSourceDate).
+    const priorDate = await findRolloverSourceDate(supabase, r.id, date);
+    if (!priorDate) continue;
 
-    if (!priorDateRow?.delivery_date) continue;
-
-    inheritedFromDate = priorDateRow.delivery_date;
+    inheritedFromDate = priorDate;
     const { data: priorRows } = await supabase
       .from("availability_items")
       .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
-      .eq("delivery_date", priorDateRow.delivery_date)
+      .eq("delivery_date", priorDate)
       .eq("restaurant_id", r.id);
 
     // Remap delivery_date so the editor shows them as belonging to this date

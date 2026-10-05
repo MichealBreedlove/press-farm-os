@@ -123,6 +123,12 @@ export function makeSupabaseMock(initialData: Record<string, Row[]> = {}) {
         filterFns.push((r) => r[col] > val);
         return api;
       }),
+      // Only the `.not(col, "is", null)` form is used by app code.
+      not: vi.fn((col: string, op: string, val: any) => {
+        if (op === "is" && val === null) filterFns.push((r) => r[col] != null);
+        else throw new Error(`supabase-mock: unsupported .not(${col}, ${op}, …)`);
+        return api;
+      }),
       in: vi.fn((col: string, vals: any[]) => {
         filterFns.push((r) => vals.includes(r[col]));
         return api;

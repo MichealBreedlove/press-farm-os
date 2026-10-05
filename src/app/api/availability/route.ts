@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/api-auth";
+import { fetchAllRows } from "@/lib/fetch-all";
+import { planCarryForward } from "@/lib/availability";
+import { todayPacific } from "@/lib/utils";
 
 /**
  * POST /api/availability — Publish availability for a delivery date
  *
  * Body: { restaurant_id, delivery_date, items: [{ item_id, status, limited_qty, cycle_notes }] }
  *
- * Upserts availability_items. Sets delivery_dates.ordering_open = true.
+ * Upserts availability_items (stamped published_at). Sets
+ * delivery_dates.ordering_open = true. Then copies the same statuses forward
+ * to every later date that is still only carried over (see
+ * planCarryForward) so a publish doesn't get "undone" by a stale snapshot
+ * a chef page view or Copy-last-cycle wrote for a future date earlier.
  * Admin only.
  */
 export async function POST(request: Request) {
@@ -67,19 +74,22 @@ export async function POST(request: Request) {
   const adminClient = createAdminClient() as any;
 
   // Upsert availability_items
-  const upsertRows = items.map((item) => ({
-    item_id: item.item_id,
-    restaurant_id,
-    delivery_date,
-    status: item.status as "available" | "limited" | "unavailable",
-    limited_qty: item.limited_qty ?? null,
-    cycle_notes: item.cycle_notes ?? null,
-    available_sizes: item.available_sizes ?? null,
-    available_colors: item.available_colors ?? null,
-    available_varieties: item.available_varieties ?? null,
-    available_units: item.available_units ?? null,
-    updated_at: new Date().toISOString(),
-  }));
+  const now = new Date().toISOString();
+  const rowsFor = (date: string) =>
+    items.map((item) => ({
+      item_id: item.item_id,
+      restaurant_id,
+      delivery_date: date,
+      status: item.status as "available" | "limited" | "unavailable",
+      limited_qty: item.limited_qty ?? null,
+      cycle_notes: item.cycle_notes ?? null,
+      available_sizes: item.available_sizes ?? null,
+      available_colors: item.available_colors ?? null,
+      available_varieties: item.available_varieties ?? null,
+      available_units: item.available_units ?? null,
+      updated_at: now,
+    }));
+  const upsertRows = rowsFor(delivery_date).map((r) => ({ ...r, published_at: now }));
 
   const { error: upsertError } = await adminClient
     .from("availability_items")
@@ -94,6 +104,44 @@ export async function POST(request: Request) {
       { error: "Failed to save availability" },
       { status: 500 }
     );
+  }
+
+  // Carry this publish forward to later dates that only hold carried-over
+  // rows. Those rows are snapshots written ahead of time (a chef opening the
+  // order form for a future date materializes it; Copy last cycle copies
+  // it), and without this they freeze whatever was available back then —
+  // the admin publishes 13 items, but next Thursday still shows the old 24
+  // (2026-10-05). published_at is left untouched so they stay "carried" and
+  // keep following the next publish. Stops at the next date the admin
+  // published themselves. Best-effort: the publish itself already landed.
+  const carriedForward: string[] = [];
+  const { data: laterRows, error: laterError } = await fetchAllRows(
+    (from, to) =>
+      adminClient
+        .from("availability_items")
+        .select("delivery_date, published_at")
+        .eq("restaurant_id", restaurant_id)
+        .gt("delivery_date", delivery_date)
+        .order("id", { ascending: true })
+        .range(from, to),
+  );
+  if (laterError) {
+    console.error("Carry-forward read error:", laterError);
+  } else {
+    const targets = planCarryForward(laterRows as any[], delivery_date, todayPacific());
+    for (const target of targets) {
+      const { error: cfError } = await adminClient
+        .from("availability_items")
+        .upsert(rowsFor(target), {
+          onConflict: "item_id,restaurant_id,delivery_date",
+          ignoreDuplicates: false,
+        });
+      if (cfError) {
+        console.error(`Carry-forward to ${target} error:`, cfError);
+        break;
+      }
+      carriedForward.push(target);
+    }
   }
 
   // Keep the item-level menu flags in step with per-restaurant availability.
@@ -156,5 +204,5 @@ export async function POST(request: Request) {
     // Non-fatal — availability was saved, just log it
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, carried_forward: carriedForward });
 }

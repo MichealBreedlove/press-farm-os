@@ -31,6 +31,7 @@ export type Database = {
           id: string
           item_id: string
           limited_qty: number | null
+          published_at: string | null
           restaurant_id: string
           status: string
           updated_at: string
@@ -46,6 +47,7 @@ export type Database = {
           id?: string
           item_id: string
           limited_qty?: number | null
+          published_at?: string | null
           restaurant_id: string
           status?: string
           updated_at?: string
@@ -61,6 +63,7 @@ export type Database = {
           id?: string
           item_id?: string
           limited_qty?: number | null
+          published_at?: string | null
           restaurant_id?: string
           status?: string
           updated_at?: string
