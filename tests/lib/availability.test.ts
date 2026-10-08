@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { fetchAvailabilityWithRollover, materializeRollover, remapInheritedRows, planCarryForward } from "@/lib/availability";
+import {
+  fetchAvailabilityWithRollover,
+  materializeRollover,
+  remapInheritedRows,
+  planCarryForward,
+  diffAvailabilityPayload,
+} from "@/lib/availability";
 import { makeSupabaseMock } from "../helpers/supabase-mock";
 
 /**
@@ -248,33 +254,94 @@ describe("planCarryForward", () => {
 
   it("copies forward to every later carried-over date", () => {
     const rows = [row("2026-10-08"), row("2026-10-08"), row("2026-10-10"), row("2026-10-12")];
-    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual([
-      "2026-10-08",
-      "2026-10-10",
-      "2026-10-12",
-    ]);
+    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual({
+      carried: ["2026-10-08", "2026-10-10", "2026-10-12"],
+      published: [],
+    });
   });
 
-  it("stops at the next date the admin published", () => {
+  it("switches to changed-items-only from the next date the admin published", () => {
     const rows = [
       row("2026-10-08"),
       row("2026-10-10"),
       row("2026-10-10", "2026-10-04T00:00:00Z"), // one published row marks the date
-      row("2026-10-12"),
+      row("2026-10-12"), // carried over FROM 10-10, so it follows 10-10's rule
+      row("2026-10-15", "2026-10-06T00:00:00Z"),
     ];
-    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual(["2026-10-08"]);
+    expect(planCarryForward(rows, "2026-10-05", "2026-10-05")).toEqual({
+      carried: ["2026-10-08"],
+      published: ["2026-10-10", "2026-10-12", "2026-10-15"],
+    });
   });
 
   it("skips past dates and ignores the published date itself", () => {
     const rows = [row("2026-10-01"), row("2026-10-03"), row("2026-10-05"), row("2026-10-08")];
-    expect(planCarryForward(rows, "2026-10-01", "2026-10-05")).toEqual([
-      "2026-10-05",
-      "2026-10-08",
-    ]);
+    expect(planCarryForward(rows, "2026-10-01", "2026-10-05")).toEqual({
+      carried: ["2026-10-05", "2026-10-08"],
+      published: [],
+    });
+  });
+
+  it("still treats a past published date as the cut-over for later dates", () => {
+    const rows = [row("2026-10-03", "2026-10-01T00:00:00Z"), row("2026-10-08")];
+    expect(planCarryForward(rows, "2026-10-01", "2026-10-05")).toEqual({
+      carried: [],
+      published: ["2026-10-08"],
+    });
   });
 
   it("returns nothing when there are no later rows", () => {
-    expect(planCarryForward([], "2026-10-05", "2026-10-05")).toEqual([]);
+    expect(planCarryForward([], "2026-10-05", "2026-10-05")).toEqual({ carried: [], published: [] });
+  });
+});
+
+describe("diffAvailabilityPayload", () => {
+  const base = (over: Record<string, any>) => ({
+    item_id: "bouquet",
+    status: "available",
+    limited_qty: null,
+    cycle_notes: null,
+    available_sizes: null,
+    available_colors: null,
+    available_varieties: null,
+    available_units: null,
+    ...over,
+  });
+
+  it("reports items whose status changed", () => {
+    expect(
+      diffAvailabilityPayload(
+        [base({ status: "unavailable" }), base({ item_id: "figs" })],
+        [base({}), base({ item_id: "figs" })],
+      ),
+    ).toEqual(["bouquet"]);
+  });
+
+  it("reports changes to limited qty, notes, sizes, colors, varieties and units", () => {
+    const cases: Array<Record<string, any>> = [
+      { status: "limited", limited_qty: 3 },
+      { cycle_notes: "Palm sized" },
+      { available_sizes: "" }, // "" = none selected, a real change from null (all)
+      { available_colors: "red" },
+      { available_varieties: "genovese" },
+      { available_units: "sm" },
+    ];
+    for (const change of cases) {
+      expect(diffAvailabilityPayload([base(change)], [base({})])).toEqual(["bouquet"]);
+    }
+  });
+
+  it("ignores cosmetic differences: blank notes, blank units, missing optional fields", () => {
+    expect(
+      diffAvailabilityPayload(
+        [{ item_id: "bouquet", status: "available", cycle_notes: "  ", available_units: "" }],
+        [base({})],
+      ),
+    ).toEqual([]);
+  });
+
+  it("treats an item with no baseline row as changed", () => {
+    expect(diffAvailabilityPayload([base({ item_id: "new-item" })], [base({})])).toEqual(["new-item"]);
   });
 });
 

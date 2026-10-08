@@ -47,11 +47,13 @@ export default async function AdminAvailabilityPage() {
     console.error("Error fetching delivery dates:", error);
   }
 
-  // For each date, fetch count of available items across both restaurants
+  // For each date, count the orderable items (available + limited) across
+  // all restaurants. Limited items ARE orderable, so a date that is all
+  // limited is not "No availability set" (2026-10-08).
   const dates: DeliveryDate[] = rawDates ?? [];
   const dateStrings = dates.map((d) => d.date);
 
-  const availabilityCountsByDate: Record<string, number> = {};
+  const countsByDate: Record<string, { available: number; limited: number }> = {};
 
   if (dateStrings.length > 0) {
     // Paginated: 12 dates × ~120 available rows each clears the silent
@@ -62,22 +64,27 @@ export default async function AdminAvailabilityPage() {
           .from("availability_items")
           .select("delivery_date, item_id, status")
           .in("delivery_date", dateStrings)
-          .eq("status", "available")
+          .in("status", ["available", "limited"])
           .order("id", { ascending: true })
           .range(from, to),
     );
 
     if (availCounts) {
-      // Deduplicate by item_id per date to avoid double-counting across restaurants
-      const seenByDate: Record<string, Set<string>> = {};
+      // Deduplicate by item_id per date to avoid double-counting across
+      // restaurants. An item available anywhere counts as available.
+      const statusByDate: Record<string, Map<string, string>> = {};
       for (const row of availCounts as Array<{ delivery_date: string; item_id: string; status: string }>) {
-        if (!seenByDate[row.delivery_date]) {
-          seenByDate[row.delivery_date] = new Set();
-        }
-        seenByDate[row.delivery_date].add(row.item_id);
+        const map = (statusByDate[row.delivery_date] ??= new Map());
+        if (map.get(row.item_id) !== "available") map.set(row.item_id, row.status);
       }
-      for (const [date, itemIds] of Object.entries(seenByDate)) {
-        availabilityCountsByDate[date] = itemIds.size;
+      for (const [date, map] of Object.entries(statusByDate)) {
+        let available = 0;
+        let limited = 0;
+        for (const status of Array.from(map.values())) {
+          if (status === "available") available++;
+          else limited++;
+        }
+        countsByDate[date] = { available, limited };
       }
     }
   }
@@ -104,7 +111,8 @@ export default async function AdminAvailabilityPage() {
         )}
 
         {dates.map((dd) => {
-          const availableCount = availabilityCountsByDate[dd.date] ?? 0;
+          const counts = countsByDate[dd.date] ?? { available: 0, limited: 0 };
+          const orderableCount = counts.available + counts.limited;
           return (
             <div key={dd.id} className="space-y-1">
             <Link
@@ -117,8 +125,8 @@ export default async function AdminAvailabilityPage() {
                     {formatDeliveryDate(dd.date)}
                   </p>
                   <p className="text-sm text-farm-muted mt-0.5">
-                    {availableCount > 0
-                      ? `${availableCount} items available`
+                    {orderableCount > 0
+                      ? `${counts.available} available${counts.limited > 0 ? ` · ${counts.limited} limited` : ""}`
                       : "No availability set"}
                   </p>
                 </div>
@@ -140,7 +148,7 @@ export default async function AdminAvailabilityPage() {
                 </div>
               </div>
             </Link>
-            {availableCount === 0 && (
+            {orderableCount === 0 && (
               <CopyLastCycleButton targetDate={dd.date} restaurants={restaurants} />
             )}
             </div>

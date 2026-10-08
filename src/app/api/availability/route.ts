@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/api-auth";
 import { fetchAllRows } from "@/lib/fetch-all";
-import { planCarryForward } from "@/lib/availability";
+import { diffAvailabilityPayload, findRolloverSourceDate, planCarryForward } from "@/lib/availability";
 import { todayPacific } from "@/lib/utils";
 
 /**
@@ -12,11 +12,12 @@ import { todayPacific } from "@/lib/utils";
  * Body: { restaurant_id, delivery_date, items: [{ item_id, status, limited_qty, cycle_notes }] }
  *
  * Upserts availability_items (stamped published_at). Sets
- * delivery_dates.ordering_open = true. Then copies the same statuses forward
- * to every later date that is still only carried over (see
- * planCarryForward) so a publish doesn't get "undone" by a stale snapshot
- * a chef page view or Copy-last-cycle wrote for a future date earlier.
- * Admin only.
+ * delivery_dates.ordering_open = true. Then carries the save forward (see
+ * planCarryForward): later dates that are only carried over get the whole
+ * list, and later dates the admin published themselves get just the items
+ * this save CHANGED — so marking the bouquet unavailable on Thursday keeps
+ * it off Saturday, Monday, … until the admin changes it again on a later
+ * date. Admin only.
  */
 export async function POST(request: Request) {
   const supabase = (await createClient()) as any;
@@ -73,22 +74,57 @@ export async function POST(request: Request) {
   // Use admin client to bypass RLS for upsert
   const adminClient = createAdminClient() as any;
 
+  // What the editor was showing before this save: the date's own rows, or
+  // (for a date with none yet) the rows it was carried over from. The items
+  // that differ from this are the ones the admin changed, which carry into
+  // later dates the admin already published (see planCarryForward).
+  const AVAIL_FIELDS =
+    "item_id, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units";
+  const readDateRows = (date: string) =>
+    fetchAllRows((from, to) =>
+      adminClient
+        .from("availability_items")
+        .select(AVAIL_FIELDS)
+        .eq("restaurant_id", restaurant_id)
+        .eq("delivery_date", date)
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
+  let changedItemIds: string[] | null = null;
+  const { data: ownRows, error: ownError } = await readDateRows(delivery_date);
+  if (ownError) {
+    console.error("Baseline read error:", ownError);
+  } else {
+    let baseline = (ownRows ?? []) as any[];
+    if (baseline.length === 0) {
+      const sourceDate = await findRolloverSourceDate(adminClient, restaurant_id, delivery_date);
+      if (sourceDate) {
+        const { data: sourceRows, error: sourceError } = await readDateRows(sourceDate);
+        if (sourceError) console.error("Baseline source read error:", sourceError);
+        else baseline = (sourceRows ?? []) as any[];
+      }
+    }
+    changedItemIds = diffAvailabilityPayload(items, baseline);
+  }
+
   // Upsert availability_items
   const now = new Date().toISOString();
-  const rowsFor = (date: string) =>
-    items.map((item) => ({
-      item_id: item.item_id,
-      restaurant_id,
-      delivery_date: date,
-      status: item.status as "available" | "limited" | "unavailable",
-      limited_qty: item.limited_qty ?? null,
-      cycle_notes: item.cycle_notes ?? null,
-      available_sizes: item.available_sizes ?? null,
-      available_colors: item.available_colors ?? null,
-      available_varieties: item.available_varieties ?? null,
-      available_units: item.available_units ?? null,
-      updated_at: now,
-    }));
+  const rowsFor = (date: string, onlyItemIds?: Set<string>) =>
+    items
+      .filter((item) => !onlyItemIds || onlyItemIds.has(item.item_id))
+      .map((item) => ({
+        item_id: item.item_id,
+        restaurant_id,
+        delivery_date: date,
+        status: item.status as "available" | "limited" | "unavailable",
+        limited_qty: item.limited_qty ?? null,
+        cycle_notes: item.cycle_notes ?? null,
+        available_sizes: item.available_sizes ?? null,
+        available_colors: item.available_colors ?? null,
+        available_varieties: item.available_varieties ?? null,
+        available_units: item.available_units ?? null,
+        updated_at: now,
+      }));
   const upsertRows = rowsFor(delivery_date).map((r) => ({ ...r, published_at: now }));
 
   const { error: upsertError } = await adminClient
@@ -106,14 +142,19 @@ export async function POST(request: Request) {
     );
   }
 
-  // Carry this publish forward to later dates that only hold carried-over
-  // rows. Those rows are snapshots written ahead of time (a chef opening the
-  // order form for a future date materializes it; Copy last cycle copies
-  // it), and without this they freeze whatever was available back then —
-  // the admin publishes 13 items, but next Thursday still shows the old 24
-  // (2026-10-05). published_at is left untouched so they stay "carried" and
-  // keep following the next publish. Stops at the next date the admin
-  // published themselves. Best-effort: the publish itself already landed.
+  // Carry this save forward. Later dates that only hold carried-over rows
+  // are snapshots written ahead of time (a chef opening the order form for a
+  // future date materializes it; Copy last cycle copies it), and without
+  // this they freeze whatever was available back then — the admin publishes
+  // 13 items, but next Thursday still shows the old 24 (2026-10-05). They
+  // get the whole list; published_at is left untouched so they stay
+  // "carried" and keep following the next publish.
+  //
+  // Later dates the admin published themselves (and everything after them)
+  // get only the items this save changed: the bouquet marked unavailable
+  // today stays unavailable on every later date, but the rest of a later
+  // publish is kept (2026-10-08). Best-effort: the publish itself already
+  // landed.
   const carriedForward: string[] = [];
   const { data: laterRows, error: laterError } = await fetchAllRows(
     (from, to) =>
@@ -128,19 +169,26 @@ export async function POST(request: Request) {
   if (laterError) {
     console.error("Carry-forward read error:", laterError);
   } else {
-    const targets = planCarryForward(laterRows as any[], delivery_date, todayPacific());
-    for (const target of targets) {
+    const plan = planCarryForward(laterRows as any[], delivery_date, todayPacific());
+    const changedSet = new Set(changedItemIds ?? []);
+    const targets: Array<{ date: string; rows: ReturnType<typeof rowsFor> }> = [
+      ...plan.carried.map((date) => ({ date, rows: rowsFor(date) })),
+      ...(changedSet.size > 0
+        ? plan.published.map((date) => ({ date, rows: rowsFor(date, changedSet) }))
+        : []),
+    ];
+    for (const { date, rows } of targets) {
       const { error: cfError } = await adminClient
         .from("availability_items")
-        .upsert(rowsFor(target), {
+        .upsert(rows, {
           onConflict: "item_id,restaurant_id,delivery_date",
           ignoreDuplicates: false,
         });
       if (cfError) {
-        console.error(`Carry-forward to ${target} error:`, cfError);
+        console.error(`Carry-forward to ${date} error:`, cfError);
         break;
       }
-      carriedForward.push(target);
+      carriedForward.push(date);
     }
   }
 

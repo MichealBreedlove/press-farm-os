@@ -11,6 +11,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+
+  // Don't serve a dynamic page from the client-side router cache. The
+  // default keeps a visited dynamic page for 30s, so tapping back to an
+  // availability date (or a chef tapping another date chip) right after a
+  // Save could show the list from before the save (2026-10-08).
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+    },
+  },
 };
 
 // Sentry error monitoring. Runtime capture only needs the SDK init files

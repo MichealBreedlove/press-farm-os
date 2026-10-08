@@ -158,9 +158,18 @@ export async function findRolloverSourceDate(
 
 /**
  * Which later dates a publish of `publishedDate` should be copied forward
- * to: every date after it (and not in the past) that is still only carried
- * over — no published rows — stopping at the next date the admin published
- * themselves, since everything after that inherits from THAT date instead.
+ * to, split by how much of the publish they take:
+ *
+ * - `carried`: every later date (not in the past) that is still only
+ *   carried over — no published rows — up to the next date the admin
+ *   published themselves. These are snapshots of an older publish, so the
+ *   WHOLE list is copied over them.
+ * - `published`: the next published date and everything after it (published
+ *   or not). The admin set those up deliberately, so only the items the
+ *   admin CHANGED in this save are pushed into them (see
+ *   diffAvailabilityPayload) — a change made on one date carries onward
+ *   until the admin changes it again on a later date, but a later publish
+ *   keeps everything that wasn't touched.
  *
  * Pure so it can be unit-tested.
  */
@@ -168,7 +177,7 @@ export function planCarryForward(
   laterRows: { delivery_date: string; published_at: string | null }[],
   publishedDate: string,
   today: string,
-): string[] {
+): { carried: string[]; published: string[] } {
   const publishedByDate = new Map<string, boolean>();
   for (const r of laterRows) {
     if (r.delivery_date <= publishedDate) continue;
@@ -177,12 +186,61 @@ export function planCarryForward(
       (publishedByDate.get(r.delivery_date) ?? false) || r.published_at != null,
     );
   }
-  const out: string[] = [];
+  const carried: string[] = [];
+  const published: string[] = [];
+  let hitPublished = false;
   for (const date of Array.from(publishedByDate.keys()).sort()) {
-    if (publishedByDate.get(date)) break;
-    if (date >= today) out.push(date);
+    if (publishedByDate.get(date)) hitPublished = true;
+    if (date < today) continue;
+    (hitPublished ? published : carried).push(date);
   }
-  return out;
+  return { carried, published };
+}
+
+/** The per-item fields an editor Save writes (status + the shared dimensions). */
+export interface AvailabilityPayloadRow {
+  item_id: string;
+  status: string;
+  limited_qty?: number | null;
+  cycle_notes?: string | null;
+  available_sizes?: string | null;
+  available_colors?: string | null;
+  available_varieties?: string | null;
+  available_units?: string | null;
+}
+
+function normalizeAvailabilityRow(r: AvailabilityPayloadRow): string {
+  // "" and null both mean "no note" / "all units"; for sizes / colors /
+  // varieties "" is a real value (none selected) and must stay distinct.
+  return JSON.stringify([
+    r.status,
+    r.limited_qty ?? null,
+    (r.cycle_notes ?? "").trim() || null,
+    r.available_sizes ?? null,
+    r.available_colors ?? null,
+    r.available_varieties ?? null,
+    r.available_units || null,
+  ]);
+}
+
+/**
+ * Item ids whose saved state differs from what the editor was showing before
+ * the save (`baseline`: the date's existing rows, or the rows it was carried
+ * over from when it had none). Items with no baseline row count as changed.
+ *
+ * Pure so it can be unit-tested.
+ */
+export function diffAvailabilityPayload(
+  payload: AvailabilityPayloadRow[],
+  baseline: AvailabilityPayloadRow[],
+): string[] {
+  const before = new Map(baseline.map((r) => [r.item_id, normalizeAvailabilityRow(r)]));
+  const changed: string[] = [];
+  for (const row of payload) {
+    const prev = before.get(row.item_id);
+    if (prev === undefined || prev !== normalizeAvailabilityRow(row)) changed.push(row.item_id);
+  }
+  return changed;
 }
 
 /**
