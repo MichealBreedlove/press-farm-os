@@ -334,18 +334,9 @@ export async function GET(request: Request) {
     WeeklyUpdate({
       weekOfLabel: "May 25",
       generalNote: "First tomatoes of the season this week\nHeat wave through Thursday — flowers may run short",
-      availableNow: [
-        { name: "Edible Flower Mix", qty: "Open", size: "SM, LG", notes: "Peak color right now" },
-        { name: "Nasturtium Leaves", qty: "Open", size: "Palm", notes: "" },
-        { name: "Squash Blossoms", qty: "12 (limited)", size: "EA", notes: "Morning pick only" },
-      ],
       planterBeds: [
         { name: "Thai Basil", bed: "Press — Bed 2", planted: "Apr 12", notes: "Pinch weekly" },
         { name: "Lemon Verbena", bed: "Under-Study — Bed 1", planted: "May 2", notes: "" },
-      ],
-      gaps: [
-        { name: "Snap Peas", lastWeek: "Yes", substitute: "—", backWhen: "~Jun 14" },
-        { name: "Squash Blossoms", lastWeek: "Yes", substitute: "—", backWhen: "Now (limited)" },
       ],
       incoming: [
         { label: "~2 Weeks", items: ["Snap Peas", "Cucumbers"] },

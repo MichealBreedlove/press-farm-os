@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Save, Check, Send, Loader2, Sprout, Users, Plus, X, Trash2, RotateCcw,
-  Table2, Flower2, AlertTriangle, CalendarClock, PauseCircle, PlayCircle,
+  Flower2, CalendarClock, PauseCircle, PlayCircle,
 } from "lucide-react";
 import type { WeeklyUpdateData } from "@/lib/weekly-update";
 import { activeDelay, slotTimeLabel, weeklyUpdateSendSlots } from "@/lib/weekly-update-schedule";
@@ -12,9 +12,9 @@ import { activeDelay, slotTimeLabel, weeklyUpdateSendSlots } from "@/lib/weekly-
 /**
  * Weekly Update editor — the full email is editable before it goes out.
  *
- * The server passes a live-built draft (availability, planter boxes,
- * forecast) plus any saved edits for this week. Every section — general
- * note, Available Now, planter beds, gaps, incoming timeline — can be
+ * The server passes a live-built draft (planter boxes, forecast, farm
+ * tasks) plus any saved edits for this week. Every section — general
+ * note, planter beds, incoming timeline — can be
  * changed, rows added or removed. "Save Draft" persists the edited version
  * (farm_settings.weekly_update_draft); both Send Now and the Monday cron
  * send the saved draft verbatim, falling back to live data when no draft
@@ -460,24 +460,6 @@ export function WeeklyUpdateClient({
       </SectionCard>
 
       <SectionCard
-        icon={<Table2 className="w-5 h-5" />}
-        title="Available Now"
-        description="Pre-filled from the latest published availability. Edit quantities, sizes, and notes freely."
-      >
-        <RowsEditor
-          rows={data.availableNow as unknown as Record<string, string>[]}
-          fields={[
-            { key: "name", label: "Item", wide: true },
-            { key: "qty", label: "Qty" },
-            { key: "size", label: "Size" },
-            { key: "notes", label: "Notes", wide: true },
-          ]}
-          onChange={(rows) => patch({ availableNow: rows as unknown as WeeklyUpdateData["availableNow"] })}
-          addLabel="Add item"
-        />
-      </SectionCard>
-
-      <SectionCard
         icon={<Flower2 className="w-5 h-5" />}
         title="Restaurant Planter Beds"
         description="Pre-filled from active planter box plantings. Notes stay blank unless you type one."
@@ -492,24 +474,6 @@ export function WeeklyUpdateClient({
           ]}
           onChange={(rows) => patch({ planterBeds: rows as unknown as WeeklyUpdateData["planterBeds"] })}
           addLabel="Add planting"
-        />
-      </SectionCard>
-
-      <SectionCard
-        icon={<AlertTriangle className="w-5 h-5" />}
-        title="Gaps or Limited Supply"
-        description="Pre-filled with limited items and anything chefs had last week that's gone now. Fill in substitutes by hand."
-      >
-        <RowsEditor
-          rows={data.gaps as unknown as Record<string, string>[]}
-          fields={[
-            { key: "name", label: "Item", wide: true },
-            { key: "lastWeek", label: "Last Wk. Avail" },
-            { key: "backWhen", label: "Back When" },
-            { key: "substitute", label: "Substitute", wide: true },
-          ]}
-          onChange={(rows) => patch({ gaps: rows as unknown as WeeklyUpdateData["gaps"] })}
-          addLabel="Add gap"
         />
       </SectionCard>
 

@@ -3,9 +3,7 @@ import { getAvailabilityBuckets } from "@/lib/forecasting";
 import type { AvailabilityEntry } from "@/lib/forecasting";
 import { addDaysISO, todayPacific } from "@/lib/utils";
 import type {
-  WeeklyUpdateAvailRow,
   WeeklyUpdateBedRow,
-  WeeklyUpdateGapRow,
   WeeklyUpdateIncomingGroup,
 } from "@/emails/weekly-update";
 
@@ -14,7 +12,7 @@ import type {
  * (/api/reports/weekly-update) and the editor page (/admin/weekly-update).
  *
  * The flow: buildWeeklyUpdateData() assembles a draft from live data
- * (availability, planter boxes, forecast). The admin can edit every field of
+ * (planter boxes, forecast, farm tasks). The admin can edit every field of
  * that draft on /admin/weekly-update; the edited draft is persisted as JSON in
  * farm_settings.weekly_update_draft stamped with the week's Monday anchor.
  * Sends prefer a same-week draft over a fresh live build, so what Micheal
@@ -25,9 +23,7 @@ export interface WeeklyUpdateData {
   /** e.g. "August 10" — rendered as "Week of August 10". */
   weekOfLabel: string;
   generalNote: string;
-  availableNow: WeeklyUpdateAvailRow[];
   planterBeds: WeeklyUpdateBedRow[];
-  gaps: WeeklyUpdateGapRow[];
   incoming: WeeklyUpdateIncomingGroup[];
   /** Farm tasks finished in the last 7 days, one line each. */
   tasksCompleted: string[];
@@ -128,119 +124,34 @@ function shortDate(iso: string): string {
   return new Date(iso + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+/**
+ * Planter-box order for the weekly update: ST boxes first, then every other
+ * series (G, U, …) — each by its NUMBER, so ST2 comes before ST10.
+ */
+export function compareBoxNames(a: string, b: string): number {
+  const parse = (n: string) => {
+    const m = n.trim().match(/^([A-Za-z]*)\s*(\d+)?/);
+    return { prefix: (m?.[1] ?? "").toUpperCase(), num: m?.[2] ? Number(m[2]) : Infinity };
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa.prefix !== pb.prefix) {
+    if (pa.prefix === "ST") return -1;
+    if (pb.prefix === "ST") return 1;
+    return pa.prefix.localeCompare(pb.prefix);
+  }
+  if (pa.num !== pb.num) return pa.num < pb.num ? -1 : 1;
+  return a.localeCompare(b);
+}
+
 /** Assemble a fresh draft from live data. `admin` must be the service-role client. */
 export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<WeeklyUpdateData> {
   const today = todayPacific();
 
-  // ---- Availability: current cycle + the one before it -------------------
-  // Cycles run Thu/Sat/Mon, so 14 days back always covers the previous cycle,
-  // and 7 days forward covers a cycle the admin has published ahead of time.
-  //
-  // IMPORTANT: a cycle carries ~1,200 availability rows (every catalog item ×
-  // every restaurant), so the full 3-week window is ~7,000+ rows — far past
-  // Supabase's silent 1,000-row response cap. Fetching it in one unbounded
-  // select returned an arbitrary truncated subset: cycle detection was wrong
-  // and stale rows from old cycles leaked into the draft. Instead: find the
-  // two most recent cycle dates from a compact date-only query, then fetch
-  // ONLY offered rows (status ≠ unavailable, ~150/cycle) for those two dates.
-  const { data: dateRows } = await (admin as any)
-    .from("availability_items")
-    .select("delivery_date")
-    .gte("delivery_date", addDaysISO(today, -14))
-    .lte("delivery_date", addDaysISO(today, 7))
-    .neq("status", "unavailable")
-    .order("delivery_date", { ascending: false })
-    .limit(1000);
-  const cycleDates: string[] = Array.from(
-    new Set<string>((dateRows ?? []).map((r: any) => r.delivery_date as string)),
-  ).sort();
-  const currentCycle = cycleDates[cycleDates.length - 1] ?? null;
-  const previousCycle = cycleDates.length > 1 ? cycleDates[cycleDates.length - 2] : null;
-
-  const { data: availRows } = await (admin as any)
-    .from("availability_items")
-    .select(
-      "delivery_date, status, limited_qty, cycle_notes, available_sizes, available_units, items(name)",
-    )
-    .in("delivery_date", [currentCycle, previousCycle].filter(Boolean))
-    .neq("status", "unavailable")
-    .limit(2000);
-
-  // Dedupe by item name across restaurants; an item available anywhere counts
-  // as available, and limited quantities take the largest published cap.
-  type CycleItem = {
-    name: string;
-    status: "available" | "limited" | "unavailable";
-    limitedQty: number | null;
-    sizes: string;
-    notes: string;
-  };
-  function collapseCycle(date: string | null): Map<string, CycleItem> {
-    const map = new Map<string, CycleItem>();
-    for (const r of (availRows ?? []).filter((r: any) => r.delivery_date === date)) {
-      const name = (r.items?.name ?? "").trim();
-      if (!name) continue;
-      const prev = map.get(name.toLowerCase());
-      const status = r.status as CycleItem["status"];
-      const rank = { available: 2, limited: 1, unavailable: 0 } as const;
-      if (!prev || rank[status] > rank[prev.status]) {
-        map.set(name.toLowerCase(), {
-          name,
-          status,
-          limitedQty: r.limited_qty ?? prev?.limitedQty ?? null,
-          sizes: r.available_sizes ?? prev?.sizes ?? "",
-          notes: r.cycle_notes ?? prev?.notes ?? "",
-        });
-      }
-    }
-    return map;
-  }
-  const current = collapseCycle(currentCycle);
-  const previous = collapseCycle(previousCycle);
-
-  const availableNow: WeeklyUpdateAvailRow[] = Array.from(current.values())
-    .filter((i) => i.status !== "unavailable")
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((i) => ({
-      name: i.name,
-      qty: i.status === "limited" ? (i.limitedQty != null ? `${i.limitedQty} (limited)` : "Limited") : "Open",
-      size: i.sizes || "—",
-      notes: i.notes || "",
-    }));
-
-  // ---- Forecast buckets (also used for "back when" on gaps) --------------
+  // ---- Forecast buckets (feed the incoming timeline) --------------------
+  // The Available Now and Gaps or Limited Supply sections were dropped
+  // (Micheal 2026-10-09) — chefs see live availability on the order form.
   const buckets = await getAvailabilityBuckets(today);
-  const futureEntries: AvailabilityEntry[] = [
-    ...buckets.in2Weeks,
-    ...buckets.in4Weeks,
-    ...buckets.in2Months,
-  ];
-  function backWhenFor(name: string): string {
-    const hit = futureEntries.find((e) => e.name.toLowerCase() === name.toLowerCase());
-    return hit ? `~${shortDate(hit.windowStart)}` : "TBD";
-  }
-
-  // ---- Gaps: limited this cycle, or available last cycle and gone now ----
-  // Only offered rows are fetched, so `current` holds available + limited.
-  // Explicitly-unavailable items simply vanish from `current`, and the
-  // dropped-items loop below catches the ones chefs actually just lost
-  // (available last cycle, gone now). Out-of-season items that were never
-  // offered don't appear anywhere — they aren't gaps.
-  const gaps: WeeklyUpdateGapRow[] = [];
-  for (const i of current.values()) {
-    if (i.status !== "limited") continue;
-    gaps.push({
-      name: i.name,
-      lastWeek: previous.get(i.name.toLowerCase())?.status === "available" ? "Yes" : "No",
-      substitute: "—",
-      backWhen: "Now (limited)",
-    });
-  }
-  for (const p of previous.values()) {
-    if (p.status !== "available" || current.has(p.name.toLowerCase())) continue;
-    gaps.push({ name: p.name, lastWeek: "Yes", substitute: "—", backWhen: backWhenFor(p.name) });
-  }
-  gaps.sort((a, b) => a.name.localeCompare(b.name));
 
   // ---- Restaurant planter beds ------------------------------------------
   const { data: bedRows } = await (admin as any)
@@ -249,7 +160,11 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
     .eq("status", "active");
   const planterBeds: WeeklyUpdateBedRow[] = (bedRows ?? [])
     .filter((r: any) => r.planter_boxes?.is_active !== false)
-    .sort((a: any, b: any) => (a.name as string).localeCompare(b.name))
+    .sort(
+      (a: any, b: any) =>
+        compareBoxNames(a.planter_boxes?.name ?? "", b.planter_boxes?.name ?? "") ||
+        (a.name as string).localeCompare(b.name),
+    )
     .map((r: any) => ({
       name: r.name,
       bed: r.planter_boxes?.name ?? "—",
@@ -310,9 +225,7 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   return {
     weekOfLabel: weekOfLabelFor(weekAnchor),
     generalNote: noteRow?.value ?? "",
-    availableNow,
     planterBeds,
-    gaps,
     incoming,
     tasksCompleted,
     tasksUpcoming,
@@ -334,15 +247,12 @@ export function sanitizeWeeklyUpdateData(raw: unknown): WeeklyUpdateData | null 
   return {
     weekOfLabel: str(r.weekOfLabel) || weekOfLabelFor(upcomingMondayISO()),
     generalNote: str(r.generalNote),
-    availableNow: rows(r.availableNow)
-      .map((x) => ({ name: str(x.name), qty: str(x.qty), size: str(x.size), notes: str(x.notes) }))
-      .filter((x) => x.name),
+    // Re-sorted by box number so drafts saved before the ST-first order
+    // (alphabetical by planting) still go out in box order.
     planterBeds: rows(r.planterBeds)
       .map((x) => ({ name: str(x.name), bed: str(x.bed), planted: str(x.planted), notes: str(x.notes) }))
-      .filter((x) => x.name),
-    gaps: rows(r.gaps)
-      .map((x) => ({ name: str(x.name), lastWeek: str(x.lastWeek), substitute: str(x.substitute), backWhen: str(x.backWhen) }))
-      .filter((x) => x.name),
+      .filter((x) => x.name)
+      .sort((a, b) => compareBoxNames(a.bed, b.bed)),
     incoming: rows(r.incoming)
       .map((x) => ({
         label: str(x.label),

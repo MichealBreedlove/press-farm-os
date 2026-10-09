@@ -11,28 +11,12 @@ import {
 import { APP_URL } from "@/lib/constants";
 import { styles, colors, FONT_STACK, MANDALA_URL, WORDMARK_URL } from "./_shared";
 
-/** One "Available Now" line — Item / Qty / Size / Notes. */
-export interface WeeklyUpdateAvailRow {
-  name: string;
-  qty: string;
-  size: string;
-  notes: string;
-}
-
 /** One Restaurant Planter Beds line — Item / Bed / Planted / Notes. */
 export interface WeeklyUpdateBedRow {
   name: string;
   bed: string;
   planted: string;
   notes: string;
-}
-
-/** One Gaps or Limited Supply line — Item / Last Wk. Avail / Substitute / Back When. */
-export interface WeeklyUpdateGapRow {
-  name: string;
-  lastWeek: string;
-  substitute: string;
-  backWhen: string;
 }
 
 /** One incoming-timeline group, e.g. "~2 Weeks" → ["Snap Peas", …]. */
@@ -46,9 +30,7 @@ interface WeeklyUpdateProps {
   weekOfLabel: string;
   /** Admin-authored note; newline-separated lines render as bullets. */
   generalNote?: string | null;
-  availableNow: WeeklyUpdateAvailRow[];
   planterBeds: WeeklyUpdateBedRow[];
-  gaps: WeeklyUpdateGapRow[];
   incoming: WeeklyUpdateIncomingGroup[];
   /** Farm tasks finished in the last week, one line each. */
   tasksCompleted?: string[];
@@ -92,17 +74,15 @@ const bullet = {
 /**
  * weekly-update.tsx — Chef-facing "Press Farm – Weekly Update".
  *
- * Mirrors Micheal's Word template: General notes, Available Now table,
- * Restaurant Planter Beds, Gaps or Limited Supply, and the Items Incoming
- * Timeline. Sent weekly to all active chefs plus any extra recipients
+ * Mirrors Micheal's Word template: General notes, Restaurant Planter Beds,
+ * and the Items Incoming Timeline. (Available Now and Gaps or Limited Supply
+ * were dropped 2026-10-09 — live availability lives on the order form.) Sent weekly to all active chefs plus any extra recipients
  * configured in /admin/settings/emails.
  */
 export default function WeeklyUpdate({
   weekOfLabel,
   generalNote,
-  availableNow,
   planterBeds,
-  gaps,
   incoming,
   tasksCompleted = [],
   tasksUpcoming = [],
@@ -166,34 +146,6 @@ export default function WeeklyUpdate({
                 </Section>
               )}
 
-              <Text style={styles.h2}>Available Now</Text>
-              {availableNow.length === 0 ? (
-                <Text style={styles.paragraphMuted}>
-                  Availability for this cycle hasn&apos;t been published yet — check the order form.
-                </Text>
-              ) : (
-                <table cellPadding="0" cellSpacing="0" border={0} style={table}>
-                  <thead>
-                    <tr>
-                      <th style={th}>Item</th>
-                      <th style={th}>Qty</th>
-                      <th style={th}>Size</th>
-                      <th style={th}>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {availableNow.map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
-                        <td style={td}>{r.qty}</td>
-                        <td style={td}>{r.size}</td>
-                        <td style={tdMuted}>{r.notes}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
               {planterBeds.length > 0 && (
                 <Section>
                   <Text style={styles.h2}>Restaurant Planter Beds</Text>
@@ -213,32 +165,6 @@ export default function WeeklyUpdate({
                           <td style={td}>{r.bed}</td>
                           <td style={td}>{r.planted}</td>
                           <td style={tdMuted}>{r.notes}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Section>
-              )}
-
-              {gaps.length > 0 && (
-                <Section>
-                  <Text style={styles.h2}>Gaps or Limited Supply</Text>
-                  <table cellPadding="0" cellSpacing="0" border={0} style={table}>
-                    <thead>
-                      <tr>
-                        <th style={th}>Item</th>
-                        <th style={th}>Last Wk.</th>
-                        <th style={th}>Substitute</th>
-                        <th style={th}>Back When</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gaps.map((r, i) => (
-                        <tr key={i}>
-                          <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
-                          <td style={td}>{r.lastWeek}</td>
-                          <td style={td}>{r.substitute}</td>
-                          <td style={td}>{r.backWhen}</td>
                         </tr>
                       ))}
                     </tbody>
