@@ -171,7 +171,7 @@ async function sendWeeklyUpdate({
       data = draft.data;
       source = "draft";
     } else {
-      // A live build touches availability, planter boxes and the forecast —
+      // A live build touches availability and the forecast —
       // any of which can throw. Without this catch the run dies here and
       // leaves no trace at all, which is the failure mode this logging
       // exists to close.
@@ -216,9 +216,6 @@ async function sendWeeklyUpdate({
           ``,
         ]
       : []),
-    ...(data.planterBeds.length > 0
-      ? [`=== RESTAURANT PLANTER BEDS ===`, ...data.planterBeds.map((r) => `  ${r.name} — ${r.bed} — planted ${r.planted}${r.notes ? ` (${r.notes})` : ""}`), ``]
-      : []),
     `=== ITEMS INCOMING ===`,
     ...data.incoming.map((g) => `  ${g.label}: ${g.items.length > 0 ? g.items.join(", ") : "—"}`),
     ``,
@@ -231,7 +228,6 @@ async function sendWeeklyUpdate({
   const reactEl = WeeklyUpdate({
     weekOfLabel: data.weekOfLabel,
     generalNote: data.generalNote || null,
-    planterBeds: data.planterBeds,
     incoming: data.incoming,
     tasksCompleted: data.tasksCompleted,
     tasksUpcoming: data.tasksUpcoming,

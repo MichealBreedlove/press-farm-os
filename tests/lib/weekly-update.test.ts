@@ -36,13 +36,8 @@ describe("sanitizeWeeklyUpdateData", () => {
     const out = sanitizeWeeklyUpdateData({
       weekOfLabel: "August 10",
       generalNote: "note",
-      planterBeds: [
-        { name: "Thai Basil", bed: "ST10", planted: "Apr 12", notes: "" },
-        { name: "Lemon Basil", bed: "ST2", planted: "Apr 12", notes: "" },
-        { name: "", bed: "x", planted: "", notes: "" }, // nameless → dropped
-        { name: 42, bed: {}, planted: [], notes: null }, // junk → dropped (name not string)
-      ],
-      // Sections removed 2026-10-09 — old saved drafts still carry them.
+      // Sections removed 2026-10-09 / 2026-10-11 — old saved drafts still carry them.
+      planterBeds: [{ name: "Thai Basil", bed: "ST10", planted: "Apr 12", notes: "" }],
       availableNow: [{ name: "Squash Blossoms", qty: "12", size: "EA", notes: "" }],
       gaps: [{ name: "Snap Peas", lastWeek: "Yes", substitute: "—", backWhen: "~Jun 14" }],
       incoming: [
@@ -53,7 +48,7 @@ describe("sanitizeWeeklyUpdateData", () => {
       tasksUpcoming: ["Fix drip line", null],
     });
     expect(out).not.toBeNull();
-    expect(out!.planterBeds.map((r) => r.bed)).toEqual(["ST2", "ST10"]);
+    expect(out).not.toHaveProperty("planterBeds");
     expect(out).not.toHaveProperty("availableNow");
     expect(out).not.toHaveProperty("gaps");
     expect(out!.incoming).toHaveLength(1);
@@ -65,13 +60,13 @@ describe("sanitizeWeeklyUpdateData", () => {
   });
 
   it("defaults task lists to empty arrays for pre-task drafts", () => {
-    const out = sanitizeWeeklyUpdateData({ planterBeds: [], incoming: [] });
+    const out = sanitizeWeeklyUpdateData({ incoming: [] });
     expect(out!.tasksCompleted).toEqual([]);
     expect(out!.tasksUpcoming).toEqual([]);
   });
 
   it("fills a default weekOfLabel when missing", () => {
-    const out = sanitizeWeeklyUpdateData({ planterBeds: [], incoming: [] });
+    const out = sanitizeWeeklyUpdateData({ incoming: [] });
     expect(out!.weekOfLabel.length).toBeGreaterThan(0);
   });
 });
@@ -90,14 +85,13 @@ describe("parseWeeklyUpdateDraft", () => {
       data: {
         weekOfLabel: "August 10",
         generalNote: "hi",
-        planterBeds: [{ name: "Mint", bed: "ST1", planted: "May 1", notes: "" }],
         incoming: [{ label: "~2 Weeks", items: ["Peas"] }],
       },
     };
     const parsed = parseWeeklyUpdateDraft(JSON.stringify(draft));
     expect(parsed).not.toBeNull();
     expect(parsed!.weekOf).toBe("2026-08-10");
-    expect(parsed!.data.planterBeds[0].name).toBe("Mint");
+    expect(parsed!.data.incoming[0].items).toEqual(["Peas"]);
   });
 });
 

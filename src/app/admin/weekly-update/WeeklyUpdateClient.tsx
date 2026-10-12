@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Save, Check, Send, Loader2, Sprout, Users, Plus, X, Trash2, RotateCcw,
-  Flower2, CalendarClock, PauseCircle, PlayCircle,
+  Save, Check, Send, Loader2, Sprout, Users, Plus, X, RotateCcw,
+  CalendarClock, PauseCircle, PlayCircle,
 } from "lucide-react";
 import type { WeeklyUpdateData } from "@/lib/weekly-update";
 import { activeDelay, slotTimeLabel, weeklyUpdateSendSlots } from "@/lib/weekly-update-schedule";
@@ -12,81 +12,13 @@ import { activeDelay, slotTimeLabel, weeklyUpdateSendSlots } from "@/lib/weekly-
 /**
  * Weekly Update editor — the full email is editable before it goes out.
  *
- * The server passes a live-built draft (planter boxes, forecast, farm
- * tasks) plus any saved edits for this week. Every section — general
- * note, planter beds, incoming timeline — can be
- * changed, rows added or removed. "Save Draft" persists the edited version
+ * The server passes a live-built draft (forecast, farm tasks) plus any saved
+ * edits for this week. Every section — general note, farm tasks, incoming
+ * timeline — can be changed. "Save Draft" persists the edited version
  * (farm_settings.weekly_update_draft); both Send Now and the Monday cron
  * send the saved draft verbatim, falling back to live data when no draft
  * exists for the week.
  */
-
-type RowField = { key: string; label: string; wide?: boolean };
-
-function RowsEditor({
-  rows,
-  fields,
-  onChange,
-  addLabel,
-}: {
-  rows: Record<string, string>[];
-  fields: RowField[];
-  onChange: (rows: Record<string, string>[]) => void;
-  addLabel: string;
-}) {
-  function setCell(idx: number, key: string, value: string) {
-    onChange(rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
-  }
-  function removeRow(idx: number) {
-    onChange(rows.filter((_, i) => i !== idx));
-  }
-  function addRow() {
-    onChange([...rows, Object.fromEntries(fields.map((f) => [f.key, ""]))]);
-  }
-  return (
-    <div className="space-y-2">
-      {rows.length === 0 && (
-        <p className="text-xs text-farm-muted">Nothing here — the section is skipped in the email unless you add a row.</p>
-      )}
-      {rows.map((row, idx) => (
-        <div key={idx} className="rounded-lg border border-farm-dark/10 p-2.5">
-          <div className="flex items-start gap-2">
-            <div className="flex-1 grid grid-cols-2 gap-2">
-              {fields.map((f) => (
-                <div key={f.key} className={f.wide ? "col-span-2" : ""}>
-                  <label className="block text-[10px] uppercase tracking-wider text-farm-muted mb-0.5">
-                    {f.label}
-                  </label>
-                  <input
-                    type="text"
-                    value={row[f.key] ?? ""}
-                    onChange={(e) => setCell(idx, f.key, e.target.value)}
-                    className="input-field py-1.5 text-sm"
-                  />
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => removeRow(idx)}
-              aria-label="Remove row"
-              className="text-farm-muted hover:text-red-700 mt-5 min-h-0 min-w-0 flex-shrink-0"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={addRow}
-        className="btn-secondary w-full flex items-center justify-center gap-1.5 py-2 text-sm"
-      >
-        <Plus className="w-4 h-4" /> {addLabel}
-      </button>
-    </div>
-  );
-}
 
 function SectionCard({
   icon,
@@ -457,24 +389,6 @@ export function WeeklyUpdateClient({
             />
           </div>
         </div>
-      </SectionCard>
-
-      <SectionCard
-        icon={<Flower2 className="w-5 h-5" />}
-        title="Restaurant Planter Beds"
-        description="Pre-filled from active planter box plantings. Notes stay blank unless you type one."
-      >
-        <RowsEditor
-          rows={data.planterBeds as unknown as Record<string, string>[]}
-          fields={[
-            { key: "name", label: "Item", wide: true },
-            { key: "bed", label: "Bed" },
-            { key: "planted", label: "Planted" },
-            { key: "notes", label: "Notes", wide: true },
-          ]}
-          onChange={(rows) => patch({ planterBeds: rows as unknown as WeeklyUpdateData["planterBeds"] })}
-          addLabel="Add planting"
-        />
       </SectionCard>
 
       <SectionCard

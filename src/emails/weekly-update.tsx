@@ -11,14 +11,6 @@ import {
 import { APP_URL } from "@/lib/constants";
 import { styles, colors, FONT_STACK, MANDALA_URL, WORDMARK_URL } from "./_shared";
 
-/** One Restaurant Planter Beds line — Item / Bed / Planted / Notes. */
-export interface WeeklyUpdateBedRow {
-  name: string;
-  bed: string;
-  planted: string;
-  notes: string;
-}
-
 /** One incoming-timeline group, e.g. "~2 Weeks" → ["Snap Peas", …]. */
 export interface WeeklyUpdateIncomingGroup {
   label: string;
@@ -30,7 +22,6 @@ interface WeeklyUpdateProps {
   weekOfLabel: string;
   /** Admin-authored note; newline-separated lines render as bullets. */
   generalNote?: string | null;
-  planterBeds: WeeklyUpdateBedRow[];
   incoming: WeeklyUpdateIncomingGroup[];
   /** Farm tasks finished in the last week, one line each. */
   tasksCompleted?: string[];
@@ -38,31 +29,6 @@ interface WeeklyUpdateProps {
   tasksUpcoming?: string[];
 }
 
-const table = {
-  width: "100%",
-  borderCollapse: "collapse" as const,
-  margin: "0 0 8px",
-};
-const th = {
-  fontFamily: FONT_STACK,
-  fontSize: "11px",
-  fontWeight: 600,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase" as const,
-  color: colors.white,
-  backgroundColor: colors.green,
-  padding: "7px 10px",
-  textAlign: "left" as const,
-};
-const td = {
-  fontFamily: FONT_STACK,
-  fontSize: "13px",
-  color: colors.text,
-  padding: "8px 10px",
-  borderBottom: `1px solid ${colors.borderSoft}`,
-  verticalAlign: "top" as const,
-};
-const tdMuted = { ...td, color: colors.textMuted };
 const bullet = {
   fontFamily: FONT_STACK,
   fontSize: "14px",
@@ -74,15 +40,15 @@ const bullet = {
 /**
  * weekly-update.tsx — Chef-facing "Press Farm – Weekly Update".
  *
- * Mirrors Micheal's Word template: General notes, Restaurant Planter Beds,
- * and the Items Incoming Timeline. (Available Now and Gaps or Limited Supply
- * were dropped 2026-10-09 — live availability lives on the order form.) Sent weekly to all active chefs plus any extra recipients
+ * Mirrors Micheal's Word template: General notes, farm tasks, and the Items
+ * Incoming Timeline. (Available Now and Gaps or Limited Supply were dropped
+ * 2026-10-09 — live availability lives on the order form. Restaurant Planter
+ * Beds was dropped 2026-10-11 — it moves to the order sheet.) Sent weekly to all active chefs plus any extra recipients
  * configured in /admin/settings/emails.
  */
 export default function WeeklyUpdate({
   weekOfLabel,
   generalNote,
-  planterBeds,
   incoming,
   tasksCompleted = [],
   tasksUpcoming = [],
@@ -143,32 +109,6 @@ export default function WeeklyUpdate({
                       ))}
                     </>
                   )}
-                </Section>
-              )}
-
-              {planterBeds.length > 0 && (
-                <Section>
-                  <Text style={styles.h2}>Restaurant Planter Beds</Text>
-                  <table cellPadding="0" cellSpacing="0" border={0} style={table}>
-                    <thead>
-                      <tr>
-                        <th style={th}>Item</th>
-                        <th style={th}>Bed</th>
-                        <th style={th}>Planted</th>
-                        <th style={th}>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {planterBeds.map((r, i) => (
-                        <tr key={i}>
-                          <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
-                          <td style={td}>{r.bed}</td>
-                          <td style={td}>{r.planted}</td>
-                          <td style={tdMuted}>{r.notes}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </Section>
               )}
 
