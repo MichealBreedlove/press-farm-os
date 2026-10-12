@@ -12,6 +12,8 @@ import { DateChips } from "@/components/order/DateChips";
 import { mapReorder } from "@/lib/order/reorder";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
+import { PlanterBedsBanner } from "@/components/shared/PlanterBedsBanner";
+import { getPlanterBedsForOrder } from "@/lib/planter-beds/server";
 import { buildOrderKey } from "@/lib/order-keys";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -314,7 +316,12 @@ export default async function OrderPage({
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
   // Microgreens ready to cut in the greenhouse right now — surfaced so chefs and
   // the bar team harvest from our trays instead of ordering from Meadowood.
-  const readyMicrogreens = await getReadyMicrogreens();
+  // Microgreens + what is growing in the restaurant planter beds — both are
+  // pick-it-yourself, shown on every order so chefs check before ordering.
+  const [readyMicrogreens, planterBeds] = await Promise.all([
+    getReadyMicrogreens(),
+    getPlanterBedsForOrder(restaurant.slug),
+  ]);
 
   return (
     <main className="min-h-screen bg-farm-cream">
@@ -347,6 +354,7 @@ export default async function OrderPage({
           deliveryDateFormatted={deliveryDateFormatted}
         />
         <GreenhouseReadyBanner crops={readyMicrogreens} />
+        <PlanterBedsBanner groups={planterBeds} />
       </div>
 
       {/* Keyed by date: /order?date=X navigations reuse this page instance,

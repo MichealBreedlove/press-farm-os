@@ -55,17 +55,29 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
   const body = await request.json().catch(() => ({}));
   const edited = sanitizeWeeklyUpdateData(body?.data);
-  return sendWeeklyUpdate({ isCron: false, edited });
+  // `testTo` sends this week's update to that one address only, marked [TEST].
+  // It never touches the real recipient list, the sent-week stamp or the log,
+  // so Monday's automatic send still goes out as normal.
+  const testTo =
+    typeof body?.testTo === "string" && /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(body.testTo.trim())
+      ? body.testTo.trim().toLowerCase()
+      : null;
+  if (body?.testTo && !testTo) {
+    return NextResponse.json({ success: false, error: "Enter a valid email address for the test." }, { status: 400 });
+  }
+  return sendWeeklyUpdate({ isCron: false, edited, testTo });
 }
 
 async function sendWeeklyUpdate({
   isCron,
   isLateRun = false,
   edited,
+  testTo = null,
 }: {
   isLateRun?: boolean;
   isCron: boolean;
   edited?: WeeklyUpdateData | null;
+  testTo?: string | null;
 }) {
   const admin = createAdminClient();
   const weekAnchor = upcomingMondayISO();
@@ -146,9 +158,13 @@ async function sendWeeklyUpdate({
 
   // ---- Recipients: exactly the saved list, nobody else -------------------
   const recipients = new Set<string>();
-  for (const entry of (settingsMap.weekly_update_recipients ?? "").split(",")) {
-    const email = entry.trim().toLowerCase();
-    if (email) recipients.add(email);
+  if (testTo) {
+    recipients.add(testTo);
+  } else {
+    for (const entry of (settingsMap.weekly_update_recipients ?? "").split(",")) {
+      const email = entry.trim().toLowerCase();
+      if (email) recipients.add(email);
+    }
   }
   if (recipients.size === 0) {
     const error =
@@ -197,7 +213,7 @@ async function sendWeeklyUpdate({
     }
   }
 
-  const subject = `Press Farm Weekly Update — Week of ${data.weekOfLabel}`;
+  const subject = `${testTo ? "[TEST] " : ""}Press Farm Weekly Update — Week of ${data.weekOfLabel}`;
 
   const fallbackText = [
     `PRESS FARM — WEEKLY UPDATE`,
@@ -255,6 +271,18 @@ async function sendWeeklyUpdate({
     else failed.push({ to: list[i], error: String(r.reason) });
   });
   if (failed.length > 0) console.error("[WEEKLY-UPDATE] Some sends failed:", failed);
+
+  // A test send is not this week's update: no log row, no sent-week stamp.
+  if (testTo) {
+    return NextResponse.json({
+      success: sent.length > 0,
+      test: true,
+      subject,
+      source,
+      to: sent,
+      ...(failed.length > 0 ? { error: failed[0].error } : {}),
+    });
+  }
 
   // Durable record of the outcome. A console.error alone is invisible the
   // moment the Vercel log ages out — this row is what the watchdog and the
