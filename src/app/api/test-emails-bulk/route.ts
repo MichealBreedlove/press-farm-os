@@ -334,10 +334,6 @@ export async function GET(request: Request) {
     WeeklyUpdate({
       weekOfLabel: "May 25",
       generalNote: "First tomatoes of the season this week\nHeat wave through Thursday — flowers may run short",
-      planterBeds: [
-        { name: "Thai Basil", bed: "Press — Bed 2", planted: "Apr 12", notes: "Pinch weekly" },
-        { name: "Lemon Verbena", bed: "Under-Study — Bed 1", planted: "May 2", notes: "" },
-      ],
       incoming: [
         { label: "~2 Weeks", items: ["Snap Peas", "Cucumbers"] },
         { label: "~1 Month", items: ["Early Girl Tomatoes"] },

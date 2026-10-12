@@ -2,17 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAvailabilityBuckets } from "@/lib/forecasting";
 import type { AvailabilityEntry } from "@/lib/forecasting";
 import { addDaysISO, todayPacific } from "@/lib/utils";
-import type {
-  WeeklyUpdateBedRow,
-  WeeklyUpdateIncomingGroup,
-} from "@/emails/weekly-update";
+import type { WeeklyUpdateIncomingGroup } from "@/emails/weekly-update";
 
 /**
  * Weekly Update draft assembly + validation, shared by the send route
  * (/api/reports/weekly-update) and the editor page (/admin/weekly-update).
  *
  * The flow: buildWeeklyUpdateData() assembles a draft from live data
- * (planter boxes, forecast, farm tasks). The admin can edit every field of
+ * (forecast, farm tasks). The admin can edit every field of
  * that draft on /admin/weekly-update; the edited draft is persisted as JSON in
  * farm_settings.weekly_update_draft stamped with the week's Monday anchor.
  * Sends prefer a same-week draft over a fresh live build, so what Micheal
@@ -23,7 +20,6 @@ export interface WeeklyUpdateData {
   /** e.g. "August 10" — rendered as "Week of August 10". */
   weekOfLabel: string;
   generalNote: string;
-  planterBeds: WeeklyUpdateBedRow[];
   incoming: WeeklyUpdateIncomingGroup[];
   /** Farm tasks finished in the last 7 days, one line each. */
   tasksCompleted: string[];
@@ -125,7 +121,7 @@ function shortDate(iso: string): string {
 }
 
 /**
- * Planter-box order for the weekly update: ST boxes first, then every other
+ * Planter-box display order: ST boxes first, then every other
  * series (G, U, …) — each by its NUMBER, so ST2 comes before ST10.
  */
 export function compareBoxNames(a: string, b: string): number {
@@ -152,27 +148,6 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   // The Available Now and Gaps or Limited Supply sections were dropped
   // (Micheal 2026-10-09) — chefs see live availability on the order form.
   const buckets = await getAvailabilityBuckets(today);
-
-  // ---- Restaurant planter beds ------------------------------------------
-  const { data: bedRows } = await (admin as any)
-    .from("planter_box_plantings")
-    .select("name, planted_date, status, planter_boxes(name, is_active)")
-    .eq("status", "active");
-  const planterBeds: WeeklyUpdateBedRow[] = (bedRows ?? [])
-    .filter((r: any) => r.planter_boxes?.is_active !== false)
-    .sort(
-      (a: any, b: any) =>
-        compareBoxNames(a.planter_boxes?.name ?? "", b.planter_boxes?.name ?? "") ||
-        (a.name as string).localeCompare(b.name),
-    )
-    .map((r: any) => ({
-      name: r.name,
-      bed: r.planter_boxes?.name ?? "—",
-      planted: r.planted_date ? shortDate(r.planted_date) : "—",
-      // Planting notes are internal (production-value estimates) — never
-      // pre-fill them into a chef-facing email. Admin can still type one.
-      notes: "",
-    }));
 
   // ---- Incoming timeline -------------------------------------------------
   const names = (entries: AvailabilityEntry[]) =>
@@ -225,7 +200,6 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
   return {
     weekOfLabel: weekOfLabelFor(weekAnchor),
     generalNote: noteRow?.value ?? "",
-    planterBeds,
     incoming,
     tasksCompleted,
     tasksUpcoming,
@@ -247,12 +221,8 @@ export function sanitizeWeeklyUpdateData(raw: unknown): WeeklyUpdateData | null 
   return {
     weekOfLabel: str(r.weekOfLabel) || weekOfLabelFor(upcomingMondayISO()),
     generalNote: str(r.generalNote),
-    // Re-sorted by box number so drafts saved before the ST-first order
-    // (alphabetical by planting) still go out in box order.
-    planterBeds: rows(r.planterBeds)
-      .map((x) => ({ name: str(x.name), bed: str(x.bed), planted: str(x.planted), notes: str(x.notes) }))
-      .filter((x) => x.name)
-      .sort((a, b) => compareBoxNames(a.bed, b.bed)),
+    // planterBeds was removed 2026-10-11 (moves to the order sheet) — drafts
+    // saved before then still carry it; it is dropped here so it never sends.
     incoming: rows(r.incoming)
       .map((x) => ({
         label: str(x.label),
