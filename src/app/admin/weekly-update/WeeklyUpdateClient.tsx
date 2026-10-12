@@ -83,6 +83,8 @@ export function WeeklyUpdateClient({
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const [testEmail, setTestEmail] = useState("");
+  const [testSending, setTestSending] = useState(false);
   // Week (Monday ISO) whose automatic send is skipped, and the later slot
   // (ISO) the automatic send was pushed to. Each only counts for this week —
   // a stale value just reads as "normal".
@@ -194,6 +196,37 @@ export function WeeklyUpdateClient({
       setSendResult({ kind: "err", msg: String(err) });
     }
     setSending(false);
+  }
+
+  /** Sends what's on screen to one address only, marked [TEST]. Nothing is
+   *  stamped as sent, so the real send still happens as scheduled. */
+  async function sendTest() {
+    const to = testEmail.trim();
+    if (!to) {
+      setSendResult({ kind: "err", msg: "Enter an email address for the test." });
+      return;
+    }
+    setTestSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch("/api/reports/weekly-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data, testTo: to }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok || !resData?.success) {
+        setSendResult({ kind: "err", msg: resData?.error || "Test send failed — check Resend config." });
+      } else {
+        setSendResult({
+          kind: "ok",
+          msg: `Test sent to ${to}. The real update has not gone out.`,
+        });
+      }
+    } catch (err) {
+      setSendResult({ kind: "err", msg: String(err) });
+    }
+    setTestSending(false);
   }
 
   /** mode: "normal" clears both, "later" pushes to `slot`, "skip" skips the week. */
@@ -567,6 +600,37 @@ export function WeeklyUpdateClient({
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Send Weekly Update Now
         </button>
+
+        <div className="mt-4 pt-4 border-t border-farm-dark/10">
+          <label
+            htmlFor="weekly-update-test-email"
+            className="block text-[10px] uppercase tracking-wider text-farm-muted mb-1"
+          >
+            Send a test to one address
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="weekly-update-test-email"
+              type="email"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="input-field flex-1"
+            />
+            <button
+              type="button"
+              onClick={sendTest}
+              disabled={testSending}
+              className="btn-secondary flex items-center justify-center gap-1.5 px-4"
+            >
+              {testSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Test
+            </button>
+          </div>
+          <p className="text-xs text-farm-muted mt-1.5">
+            Goes only to that address, marked [TEST]. Monday&apos;s send is not affected.
+          </p>
+        </div>
       </div>
     </div>
   );

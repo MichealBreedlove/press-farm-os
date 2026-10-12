@@ -7,6 +7,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
 import { fetchAvailabilityWithRollover, materializeRollover } from "@/lib/availability";
 import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
+import { PlanterBedsBanner } from "@/components/shared/PlanterBedsBanner";
+import { getPlanterBedsForOrder } from "@/lib/planter-beds/server";
 import { EventOrderClient } from "./EventOrderClient";
 import type { AvailabilityItemWithItem } from "@/types";
 
@@ -99,7 +101,10 @@ export default async function EventOrderPage({
 
   // Microgreens ready to cut in the greenhouse right now — surfaced so the
   // events/bar team harvest from our trays instead of ordering from Meadowood.
-  const readyMicrogreens = await getReadyMicrogreens();
+  const [readyMicrogreens, planterBeds] = await Promise.all([
+    getReadyMicrogreens(),
+    getPlanterBedsForOrder(),
+  ]);
 
   return (
     <main className="pb-24 bg-farm-cream min-h-screen">
@@ -111,6 +116,7 @@ export default async function EventOrderPage({
       />
       <div className="px-4 py-6 max-w-2xl mx-auto space-y-6">
         <GreenhouseReadyBanner crops={readyMicrogreens} />
+        <PlanterBedsBanner groups={planterBeds} />
         {deliveryDates.length === 0 ? (
           <EmptyState
             flower="squash-blossom"
