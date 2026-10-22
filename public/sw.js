@@ -22,7 +22,11 @@
 //   v5 → microgreens trays multi-select sticky bar was z-40 vs BottomNav
 //        z-50 — invisible on Android. New bundle has z-[60] + raised
 //        offset; bumping cache to force PWA installs to refetch.
-const CACHE_NAME = "press-farm-v5";
+//   v6 → stop caching Next.js RSC (flight) payloads. On a weak signal the
+//        worker served a stale cached payload into a client-side navigation,
+//        which corrupted the router tree and crashed the home-screen app
+//        ("Cannot read properties of null (reading 'get')"); v6 purges them.
+const CACHE_NAME = "press-farm-v6";
 
 const PRECACHE_URLS = [
   "/",
@@ -67,6 +71,13 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/auth/")) return;
+  // Next.js RSC / prefetch payloads are per-build and per-router-state —
+  // never cache or replay them; let the router fetch (and recover) itself.
+  if (
+    url.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1" ||
+    request.headers.has("Next-Router-Prefetch")
+  ) return;
 
   // Static assets: cache-first
   if (

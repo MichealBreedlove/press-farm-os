@@ -5,7 +5,6 @@ import { useEffect } from "react";
 
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -27,7 +26,10 @@ export default function GlobalError({
               {error.message || "An unexpected error occurred."}
             </p>
             <button
-              onClick={reset}
+              // A full reload, not reset(): errors that reach this boundary
+              // are usually a corrupted client router tree, which reset()
+              // re-renders as-is (Try Again then fails the same way).
+              onClick={() => window.location.reload()}
               style={{
                 background: "#00774A",
                 color: "white",
