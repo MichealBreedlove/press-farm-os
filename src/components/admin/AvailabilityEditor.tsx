@@ -421,9 +421,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
   return (
     <div>
-      {/* Search */}
-      <div className="bg-white border-b border-farm-dark/10 px-4 py-3 sticky top-0 z-10">
-        <div className="relative">
+      {/* Sticky filter bar — kept to search + one chip row so it never eats the screen */}
+      <div className="bg-white border-b border-farm-dark/10 px-4 py-2 sticky top-0 z-10 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+        <div className="relative sm:w-64 sm:flex-none">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted"
             fill="none"
@@ -442,7 +442,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 min-h-[44px] text-sm border border-farm-dark/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+            className="w-full pl-9 pr-9 py-2 min-h-[44px] text-sm border border-farm-dark/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
           />
           {search && (
             <button
@@ -455,13 +455,14 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             </button>
           )}
         </div>
-        {/* Filter: pick a restaurant, then optionally narrow by that restaurant's status */}
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+        {/* Filter: pick a restaurant, then optionally narrow by that restaurant's status.
+            One row that scrolls sideways on narrow screens instead of wrapping. */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-1">
           <button
             type="button"
             onClick={() => selectRestaurant(null)}
             aria-pressed={!restaurantSelected}
-            className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
               !restaurantSelected
                 ? "bg-farm-dark text-white border-farm-dark"
                 : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -477,7 +478,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => selectRestaurant(r.id)}
                 aria-pressed={active}
-                className={`px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+                className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active
                     ? "bg-farm-green text-white border-farm-green"
                     : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -487,10 +488,9 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
               </button>
             );
           })}
-        </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-farm-muted mr-0.5">
+          <span className="shrink-0 w-px h-6 bg-farm-dark/15 mx-1" aria-hidden="true" />
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-farm-muted">
             Status
           </span>
           {(["any", "available", "limited", "unavailable"] as const).map((st) => {
@@ -505,7 +505,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => setFilterStatus(st)}
                 aria-pressed={active}
-                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+                className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 rounded-full text-[11px] font-semibold border transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
                 }`}
               >
@@ -514,9 +514,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             );
           })}
         </div>
+      </div>
 
+      {/* Bulk actions — scoped to the shown items (and the selected restaurant, if any) */}
+      <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/10">
         {isNarrowed && (
-          <div className="mt-2 flex items-center justify-between px-1">
+          <div className="mb-2 flex items-center justify-between px-0.5">
             <p className="text-xs text-farm-muted">
               {filteredItems.length} of {items.length}
               {restaurantSelected
@@ -535,18 +538,13 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             </button>
           </div>
         )}
-
-        <p className="text-[11px] text-farm-muted mt-2 leading-snug">
+        <p className="text-[11px] text-farm-muted mb-2 px-0.5 leading-snug">
           Tap a restaurant chip to cycle <span className="font-semibold text-farm-green">✓ Available</span>
           {" → "}
           <span className="font-semibold text-amber-600">⚠ Limited</span>
           {" → "}
           <span className="font-semibold">✗ Unavailable</span>. Tap the row label to set all 4 at once.
         </p>
-      </div>
-
-      {/* Bulk actions — scoped to the shown items (and the selected restaurant, if any) */}
-      <div className="px-4 py-3 bg-farm-cream/40 border-b border-farm-dark/10">
         <div className="flex gap-2">
           <button
             type="button"
