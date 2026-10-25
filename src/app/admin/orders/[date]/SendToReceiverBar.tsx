@@ -75,7 +75,7 @@ export function SendToReceiverBar({ date, totalLines, resolvedLines, submittedOr
   return (
     <>
       <div
-        className="fixed bottom-nav-safe inset-x-0 bg-white border-t border-farm-dark/10 px-4 py-3 z-40 print:hidden"
+        className="fixed admin-nav-safe inset-x-0 bg-white border-t border-farm-dark/10 px-4 py-3 z-40 print:hidden"
         style={{ boxShadow: "0 -8px 16px -8px rgba(0, 0, 0, 0.08)" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">

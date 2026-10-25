@@ -618,7 +618,7 @@ export default function DeliveryLogForm({
 
       {/* Total + Save */}
       {!isFinalized && (
-        <div className="fixed bottom-nav-safe left-0 right-0 px-4 py-3 bg-white border-t border-farm-dark/5"
+        <div className="fixed admin-nav-safe left-0 right-0 px-4 py-3 bg-white border-t border-farm-dark/5"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-center justify-between">
             <div>

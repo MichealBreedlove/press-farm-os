@@ -837,7 +837,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
       </div>
 
       {/* Sticky bottom */}
-      <div className="sticky bottom-nav-safe bg-white border-t border-farm-dark/10 px-4 py-3 space-y-2">
+      <div className="sticky admin-nav-safe bg-white border-t border-farm-dark/10 px-4 py-2 space-y-1.5">
         {saveError && <p className="text-xs text-red-600 text-center">{saveError}</p>}
         {saveSuccess && (
           <p className="text-xs text-farm-green text-center font-medium">
@@ -855,7 +855,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             type="button"
             onClick={handleDuplicate}
             disabled={isDuplicating}
-            className="flex-1 py-3 rounded-xl border border-farm-dark/15 text-sm font-semibold text-farm-dark/80 bg-white disabled:opacity-50"
+            className="flex-1 py-2 min-h-[44px] rounded-xl border border-farm-dark/15 text-sm font-semibold text-farm-dark/80 bg-white disabled:opacity-50"
           >
             {isDuplicating ? "Duplicating…" : "Duplicate Last"}
           </button>
@@ -863,7 +863,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="btn-primary flex-1 py-3 text-sm font-semibold disabled:opacity-50"
+            className="btn-primary flex-1 !py-2 min-h-[44px] text-sm font-semibold disabled:opacity-50"
           >
             {isSaving ? "Saving…" : "Save All Restaurants"}
           </button>

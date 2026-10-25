@@ -605,7 +605,7 @@ export function ItemsClient({ items, parentNames, addItemHref }: Props) {
           default; Delete is destructive and gated by a typed confirmation. */}
       {selectionMode && selected.size > 0 && (
         <div
-          className="fixed inset-x-0 bottom-nav-safe bg-white border-t border-farm-dark/10 px-4 py-3 z-40"
+          className="fixed inset-x-0 admin-nav-safe bg-white border-t border-farm-dark/10 px-4 py-3 z-40"
           style={{ boxShadow: "0 -8px 16px -8px rgba(0, 0, 0, 0.08)" }}
         >
           <div className="max-w-3xl mx-auto flex items-center gap-2 flex-wrap">
