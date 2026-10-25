@@ -421,9 +421,10 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
 
   return (
     <div>
-      {/* Sticky filter bar — kept to search + one chip row so it never eats the screen */}
-      <div className="bg-white border-b border-farm-dark/10 px-4 py-1.5 sticky top-0 z-10 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-        <div className="relative sm:w-64 sm:flex-none">
+      {/* Sticky filter bar — one row (search + sideways-scrolling chips), capped
+          at 11% of the screen height via --admin-bar-ctl-h */}
+      <div className="bg-white border-b border-farm-dark/10 px-4 py-1.5 sticky top-0 z-10 flex items-center gap-2 sm:gap-3">
+        <div className="relative w-32 shrink-0 sm:w-64">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-farm-muted"
             fill="none"
@@ -442,13 +443,13 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 h-9 text-sm border border-farm-dark/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
+            className="block w-full pl-9 pr-9 py-0 h-[var(--admin-bar-ctl-h)] text-sm border border-farm-dark/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-farm-muted hover:text-farm-muted/90"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 min-h-0 flex items-center justify-center text-farm-muted hover:text-farm-muted/90"
               aria-label="Clear search"
             >
               ✕
@@ -457,12 +458,12 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
         </div>
         {/* Filter: pick a restaurant, then optionally narrow by that restaurant's status.
             One row that scrolls sideways on narrow screens instead of wrapping. */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-1">
+        <div className="flex flex-1 min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar -mr-4 pr-4 sm:mr-0 sm:pr-0">
           <button
             type="button"
             onClick={() => selectRestaurant(null)}
             aria-pressed={!restaurantSelected}
-            className={`shrink-0 px-3 h-9 rounded-full text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+            className={`shrink-0 px-3 h-[var(--admin-bar-ctl-h)] min-h-0 rounded-full text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
               !restaurantSelected
                 ? "bg-farm-dark text-white border-farm-dark"
                 : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -478,7 +479,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => selectRestaurant(r.id)}
                 aria-pressed={active}
-                className={`shrink-0 whitespace-nowrap px-3 h-9 rounded-full text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+                className={`shrink-0 whitespace-nowrap px-3 h-[var(--admin-bar-ctl-h)] min-h-0 rounded-full text-xs font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active
                     ? "bg-farm-green text-white border-farm-green"
                     : "bg-white text-farm-dark/70 border-farm-dark/15"
@@ -489,7 +490,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             );
           })}
 
-          <span className="shrink-0 w-px h-6 bg-farm-dark/15 mx-1" aria-hidden="true" />
+          <span className="shrink-0 w-px h-4 bg-farm-dark/15 mx-1" aria-hidden="true" />
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-farm-muted">
             Status
           </span>
@@ -505,7 +506,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
                 type="button"
                 onClick={() => setFilterStatus(st)}
                 aria-pressed={active}
-                className={`shrink-0 whitespace-nowrap px-2.5 h-9 rounded-full text-[11px] font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
+                className={`shrink-0 whitespace-nowrap px-2.5 h-[var(--admin-bar-ctl-h)] min-h-0 rounded-full text-[11px] font-semibold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-farm-green/40 ${
                   active ? activeCls : "bg-white text-farm-dark/70 border-farm-dark/15"
                 }`}
               >
@@ -837,10 +838,15 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
       </div>
 
       {/* Sticky bottom */}
-      <div className="sticky admin-nav-safe bg-white border-t border-farm-dark/10 px-4 py-1.5 space-y-1">
-        {saveError && <p className="text-xs text-red-600 text-center">{saveError}</p>}
+      <div className="sticky admin-nav-safe bg-white border-t border-farm-dark/10 px-4 py-1.5">
+        {/* Save messages float above the bar so they never add to its height */}
+        {saveError && (
+          <p className="absolute inset-x-0 bottom-full px-4 py-1 bg-white/95 text-xs text-red-600 text-center">
+            {saveError}
+          </p>
+        )}
         {saveSuccess && (
-          <p className="text-xs text-farm-green text-center font-medium">
+          <p className="absolute inset-x-0 bottom-full px-4 py-1 bg-white/95 text-xs text-farm-green text-center font-medium">
             Saved to all {orderedRestaurants.length} restaurants
             {carriedForward.length > 0 &&
               ` · also updated ${carriedForward
@@ -855,7 +861,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             type="button"
             onClick={handleDuplicate}
             disabled={isDuplicating}
-            className="flex-1 h-9 rounded-lg border border-farm-dark/15 text-sm font-semibold text-farm-dark/80 bg-white disabled:opacity-50"
+            className="flex-1 h-[var(--admin-bar-ctl-h)] min-h-0 rounded-lg border border-farm-dark/15 text-sm font-semibold text-farm-dark/80 bg-white disabled:opacity-50"
           >
             {isDuplicating ? "Duplicating…" : "Duplicate Last"}
           </button>
@@ -863,7 +869,7 @@ export function AvailabilityEditor({ items, availability, date, restaurants }: A
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="btn-primary flex-1 h-9 !py-0 !rounded-lg text-sm font-semibold disabled:opacity-50"
+            className="btn-primary flex-1 h-[var(--admin-bar-ctl-h)] min-h-0 !py-0 !rounded-lg text-sm font-semibold disabled:opacity-50"
           >
             {isSaving ? "Saving…" : "Save All Restaurants"}
           </button>

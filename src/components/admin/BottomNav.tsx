@@ -120,7 +120,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
           role="dialog"
           aria-modal="true"
           aria-label="All admin pages"
-          className="fixed inset-x-0 top-0 bottom-12 z-40 bg-white overflow-y-auto overscroll-contain"
+          className="fixed inset-x-0 top-0 bottom-[var(--admin-nav-h)] z-40 bg-white overflow-y-auto overscroll-contain"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="px-5 pt-6 pb-8 max-w-3xl mx-auto">
@@ -189,7 +189,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
         className="fixed bottom-0 left-0 right-0 bg-white shadow-nav z-50 safe-bottom"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="flex items-stretch h-12">
+        <div className="flex items-stretch h-[var(--admin-nav-h)]">
           {NAV_ITEMS.map(({ label, Icon, href }) => {
             const active = !menuOpen && isActive(href);
             const badge = badgeFor(href);
@@ -199,7 +199,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
                 href={href}
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] leading-3 font-medium transition-colors",
+                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-0 text-[10px] leading-3 font-medium transition-colors",
                   active ? "text-farm-green" : "text-farm-muted"
                 )}
               >
@@ -214,7 +214,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
                     </span>
                   )}
                 </div>
-                <span>{label}</span>
+                <span className="admin-nav-label">{label}</span>
                 {active && (
                   <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-farm-green" />
                 )}
@@ -228,7 +228,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             className={cn(
-              "relative flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] leading-3 font-medium transition-colors",
+              "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-0 text-[10px] leading-3 font-medium transition-colors",
               menuOpen ? "text-farm-green" : "text-farm-muted"
             )}
           >
@@ -245,7 +245,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
                 />
               )}
             </div>
-            <span>More</span>
+            <span className="admin-nav-label">More</span>
             {menuOpen && (
               <span className="absolute bottom-0.5 w-1 h-1 rounded-full bg-farm-green" />
             )}

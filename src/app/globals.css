@@ -366,6 +366,21 @@
   }
 }
 
+/* Admin bar sizing. The availability editor stacks three bars (filter bar,
+   Duplicate/Save bar, bottom nav); each is capped at 11% of the viewport
+   height so together they never cover more than a third of the screen. */
+:root {
+  --admin-nav-h: min(48px, 11vh);
+  --admin-nav-h: min(48px, 11dvh);
+  /* Control height inside a bar with 6px top/bottom padding + 1px border */
+  --admin-bar-ctl-h: min(36px, calc(11vh - 13px));
+  --admin-bar-ctl-h: min(36px, calc(11dvh - 13px));
+}
+@media (max-height: 340px) {
+  /* Too short for icon + label in the nav — icons only */
+  .admin-nav-label { display: none; }
+}
+
 /* Safe area utilities for iPhone notch/Dynamic Island */
 @layer utilities {
   .pb-safe {
@@ -377,8 +392,8 @@
     bottom: calc(64px + env(safe-area-inset-bottom));
   }
   .admin-nav-safe {
-    /* Same, for the slimmer admin bottom nav (h-12 = 48px) */
-    bottom: calc(48px + env(safe-area-inset-bottom));
+    /* Same, for the slimmer admin bottom nav (--admin-nav-h) */
+    bottom: calc(var(--admin-nav-h) + env(safe-area-inset-bottom));
   }
 }
 
