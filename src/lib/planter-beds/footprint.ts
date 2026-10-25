@@ -15,6 +15,9 @@ export const SQ_FT_PER_ACRE = 43_560;
 /** Cultivated field acreage, excluding the restaurant planter boxes. */
 export const FIELD_ACRES = 0.5;
 
+/** Microgreen greenhouse footprint: 15' × 10' (Micheal, 2026-10-25). */
+export const GREENHOUSE_SQ_FT = 15 * 10;
+
 /** One dimension in feet: 12', 2'6", 23.5", 7 ft, 30 in. Null if unparseable. */
 export function parseDimensionFeet(raw: string): number | null {
   const s = raw.trim().replace(/[’′]/g, "'").replace(/[”″]/g, '"');

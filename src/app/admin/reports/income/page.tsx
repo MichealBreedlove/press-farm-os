@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { farmerPayForRange, LEGACY_FARMER_PAY_RATES } from "@/lib/farmer-pay";
+import { todayPacific } from "@/lib/utils";
 
 interface Props {
   searchParams: Promise<{ year?: string; quarter?: string }>;
@@ -15,9 +17,6 @@ const MONTH_LABELS: Record<string, string> = {
   "07": "Jul", "08": "Aug", "09": "Sep",
   "10": "Oct", "11": "Nov", "12": "Dec",
 };
-
-// Farmer pay is a fixed operating expense, $12K per quarter
-const FARMER_PAY_PER_QUARTER = 12000;
 
 // Industry benchmarks for market farms
 const BENCHMARKS = {
@@ -85,7 +84,7 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const lastDay = new Date(year, endMonth, 0).getDate();
   const end = `${year}-${String(endMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  const [{ data: deliveries }, { data: expenses }] = await Promise.all([
+  const [{ data: deliveries }, { data: expenses }, { data: payRates }] = await Promise.all([
     admin
       .from("deliveries")
       .select("delivery_date, total_value, restaurants(name)")
@@ -96,6 +95,9 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
       .select("date, amount, category")
       .gte("date", start)
       .lte("date", end),
+    admin
+      .from("farmer_pay_rates")
+      .select("effective_date, hourly_rate, hours_per_week, flat_quarterly"),
   ]);
 
   // Monthly rollup
@@ -130,7 +132,18 @@ export default async function AdminIncomeStatementPage({ searchParams }: Props) 
   const cogs = Object.values(monthData).reduce((s, m) => s + m.expenses, 0);
   const grossProfit = revenue - cogs;
   const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
-  const operatingExpenses = FARMER_PAY_PER_QUARTER;
+  // Farmer pay from farmer_pay_rates, accrued through today for the current quarter.
+  const today = todayPacific();
+  const payEnd = end < today ? end : today;
+  const operatingExpenses =
+    payEnd >= start
+      ? farmerPayForRange(
+          payRates?.length ? payRates : LEGACY_FARMER_PAY_RATES,
+          start,
+          payEnd,
+          new Set([`${year}-Q${quarter}`]),
+        )
+      : 0;
   const operatingProfit = grossProfit - operatingExpenses;
   const operatingMargin = revenue > 0 ? operatingProfit / revenue : 0;
   const netIncome = operatingProfit; // no other income/tax adjustments

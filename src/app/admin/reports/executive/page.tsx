@@ -6,18 +6,9 @@ import ExecutiveDashboard from "./ExecutiveDashboard";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { getProductionValue, byMonthToByYear } from "@/lib/production-value/server";
 import { todayPacific } from "@/lib/utils";
-import { FIELD_ACRES, planterFootprint } from "@/lib/planter-beds/footprint";
+import { FIELD_ACRES, GREENHOUSE_SQ_FT, SQ_FT_PER_ACRE, planterFootprint } from "@/lib/planter-beds/footprint";
+import { farmerPayForRange, LEGACY_FARMER_PAY_RATES } from "@/lib/farmer-pay";
 
-const FARMER_PAY_PER_QUARTER = 12000;
-
-// Calculate farmer pay for a given year based on quarters that have delivery data
-function calcFarmerPay(year: string, quartersWithData: Set<string>): number {
-  let count = 0;
-  for (let q = 1; q <= 4; q++) {
-    if (quartersWithData.has(`${year}-Q${q}`)) count++;
-  }
-  return count * FARMER_PAY_PER_QUARTER;
-}
 
 export type AnnualSummary = {
   year: string;
@@ -38,7 +29,7 @@ export type AnnualSummary = {
   operating_margin: number;
   net_margin: number;
   /** Growing area for Production/Acre: the field, plus the restaurant planter
-   *  boxes in years they produced value. */
+   *  boxes and the microgreen greenhouse in years they produced value. */
   acres: number;
 };
 
@@ -81,6 +72,8 @@ export type ExecutiveData = {
   expenseCategories: ExpenseCategory[];
   /** Planter-box footprint counted in `acres` (sq ft). */
   planterSqFt: number;
+  /** Microgreen greenhouse footprint counted in `acres` (sq ft). */
+  greenhouseSqFt: number;
   fieldAcres: number;
   /** Year the KPI strip reports on — the current year, year-to-date. */
   currentYear: string;
@@ -105,6 +98,7 @@ export default async function AdminExecutiveReportsPage() {
     { data: itemRevenueRows },
     production,
     { data: planterBoxes },
+    { data: payRates },
   ] =
     await Promise.all([
       admin
@@ -126,6 +120,10 @@ export default async function AdminExecutiveReportsPage() {
 
       // Planter-box sizes → footprint added to the acreage (planter_boxes isn't in database.ts).
       (admin as any).from("planter_boxes").select("name, size, is_active"),
+
+      admin
+        .from("farmer_pay_rates")
+        .select("effective_date, hourly_rate, hours_per_week, flat_quarterly"),
     ]);
 
   const planter = planterFootprint(planterBoxes ?? []);
@@ -162,6 +160,8 @@ export default async function AdminExecutiveReportsPage() {
     const m = e.date.slice(0, 7);
     monthExpMap[m] = (monthExpMap[m] ?? 0) + (e.amount ?? 0);
   }
+
+  const today = todayPacific();
 
   // ---- Annual summaries ----
   const yearRevMap: Record<string, number> = {};
@@ -200,7 +200,20 @@ export default async function AdminExecutiveReportsPage() {
     const revenue = delivery_revenue + production_total;
     const expenses = yearExpMap[year] ?? 0;
     const gross_profit = revenue - expenses;
-    const farmer_pay = calcFarmerPay(year, quartersWithData);
+    // Farmer pay from farmer_pay_rates (flat $12K/quarter, then hourly from
+    // 2026-05-24), accrued through today so the current year isn't charged
+    // for weeks not yet worked.
+    const yearEnd = `${year}-12-31`;
+    const payEnd = yearEnd < today ? yearEnd : today;
+    const farmer_pay =
+      payEnd >= `${year}-01-01`
+        ? farmerPayForRange(
+            payRates?.length ? payRates : LEGACY_FARMER_PAY_RATES,
+            `${year}-01-01`,
+            payEnd,
+            quartersWithData,
+          )
+        : 0;
     const operating_profit = gross_profit - farmer_pay;
     const net_income = operating_profit;
     const gross_margin = revenue > 0 ? gross_profit / revenue : 0;
@@ -208,7 +221,10 @@ export default async function AdminExecutiveReportsPage() {
     const net_margin = revenue > 0 ? net_income / revenue : 0;
     // Box value is counted in revenue only in years the boxes produced, so
     // their footprint joins the denominator in those same years.
-    const acres = FIELD_ACRES + (production_boxes > 0 ? planter.acres : 0);
+    const acres =
+      FIELD_ACRES +
+      (production_boxes > 0 ? planter.acres : 0) +
+      (production_micro > 0 ? GREENHOUSE_SQ_FT / SQ_FT_PER_ACRE : 0);
     return {
       year,
       delivery_revenue,
@@ -329,7 +345,6 @@ export default async function AdminExecutiveReportsPage() {
     }));
 
   // ---- YoY growth: this year to date vs the same span last year ----
-  const today = todayPacific();
   const currentYear = today.slice(0, 4);
   const priorYear = String(Number(currentYear) - 1);
   const monthDay = today.slice(5);
@@ -355,6 +370,7 @@ export default async function AdminExecutiveReportsPage() {
     restaurantByYear,
     expenseCategories,
     planterSqFt: planter.sqFt,
+    greenhouseSqFt: GREENHOUSE_SQ_FT,
     fieldAcres: FIELD_ACRES,
     currentYear,
     yoyGrowth,

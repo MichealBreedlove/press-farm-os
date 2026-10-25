@@ -40,7 +40,7 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
   const productionPerAcre = latest ? latest.revenue / latest.acres : 0;
   const acreNote = latest
     ? latest.acres > data.fieldAcres
-      ? `${latest.acres.toFixed(3)} ac (field + ${Math.round(data.planterSqFt)} sq ft boxes)`
+      ? `${latest.acres.toFixed(3)} ac (field + boxes + greenhouse)`
       : `${latest.acres.toFixed(1)} ac field`
     : "";
 
