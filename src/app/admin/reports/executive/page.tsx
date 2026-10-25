@@ -6,9 +6,9 @@ import ExecutiveDashboard from "./ExecutiveDashboard";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { getProductionValue, byMonthToByYear } from "@/lib/production-value/server";
 import { todayPacific } from "@/lib/utils";
+import { FIELD_ACRES, planterFootprint } from "@/lib/planter-beds/footprint";
 
 const FARMER_PAY_PER_QUARTER = 12000;
-const FARM_ACRES = 0.5;
 
 // Calculate farmer pay for a given year based on quarters that have delivery data
 function calcFarmerPay(year: string, quartersWithData: Set<string>): number {
@@ -37,6 +37,9 @@ export type AnnualSummary = {
   gross_margin: number;
   operating_margin: number;
   net_margin: number;
+  /** Growing area for Production/Acre: the field, plus the restaurant planter
+   *  boxes in years they produced value. */
+  acres: number;
 };
 
 export type MonthlyRevPoint = {
@@ -76,6 +79,9 @@ export type ExecutiveData = {
   topItemsByQty: TopItem[];
   restaurantByYear: RestaurantByYear[];
   expenseCategories: ExpenseCategory[];
+  /** Planter-box footprint counted in `acres` (sq ft). */
+  planterSqFt: number;
+  fieldAcres: number;
   /** Year the KPI strip reports on — the current year, year-to-date. */
   currentYear: string;
   /** Delivery revenue growth: this year to date vs the same span last year. */
@@ -93,7 +99,13 @@ export default async function AdminExecutiveReportsPage() {
 
   const admin = createAdminClient();
 
-  const [{ data: deliveries }, { data: expenses }, { data: itemRevenueRows }, production] =
+  const [
+    { data: deliveries },
+    { data: expenses },
+    { data: itemRevenueRows },
+    production,
+    { data: planterBoxes },
+  ] =
     await Promise.all([
       admin
         .from("deliveries")
@@ -111,7 +123,12 @@ export default async function AdminExecutiveReportsPage() {
 
       // Production value (migration 069) — self-harvest, separate from deliveries.
       getProductionValue(),
+
+      // Planter-box sizes → footprint added to the acreage (planter_boxes isn't in database.ts).
+      (admin as any).from("planter_boxes").select("name, size, is_active"),
     ]);
+
+  const planter = planterFootprint(planterBoxes ?? []);
 
   // Production value rolled up per year (microgreens + planter boxes).
   const prodMicroByYear = byMonthToByYear(production.microByMonth);
@@ -189,6 +206,9 @@ export default async function AdminExecutiveReportsPage() {
     const gross_margin = revenue > 0 ? gross_profit / revenue : 0;
     const operating_margin = revenue > 0 ? operating_profit / revenue : 0;
     const net_margin = revenue > 0 ? net_income / revenue : 0;
+    // Box value is counted in revenue only in years the boxes produced, so
+    // their footprint joins the denominator in those same years.
+    const acres = FIELD_ACRES + (production_boxes > 0 ? planter.acres : 0);
     return {
       year,
       delivery_revenue,
@@ -204,6 +224,7 @@ export default async function AdminExecutiveReportsPage() {
       gross_margin,
       operating_margin,
       net_margin,
+      acres,
     };
   });
 
@@ -333,6 +354,8 @@ export default async function AdminExecutiveReportsPage() {
     topItemsByQty,
     restaurantByYear,
     expenseCategories,
+    planterSqFt: planter.sqFt,
+    fieldAcres: FIELD_ACRES,
     currentYear,
     yoyGrowth,
     totalRevenueAllTime,

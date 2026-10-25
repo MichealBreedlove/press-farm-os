@@ -22,8 +22,6 @@ function mColor(val: number, min: number) {
   return "text-red-600";
 }
 
-const FARM_ACRES = 0.5;
-
 const YC: Record<string, string> = { "2024": "#9ca3af", "2025": "#00774A", "2026": "#F0B530" };
 function yc(y: string) { return YC[y] ?? "#6b7280"; }
 
@@ -39,7 +37,12 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
   const latest = byYear[data.currentYear] ?? byYear[years[years.length - 1]];
   const isYtd = latest?.year === data.currentYear;
   const fyLabel = latest ? `FY${latest.year}${isYtd ? " YTD" : ""}` : "";
-  const productionPerAcre = latest ? latest.revenue / FARM_ACRES : 0;
+  const productionPerAcre = latest ? latest.revenue / latest.acres : 0;
+  const acreNote = latest
+    ? latest.acres > data.fieldAcres
+      ? `${latest.acres.toFixed(3)} ac (field + ${Math.round(data.planterSqFt)} sq ft boxes)`
+      : `${latest.acres.toFixed(1)} ac field`
+    : "";
 
   // Restaurant names
   const allRestaurants = Array.from(
@@ -88,7 +91,7 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
         <KpiCard
           label={latest ? `${fyLabel} Production/Acre` : "Production/Acre"}
           value={latest ? fmtK(productionPerAcre) : "—"}
-          sub={productionPerAcre >= 100_000 ? "Above $100K target" : "Below $100K target"}
+          sub={`${acreNote} · ${productionPerAcre >= 100_000 ? "above" : "below"} $100K target`}
           subColor={productionPerAcre >= 100_000 ? "text-green-600" : "text-amber-600"}
           green
         />
@@ -235,7 +238,7 @@ function CompactBenchmarks({ years, byYear }: { years: string[]; byYear: Record<
     { label: "Gross Margin", target: "50–70%", min: 0.5, get: (s: ExecutiveData["annualSummaries"][0]) => s.gross_margin, isPct: true },
     { label: "Op. Margin", target: "30–50%", min: 0.3, get: (s: ExecutiveData["annualSummaries"][0]) => s.operating_margin, isPct: true },
     { label: "Net Margin", target: "20–40%", min: 0.2, get: (s: ExecutiveData["annualSummaries"][0]) => s.net_margin, isPct: true },
-    { label: "Prod./Acre", target: "$100K", min: 100_000, get: (s: ExecutiveData["annualSummaries"][0]) => s.revenue / FARM_ACRES, isPct: false },
+    { label: "Prod./Acre", target: "$100K", min: 100_000, get: (s: ExecutiveData["annualSummaries"][0]) => s.revenue / s.acres, isPct: false },
   ];
 
   return (
