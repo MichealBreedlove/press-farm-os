@@ -377,8 +377,8 @@
     bottom: calc(64px + env(safe-area-inset-bottom));
   }
   .admin-nav-safe {
-    /* Same, for the slimmer admin bottom nav (h-14 = 56px) */
-    bottom: calc(56px + env(safe-area-inset-bottom));
+    /* Same, for the slimmer admin bottom nav (h-12 = 48px) */
+    bottom: calc(48px + env(safe-area-inset-bottom));
   }
 }
 
