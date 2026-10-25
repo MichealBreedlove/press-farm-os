@@ -34,7 +34,11 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
   for (const a of fy) byYear[a.year] = a;
   const years = fy.map((a) => a.year).sort();
 
-  const latest = byYear["2025"] ?? byYear[years[years.length - 1]];
+  // KPI strip = the current year to date (was hard-wired to FY2025, so the
+  // Production/Acre card disagreed with the benchmark table's current column).
+  const latest = byYear[data.currentYear] ?? byYear[years[years.length - 1]];
+  const isYtd = latest?.year === data.currentYear;
+  const fyLabel = latest ? `FY${latest.year}${isYtd ? " YTD" : ""}` : "";
   const productionPerAcre = latest ? latest.revenue / FARM_ACRES : 0;
 
   // Restaurant names
@@ -64,25 +68,25 @@ export default function ExecutiveDashboard({ data }: { data: ExecutiveData }) {
       {/* ── Row 1: KPI strip ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         <KpiCard
-          label={latest ? `FY${latest.year} Delivery Rev` : "Delivery Rev"}
+          label={latest ? `${fyLabel} Delivery Rev` : "Delivery Rev"}
           value={latest ? fmtK(latest.delivery_revenue) : "—"}
-          sub={data.yoyGrowth !== null ? `${data.yoyGrowth >= 0 ? "+" : ""}${data.yoyGrowth.toFixed(0)}% YoY` : "chef orders"}
+          sub={data.yoyGrowth !== null ? `${data.yoyGrowth >= 0 ? "+" : ""}${data.yoyGrowth.toFixed(0)}% vs same period last year` : "chef orders"}
           subColor={data.yoyGrowth && data.yoyGrowth >= 0 ? "text-green-600" : "text-red-500"}
         />
         <KpiCard
-          label="Production Value"
+          label={latest ? `${fyLabel} Production Value` : "Production Value"}
           value={latest ? fmtK(latest.production_total) : "—"}
           sub="self-harvest"
           info
         />
         <KpiCard
-          label="Net Income"
+          label={latest ? `${fyLabel} Net Income` : "Net Income"}
           value={latest ? fmtK(latest.net_income) : "—"}
           sub={latest ? `${fmtPct(latest.net_margin)} margin` : undefined}
           dark
         />
         <KpiCard
-          label="Production/Acre"
+          label={latest ? `${fyLabel} Production/Acre` : "Production/Acre"}
           value={latest ? fmtK(productionPerAcre) : "—"}
           sub={productionPerAcre >= 100_000 ? "Above $100K target" : "Below $100K target"}
           subColor={productionPerAcre >= 100_000 ? "text-green-600" : "text-amber-600"}

@@ -5,6 +5,7 @@ import { PrintButton } from "@/components/shared/PrintButton";
 import ExecutiveDashboard from "./ExecutiveDashboard";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { getProductionValue, byMonthToByYear } from "@/lib/production-value/server";
+import { todayPacific } from "@/lib/utils";
 
 const FARMER_PAY_PER_QUARTER = 12000;
 const FARM_ACRES = 0.5;
@@ -75,6 +76,9 @@ export type ExecutiveData = {
   topItemsByQty: TopItem[];
   restaurantByYear: RestaurantByYear[];
   expenseCategories: ExpenseCategory[];
+  /** Year the KPI strip reports on — the current year, year-to-date. */
+  currentYear: string;
+  /** Delivery revenue growth: this year to date vs the same span last year. */
   yoyGrowth: number | null;
   totalRevenueAllTime: number;
   topItemName: string;
@@ -303,11 +307,21 @@ export default async function AdminExecutiveReportsPage() {
       byYear: expCatYearMap[category] ?? {},
     }));
 
-  // ---- YoY growth 2024→2025 ----
-  const rev2024 = yearRevMap["2024"] ?? 0;
-  const rev2025 = yearRevMap["2025"] ?? 0;
+  // ---- YoY growth: this year to date vs the same span last year ----
+  const today = todayPacific();
+  const currentYear = today.slice(0, 4);
+  const priorYear = String(Number(currentYear) - 1);
+  const monthDay = today.slice(5);
+  let revYtd = 0;
+  let revPriorSameSpan = 0;
+  for (const d of deliveries ?? []) {
+    const y = d.delivery_date.slice(0, 4);
+    if (d.delivery_date.slice(5) > monthDay) continue;
+    if (y === currentYear) revYtd += d.total_value ?? 0;
+    else if (y === priorYear) revPriorSameSpan += d.total_value ?? 0;
+  }
   const yoyGrowth =
-    rev2024 > 0 ? ((rev2025 - rev2024) / rev2024) * 100 : null;
+    revPriorSameSpan > 0 ? ((revYtd - revPriorSameSpan) / revPriorSameSpan) * 100 : null;
 
   // ---- Top item name ----
   const topItemName = topItemsByQty[0]?.name ?? topItemsByRevenue[0]?.name ?? "—";
@@ -319,6 +333,7 @@ export default async function AdminExecutiveReportsPage() {
     topItemsByQty,
     restaurantByYear,
     expenseCategories,
+    currentYear,
     yoyGrowth,
     totalRevenueAllTime,
     topItemName,
