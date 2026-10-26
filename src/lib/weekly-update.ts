@@ -207,7 +207,10 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
 }
 
 const MAX_ROWS = 300;
-const str = (v: unknown): string => (typeof v === "string" ? v.slice(0, 2000) : "");
+const str = (v: unknown, max = 2000): string => (typeof v === "string" ? v.slice(0, max) : "");
+// The general note is a full multi-section write-up (status, crop-by-crop,
+// property…) — 2,000 chars silently cut real notes mid-line (2026-10-26).
+const MAX_NOTE_CHARS = 20000;
 
 /**
  * Coerce untrusted JSON (a saved draft or an admin-posted edit) into a
@@ -220,20 +223,20 @@ export function sanitizeWeeklyUpdateData(raw: unknown): WeeklyUpdateData | null 
     Array.isArray(v) ? (v.slice(0, MAX_ROWS).filter((x) => x && typeof x === "object") as Record<string, unknown>[]) : [];
   return {
     weekOfLabel: str(r.weekOfLabel) || weekOfLabelFor(upcomingMondayISO()),
-    generalNote: str(r.generalNote),
+    generalNote: str(r.generalNote, MAX_NOTE_CHARS),
     // planterBeds was removed 2026-10-11 (moves to the order sheet) — drafts
     // saved before then still carry it; it is dropped here so it never sends.
     incoming: rows(r.incoming)
       .map((x) => ({
         label: str(x.label),
-        items: Array.isArray(x.items) ? x.items.map(str).filter(Boolean).slice(0, MAX_ROWS) : [],
+        items: Array.isArray(x.items) ? x.items.map((i) => str(i)).filter(Boolean).slice(0, MAX_ROWS) : [],
       }))
       .filter((x) => x.label),
     tasksCompleted: Array.isArray(r.tasksCompleted)
-      ? r.tasksCompleted.map(str).filter(Boolean).slice(0, MAX_ROWS)
+      ? r.tasksCompleted.map((i) => str(i)).filter(Boolean).slice(0, MAX_ROWS)
       : [],
     tasksUpcoming: Array.isArray(r.tasksUpcoming)
-      ? r.tasksUpcoming.map(str).filter(Boolean).slice(0, MAX_ROWS)
+      ? r.tasksUpcoming.map((i) => str(i)).filter(Boolean).slice(0, MAX_ROWS)
       : [],
   };
 }

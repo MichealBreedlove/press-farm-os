@@ -26,6 +26,18 @@ describe("weekOfLabelFor", () => {
 });
 
 describe("sanitizeWeeklyUpdateData", () => {
+  it("keeps a long general note but still caps row text", () => {
+    const note = "x".repeat(5000);
+    const out = sanitizeWeeklyUpdateData({
+      generalNote: note,
+      tasksCompleted: ["y".repeat(3000), "short"],
+      incoming: [{ label: "~2 Weeks", items: ["a", "b"] }],
+    });
+    expect(out?.generalNote).toHaveLength(5000);
+    expect(out?.tasksCompleted.map((t) => t.length)).toEqual([2000, 5]);
+    expect(out?.incoming[0].items).toEqual(["a", "b"]);
+  });
+
   it("rejects non-objects", () => {
     expect(sanitizeWeeklyUpdateData(null)).toBeNull();
     expect(sanitizeWeeklyUpdateData("x")).toBeNull();
