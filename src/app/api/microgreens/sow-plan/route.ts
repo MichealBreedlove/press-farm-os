@@ -25,7 +25,7 @@ export async function GET(_req: Request) {
     (admin as any).from("microgreen_batches").select("*"),
     (admin as any).from("microgreen_trays").select("*"),
     (admin as any).from("delivery_dates")
-      .select("delivery_date").gte("delivery_date", today).lte("delivery_date", horizonIso),
+      .select("date").gte("date", today).lte("date", horizonIso),
   ]);
 
   const plan = computeSowPlan({
@@ -33,7 +33,7 @@ export async function GET(_req: Request) {
     demand: demand ?? [],
     batches: batches ?? [],
     trays: trays ?? [],
-    deliveryDates: (deliveryDates ?? []).map((d: any) => d.delivery_date),
+    deliveryDates: (deliveryDates ?? []).map((d: any) => d.date),
     now,
   });
 

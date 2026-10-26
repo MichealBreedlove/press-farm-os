@@ -21,8 +21,8 @@ export default async function MicrogreensDashboardPage() {
     (admin as any).from("microgreen_demand").select("*"),
     (admin as any).from("microgreen_batches").select("*"),
     (admin as any).from("microgreen_trays").select("*"),
-    (admin as any).from("delivery_dates").select("delivery_date")
-      .gte("delivery_date", today).lte("delivery_date", horizon),
+    (admin as any).from("delivery_dates").select("date")
+      .gte("date", today).lte("date", horizon),
     (admin as any).from("deliveries")
       .select("id, delivery_date, restaurant:restaurants(name)")
       .gte("delivery_date", today).lte("delivery_date", horizon)
@@ -31,7 +31,7 @@ export default async function MicrogreensDashboardPage() {
 
   const plan = computeSowPlan({
     crops: crops ?? [], demand: demand ?? [], batches: batches ?? [], trays: trays ?? [],
-    deliveryDates: (deliveryDates ?? []).map((d: any) => d.delivery_date),
+    deliveryDates: (deliveryDates ?? []).map((d: any) => d.date),
     now,
   });
 
