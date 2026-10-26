@@ -25,7 +25,10 @@ export const TRAY_STATUS_COLORS: Record<MicrogreenTrayStatus, string> = {
 export const FORECAST_LOOKBACK_WEEKS = 8;
 export const FORECAST_WARNING_RATIO = 1.25; // forecast > manual * 1.25 -> warn
 
-export const PLAN_HORIZON_DAYS = 21;
+// Must cover the longest ideal_harvest_day of any active crop — a delivery
+// further out than this is never planned, so its sow task never appears
+// (Shiso grows 27 days; 21 silently dropped it).
+export const PLAN_HORIZON_DAYS = 35;
 
 export const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

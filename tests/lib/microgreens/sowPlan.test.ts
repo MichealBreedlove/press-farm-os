@@ -48,6 +48,22 @@ function makeDemand(
 }
 
 describe("computeSowPlan", () => {
+  it("plans a long-grow crop (27-day Shiso) on its sow date", () => {
+    // Regression: a 21-day planning horizon silently dropped any delivery more
+    // than 21 days out, so a crop growing longer than that never got a sow task.
+    const shiso: MicrogreenCrop = { ...broccoli, id: "crop-shiso", name: "Shiso", ideal_harvest_day: 27 };
+    const plan = computeSowPlan({
+      crops: [shiso],
+      demand: [makeDemand("d-shiso", { crop_id: shiso.id, day_of_week: 6, target_quantity: 1 })],
+      batches: [],
+      trays: [],
+      deliveryDates: ["2026-06-13"], // Saturday, 27 days after 2026-05-17
+      now: today,
+    });
+    expect(plan.sow_today).toHaveLength(1);
+    expect(plan.sow_today[0].sow_date).toBe("2026-05-17");
+  });
+
   it("returns empty buckets when no demand", () => {
     const plan = computeSowPlan({
       crops: [broccoli],
