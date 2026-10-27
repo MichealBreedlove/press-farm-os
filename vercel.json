@@ -45,20 +45,8 @@
       "schedule": "0 17 2 1 *"
     },
     {
-      "path": "/api/reports/partner-report?type=q1",
-      "schedule": "0 23 31 3 *"
-    },
-    {
-      "path": "/api/reports/partner-report?type=q2",
-      "schedule": "0 23 30 6 *"
-    },
-    {
-      "path": "/api/reports/partner-report?type=q3",
-      "schedule": "0 23 30 9 *"
-    },
-    {
-      "path": "/api/reports/partner-report?type=q4",
-      "schedule": "0 23 31 12 *"
+      "path": "/api/reports/partner-report?type=quarterly",
+      "schedule": "0 17 2 1,4,7,10 *"
     }
   ]
 }

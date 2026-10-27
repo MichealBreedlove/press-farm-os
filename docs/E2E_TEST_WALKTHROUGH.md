@@ -5,6 +5,8 @@ Use this checklist to verify every major workflow on a fresh deploy. Run through
 **Estimated time:** 20–25 minutes
 **Prerequisites:** A test chef account, signed in admin account, at least one delivery date in the future, at least 5 items in catalog
 
+**Automated smoke check first:** `npm run test:smoke` runs the Playwright specs in `tests/smoke.spec.ts` (login page renders, root redirects, `/about` is public, `/api/v1/*` is key-gated) against `http://localhost:3000` (auto-starts `npm run dev`) or `SMOKE_BASE_URL=https://pressfarm.io npm run test:smoke` against prod. One-time setup on a fresh checkout: `npx playwright install chromium`. The manual walkthrough below covers everything the smoke test can't (emails, orders, close-out).
+
 ---
 
 ## Setup (5 min)

@@ -2,7 +2,9 @@
  * Press Farm OS — Email helper
  *
  * Wraps Resend with a graceful console.log fallback when RESEND_API_KEY is not set.
- * Email errors never fail the API response — they are caught and logged.
+ * Email errors never THROW into the API response — they are caught, logged and
+ * returned as `{ ok: false, error }` so each caller can decide whether a
+ * rejected send is a 502, a counted failure, or ignorable.
  */
 
 import { render } from "@react-email/render";
@@ -72,6 +74,13 @@ export interface ShortageEmailParams {
   }[];
 }
 
+/** Outcome of one send. `ok: true` with no `id` is the no-API-key console fallback. */
+export interface SendResult {
+  ok: boolean;
+  id?: string;
+  error?: string;
+}
+
 // ---- Internal helpers ----
 
 function hasResend(): boolean {
@@ -84,7 +93,7 @@ async function sendOrLog(params: {
   react: React.ReactElement;
   fallbackText: string;
   from?: string;
-}): Promise<void> {
+}): Promise<SendResult> {
   const { to, subject, react, fallbackText, from } = params;
 
   if (!hasResend()) {
@@ -92,26 +101,31 @@ async function sendOrLog(params: {
     console.log(
       `[EMAIL FALLBACK] From: ${from ?? FROM_EMAIL} | To: ${to} | Subject: ${subject}\n${fallbackText}\n--- HTML preview (truncated) ---\n${html.slice(0, 500)}`
     );
-    return;
+    return { ok: true };
   }
 
   // Use type-specific from-address if provided, else fall back to env/default
   const fromAddress = from || process.env.RESEND_FROM_EMAIL || FROM_EMAIL;
 
   try {
+    // `text` is the plain-text part — clients that strip HTML (and spam
+    // filters that score HTML-only mail) read this.
     const { data: sendData, error } = await safeResendSend({
       from: fromAddress,
       to,
       subject,
       react,
+      text: fallbackText,
     });
     if (error) {
       console.error("[EMAIL ERROR]", JSON.stringify(error));
-    } else {
-      console.log("[EMAIL] Sent successfully:", sendData?.id, "from:", fromAddress, "to:", to);
+      return { ok: false, error: error.message || String(error.name ?? "send failed") };
     }
+    console.log("[EMAIL] Sent successfully:", sendData?.id, "from:", fromAddress, "to:", to);
+    return { ok: true, id: sendData?.id };
   } catch (err) {
     console.error("[EMAIL ERROR] Unexpected error sending email:", err);
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -122,7 +136,7 @@ async function sendOrLog(params: {
  */
 export async function sendOrderSubmittedEmail(
   params: OrderSubmittedEmailParams
-): Promise<void> {
+): Promise<SendResult> {
   const { restaurantName, deliveryDate } = params;
   const subject = `New order from ${restaurantName} for ${deliveryDate}`;
 
@@ -138,7 +152,7 @@ export async function sendOrderSubmittedEmail(
     .filter(Boolean)
     .join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: ADMIN_EMAIL,
     subject,
     react: OrderReceived(params) as React.ReactElement,
@@ -153,7 +167,7 @@ export async function sendOrderSubmittedEmail(
  */
 export async function sendOrderConfirmationEmail(
   params: OrderSubmittedToChefParams,
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, chefName, restaurantName, deliveryDate, items, freeformNotes } = params;
   const subject = `Order Confirmed — ${deliveryDate}`;
 
@@ -168,7 +182,7 @@ export async function sendOrderConfirmationEmail(
     .filter(Boolean)
     .join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: OrderConfirmation({
@@ -188,7 +202,7 @@ export async function sendOrderConfirmationEmail(
  */
 export async function sendOrderConfirmedEmail(
   params: OrderConfirmedEmailParams
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, deliveryDate, chefName, restaurantName, items } = params;
   const subject = `Order confirmed for ${deliveryDate}`;
 
@@ -202,7 +216,7 @@ export async function sendOrderConfirmedEmail(
     ),
   ].join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: OrderFulfilled({ chefName, restaurantName, deliveryDate, items }) as React.ReactElement,
@@ -214,7 +228,7 @@ export async function sendOrderConfirmedEmail(
 /**
  * Sent to the chef when admin marks items as shorted.
  */
-export async function sendShortageEmail(params: ShortageEmailParams): Promise<void> {
+export async function sendShortageEmail(params: ShortageEmailParams): Promise<SendResult> {
   const { toEmail, deliveryDate, chefName, restaurantName, shortages } = params;
   const subject = `Update on your order for ${deliveryDate}`;
 
@@ -229,7 +243,7 @@ export async function sendShortageEmail(params: ShortageEmailParams): Promise<vo
     ),
   ].join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: ShortageNotice({ chefName, restaurantName, deliveryDate, shortages }) as React.ReactElement,
@@ -255,7 +269,7 @@ export interface EventRequestAcceptedEmailParams {
  */
 export async function sendEventRequestAcceptedEmail(
   params: EventRequestAcceptedEmailParams,
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, chefName, restaurantName, deliveryDate, items, eventName, adminResponse } = params;
   const subject = `Event request confirmed — ${deliveryDate}`;
 
@@ -269,7 +283,7 @@ export async function sendEventRequestAcceptedEmail(
     .filter(Boolean)
     .join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: EventRequestAccepted({
@@ -306,7 +320,7 @@ export interface AvailabilityPublishedEmailParams {
  */
 export async function sendAvailabilityPublishedEmail(
   params: AvailabilityPublishedEmailParams,
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, chefName, restaurantName, deliveryDate, itemCount, seasonal } = params;
   const subject = `New Availability — ${deliveryDate}`;
 
@@ -329,7 +343,7 @@ export async function sendAvailabilityPublishedEmail(
   }
   const fallbackText = fallbackLines.join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: AvailabilityPublished({
@@ -360,7 +374,7 @@ export interface AvailabilityForecastEmailParams {
  */
 export async function sendAvailabilityForecastEmail(
   params: AvailabilityForecastEmailParams,
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, chefName, restaurantName, asOfDate, sections } = params;
   const subject = `What's coming from the farm — ${asOfDate}`;
 
@@ -387,7 +401,7 @@ export async function sendAvailabilityForecastEmail(
   }
   const fallbackText = fallbackLines.join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: AvailabilityForecast({
@@ -429,7 +443,7 @@ export interface PartnerReportEmailParams {
  */
 export async function sendPartnerReportEmail(
   params: PartnerReportEmailParams,
-): Promise<void> {
+): Promise<SendResult> {
   const { toEmail, partnerName, period, periodLabel, totalValue, deliveryCount, topItems, byRestaurant, comingSoon, selfHarvest, annual, subjectPrefix } = params;
   const periodWord = period === "annual" ? "year" : period === "quarterly" ? "quarter" : "month";
   const subject = `${subjectPrefix ?? ""}Press Farm — your ${periodWord} from the farm, ${periodLabel}`;
@@ -481,7 +495,7 @@ export async function sendPartnerReportEmail(
   ];
   const fallbackText = fallbackLines.join("\n");
 
-  await sendOrLog({
+  return sendOrLog({
     to: toEmail,
     subject,
     react: PartnerReport({

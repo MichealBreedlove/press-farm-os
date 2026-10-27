@@ -81,18 +81,24 @@ export async function POST(request: Request) {
       signOff: "Micheal Breedlove",
     }) as React.ReactElement;
 
-    await safeResendSend({
+    const { data: sendData, error } = await safeResendSend({
       from: FROM_ADDRESSES.timesheet,
       to: toEmail,
       subject: `Timesheet for week of ${weekLabel}`,
       text: fallbackText,
       react: reactEl,
     });
+    // supabase-style: Resend reports rejections in `error`, it doesn't throw.
+    // Without this check a bounced timesheet returned 200 and nobody knew.
+    if (error) {
+      console.error("[EMAIL] Timesheet send rejected:", JSON.stringify(error));
+      return NextResponse.json({ error: "The timesheet email was not accepted by the mail service. Try again." }, { status: 502 });
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: sendData?.id ?? null });
   } catch (err) {
     console.error("[EMAIL] Timesheet send error:", err);
-    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send email" }, { status: 502 });
   }
 }
 

@@ -12,6 +12,12 @@ import { ADMIN_EMAIL, CATEGORY_LABELS } from "@/lib/constants";
 import type { PartnerReportLine, PartnerReportAnnual, PartnerReportPeriod, PartnerSelfHarvest } from "@/emails/partner-report";
 import type { ForecastEmailEntry } from "@/emails/availability-forecast";
 import type { ItemCategory } from "@/types";
+import { requireCronSecret } from "@/lib/api-auth";
+
+// The annual report pages a year of delivery_items plus production value;
+// the plan-default function budget (10 s on Hobby) isn't enough. 60 s is
+// allowed on every Vercel plan.
+export const maxDuration = 60;
 
 type Period = PartnerReportPeriod;
 interface PeriodRange {
@@ -25,9 +31,15 @@ interface PeriodRange {
  *
  *   GET  — Vercel Cron. The `type` query param selects what to send:
  *            • `type=monthly` (1st of each month) → previous calendar month.
- *            • `type=q1|q2|q3|q4` (last day of Mar/Jun/Sep/Dec) → that exact
- *              calendar quarter of the current year. Quarters are fixed:
- *              Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec.
+ *            • `type=quarterly` (2nd of Jan/Apr/Jul/Oct, 17:00 UTC) → the most
+ *              recently COMPLETED calendar quarter. Quarters are fixed:
+ *              Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec. It used
+ *              to fire at 23:00 UTC on the quarter's LAST day (4 PM Pacific —
+ *              a Thursday delivery day on Dec 31 2026), which left that
+ *              evening's deliveries out of the report for good.
+ *            • `type=q1|q2|q3|q4` (legacy) → that quarter of the current year
+ *              when it has started, else of the previous year — so an old
+ *              `?type=q4` call on Jan 2 still means last year's Q4.
  *          Requires `Authorization: Bearer ${CRON_SECRET}` (fail-closed in
  *          prod, unsigned OK in local dev).
  *            • `type=annual` (Jan 2) → the previous calendar year: adds
@@ -91,15 +103,8 @@ function mostRecentCompletedQuarter(now: Date): { year: number; quarter: number 
 }
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
-  if (expected) {
-    if (authHeader !== expected) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  } else if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
-  }
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
 
   const { searchParams } = new URL(request.url);
   const type = (searchParams.get("type") ?? "monthly").toLowerCase();
@@ -111,10 +116,17 @@ export async function GET(request: Request) {
   if (type === "annual") {
     period = "annual";
     range = yearRange(now.getFullYear() - 1, todayPacific());
-  } else if (quarterMatch) {
-    // Fired on the last day of the quarter — report that quarter of this year.
+  } else if (type === "quarterly") {
+    // Fired a couple of days into the new quarter — report the one just closed.
     period = "quarterly";
-    range = quarterRange(now.getFullYear(), parseInt(quarterMatch[1], 10));
+    const { year, quarter } = mostRecentCompletedQuarter(now);
+    range = quarterRange(year, quarter);
+  } else if (quarterMatch) {
+    // Legacy explicit quarter: this year's if that quarter has begun, else last year's.
+    period = "quarterly";
+    const quarter = parseInt(quarterMatch[1], 10);
+    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+    range = quarterRange(quarter <= currentQuarter ? now.getFullYear() : now.getFullYear() - 1, quarter);
   } else {
     period = "monthly";
     const { year, month } = previousMonth(now);
@@ -122,7 +134,11 @@ export async function GET(request: Request) {
   }
 
   const result = await buildAndSend(period, range);
-  return NextResponse.json({ success: true, period, periodLabel: range.label, ...(result as object) });
+  const rejected = "sent" in result && result.sent === false;
+  return NextResponse.json(
+    { success: !rejected, period, periodLabel: range.label, ...(result as object) },
+    { status: rejected ? 502 : 200 },
+  );
 }
 
 export async function POST(request: Request) {
@@ -158,7 +174,11 @@ export async function POST(request: Request) {
   }
 
   const result = await buildAndSend(period, range, { preview });
-  return NextResponse.json({ success: true, period, periodLabel: range.label, preview, ...(result as object) });
+  const rejected = "sent" in result && result.sent === false;
+  return NextResponse.json(
+    { success: !rejected, period, periodLabel: range.label, preview, ...(result as object) },
+    { status: rejected ? 502 : 200 },
+  );
 }
 
 async function buildAndSend(
@@ -364,7 +384,7 @@ async function buildAndSend(
     .maybeSingle();
   const partnerName: string = nameSetting?.value || "Phil";
 
-  await sendPartnerReportEmail({
+  const send = await sendPartnerReportEmail({
     toEmail,
     partnerName,
     period,
@@ -379,5 +399,19 @@ async function buildAndSend(
     subjectPrefix: preview ? "[PREVIEW] " : undefined,
   });
 
-  return { sent: true, to: toEmail, period, periodLabel: label, totalValue, deliveryCount };
+  if (!send.ok) {
+    // The detail is in the server log; the client gets a plain sentence.
+    console.error(`[PARTNER REPORT] send to ${toEmail} rejected:`, send.error);
+    return {
+      sent: false as const,
+      to: toEmail,
+      period,
+      periodLabel: label,
+      totalValue,
+      deliveryCount,
+      error: "The partner report email was not accepted by the mail service. Nothing was sent.",
+    };
+  }
+
+  return { sent: true as const, to: toEmail, period, periodLabel: label, totalValue, deliveryCount };
 }

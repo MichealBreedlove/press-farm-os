@@ -11,6 +11,18 @@ Baseline: `tsc --noEmit` clean, `next lint` 0 errors / 6 `<img>` warnings,
 (`docs/ARCHITECTURE_REVIEW.md`, `docs/website-audit-2026-09-15.md`) are not
 repeated here; §8 lists which of their items are still open.
 
+## Status (end of day 2026-10-27)
+
+Everything in this report shipped on branch `claude/press-farm-os-review-qv7b6b`
+in five commits, except: the Next 15 / `@supabase/ssr` major upgrade
+(deferred by decision), the `no-floating-promises` lint rule (17 sites to
+clean first), and the three decisions below. Decisions taken by assumption:
+same-date resubmission still **merges** (the form now says so and offers
+Edit); chefs **cannot** re-open a closed date; the upgrade waits.
+Verified at the end: `next build` green, `tsc` clean, `next lint` 0 errors,
+`vitest` 47 files / 426 tests. `npm audit` 38 → 23 (the remaining critical is
+`next@14.2`). CI now runs on push to `main`.
+
 ## 0. TL;DR
 
 Eight things are worth doing before anything else. Four of them produce wrong

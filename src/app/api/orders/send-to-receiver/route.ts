@@ -10,13 +10,14 @@ import { materializeDeliveryItems } from "@/lib/materialize-deliveries";
  *
  * One-shot "I'm done picking" action from the unified pick page. For
  * the given delivery date, this:
- *   1. Bumps every 'submitted' order to 'in_progress' so the receiver
- *      dashboard shows them as the day's queue.
- *   2. Auto-creates the financial paper trail — for each picked or
+ *   1. Auto-creates the financial paper trail — for each picked or
  *      shorted order_item that doesn't already have a matching
  *      delivery_items row, materialize one. The deliveries row is
  *      upserted on (date, restaurant). The deliveries.total_value
- *      trigger then auto-rolls up to the financial reports.
+ *      trigger then auto-rolls up to the financial reports. A failure
+ *      here aborts the whole action (500) — the day is not closed.
+ *   2. Bumps every 'submitted' order to 'in_progress' so the receiver
+ *      dashboard shows them as the day's queue.
  *   3. Sends the receiver-daily email with the same template the cron
  *      uses.
  *
@@ -47,6 +48,24 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
+  // Auto-create delivery_items FIRST so the financial reports light up
+  // without anyone visiting the legacy /admin/deliveries log page. If this
+  // fails the day is NOT closed: nothing is bumped, no email goes out, and
+  // the admin sees why. (Before 2026-10-27 a failed insert logged a line,
+  // returned 0 and the day closed anyway — review §1.4.)
+  const mat = await materializeDeliveryItems(admin, date);
+  if (mat.failed) {
+    console.error(`[send-to-receiver] delivery materialization failed for ${date}:`, mat.error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Could not record today's deliveries, so the day was NOT sent to the receiver. Nothing changed — try again.",
+      },
+      { status: 500 },
+    );
+  }
+  const created = mat.created;
+
   // Bump statuses. We only touch 'submitted' rows so re-sending after a
   // shortage edit doesn't undo a 'fulfilled' order — the receiver may
   // have already finished part of the day.
@@ -56,12 +75,9 @@ export async function POST(request: Request) {
     .eq("delivery_date", date)
     .eq("status", "submitted");
   if (statusErr) {
-    return NextResponse.json({ error: `Status update failed: ${statusErr.message}` }, { status: 500 });
+    console.error(`[send-to-receiver] status bump failed for ${date}:`, statusErr);
+    return NextResponse.json({ ok: false, error: "Could not update the day's orders. Try again." }, { status: 500 });
   }
-
-  // Auto-create delivery_items so the financial reports light up
-  // without anyone visiting the legacy /admin/deliveries log page.
-  const created = await materializeDeliveryItems(admin, date);
 
   // Build + send the receiver email. Falls back gracefully if no
   // active receivers exist — admin sees a clear message rather than
@@ -72,7 +88,9 @@ export async function POST(request: Request) {
       ok: true,
       bumped: bumpedCount ?? 0,
       sent: 0,
+      deliveryItemsCreated: created,
       delivery_items_created: created,
+      ...(mat.warning ? { warning: mat.warning } : {}),
       message: "No orders for this date — nothing to send.",
     });
   }
@@ -86,7 +104,9 @@ export async function POST(request: Request) {
     bumped: bumpedCount ?? 0,
     sent: successes,
     failed: failures.length,
+    deliveryItemsCreated: created,
     delivery_items_created: created,
+    ...(mat.warning ? { warning: mat.warning } : {}),
     failures: failures.map((f) => ({ to: f.receiver, error: String(f.error ?? f.status) })),
     receivers_count: sendResults.length,
   });

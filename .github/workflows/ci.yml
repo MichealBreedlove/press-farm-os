@@ -1,0 +1,40 @@
+name: CI
+
+# Typecheck, lint and unit tests on every push to main and every pull request.
+# No `next build` here: it needs Google Fonts over the network plus the
+# Supabase/Resend env, and Vercel already runs the build on deploy. What this
+# adds is the vitest suite, which the deploy path never ran (a pricing
+# regression could ship green).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: tsc · lint · vitest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx next lint
+
+      - name: Unit tests
+        run: npx vitest run

@@ -6,6 +6,10 @@ import * as XLSX from "xlsx";
 import { ITEM_CATEGORIES, UNIT_TYPES, SEASON_STATUSES } from "@/lib/constants";
 import type { ItemCategory } from "@/types";
 
+/** Cap on an uploaded sheet: xlsx 0.18 parses untrusted bytes with known
+ *  ReDoS / prototype-pollution advisories; admin-only, but keep it bounded. */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
 const VALID_CATEGORIES = new Set(ITEM_CATEGORIES.map((c) => c.value));
 const VALID_UNITS = new Set(UNIT_TYPES.map((u) => u.value));
 const VALID_SEASONS = new Set(SEASON_STATUSES.map((s) => s.value));
@@ -123,6 +127,9 @@ export async function POST(request: Request) {
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
 
   // SheetJS handles both CSV and XLSX; first sheet is used for both.
+  if (file.size > MAX_IMPORT_BYTES) {
+    return NextResponse.json({ error: "File is too large (10 MB max)" }, { status: 413 });
+  }
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", raw: false, cellText: true });
 

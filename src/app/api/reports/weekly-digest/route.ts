@@ -7,6 +7,16 @@ import { ADMIN_EMAIL } from "@/lib/constants";
 import { getAnthropicClient } from "@/lib/anthropic/client";
 import WeeklyDigest from "@/emails/weekly-digest";
 import { formatCurrency } from "@/lib/utils";
+import { readFarmSettings, upsertFarmSetting } from "@/lib/weekly-update";
+import { requireCronSecret } from "@/lib/api-auth";
+
+// Three table reads + an Anthropic call + one Resend call per recipient.
+// The plan-default budget (10 s on Hobby) is too tight; 60 s is allowed on
+// every Vercel plan.
+export const maxDuration = 60;
+
+/** farm_settings key holding the window-end date of the last digest that went out. */
+const SENT_STAMP_KEY = "weekly_digest_last_sent_week";
 
 function formatDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-US", {
@@ -15,34 +25,49 @@ function formatDate(d: string) {
 }
 
 /**
- * GET /api/reports/weekly-digest — Vercel Cron trigger
- * POST /api/reports/weekly-digest — Manual trigger from dashboard
+ * GET /api/reports/weekly-digest — Vercel Cron trigger. Requires
+ *   `Authorization: Bearer ${CRON_SECRET}`; fail-closed in production (a
+ *   deploy without the secret is not callable — before 2026-10-27 an unset
+ *   secret let `Bearer undefined` through). The cron skips a window it
+ *   already sent (farm_settings.weekly_digest_last_sent_week holds the
+ *   window-end date), so a double fire or a manual send that morning can't
+ *   mail the digest twice.
+ * POST /api/reports/weekly-digest — Manual trigger from dashboard. Always
+ *   sends; stamps the window on success so the cron then skips it.
  *
  * Summarizes: deliveries, revenue, expenses, labor for the past 7 days.
  */
 export async function GET(request: Request) {
-  // Vercel Cron sends authorization header
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return sendDigest();
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
+  return sendDigest({ isCron: true });
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient();
   const auth = await requireAdmin(supabase);
   if (!auth.ok) return auth.response;
-  return sendDigest();
+  return sendDigest({ isCron: false });
 }
 
-async function sendDigest() {
+async function sendDigest({ isCron }: { isCron: boolean }) {
 
   const admin = createAdminClient();
 
   // Date range: last 7 days
   const end = todayPacific();
   const start = addDaysISO(end, -7);
+
+  // Cron never re-sends a window that already went out (double fire, retry,
+  // or a manual Send Now earlier the same day). Manual sends always go.
+  if (isCron) {
+    const stamp = await readFarmSettings(admin, [SENT_STAMP_KEY]);
+    if (stamp[SENT_STAMP_KEY] === end) {
+      const message = `Digest through ${end} already sent — skipping scheduled send.`;
+      console.log(`[DIGEST] ${message}`);
+      return NextResponse.json({ success: true, skipped: true, message });
+    }
+  }
 
   // Fetch deliveries
   const { data: deliveries } = await (admin as any)
@@ -206,6 +231,11 @@ async function sendDigest() {
       else failed.push({ to: recipients[i], error: String(r.reason) });
     });
     if (failed.length > 0) console.error("[DIGEST] Some sends failed:", failed);
+
+    // Stamp the window once at least one recipient has it.
+    if (sent.length > 0) {
+      await upsertFarmSetting(admin, SENT_STAMP_KEY, end);
+    }
 
     return NextResponse.json({
       success: sent.length > 0,

@@ -24,7 +24,7 @@ Restaurants modeled: **Press**, **Under-Study**, plus an **Events** pseudo-resta
 | AI | Anthropic SDK (`@anthropic-ai/sdk`) — inbound-email task extraction, catalog audit, bulk item-content drafting, crop recommendations |
 | Excel/CSV | SheetJS (xlsx) for legacy formats; CSV is the round-trip format |
 | Styling | Tailwind + custom `farm-*` and `pf-*` token namespaces |
-| Tests | Vitest — suites in top-level `tests/` (`npm test`) |
+| Tests | Vitest — suites in top-level `tests/` (`npm test`); Playwright smoke (`npm run test:smoke`, needs a running app + `SMOKE_BASE_URL`); CI in `.github/workflows/ci.yml` runs tsc + lint + vitest on push to `main` |
 | Monitoring | Sentry (`@sentry/nextjs`) — inert until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel |
 
 Repo: github.com/MichealBreedlove/press-farm-os
@@ -230,14 +230,18 @@ Base schema + microgreens (045), seed inventory (046), inbound-email/inbox (060:
 - `profiles` extends `auth.users` with `role` and `is_active`.
 - `restaurant_users` join table maps users to restaurants.
 - Service-role key (`createAdminClient`) is **server-only**. Never expose to browser.
-- **Open signup**: `/signup` + `/api/auth/signup` let anyone self-register against any restaurant (auto-confirmed). This is intentional per Micheal — do **not** lock it down without an explicit ask. Each API route self-gates on `profiles.role` — most via the shared `requireAdmin()` helper in `src/lib/api-auth.ts`; a minority still inline the `getUser()` → fetch role → compare block.
+- **Open signup**: `/signup` + `/api/auth/signup` let anyone self-register against any restaurant (auto-confirmed). This is intentional per Micheal — do **not** lock it down without an explicit ask. Each API route self-gates on `profiles.role` — most via the shared `requireAdmin()` / `requireRole()` / `requireUser()` helpers in `src/lib/api-auth.ts` (`src/lib/tasks/auth.ts` wraps the same gate); a minority still inline the `getUser()` → fetch role → compare block.
+- **Deactivated accounts are refused everywhere** (2026-10-27): `requireUser` and `requireRole` 403 when `profiles.is_active = false` by default. Before, Deactivate only changed the badge.
+- **Cron routes** use `requireCronSecret(request)` from `api-auth.ts`: constant-time compare, fails closed in production when `CRON_SECRET` is unset, lets local dev through. Don't hand-roll the Bearer check again.
+- **Chefs can't re-open a closed date** — `/api/order/open-date` only creates new custom rows for non-admins (Business Rule 3).
+- **Order lines are validated server-side** (`src/lib/order-line-validation.ts`, tested): `unit_type` / `size_label` / `color_key` / `variety_key` must be options the availability row really offers (per-cycle override ∩ item master) before the price tier is frozen. Both `/api/orders` and `/api/events/order` call it.
 
 ## Key Business Rules
 
 1. Delivery schedule: **Thursday, Saturday, Monday**.
-2. One chef order per restaurant per delivery date — partial unique index on `(restaurant_id, delivery_date) WHERE event_date IS NULL` (migration 070), last save wins. Events orders (`event_date` set) may repeat per date.
+2. One chef order per restaurant per delivery date — partial unique index on `(restaurant_id, delivery_date) WHERE event_date IS NULL` (migration 070). A second plain submission for the same date **merges** into the existing order (matching lines sum; the form shows a "You already have N items on this date" banner and the button reads "Add to order"); an explicit edit (`editing_order_id`) replaces. Events orders (`event_date` set) may repeat per date.
 3. Ordering locked when admin closes a date → `delivery_dates.ordering_open = false`.
-4. **Financial source of truth = `deliveries` + `delivery_items`**, NOT `order_items`.
+4. **Financial source of truth = `deliveries` + `delivery_items`**, NOT `order_items`. `materializeDeliveryItems()` (pure core `planDeliveryRows()` in `src/lib/materialize-deliveries.ts`, 27 tests) now returns `{created, failed, error?, warning?}`; the fulfil / send-to-receiver routes materialize FIRST and refuse to flip the status when it fails. `POST /api/deliveries` inserts new lines before deleting the replaced ones. Any `delivery_items` read that can exceed ~1,000 rows (all-time, a year, this_year) MUST go through `fetchAllRows` — Crop Revenue, Item Performance and the Orders explorer were silently truncated until 2026-10-27.
 5. Q1 2026 benchmark: $21,633 production / $1,536 expenses / $12K farmer pay.
 6. Items support multi-unit (comma-separated `unit_type`) with optional per-unit pricing in `unit_prices` JSONB and `default_price` fallback.
 7. Order-form quantity keys (don't break — review/submit code expects this):
@@ -252,6 +256,7 @@ The brand is built out — **do not redesign without an explicit ask**.
 
 - **Logo**: mandala (color/mono/gold/black), circular seal, horizontal/stacked/wordmark, app icon. Live under `public/assets/pressfarm/logo/`.
 - **Flowers**: ~38 hand-illustrated botanicals at `public/assets/pressfarm/flowers/`. Auto-resolve via `src/lib/flower-images.ts`. Don't rename/delete files without checking `flowerImageForName()` callers and `FLOWER_NAME_MAP`. Legacy alias `"fairyvetch"` exists for the old Hairy Vetch misspelling.
+- **Images in the app go through `next/image`** (local `/assets/*` and the project's Supabase storage host, which is listed in `next.config.js` `images.remotePatterns`; use `isOptimizableImage()` from `src/lib/flower-images.ts` before rendering an arbitrary URL). CSS-background decorations use the 128/256px variants under `flowers/small/` + `logo/png/small/`, generated idempotently by `npm run optimize:images`. `pf-master-gold` is a real Tailwind token since 2026-10-27 (it never was before — ~134 usages rendered nothing); use `text-pf-gold-700` for small gold TEXT (AA on cream), brass `pf-master-gold` for rules/dots.
 - **Image weights**: brand PNGs are downsized to 768px (flowers) / 1024px (logos) — originals were 2048–3000px (141MB → 47MB). Keep new assets web-sized; run `npm run optimize:images` (idempotent, in-place, preserves PNG + filename + alpha) after adding art. Logos stay PNG because some email clients can't render WebP. The logo **SVGs** embed the mandala as a base64 raster — `node scripts/optimize-svg-logos.mjs` (idempotent) caps those embedded rasters at 1024px (was 30MB across 8 files, now ~5MB); run it if new logo SVGs are added. **Emails** use `pressfarm-mandala-240.png` (240px truecolor RGBA — NOT a palette/indexed PNG, Outlook drops those) via `MANDALA_URL` in `src/emails/_shared.ts` — never point email `<Img>` tags at the 1024px/1.5MB masters; Outlook-type clients skip images that large.
 - **Typography**: Bank Gothic LT (wordmark + tagline), Cormorant Garamond (display), Inter (body), JetBrains Mono (code).
 - **Tokens**: prefer `pf-*` (`--pf-master-blue`, `--pf-master-orange`, `--pf-master-violet`) for new work. `farm-green / farm-cream / farm-dark / farm-muted` are core legacy and still used everywhere — don't remove.
@@ -342,7 +347,9 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 - `/receiver` — destination-side unpack / check-in.
 - `/harvest` — harvester portal: the combined cross-restaurant pick list (shared roll-up in `src/lib/harvest.ts`) + add-extra-items flow, with a persisted English/Spanish toggle (`src/lib/i18n/harvest.ts`). Harvester accounts are created in /admin/settings/users (role: Harvester).
 - Vitest suites in `tests/` — concentrated on the microgreens algorithm, forecasting, tasks, production value, the order-submit pure cores (pricing precedence, line-merge planning, availability resolution, v1 API-key gate), and the event-request accept flow. (The route-level financial flows — deliveries logging, reports — still have thin automated coverage.)
-- Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps).
+- Sentry error monitoring wired (`sentry.*.config.ts` + `withSentryConfig`) — **inactive until `NEXT_PUBLIC_SENTRY_DSN` is set in Vercel** (optionally `SENTRY_ORG/PROJECT/AUTH_TOKEN` for source maps). `withSentryConfig` is only applied when a DSN / auth token is set, so the client SDK isn't bundled while it's off.
+- **Service worker v6** (`public/sw.js`): precaches only static URLs, never caches `/admin/*` or redirected responses, purges on sign-out (`purgeServiceWorkerCache()`), and the post-update reload waits for page hide so a chef is never reloaded mid-order. Bump `CACHE_NAME` on behavioural changes.
+- **Email**: `sendOrLog` sends the plain-text part and returns `{ok, id?, error?}`; cron senders count real successes. Weekly-update stamps its sent-week BEFORE sending (idempotency) — the watchdog therefore trusts only `weekly_update_log` rows, never the stamp.
 
 ## Open Follow-ups (Prioritized)
 
@@ -355,6 +362,8 @@ UPSTASH_REDIS_REST_TOKEN         # optional — both must be set; fail-open + in
 5. List queries are bounded (history paginated, labor 1000, notes 500, event-requests 300) except the items catalog, which stays unbounded on purpose — it's the full-catalog admin view (~300 rows).
 6. Still manual: enable leaked-password protection in the Supabase Auth dashboard.
 8. **Activate Sentry** — create a free sentry.io project and set `NEXT_PUBLIC_SENTRY_DSN` in Vercel; the SDK is already wired and ships inert without it.
+9. **Next 15 / `@supabase/ssr` 0.12 upgrade** — `next@14.2.x` sits inside several published advisories (image optimizer, RSC cache poisoning); deferred to its own session. `docs/code-review-2026-10-27.md` has the full list; everything else from that review shipped 2026-10-27.
+10. `text-pf-master-gold` → `text-pf-gold-700` on any remaining small-text sites you touch; `id="main"` on the chef/admin page `<main>`s for the skip link (it falls back to the first `<main>` today); `no-floating-promises` has 17 call sites to clean before it can be enabled.
 
 Pack manager is descoped (Micheal 2026-05-15) — do not build `src/app/admin/packs/`. The `pack_inventory` table from migration 020 stays unused.
 

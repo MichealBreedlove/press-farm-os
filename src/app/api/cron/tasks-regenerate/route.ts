@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { regenerateAllTasksForDefaultFarm } from "@/lib/tasks/regenerate";
+import { requireCronSecret } from "@/lib/api-auth";
 
 export const maxDuration = 60;
 
@@ -14,23 +15,8 @@ export const maxDuration = 60;
  * Dev/local with unset CRON_SECRET allows through so curl tests work.
  */
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  const isProd =
-    process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
-
-  if (!expected) {
-    if (isProd) {
-      return NextResponse.json(
-        { error: "Misconfigured: CRON_SECRET not set in production" },
-        { status: 500 },
-      );
-    }
-  } else {
-    const auth = request.headers.get("authorization") ?? "";
-    if (auth !== `Bearer ${expected}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
 
   const summary = await regenerateAllTasksForDefaultFarm();
   console.log("[CRON] tasks-regenerate", summary);

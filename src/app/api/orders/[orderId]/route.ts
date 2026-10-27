@@ -50,25 +50,55 @@ export async function PATCH(
   }
 
   const adminClient = createAdminClient();
-  const { data: order, error } = await (adminClient.from("orders") as any)
-    .update({ status })
-    .eq("id", orderId)
-    .select()
-    .single();
 
-  if (error || !order) {
-    console.error("Order update error:", error);
+  // Load the order first: the fulfilled path has work to do BEFORE the
+  // status flips, and every path needs delivery_date / chef_id / restaurant_id.
+  const { data: existing, error: loadErr } = await adminClient
+    .from("orders")
+    .select("id, restaurant_id, delivery_date, chef_id, status")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (loadErr) {
+    console.error("Order load error:", loadErr);
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }
+  if (!existing) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  }
 
-  // When status changes to 'fulfilled', auto-fill quantity_fulfilled on any
-  // line item that wasn't explicitly marked short. Without this, items that
-  // admin never tapped stay at NULL and the receiver email computes them as
-  // "pending" — even though the chef will receive the full ordered quantity.
-  //
-  // Group lines by their requested quantity so we issue ~5 batched UPDATEs
-  // instead of one per line (most orders have a small set of distinct qtys).
+  let deliveryItemsCreated = 0;
+  let warning: string | undefined;
+
   if (status === "fulfilled") {
+    // Write the financial paper trail FIRST. Marking an order fulfilled means
+    // it was (or will be) delivered, so the deliveries + delivery_items rows
+    // the finance reports read must exist — regardless of whether admin
+    // closed the day via the Send to Receiver bar (which also materializes)
+    // or this per-order button. The order is still in_progress in the DB at
+    // this point, so it's passed as assumeFulfilled; if the write fails the
+    // status stays put and the admin sees an error instead of a green
+    // button over an invisible delivery (review §1.4 — the Jul–Aug 2026
+    // gap was exactly this, backfilled by migration 076).
+    const mat = await materializeDeliveryItems(adminClient, existing.delivery_date, {
+      assumeFulfilledOrderIds: [orderId],
+    });
+    if (mat.failed) {
+      console.error(`[orders PATCH] delivery materialization failed for ${orderId}:`, mat.error);
+      return NextResponse.json(
+        { error: "Could not record the delivery for this order, so it was NOT marked fulfilled. Try again." },
+        { status: 500 },
+      );
+    }
+    deliveryItemsCreated = mat.created;
+    warning = mat.warning;
+
+    // Auto-fill quantity_fulfilled on any line item that wasn't explicitly
+    // marked short. Without this, items that admin never tapped stay at NULL
+    // and the receiver email computes them as "pending" — even though the
+    // chef will receive the full ordered quantity.
+    //
+    // Group lines by their requested quantity so we issue ~5 batched UPDATEs
+    // instead of one per line (most orders have a small set of distinct qtys).
     const { data: openLines } = await (adminClient as any)
       .from("order_items")
       .select("id, quantity_requested")
@@ -94,20 +124,15 @@ export async function PATCH(
     }
   }
 
-  // When status changes to 'fulfilled', write the financial paper trail.
-  // Marking an order fulfilled means it was (or will be) delivered, so the
-  // deliveries + delivery_items rows the finance reports read must exist —
-  // regardless of whether admin closed the day via the Send to Receiver bar
-  // (which also materializes) or this per-order button. Runs AFTER the
-  // quantity_fulfilled auto-fill above so shorted-line quantities are final.
-  // Idempotent and skips finalized deliveries, so double-running is safe.
-  let deliveryItemsCreated = 0;
-  if (status === "fulfilled") {
-    try {
-      deliveryItemsCreated = await materializeDeliveryItems(adminClient, order.delivery_date);
-    } catch (matErr) {
-      console.error("[orders PATCH] delivery materialization failed:", matErr);
-    }
+  const { data: order, error } = await (adminClient.from("orders") as any)
+    .update({ status })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error || !order) {
+    console.error("Order update error:", error);
+    return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }
 
   // When status changes to 'fulfilled', send confirmation email to the chef
@@ -186,7 +211,14 @@ export async function PATCH(
     detail: { status },
   });
 
-  return NextResponse.json({ data: order, error: null, delivery_items_created: deliveryItemsCreated });
+  return NextResponse.json({
+    data: order,
+    error: null,
+    deliveryItemsCreated,
+    // Legacy key — kept for any client still reading it.
+    delivery_items_created: deliveryItemsCreated,
+    ...(warning ? { warning } : {}),
+  });
 }
 
 /**

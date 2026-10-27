@@ -49,16 +49,21 @@ export interface WeeklyUpdateAttempt {
 /**
  * Record a send attempt in weekly_update_log.
  *
- * Deliberately swallows its own errors: logging must never be the reason an
+ * Deliberately never throws: logging must never be the reason an
  * otherwise-good email fails. A lost log row is recoverable; a throw here
- * would abort the send path. `admin` must be the service-role client.
+ * would abort the send path. But it IS reported — supabase-js returns insert
+ * failures in `{ error }` rather than throwing, and before 2026-10-27 that
+ * value was never read, so a rejected row vanished without a trace and the
+ * watchdog later cried "chefs did NOT get the update" over a send that
+ * worked. Returns false when the row was not written. `admin` must be the
+ * service-role client.
  */
 export async function recordWeeklyUpdateAttempt(
   admin: SupabaseClient,
   attempt: WeeklyUpdateAttempt,
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await (admin as any).from("weekly_update_log").insert({
+    const { error } = await (admin as any).from("weekly_update_log").insert({
       week_of: attempt.weekOf,
       triggered_by: attempt.triggeredBy,
       status: attempt.status,
@@ -70,17 +75,32 @@ export async function recordWeeklyUpdateAttempt(
       // to diagnose from.
       error: attempt.error ? attempt.error.slice(0, 4000) : null,
     });
+    if (error) {
+      console.error(
+        `[WEEKLY-UPDATE] Failed to write weekly_update_log row (${attempt.status}, week of ${attempt.weekOf}):`,
+        error,
+      );
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("[WEEKLY-UPDATE] Failed to write weekly_update_log row:", err);
+    return false;
   }
 }
 
 /**
  * Did the update for `weekOf` reach at least one recipient?
  *
- * 'partial' counts as reached — some chefs got it, which is a different and
- * less urgent problem than nobody getting it. The watchdog uses this to
- * decide whether Monday silently missed.
+ * Proof is a 'sent' or 'partial' weekly_update_log row for the week
+ * ('partial' counts — some chefs got it, which is a different and less
+ * urgent problem than nobody getting it).
+ *
+ * The farm_settings.weekly_update_last_sent_week stamp is deliberately NOT
+ * accepted as proof: since 2026-10-27 the send route writes it BEFORE the
+ * sends (so an overlapping late-slot run can't re-send), which makes it a
+ * claim of intent, not of delivery. A failed log insert is logged loudly by
+ * recordWeeklyUpdateAttempt; a false alarm from that is the safer failure.
  */
 export async function hasSuccessfulWeeklyUpdate(
   admin: SupabaseClient,
@@ -100,6 +120,53 @@ export async function hasSuccessfulWeeklyUpdate(
     return true;
   }
   return (data ?? []).length > 0;
+}
+
+// ---- farm_settings helpers (generic: the digest's sent-week stamp uses them too) ----
+
+/** Read a handful of farm_settings keys into a map (missing keys are absent). */
+export async function readFarmSettings(
+  admin: SupabaseClient,
+  keys: string[],
+): Promise<Record<string, string>> {
+  const { data, error } = await admin.from("farm_settings").select("key, value").in("key", keys);
+  if (error) {
+    console.error("[FARM-SETTINGS] read failed:", error);
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const row of (data ?? []) as Array<{ key: string; value: string | null }>) out[row.key] = row.value ?? "";
+  return out;
+}
+
+/**
+ * Upsert one farm_settings key (null clears it). Resolves the single farm's
+ * id itself. Returns false — and logs — when the write did not happen; it
+ * never throws, since a stamp must not take a send down with it.
+ */
+export async function upsertFarmSetting(
+  admin: SupabaseClient,
+  key: string,
+  value: string | null,
+): Promise<boolean> {
+  try {
+    const { data: farmRow, error: farmErr } = await admin.from("farms").select("id").limit(1).maybeSingle();
+    if (farmErr || !farmRow?.id) {
+      console.error(`[FARM-SETTINGS] no farm row for ${key}:`, farmErr);
+      return false;
+    }
+    const { error } = await admin
+      .from("farm_settings")
+      .upsert({ farm_id: farmRow.id, key, value }, { onConflict: "farm_id,key" });
+    if (error) {
+      console.error(`[FARM-SETTINGS] upsert ${key} failed:`, error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`[FARM-SETTINGS] upsert ${key} threw:`, err);
+    return false;
+  }
 }
 
 /** The upcoming Monday (Pacific) — today when today IS Monday. The email's

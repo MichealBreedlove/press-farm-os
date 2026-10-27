@@ -8,10 +8,17 @@ import {
   recordWeeklyUpdateAttempt,
   sanitizeWeeklyUpdateData,
   upcomingMondayISO,
+  upsertFarmSetting,
   type WeeklyUpdateData,
 } from "@/lib/weekly-update";
 import WeeklyUpdate from "@/emails/weekly-update";
 import { slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
+import { requireCronSecret } from "@/lib/api-auth";
+
+// One Resend call per recipient (parallel) on top of a possible live build;
+// the plan-default budget (10 s on Hobby) is too tight. 60 s is allowed on
+// every Vercel plan.
+export const maxDuration = 60;
 
 /**
  * Chef-facing "Press Farm – Weekly Update" email.
@@ -35,16 +42,8 @@ import { slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-sch
  * auto-included).
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
-  if (expected) {
-    if (authHeader !== expected) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  } else if (process.env.NODE_ENV === "production") {
-    // Fail closed: a production deploy without CRON_SECRET must not be callable.
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
-  }
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
   const isLateRun = new URL(request.url).searchParams.has("late");
   return sendWeeklyUpdate({ isCron: true, isLateRun });
 }
@@ -250,6 +249,17 @@ async function sendWeeklyUpdate({
   }) as React.ReactElement;
 
   const list = Array.from(recipients);
+
+  // Stamp the week as sent BEFORE the sends go out. Once a delayed slot is
+  // reached, every later hourly run also decides "send" and the stamp is the
+  // only thing stopping it — written after the sends, two runs could overlap
+  // and the chefs got the update twice. A test send never stamps. If every
+  // send fails the stamp is put back to what it was (see below).
+  const priorStamp = settingsMap.weekly_update_last_sent_week || null;
+  if (!testTo) {
+    await upsertFarmSetting(admin, "weekly_update_last_sent_week", weekAnchor);
+  }
+
   const sendResults = await Promise.allSettled(
     list.map((to) =>
       safeResendSend({
@@ -301,17 +311,12 @@ async function sendWeeklyUpdate({
         : null,
   });
 
-  // Stamp the sent week so the Monday cron doesn't re-send after a manual send.
-  if (sent.length > 0) {
-    const { data: farmRow } = await admin.from("farms").select("id").limit(1).single();
-    if (farmRow?.id) {
-      await (admin as any)
-        .from("farm_settings")
-        .upsert(
-          { farm_id: farmRow.id, key: "weekly_update_last_sent_week", value: weekAnchor },
-          { onConflict: "farm_id,key" },
-        );
-    }
+  // Total failure: nobody got it, so the week must not read as sent — put
+  // the stamp back so the Monday cron (or a late slot) still tries, and the
+  // watchdog still alerts. A partial send keeps the stamp: re-sending would
+  // double up the chefs who did get it.
+  if (sent.length === 0 && priorStamp !== weekAnchor) {
+    await upsertFarmSetting(admin, "weekly_update_last_sent_week", priorStamp);
   }
 
   return NextResponse.json({

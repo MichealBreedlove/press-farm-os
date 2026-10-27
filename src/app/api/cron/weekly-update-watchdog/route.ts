@@ -4,6 +4,7 @@ import { ADMIN_EMAIL, FROM_ADDRESSES } from "@/lib/constants";
 import { safeResendSend } from "@/lib/resend/client";
 import { hasSuccessfulWeeklyUpdate, upcomingMondayISO } from "@/lib/weekly-update";
 import { watchdogShouldWait } from "@/lib/weekly-update-schedule";
+import { requireCronSecret } from "@/lib/api-auth";
 
 export const maxDuration = 60;
 
@@ -24,6 +25,11 @@ export const maxDuration = 60;
  * no successful row for this week's Monday, so the farm gets an email. An
  * in-route try/catch could never have caught the third case.
  *
+ * Proof of success is either a sent/partial weekly_update_log row OR the
+ * farm_settings.weekly_update_last_sent_week stamp for this Monday (see
+ * hasSuccessfulWeeklyUpdate) — so a lost log row alone never raises a false
+ * "chefs did NOT get the update" alarm.
+ *
  * Runs twice (Mon 23:30 UTC and Tue 06:45 UTC — still Monday in Pacific):
  * when the admin pushed the send to a later slot, the first run waits and
  * the second one checks.
@@ -35,23 +41,8 @@ export const maxDuration = 60;
  * tasks-regenerate.
  */
 export async function GET(request: Request) {
-  const expected = process.env.CRON_SECRET;
-  const isProd =
-    process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
-
-  if (!expected) {
-    if (isProd) {
-      return NextResponse.json(
-        { error: "Misconfigured: CRON_SECRET not set in production" },
-        { status: 500 },
-      );
-    }
-  } else {
-    const auth = request.headers.get("authorization") ?? "";
-    if (auth !== `Bearer ${expected}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
 
   const admin = createAdminClient();
   const weekAnchor = upcomingMondayISO();

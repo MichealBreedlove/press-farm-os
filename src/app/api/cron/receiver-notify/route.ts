@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildReceiverBlocks, sendToReceivers, statusCountsFromBlocks } from "@/lib/receiver-notify";
 import { FARM_TIMEZONE } from "@/lib/utils";
+import { requireCronSecret } from "@/lib/api-auth";
 
 export const maxDuration = 30;
 
@@ -30,23 +31,8 @@ export async function GET(request: Request) {
   // CRON_SECRET in a deployed environment is treated as a misconfiguration,
   // not as "anyone can fire this." Local dev is the only place where unset
   // CRON_SECRET allows access (so npm run dev curl-tests still work).
-  const expected = process.env.CRON_SECRET;
-  const isProd = process.env.VERCEL_ENV === "production"
-    || process.env.NODE_ENV === "production";
-  if (!expected) {
-    if (isProd) {
-      return NextResponse.json(
-        { error: "Misconfigured: CRON_SECRET not set in production" },
-        { status: 500 },
-      );
-    }
-    // dev/local: allow through
-  } else {
-    const auth = request.headers.get("authorization") ?? "";
-    if (auth !== `Bearer ${expected}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const denied = requireCronSecret(request);
+  if (denied) return denied;
 
   // Today's date in America/Los_Angeles — the farm's TZ. Using
   // toLocaleDateString with the timezone option keeps DST changes correct.

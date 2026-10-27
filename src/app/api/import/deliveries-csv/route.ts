@@ -4,6 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import * as XLSX from "xlsx";
 
+/** Cap on an uploaded sheet: xlsx 0.18 parses untrusted bytes with known
+ *  ReDoS / prototype-pollution advisories; admin-only, but keep it bounded. */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
 interface ParsedLine {
   date: string;
   restaurant: string;
@@ -110,6 +114,9 @@ export async function POST(request: Request) {
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
 
+  if (file.size > MAX_IMPORT_BYTES) {
+    return NextResponse.json({ error: "File is too large (10 MB max)" }, { status: 413 });
+  }
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array", cellDates: true, raw: false, cellText: true });
 
