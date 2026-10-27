@@ -80,7 +80,8 @@ export async function POST(request: Request) {
     .eq("id", deliveryId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[receiver/close-delivery] update failed:", error);
+    return NextResponse.json({ error: "Could not close the delivery" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, closed_by_name: closedByName });

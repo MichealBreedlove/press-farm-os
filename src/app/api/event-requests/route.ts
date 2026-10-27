@@ -70,7 +70,10 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[event-requests] query failed:", error);
+    return NextResponse.json({ error: "Could not load event requests" }, { status: 500 });
+  }
   return NextResponse.json({ requests: data ?? [] });
 }
 
@@ -175,7 +178,10 @@ export async function POST(request: Request) {
   }));
 
   const { error } = await (admin as any).from("event_requests").insert(rowsToInsert);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[event-requests] insert failed:", error);
+    return NextResponse.json({ error: "Could not save the event request" }, { status: 500 });
+  }
 
   return NextResponse.json({ group_id: groupId, count: rowsToInsert.length });
 }

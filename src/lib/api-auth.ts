@@ -26,9 +26,14 @@ const forbidden = () =>
   NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
 /**
- * Just requires an authenticated session — no role gate. For routes that key
- * off `user.id` or membership rather than a role (e.g. chef-facing mutations,
- * service-role reads scoped to the caller).
+ * Just requires an authenticated, ACTIVE session — no role gate. For routes
+ * that key off `user.id` or membership rather than a role (e.g. chef-facing
+ * mutations, service-role reads scoped to the caller).
+ *
+ * "Active" is enforced here because an admin's Deactivate (profiles.is_active
+ * = false) previously only changed the badge in /admin/settings/users: the
+ * account kept submitting orders, filing event requests and closing
+ * deliveries through every route gated by this helper (2026-10-27).
  *
  *   const supabase = await createClient();
  *   const auth = await requireUser(supabase);
@@ -40,6 +45,18 @@ export async function requireUser(supabase: SupabaseServerClient): Promise<UserA
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, response: unauthorized() };
+
+  // (The SSR client's typed select/maybeSingle chain infers `never` for this
+  // row shape, so narrow it explicitly — same workaround as open-date.)
+  const { data } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+  const profile = data as { is_active: boolean | null } | null;
+  if (profile && profile.is_active === false) {
+    return { ok: false, response: forbidden() };
+  }
   return { ok: true, user };
 }
 
@@ -65,7 +82,11 @@ export async function requireRole(
     .eq("id", user.id)
     .single();
   const role = (profile as any)?.role as Role | undefined;
-  if (!role || !roles.includes(role) || (opts.requireActive && !(profile as any)?.is_active)) {
+  // Inactive accounts are refused by default; `requireActive: false` is the
+  // explicit opt-out (nothing uses it today — kept for symmetry with the old
+  // signature, where the check was opt-IN and most callers forgot it).
+  const mustBeActive = opts.requireActive ?? true;
+  if (!role || !roles.includes(role) || (mustBeActive && (profile as any)?.is_active === false)) {
     return { ok: false, response: forbidden() };
   }
 
@@ -89,6 +110,36 @@ export async function requireAdmin(supabase: SupabaseServerClient): Promise<Admi
   const auth = await requireRole(supabase, ["admin"]);
   if (!auth.ok) return auth;
   return { ok: true, user: auth.user };
+}
+
+/**
+ * Vercel Cron gate. Returns null when the request carries
+ * `Authorization: Bearer <CRON_SECRET>`, else a ready-to-return response.
+ *
+ * - Constant-time compare (the secret is a long-lived credential).
+ * - Fails CLOSED in production when CRON_SECRET is unset (401 — Vercel's cron
+ *   dashboard shows the failed run), and lets local/dev through so a bare
+ *   `curl` works. One of the seven cron-style routes used to compare against
+ *   the template string "Bearer undefined" and so failed OPEN (2026-10-27).
+ *
+ *   const denied = requireCronSecret(request);
+ *   if (denied) return denied;
+ */
+export function requireCronSecret(request: Request): NextResponse | null {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 401 });
+    }
+    return null;
+  }
+  const header = request.headers.get("authorization") ?? "";
+  const provided = Buffer.from(header.startsWith("Bearer ") ? header.slice(7) : "");
+  const expected = Buffer.from(secret);
+  if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
 }
 
 /**

@@ -38,8 +38,18 @@ export async function POST(
 
   const { item_id, quantity, unit, unit_price, bonus_note } = body;
   if (!item_id) return NextResponse.json({ error: "item_id required" }, { status: 400 });
-  if (!Number.isFinite(quantity) || quantity <= 0) {
-    return NextResponse.json({ error: "quantity must be > 0" }, { status: 400 });
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 10_000) {
+    return NextResponse.json({ error: "quantity must be between 0 and 10,000" }, { status: 400 });
+  }
+  // Only the admin may override the price — a harvester's extra is always
+  // priced from the catalog (this writes straight into delivery_items).
+  if (unit_price != null) {
+    if (auth.role !== "admin") {
+      return NextResponse.json({ error: "Only an admin can set a price" }, { status: 403 });
+    }
+    if (!Number.isFinite(unit_price) || unit_price < 0) {
+      return NextResponse.json({ error: "Invalid unit_price" }, { status: 400 });
+    }
   }
   if (!unit || !VALID_UNITS.has(unit as any)) {
     return NextResponse.json({ error: "Invalid unit" }, { status: 400 });
@@ -176,7 +186,10 @@ export async function DELETE(
   }
 
   const { error } = await (admin as any).from("delivery_items").delete().eq("id", lineId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[extras] delete failed:", error);
+    return NextResponse.json({ error: "Could not remove the extra" }, { status: 500 });
+  }
 
   return NextResponse.json({ deleted: true });
 }

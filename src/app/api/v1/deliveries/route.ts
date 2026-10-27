@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const month = url.searchParams.get("month");
   const date = url.searchParams.get("date");
-  const limit = parseInt(url.searchParams.get("limit") ?? "100");
+  // Clamp: parseInt gives NaN / 1e9 for junk, which PostgREST turns into "no limit".
+  const limit = Math.min(500, Math.max(1, parseInt(url.searchParams.get("limit") ?? "100", 10) || 100));
 
   const admin = createAdminClient();
   let query = admin.from("deliveries")

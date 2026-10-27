@@ -80,7 +80,8 @@ export async function POST(request: Request) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[receiver/check-line] update failed:", error);
+    return NextResponse.json({ error: "Could not save the check-in" }, { status: 500 });
   }
   return NextResponse.json({ ok: true, received });
 }

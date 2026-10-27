@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { formatCurrency, formatQty, formatDeliveryDate } from "@/lib/utils";
 import {
   PERIOD_KEYS,
@@ -77,37 +78,46 @@ export async function ExplorerView({ searchParams }: { searchParams: ExplorerSea
     .order("name", { ascending: true });
   const restaurants: { id: string; name: string }[] = restaurantsRaw ?? [];
 
-  // Deliveries in window — what was actually brought in (source of truth).
-  let deliveryQuery = admin
-    .from("delivery_items")
-    .select(
-      `
-      quantity, unit, unit_price, line_total,
-      items ( id, name, category, unit_type ),
-      deliveries!inner ( delivery_date, restaurant_id, restaurants ( name ) )
-    `,
-    )
-    .gte("deliveries.delivery_date", from)
-    .lte("deliveries.delivery_date", to);
-  if (restaurantFilter) deliveryQuery = deliveryQuery.eq("deliveries.restaurant_id", restaurantFilter);
-
-  // Orders in window — demand. order_items → availability_items → items.
-  let orderQuery = admin
-    .from("order_items")
-    .select(
-      `
-      quantity_requested, unit_type,
-      availability_items ( items ( id, name, category, unit_type ) ),
-      orders!inner ( id, delivery_date, restaurant_id, status, restaurants ( name ) )
-    `,
-    )
-    .gte("orders.delivery_date", from)
-    .lte("orders.delivery_date", to);
-  if (restaurantFilter) orderQuery = orderQuery.eq("orders.restaurant_id", restaurantFilter);
-
+  // Both reads are paginated: a this_year / last_year window is well past
+  // Supabase's silent 1,000-row cap (delivery_items alone is 1,700+ rows
+  // for 2026), and an un-ranged select would understate "brought in".
   const [{ data: deliveryItems }, { data: orderItems }] = await Promise.all([
-    deliveryQuery,
-    orderQuery,
+    // Deliveries in window — what was actually brought in (source of truth).
+    fetchAllRows((lo, hi) => {
+      let q = admin
+        .from("delivery_items")
+        .select(
+          `
+          quantity, unit, unit_price, line_total,
+          items ( id, name, category, unit_type ),
+          deliveries!inner ( delivery_date, restaurant_id, restaurants ( name ) )
+        `,
+        )
+        .gte("deliveries.delivery_date", from)
+        .lte("deliveries.delivery_date", to)
+        .order("id")
+        .range(lo, hi);
+      if (restaurantFilter) q = q.eq("deliveries.restaurant_id", restaurantFilter);
+      return q;
+    }),
+    // Orders in window — demand. order_items → availability_items → items.
+    fetchAllRows((lo, hi) => {
+      let q = admin
+        .from("order_items")
+        .select(
+          `
+          quantity_requested, unit_type,
+          availability_items ( items ( id, name, category, unit_type ) ),
+          orders!inner ( id, delivery_date, restaurant_id, status, restaurants ( name ) )
+        `,
+        )
+        .gte("orders.delivery_date", from)
+        .lte("orders.delivery_date", to)
+        .order("id")
+        .range(lo, hi);
+      if (restaurantFilter) q = q.eq("orders.restaurant_id", restaurantFilter);
+      return q;
+    }),
   ]);
 
   // ---- Roll up per item ----

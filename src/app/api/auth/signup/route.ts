@@ -88,7 +88,8 @@ export async function POST(request: Request) {
   if (profileErr) {
     // Roll back the auth user so the chef can retry cleanly.
     await admin.auth.admin.deleteUser(newUserId);
-    return NextResponse.json({ error: profileErr.message }, { status: 500 });
+    console.error("[signup] profile write failed:", profileErr);
+    return NextResponse.json({ error: "Could not finish creating your account" }, { status: 500 });
   }
 
   const { error: linkErr } = await admin
@@ -100,7 +101,8 @@ export async function POST(request: Request) {
 
   if (linkErr) {
     await admin.auth.admin.deleteUser(newUserId);
-    return NextResponse.json({ error: linkErr.message }, { status: 500 });
+    console.error("[signup] restaurant link failed:", linkErr);
+    return NextResponse.json({ error: "Could not finish creating your account" }, { status: 500 });
   }
 
   return NextResponse.json(

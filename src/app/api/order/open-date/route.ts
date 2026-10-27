@@ -75,12 +75,23 @@ export async function POST(request: Request) {
 
   if (existing) {
     if (!existing.ordering_open) {
+      // A closed date was closed on purpose (Business Rule 3: the admin
+      // closes a date to start harvesting). Only the admin may re-open it;
+      // a chef asking for a closed date gets told so instead of flipping
+      // the lock back (2026-10-27).
+      if (role !== "admin") {
+        return NextResponse.json(
+          { error: "Ordering for that date is closed — please pick the next delivery day." },
+          { status: 409 },
+        );
+      }
       const { error } = await admin
         .from("delivery_dates")
         .update({ ordering_open: true })
         .eq("id", existing.id);
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[open-date] re-open failed:", error);
+        return NextResponse.json({ error: "Could not open that date" }, { status: 500 });
       }
     }
     return NextResponse.json({ ok: true, created: false, date, day_of_week: existing.day_of_week });
@@ -101,7 +112,8 @@ export async function POST(request: Request) {
     .from("delivery_dates")
     .insert({ date, day_of_week, ordering_open: true });
   if (insertErr) {
-    return NextResponse.json({ error: insertErr.message }, { status: 500 });
+    console.error("[open-date] insert failed:", insertErr);
+    return NextResponse.json({ error: "Could not open that date" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, created: true, date, day_of_week });

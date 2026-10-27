@@ -84,7 +84,15 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
+    // Carry the original destination so a chef tapping an email link to
+    // /history/<id> or /order?date=… lands there after signing in instead of
+    // on the default order form. Pages only — an API deep link is useless.
+    const wanted = `${pathname}${request.nextUrl.search}`;
     url.pathname = "/login";
+    url.search = "";
+    if (pathname !== "/" && !pathname.startsWith("/api/")) {
+      url.searchParams.set("next", wanted);
+    }
     return NextResponse.redirect(url);
   }
 

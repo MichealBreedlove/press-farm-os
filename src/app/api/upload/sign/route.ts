@@ -3,6 +3,14 @@ import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const EXT_BY_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/heic": "heic",
+};
+
 const BUCKET = "item-photos";
 const FOLDER = "items";
 // 15MB final cap. Client-side autoresize compresses anything over ~5MB
@@ -72,7 +80,9 @@ export async function POST(request: Request) {
         return;
       }
 
-      const ext = f.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      // Extension from the declared MIME type, never the client filename (a name
+      // like "a.html" or "a.b/c" would otherwise become the stored key).
+      const ext = EXT_BY_MIME[f.type] ?? "jpg";
       const cleanName = f.name
         .replace(/\.[^.]+$/, "")
         .toLowerCase()

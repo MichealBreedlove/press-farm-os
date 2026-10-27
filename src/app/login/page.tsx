@@ -25,6 +25,11 @@ function toAuthEmail(input: string): string {
   return `${username}@${SYNTHETIC_EMAIL_DOMAIN}`;
 }
 
+/** Only a same-origin path (no "//host" or "/\\host" tricks) may be the post-login target. */
+function safeNext(raw: string | null): string {
+  return raw && /^\/(?![\/\\])/.test(raw) ? raw : "/";
+}
+
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -43,11 +48,13 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    window.location.href = "/";
+    // Hard navigation on purpose: the root page routes by role server-side.
+    // `next` is set by the middleware when it bounced a deep link here.
+    window.location.href = safeNext(new URLSearchParams(window.location.search).get("next"));
   }
 
   return (
-    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
+    <main id="main" className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="login-card px-8 py-12 sm:px-12 sm:py-14 space-y-8">
           <div className="text-center">
@@ -72,7 +79,7 @@ export default function LoginPage() {
                 autoCorrect="off"
                 spellCheck={false}
               />
-              <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted/80">
+              <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted">
                 Chefs sign in with their email; shared kitchen accounts use a username.
               </p>
             </div>
@@ -107,7 +114,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-farm-dark/10" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-[10px] tracking-[0.2em] uppercase text-farm-muted/70">
+              <span className="bg-white px-3 text-[10px] tracking-[0.2em] uppercase text-farm-muted">
                 New here
               </span>
             </div>
@@ -120,7 +127,7 @@ export default function LoginPage() {
             Create a chef account
           </Link>
 
-          <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
+          <p className="text-[11px] tracking-wide text-center text-farm-muted">
             Trouble signing in? Contact Press Farm.
           </p>
         </div>
@@ -128,7 +135,7 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <Link
             href="/about"
-            className="text-xs tracking-[0.18em] uppercase text-farm-muted/90 hover:text-pf-master-gold transition-colors"
+            className="inline-flex items-center min-h-[44px] px-2 text-xs tracking-[0.18em] uppercase text-farm-muted hover:text-pf-gold-700 transition-colors"
           >
             About Press Farm →
           </Link>

@@ -3,6 +3,15 @@ import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+/** Keep only the columns a client may set — a stray id / farm_id / created_at
+ *  key from a buggy client must not land in the row. */
+function pick(body: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) if (k in body) out[k] = body[k];
+  return out;
+}
+const PLANTING_FIELDS = ["crop_name","variety","category","item_id","seed_id","location","growing_location","beds","bed_feet","container_type","quantity","quantity_unit","planting_stock","sowing_method","sow_date","transplant_date","harvest_start","harvest_end","termination_date","days_to_maturity","harvest_unit","avg_yield","avg_price","projected_revenue","season","status","notes"] as const;
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,7 +25,7 @@ export async function PATCH(
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("plantings")
-    .update(body)
+    .update(pick(body, PLANTING_FIELDS))
     .eq("id", id)
     .select()
     .single();

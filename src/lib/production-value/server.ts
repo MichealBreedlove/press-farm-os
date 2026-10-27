@@ -11,6 +11,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { todayPacific } from "@/lib/utils";
+import { fetchAllRows } from "@/lib/fetch-all";
 import {
   trayAccrual,
   plantingAccrual,
@@ -88,13 +89,20 @@ export async function getProductionValue(today?: string): Promise<ProductionValu
 
   const [{ data: trays }, { data: plantings }, split] = await Promise.all([
     // Trays of crops that carry a value_per_tray and have started harvesting.
-    (admin as any)
-      .from("microgreen_trays")
-      .select(
-        "id, harvesting_start, terminated_at, status, " +
-          "microgreen_batches(microgreen_crops(name, value_per_tray, productive_life_days))",
-      )
-      .not("harvesting_start", "is", null),
+    // Paginated: this is every tray that ever harvested (~60 new/month), so
+    // it crosses Supabase's silent 1,000-row cap in about a year and the
+    // executive P&L would quietly drop the oldest trays' income.
+    fetchAllRows((from, to) =>
+      (admin as any)
+        .from("microgreen_trays")
+        .select(
+          "id, harvesting_start, terminated_at, status, " +
+            "microgreen_batches(microgreen_crops(name, value_per_tray, productive_life_days))",
+        )
+        .not("harvesting_start", "is", null)
+        .order("id")
+        .range(from, to),
+    ),
     (admin as any)
       .from("planter_box_plantings")
       .select("id, name, lifecycle, planted_date, end_date, value_amount, seasonal_months, planter_boxes(name)"),

@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/api-auth";
 
+const EXT_BY_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/heic": "heic",
+};
+
 const BUCKET = "item-photos";
 
 /**
@@ -34,7 +42,9 @@ export async function POST(request: Request) {
     }
 
     // Generate a clean filename
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    // Extension from the declared MIME type, never the client filename (a name
+      // like "a.html" or "a.b/c" would otherwise become the stored key).
+      const ext = EXT_BY_MIME[file.type] ?? "jpg";
     const cleanName = file.name
       .replace(/\.[^.]+$/, "")
       .toLowerCase()

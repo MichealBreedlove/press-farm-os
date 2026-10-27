@@ -31,38 +31,39 @@ export default async function AdminDeliveryLogPage({
   // delivery rows that reference archived items can still resolve their
   // names. The DeliveryLogForm filters archived items out of the picker
   // so admins don't see them when adding new lines.
-  const { data: items } = await admin
-    .from("items")
-    .select("id, name, category, unit_type, default_price, unit_prices, size_prices, size, is_archived")
-    .order("category")
-    .order("name");
-
-  // Load existing deliveries for this date (already logged)
-  const { data: existingDeliveries } = await admin
-    .from("deliveries")
-    .select(`
-      id, restaurant_id, status, notes, total_value,
-      delivery_items (
-        id, item_id, quantity, unit, unit_price, line_total, size_label, is_bonus, bonus_note
-      )
-    `)
-    .eq("delivery_date", date);
-
-  // Load fulfilled orders for this date (pre-populate source)
-  // order_items references availability_items which references items, so we need to join through
-  const { data: rawOrders } = await admin
-    .from("orders")
-    .select(`
-      id, restaurant_id, status,
-      order_items (
-        quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type, size_label,
-        availability_items (
-          item:items (id, name, unit_type, default_price, unit_prices, size_prices)
+  // Independent reads — run together (this is the daily logging hot path).
+  const [{ data: items }, { data: existingDeliveries }, { data: rawOrders }] = await Promise.all([
+    admin
+      .from("items")
+      .select("id, name, category, unit_type, default_price, unit_prices, size_prices, size, is_archived")
+      .order("category")
+      .order("name"),
+    // Existing deliveries for this date (already logged)
+    admin
+      .from("deliveries")
+      .select(`
+        id, restaurant_id, status, notes, total_value,
+        delivery_items (
+          id, item_id, quantity, unit, unit_price, line_total, size_label, is_bonus, bonus_note
         )
-      )
-    `)
-    .eq("delivery_date", date)
-    .in("status", ["fulfilled", "in_progress", "submitted"]);
+      `)
+      .eq("delivery_date", date),
+    // Fulfilled orders for this date (pre-populate source).
+    // order_items → availability_items → items, so we join through.
+    admin
+      .from("orders")
+      .select(`
+        id, restaurant_id, status,
+        order_items (
+          quantity_requested, quantity_fulfilled, unit_price_at_order, unit_type, size_label,
+          availability_items (
+            item:items (id, name, unit_type, default_price, unit_prices, size_prices)
+          )
+        )
+      `)
+      .eq("delivery_date", date)
+      .in("status", ["fulfilled", "in_progress", "submitted"]),
+  ]);
 
   // Flatten the structure for the form: order_items[].item_id, quantity_ordered, quantity_fulfilled, unit, unit_price
   const orders = (rawOrders ?? []).map((o: any) => ({

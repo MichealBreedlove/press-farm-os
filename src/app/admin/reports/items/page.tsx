@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { addDaysISO, todayPacific } from "@/lib/utils";
 import { PrintButton } from "@/components/shared/PrintButton";
 import { EditorialHero } from "@/components/shared/EditorialHero";
@@ -48,15 +49,25 @@ export default async function ItemPerformancePage({
 
   const admin = createAdminClient();
 
-  // Fetch delivery items with details
-  const { data: deliveryItems } = await admin
-    .from("delivery_items")
-    .select(`
-      quantity, unit, unit_price, line_total,
-      items ( id, name, category, unit_type, is_archived ),
-      deliveries!inner ( delivery_date )
-    `)
-    .gte("deliveries.delivery_date", cutoffStr);
+  // Fetch delivery items with details — paginated, because the past-year
+  // window is 2,000+ rows and Supabase silently caps an un-ranged select at
+  // 1,000 (items missing from the truncated set were flagged "dead stock").
+  // The catalog read for dead stock is independent, so it runs alongside.
+  const [{ data: deliveryItems }, { data: allItems }] = await Promise.all([
+    fetchAllRows((from, to) =>
+      admin
+        .from("delivery_items")
+        .select(`
+          quantity, unit, unit_price, line_total,
+          items ( id, name, category, unit_type, is_archived ),
+          deliveries!inner ( delivery_date )
+        `)
+        .gte("deliveries.delivery_date", cutoffStr)
+        .order("id")
+        .range(from, to),
+    ),
+    admin.from("items").select("id, name, category").eq("is_archived", false),
+  ]);
 
   // Aggregate by item
   const statsMap = new Map<string, ItemStat>();
@@ -98,10 +109,6 @@ export default async function ItemPerformancePage({
   const mostFrequent = [...allStats].sort((a, b) => b.deliveryCount - a.deliveryCount).slice(0, 10);
 
   // Dead stock: items in catalog but NOT in deliveries this window
-  const { data: allItems } = await admin
-    .from("items")
-    .select("id, name, category")
-    .eq("is_archived", false);
   const deliveredIds = new Set(allStats.map((s) => s.itemId));
   const deadStock = (allItems ?? []).filter((i: any) => !deliveredIds.has(i.id));
 

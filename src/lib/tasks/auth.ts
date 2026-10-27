@@ -8,26 +8,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin as requireAdminSession } from "@/lib/api-auth";
 
 export type AuthOk = { ok: true; userId: string; farmId: string };
 export type AuthErr = { ok: false; res: NextResponse };
 
+/**
+ * Thin wrapper over the shared `requireAdmin` in src/lib/api-auth.ts (so a
+ * change to the admin gate — e.g. the is_active check — reaches the task
+ * routes too) that additionally resolves the single farm row.
+ */
 export async function requireAdmin(): Promise<AuthOk | AuthErr> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { ok: false, res: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  }
-  const { data: profile } = await (supabase as any)
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || profile.role !== "admin") {
-    return { ok: false, res: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
+  const auth = await requireAdminSession(supabase);
+  if (!auth.ok) return { ok: false, res: auth.response };
+  const user = auth.user;
 
   const admin = createAdminClient();
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);

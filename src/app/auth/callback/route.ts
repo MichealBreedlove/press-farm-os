@@ -8,7 +8,11 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // Only ever redirect within this origin: a `next` like "@evil.com" or
+  // ".evil.com" would otherwise be glued onto `${origin}` and resolve to a
+  // foreign host (userinfo / subdomain tricks). Relative paths only.
+  const rawNext = searchParams.get("next") ?? "/";
+  const next = /^\/(?![\/\\])/.test(rawNext) ? rawNext : "/";
 
   if (code) {
     const supabase = await createClient();

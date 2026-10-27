@@ -114,15 +114,31 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   let deliveryId: string;
+  // Ids of the lines a re-log replaces. They are deleted only AFTER the new
+  // lines are in, so a failed insert can never leave the day at $0 (the old
+  // delete-then-insert dropped every line before the insert was attempted,
+  // and the update_delivery_total trigger then recomputed the total to 0).
+  let previousLineIds: string[] = [];
 
   if (existing) {
     deliveryId = existing.id;
-    // Delete old items before reinserting
-    await admin.from("delivery_items").delete().eq("delivery_id", deliveryId);
-    await admin
+    const { data: previousLines, error: prevErr } = await admin
+      .from("delivery_items")
+      .select("id")
+      .eq("delivery_id", deliveryId);
+    if (prevErr) {
+      console.error("[deliveries POST] could not read existing lines:", prevErr);
+      return NextResponse.json({ error: "Could not read the existing delivery" }, { status: 500 });
+    }
+    previousLineIds = (previousLines ?? []).map((r) => r.id);
+    const { error: updErr } = await admin
       .from("deliveries")
       .update({ notes: notes ?? null, status: "logged" })
       .eq("id", deliveryId);
+    if (updErr) {
+      console.error("[deliveries POST] delivery update failed:", updErr);
+      return NextResponse.json({ error: "Could not update the delivery" }, { status: 500 });
+    }
   } else {
     const { data: newDelivery, error: deliveryError } = await admin
       .from("deliveries")
@@ -136,7 +152,8 @@ export async function POST(request: Request) {
       .single();
 
     if (deliveryError) {
-      return NextResponse.json({ error: deliveryError.message }, { status: 500 });
+      console.error("[deliveries POST] delivery insert failed:", deliveryError);
+      return NextResponse.json({ error: "Could not create the delivery" }, { status: 500 });
     }
     deliveryId = newDelivery.id;
   }
@@ -158,7 +175,28 @@ export async function POST(request: Request) {
     .insert(deliveryItems);
 
   if (itemsError) {
-    return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    console.error("[deliveries POST] delivery_items insert failed:", itemsError);
+    // The previous lines are still in place — nothing was lost.
+    return NextResponse.json(
+      { error: "Could not save the delivery lines; the previous log is unchanged" },
+      { status: 500 },
+    );
+  }
+
+  if (previousLineIds.length > 0) {
+    const { error: delErr } = await admin
+      .from("delivery_items")
+      .delete()
+      .in("id", previousLineIds);
+    if (delErr) {
+      // New lines are in; the old ones linger. Surface it loudly rather than
+      // silently doubling the day's total.
+      console.error("[deliveries POST] could not remove replaced lines:", delErr);
+      return NextResponse.json(
+        { error: "Saved the new lines but could not remove the old ones — re-save the day" },
+        { status: 500 },
+      );
+    }
   }
 
   // Fetch updated delivery with total (trigger recalculates total_value)

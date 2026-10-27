@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/fetch-all";
 import { redirect } from "next/navigation";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { PrintButton } from "@/components/shared/PrintButton";
@@ -57,19 +58,24 @@ export default async function CropRevenueReportPage({ searchParams }: Props) {
   }
 
   // Pull delivery_items joined to items + deliveries for date filtering.
-  let q = admin
-    .from("delivery_items")
-    .select(`
-      item_id, quantity, line_total,
-      items ( name, category, unit_type ),
-      deliveries!inner ( delivery_date )
-    `);
-
-  if (dateFrom && dateTo) {
-    q = q.gte("deliveries.delivery_date", dateFrom).lte("deliveries.delivery_date", dateTo);
-  }
-
-  const { data: deliveryItems } = await q;
+  // Paginated: delivery_items is past 4,800 rows all-time (1,700+ per
+  // year), well over Supabase's silent 1,000-row cap — an un-ranged select
+  // here used to rank crops on an arbitrary fifth of the data.
+  const { data: deliveryItems } = await fetchAllRows((from, to) => {
+    let q = admin
+      .from("delivery_items")
+      .select(`
+        item_id, delivery_id, quantity, line_total,
+        items ( name, category, unit_type ),
+        deliveries!inner ( delivery_date )
+      `)
+      .order("id")
+      .range(from, to);
+    if (dateFrom && dateTo) {
+      q = q.gte("deliveries.delivery_date", dateFrom).lte("deliveries.delivery_date", dateTo);
+    }
+    return q;
+  });
 
   // Aggregate
   type Agg = {

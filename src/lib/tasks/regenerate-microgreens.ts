@@ -137,7 +137,10 @@ export async function regenerateMicrogreensTasks(
     (admin as any).from("microgreen_crops").select("*").eq("is_active", true),
     (admin as any).from("microgreen_demand").select("*"),
     (admin as any).from("microgreen_batches").select("*"),
-    (admin as any).from("microgreen_trays").select("*"),
+    // Only live trays feed the sow plan; terminated/lost ones would otherwise
+    // grow this read past the 1,000-row cap and silently drop in-flight trays
+    // (→ the nightly cron re-sowing already-sown trays).
+    (admin as any).from("microgreen_trays").select("*").not("status", "in", "(terminated,lost)"),
     (admin as any)
       .from("delivery_dates")
       .select("date")

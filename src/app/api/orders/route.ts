@@ -4,6 +4,7 @@ import { requireAdmin, requireUser } from "@/lib/api-auth";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
+import { capText, validateLineOptions } from "@/lib/order-line-validation";
 import { planOrderItemMerge, resolveStaleAvailabilityIds, type MergeUpdate } from "@/lib/orders";
 import { minOrderableDatePacific, ORDER_CUTOFF_LABEL, FARM_TIMEZONE } from "@/lib/utils";
 
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { restaurant_id, delivery_date, items, freeform_notes, editing_order_id, idempotency_key } = body;
+  const { restaurant_id, delivery_date, items, editing_order_id, idempotency_key } = body;
+  const freeform_notes = capText(body.freeform_notes, 2000) ?? undefined;
 
   if (!restaurant_id || !delivery_date || !Array.isArray(items)) {
     return NextResponse.json(
@@ -238,7 +240,10 @@ export async function POST(request: Request) {
   // now-unavailable item fail the whole submission with "no longer available".
   const fetchAvailForIds = (ids: string[]) =>
     (supabase.from("availability_items") as any)
-      .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
+      .select(
+        "id, available_units, available_sizes, available_colors, available_varieties, " +
+          "item:items(name, default_price, unit_prices, size_prices, unit_type, size, color, variety)",
+      )
       .eq("restaurant_id", restaurant_id)
       .eq("delivery_date", delivery_date)
       .neq("status", "unavailable")
@@ -359,6 +364,20 @@ export async function POST(request: Request) {
   // (unit, size, color, variety) discriminators so chefs can order multiple
   // sizes/colors/varieties of the same item and have them round-trip through
   // the receiver dashboard, email, and edit-order hydration.
+  // The unit and size pick the frozen price tier, so they must be options
+  // this availability row really offers (per-cycle override ∩ item master).
+  // Colors / varieties don't price, but they round-trip to the harvest list.
+  const availRowById = new Map<string, any>((availItems ?? []).map((a: any) => [a.id, a]));
+  for (const item of items) {
+    if (!(item.quantity > 0)) continue;
+    const row = availRowById.get(item.availability_item_id);
+    if (!row?.item) continue; // already rejected above as unavailable
+    const problem = validateLineOptions(row, item, row.item.name ?? "an item");
+    if (problem) {
+      return NextResponse.json({ error: `${problem} Reload the page and re-add it.` }, { status: 400 });
+    }
+  }
+
   const incomingLines = items
     .filter((item) => item.quantity > 0)
     .map((item) => {
@@ -373,11 +392,11 @@ export async function POST(request: Request) {
         quantity_requested: item.quantity,
         unit_price_at_order: resolvePrice(item.availability_item_id, chosenUnit, item.size_label ?? null),
         unit_type: chosenUnit,
-        size_label: item.size_label ?? null,
-        color_key: item.color_key ?? null,
-        variety_key: item.variety_key ?? null,
+        size_label: capText(item.size_label),
+        color_key: capText(item.color_key),
+        variety_key: capText(item.variety_key),
         menu_section: menuSection,
-        notes: typeof item.notes === "string" ? item.notes.trim().slice(0, 500) || null : null,
+        notes: capText(item.notes),
         // Accountability: who added this line. Stamped on every insert.
         created_by: user.id,
       };

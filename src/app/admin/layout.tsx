@@ -59,19 +59,22 @@ export default async function AdminLayout({
   }
 
   const admin = createAdminClient();
-  const inboxUnreadCount = await getInboxUnreadCount(admin);
-
-  // Tasks badge — resolves the single farm row inline. Tolerant to the
+  // Both badges on every admin navigation — fetched together, not in series.
+  // Tasks badge resolves the single farm row inline; tolerant to the
   // farm_tasks table not existing yet (returns 0) so deploying before
   // migration 062 runs doesn't crash every admin page.
-  let tasksOpenCount = 0;
-  try {
-    const { data: farms } = await admin.from("farms").select("id").limit(1);
-    const farmId = farms?.[0]?.id;
-    if (farmId) tasksOpenCount = await getOpenTaskCount(admin, farmId);
-  } catch {
-    // migration 062 not applied yet — leave count at 0
-  }
+  const [inboxUnreadCount, tasksOpenCount] = await Promise.all([
+    getInboxUnreadCount(admin),
+    (async () => {
+      try {
+        const { data: farms } = await admin.from("farms").select("id").limit(1);
+        const farmId = farms?.[0]?.id;
+        return farmId ? await getOpenTaskCount(admin, farmId) : 0;
+      } catch {
+        return 0; // migration 062 not applied yet
+      }
+    })(),
+  ]);
 
   return (
     <div className="min-h-screen bg-farm-cream">

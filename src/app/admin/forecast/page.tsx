@@ -62,14 +62,20 @@ export default async function ForecastPage({
   cutoff.setDate(cutoff.getDate() - 56); // 8 weeks back
   const cutoffStr = cutoff.toISOString().split("T")[0];
 
+  // Bounded to the 8-week window server-side (the un-filtered read relied
+  // on the newest 1,000 rows happening to cover it — fine today, silently
+  // wrong once volume grows).
   const { data: deliveryItems } = await admin
     .from("delivery_items")
     .select(`
       quantity, unit,
       items ( id, name, category, unit_type ),
-      deliveries ( delivery_date )
+      deliveries!inner ( delivery_date )
     `)
-    .order("deliveries(delivery_date)", { ascending: false });
+    .gte("deliveries.delivery_date", cutoffStr)
+    .lt("deliveries.delivery_date", targetDate)
+    .order("deliveries(delivery_date)", { ascending: false })
+    .limit(5000);
 
   // Filter to same day-of-week, after cutoff
   const sameDay = (deliveryItems ?? []).filter((di: any) => {

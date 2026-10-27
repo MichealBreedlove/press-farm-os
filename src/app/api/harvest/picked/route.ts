@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     .in("id", lineIds)
     .eq("order.delivery_date", date);
   if (lookupErr) {
-    return NextResponse.json({ error: lookupErr.message }, { status: 500 });
+    console.error("[harvest/picked] lookup failed:", lookupErr);
+    return NextResponse.json({ error: "Could not load the order line" }, { status: 500 });
   }
   const validIds = (validRows ?? []).map((r: any) => r.id);
   if (validIds.length === 0) {
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
     .update({ picked_at: picked ? new Date().toISOString() : null })
     .in("id", validIds)
     .select("id");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[harvest/picked] update failed:", error);
+    return NextResponse.json({ error: "Could not save the pick" }, { status: 500 });
+  }
 
   return NextResponse.json({ updated: (updated ?? []).length, picked });
 }

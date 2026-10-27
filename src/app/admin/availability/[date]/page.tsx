@@ -50,48 +50,53 @@ export default async function AdminAvailabilityEditorPage({
     notFound();
   }
 
-  // Fetch all non-archived items, ordered by sort_order + name
-  const { data: rawItems, error: itemsError } = await supabase
-    .from("items")
-    .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, size, color, variety, created_at, updated_at")
-    .eq("is_archived", false)
-    .order("sort_order", { ascending: true, nullsFirst: false })
-    .order("name", { ascending: true });
-  const items: Item[] = rawItems ?? [];
-
-  if (itemsError) {
-    console.error("Error fetching items:", itemsError);
-  }
-
-  // Fetch every customer restaurant on the farm (Press, Understudy,
-  // Press Bar, Events). The editor renders a per-restaurant chip per
-  // item, so this list drives column count downstream.
-  const { data: rawRestaurants, error: restaurantsError } = await supabase
-    .from("restaurants")
-    .select("id, name, slug, farm_id, created_at, updated_at")
-    .order("name", { ascending: true });
-  const restaurants: Restaurant[] = rawRestaurants ?? [];
-
-  if (restaurantsError) {
-    console.error("Error fetching restaurants:", restaurantsError);
-  }
-
-  // Fetch existing availability_items for this date across all restaurants.
-  // MUST be paginated: a fully published date carries ~1,170 rows (every
-  // catalog item × 4 restaurants), past Supabase's silent 1,000-row cap.
-  // A truncated read here is what the editor SAVES BACK — missing rows
-  // seed "unavailable" and one Save wipes them for real (2026-08-28
-  // incident: Press went out with 7 orderable items instead of 29).
-  const { data: rawAvailability, error: availError } = await fetchAllRows(
-    (from, to) =>
+  // The three reads below are independent, so they run together — on a
+  // cold cycle this page used to make ~12 serial round-trips before the
+  // editor hydrated.
+  const [
+    { data: rawItems, error: itemsError },
+    { data: rawRestaurants, error: restaurantsError },
+    { data: rawAvailability, error: availError },
+  ] = await Promise.all([
+    // All non-archived items, ordered by sort_order + name
+    supabase
+      .from("items")
+      .select("id, farm_id, name, category, unit_type, default_price, chef_notes, internal_notes, source, is_archived, sort_order, size, color, variety, created_at, updated_at")
+      .eq("is_archived", false)
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("name", { ascending: true }),
+    // Every customer restaurant on the farm (Press, Understudy, Press Bar,
+    // Events). The editor renders a per-restaurant chip per item, so this
+    // list drives column count downstream.
+    supabase
+      .from("restaurants")
+      .select("id, name, slug, farm_id, created_at, updated_at")
+      .order("name", { ascending: true }),
+    // Existing availability_items for this date across all restaurants.
+    // MUST be paginated: a fully published date carries ~1,170 rows (every
+    // catalog item × 4 restaurants), past Supabase's silent 1,000-row cap.
+    // A truncated read here is what the editor SAVES BACK — missing rows
+    // seed "unavailable" and one Save wipes them for real (2026-08-28
+    // incident: Press went out with 7 orderable items instead of 29).
+    fetchAllRows((from, to) =>
       supabase
         .from("availability_items")
         .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
         .eq("delivery_date", date)
         .order("id", { ascending: true })
         .range(from, to),
-  );
+    ),
+  ]);
+  const items: Item[] = rawItems ?? [];
+  const restaurants: Restaurant[] = rawRestaurants ?? [];
   let availability: AvailabilityItem[] = rawAvailability ?? [];
+
+  if (itemsError) {
+    console.error("Error fetching items:", itemsError);
+  }
+  if (restaurantsError) {
+    console.error("Error fetching restaurants:", restaurantsError);
+  }
   let inheritedFromDate: string | null = null;
 
   if (availError) {
@@ -111,26 +116,28 @@ export default async function AdminAvailabilityEditorPage({
   const restaurantsWithRows = new Set(availability.map((a) => a.restaurant_id));
   const missingRestaurants = restaurants.filter((r) => !restaurantsWithRows.has(r.id));
 
-  for (const r of missingRestaurants) {
-    // Prefer the latest PUBLISHED date — a later carried-over snapshot can
-    // be stale (see findRolloverSourceDate).
-    const priorDate = await findRolloverSourceDate(supabase, r.id, date);
-    if (!priorDate) continue;
-
-    inheritedFromDate = priorDate;
-    const { data: priorRows } = await supabase
-      .from("availability_items")
-      .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
-      .eq("delivery_date", priorDate)
-      .eq("restaurant_id", r.id);
-
+  // Each restaurant's carry-over is independent (two round-trips each), so
+  // resolve them all at once; results are folded in restaurant order so the
+  // editor's row order is unchanged.
+  const carried = await Promise.all(
+    missingRestaurants.map(async (r) => {
+      // Prefer the latest PUBLISHED date — a later carried-over snapshot can
+      // be stale (see findRolloverSourceDate).
+      const priorDate = await findRolloverSourceDate(supabase, r.id, date);
+      if (!priorDate) return null;
+      const { data: priorRows } = await supabase
+        .from("availability_items")
+        .select("id, item_id, restaurant_id, delivery_date, status, limited_qty, cycle_notes, available_sizes, available_colors, available_varieties, available_units, created_at, updated_at")
+        .eq("delivery_date", priorDate)
+        .eq("restaurant_id", r.id);
+      return { priorDate, rows: (priorRows ?? []) as any[] };
+    }),
+  );
+  for (const c of carried) {
+    if (!c) continue;
+    inheritedFromDate = c.priorDate;
     // Remap delivery_date so the editor shows them as belonging to this date
-    availability = availability.concat(
-      (priorRows ?? []).map((r2: any) => ({
-        ...r2,
-        delivery_date: date,
-      })),
-    );
+    availability = availability.concat(c.rows.map((r2: any) => ({ ...r2, delivery_date: date })));
   }
 
   const pageTitle = formatPageTitle(date);

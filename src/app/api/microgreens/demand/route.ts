@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+
+/** Keep only the columns a client may set — a stray id / farm_id / created_at
+ *  key from a buggy client must not land in the row. */
+function pick(body: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of keys) if (k in body) out[k] = body[k];
+  return out;
+}
+const DEMAND_FIELDS = ["crop_id","restaurant_id","day_of_week","target_oz","target_quantity","target_unit","interval_weeks","effective_from","effective_to","notes"] as const;
+type RowInsert = Database["public"]["Tables"]["microgreen_demand"]["Insert"];
 
 export async function GET(_req: Request) {
   const supabase = await createClient();
@@ -54,7 +65,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("microgreen_demand")
-    .insert(body)
+    .insert(pick(body, DEMAND_FIELDS) as RowInsert)
     .select()
     .single();
 

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/api-auth";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
+import { MAX_LINE_TEXT, capText, isIsoDate, validateLineOptions } from "@/lib/order-line-validation";
 import { sendOrderSubmittedEmail } from "@/lib/email";
 import { todayPacific, minOrderableDatePacific, ORDER_CUTOFF_LABEL, FARM_TIMEZONE } from "@/lib/utils";
 
@@ -66,6 +67,8 @@ export async function POST(request: Request) {
       size_label?: string | null;
       color_key?: string | null;
       variety_key?: string | null;
+      /** The "Add a note..." text on the line (same column chefs' notes use). */
+      notes?: string | null;
     }[];
   };
 
@@ -91,8 +94,12 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!isIsoDate(delivery_date) || !isIsoDate(event_date)) {
+    return NextResponse.json({ error: "Dates must be YYYY-MM-DD." }, { status: 400 });
+  }
+
   // What the event is, when it is, and when it's delivered are all required.
-  const eventLabel = (event_name ?? "").trim();
+  const eventLabel = (event_name ?? "").trim().slice(0, MAX_LINE_TEXT);
   if (!eventLabel) {
     return NextResponse.json(
       { error: "Tell us what the event is (event name is required)." },
@@ -154,7 +161,10 @@ export async function POST(request: Request) {
   const submittedIds = ordered.map((i) => i.availability_item_id);
   const { data: availItems } = await (supabase as any)
     .from("availability_items")
-    .select("id, item:items(default_price, unit_prices, size_prices, unit_type)")
+    .select(
+      "id, available_units, available_sizes, available_colors, available_varieties, " +
+        "item:items(name, default_price, unit_prices, size_prices, unit_type, size, color, variety)",
+    )
     .eq("restaurant_id", restaurantId)
     .eq("delivery_date", delivery_date)
     .neq("status", "unavailable")
@@ -191,6 +201,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // Unit / size pick the frozen price tier — they must be real options for
+  // this row (see src/lib/order-line-validation.ts).
+  for (const i of ordered) {
+    const row = (availItems ?? []).find((a: any) => a.id === i.availability_item_id);
+    if (!row?.item) continue;
+    const problem = validateLineOptions(row, i, row.item.name ?? "an item");
+    if (problem) {
+      return NextResponse.json({ error: `${problem} Reload the page and re-add it.` }, { status: 400 });
+    }
+  }
+
   // Build each order_items line, freezing the per-unit price.
   const lines = ordered.map((i) => {
     const info = availInfo.get(i.availability_item_id);
@@ -200,10 +221,13 @@ export async function POST(request: Request) {
       quantity_requested: i.quantity,
       unit_price_at_order: resolveOrderUnitPrice(info, unit, i.size_label ?? null),
       unit_type: unit,
-      size_label: i.size_label ?? null,
-      color_key: i.color_key ?? null,
-      variety_key: i.variety_key ?? null,
+      size_label: capText(i.size_label),
+      color_key: capText(i.color_key),
+      variety_key: capText(i.variety_key),
       menu_section: null,
+      // Was silently dropped before 2026-10-27 — the form showed the box,
+      // the API never read it (the chef flow had the same bug; migration 080).
+      notes: capText(i.notes),
       created_by: user.id,
     };
   });
@@ -212,7 +236,7 @@ export async function POST(request: Request) {
   // shows (the admin dashboard already renders freeform_notes); the structured
   // event_date / event_name columns are stored on the row too.
   const eventLine = `Event: ${eventLabel} — ${event_date}`;
-  const userNote = (freeform_notes ?? "").trim();
+  const userNote = (freeform_notes ?? "").trim().slice(0, 2000);
   const composedNotes = userNote ? `${eventLine}\n\n${userNote}` : eventLine;
 
   // Events orders are NOT one-per-delivery-date: each submission is its own

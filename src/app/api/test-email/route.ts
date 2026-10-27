@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       success: false,
       diagnostics,
       exception: err?.message ?? String(err),
-      stack: err?.stack,
+      
     });
   }
 }
