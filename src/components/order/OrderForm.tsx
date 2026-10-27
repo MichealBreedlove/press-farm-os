@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORY_LABELS, CATEGORY_ORDER, EVENT_MENU_KEY_PREFIX, MAX_NOTES_LENGTH, UNIT_LABELS } from "@/lib/constants";
 import { formatDateShort, priceForUnit } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { ChefSuggestionBox } from "./ChefSuggestionBox";
 import type { AvailabilityItemWithItem, ItemCategory } from "@/types";
 import { resolveUnits, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
+import { mintIdempotencyKey } from "@/lib/order/idempotency";
 
 interface OrderFormProps {
   availabilityItems: AvailabilityItemWithItem[];
@@ -35,6 +37,15 @@ interface OrderFormProps {
   initialItemNotes?: Record<string, string>;
   initialNotes?: string;
   editingOrderId?: string;
+  /** Edit mode: lines of the existing order that could not be placed on
+   *  this form (their unit/size is no longer offered, or the item went
+   *  unavailable). Saving an edit REPLACES the order's items, so these are
+   *  named in the banner before the chef silently loses them. */
+  editingDropped?: string[];
+  /** Non-edit mode: the chef-editable order that already exists for this
+   *  restaurant + date. A plain submit MERGES into it (the route sums
+   *  matching lines), so the form says so and offers the edit path. */
+  existingOrder?: { id: string; lineCount: number } | null;
   /** Set when the form was prefilled from a past order (?reorder=). */
   reorderNotice?: { fromDate: string; placed: number; missing: string[] };
   /** Item ids on this restaurant's most recent order — powers the "Last order" chip. */
@@ -81,9 +92,16 @@ export interface OrderFormData {
   }[];
   freeformNotes: string;
   editingOrderId?: string;
-  /** Idempotency token minted when the chef enters review. Reused across
-   *  retries of the same submission so a lost-response retry can't double the
-   *  order; a fresh Review pass mints a new token (a genuine new submission). */
+  /** Non-edit submission onto a date that already has a chef-editable order:
+   *  the route will MERGE these lines into it. Lets the review page label the
+   *  action honestly ("Add to order"). */
+  addingToOrderId?: string | null;
+  /** Idempotency token minted once per draft (on first Review, or restored
+   *  with the draft). Reused across every retry of the same submission —
+   *  including Back → Review → Submit after a lost response — so a retry of
+   *  a write that already landed is a no-op instead of a merge that doubles
+   *  the order. A new token only appears with a new draft, i.e. after a
+   *  successful submit clears this one. */
   idempotencyKey: string;
 }
 
@@ -101,12 +119,19 @@ export function OrderForm({
   initialItemNotes = {},
   initialNotes = "",
   editingOrderId,
+  editingDropped = [],
+  existingOrder = null,
   reorderNotice,
   lastOrderItemIds = [],
   lastOrderDate = null,
   initialSearch = "",
 }: OrderFormProps) {
   const router = useRouter();
+  // The draft's idempotency token. Null until the first Review pass mints
+  // one (or the restore effect below brings a saved draft's token back), so
+  // a retried submission always carries the token of the submission it is
+  // retrying. See OrderFormData.idempotencyKey.
+  const idempotencyKeyRef = useRef<string | null>(null);
   const picker = useItemPicker({
     quantities: initialQuantities,
     itemColors: initialColors,
@@ -142,6 +167,22 @@ export function OrderForm({
         saved?.deliveryDate !== deliveryDate
       ) {
         return; // not the same draft — don't restore
+      }
+      // A draft saved while EDITING an existing order must never rehydrate
+      // into this (non-edit) form: Submit would then go out without
+      // editing_order_id, the route would find the existing order and MERGE,
+      // and every line would be summed with itself. Clearing is the safe,
+      // simple option — redirecting to /order?edit= would hijack a deliberate
+      // tap on the Order tab and wouldn't preserve the unsaved changes anyway
+      // (edit mode hydrates from the saved order, not from this draft).
+      if (saved?.editingOrderId) {
+        sessionStorage.removeItem("press_farm_order");
+        return;
+      }
+      // Carry the draft's token so a retry of this same submission (Review →
+      // Submit → lost response → Back → Review → Submit) is recognised as one.
+      if (typeof saved?.idempotencyKey === "string" && saved.idempotencyKey) {
+        idempotencyKeyRef.current = saved.idempotencyKey;
       }
       // The saved payload is the format the review page reads — a
       // flattened items[] array. Rebuild the quantity / color maps
@@ -310,19 +351,26 @@ export function OrderForm({
           return sources;
         });
 
-  function openSplit(id: string) {
+  // Stable handler identities: ItemRow is memoized on its props, and a new
+  // function per render would re-render every row on every keystroke.
+  const { dropKeysWithPrefix } = picker;
+  const openSplit = useCallback((id: string) => {
     // The main row becomes the regular portion; the event side now lives on
     // the sub-row, so drop any whole-item event mark.
     setEventChecked((prev) => ({ ...prev, [id]: false }));
     setSplitOpen((prev) => ({ ...prev, [id]: true }));
-  }
+  }, []);
 
-  function closeSplit(id: string) {
+  const closeSplit = useCallback((id: string) => {
     // Clear the event portion's quantities/colors/note so nothing invisible
     // stays in the order after the sub-row disappears.
-    picker.dropKeysWithPrefix(`${EVENT_MENU_KEY_PREFIX}${id}`);
+    dropKeysWithPrefix(`${EVENT_MENU_KEY_PREFIX}${id}`);
     setSplitOpen((prev) => ({ ...prev, [id]: false }));
-  }
+  }, [dropKeysWithPrefix]);
+
+  const onEventToggle = useCallback((id: string, checked: boolean) => {
+    setEventChecked((prev) => ({ ...prev, [id]: checked }));
+  }, []);
 
   const menuByCategory = groupByCategory(menuItems);
   const pressBarByCategory = groupByCategory(pressBarItems);
@@ -390,12 +438,11 @@ export function OrderForm({
       items: orderedItems,
       freeformNotes,
       editingOrderId,
-      // New token per Review pass. The review page reuses it across submit
-      // retries; only a fresh trip through this form mints a new one.
-      idempotencyKey:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      addingToOrderId: !editingOrderId && existingOrder ? existingOrder.id : null,
+      // One token per draft: minted on the first Review pass and kept across
+      // Back → Review round-trips. The review page clears the draft (and so
+      // the token) only after the server confirms the submission.
+      idempotencyKey: (idempotencyKeyRef.current ??= mintIdempotencyKey()),
     };
 
     sessionStorage.setItem("press_farm_order", JSON.stringify(formData));
@@ -410,8 +457,35 @@ export function OrderForm({
           anchored, and SKIP_PATHS alone wasn't reliable when the bundle
           was cached by the service worker. */}
       {editingOrderId && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2">
-          <span className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</span>
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 space-y-1">
+          <p className="text-xs text-amber-700 font-medium">Editing existing order — changes will replace your previous submission</p>
+          {editingDropped.length > 0 && (
+            <p className="text-xs text-amber-800 leading-snug">
+              {editingDropped.length} line{editingDropped.length === 1 ? "" : "s"} from your order{" "}
+              {editingDropped.length === 1 ? "is" : "are"} no longer available and will be removed when you save:{" "}
+              <span className="font-medium">{editingDropped.join(", ")}</span>
+            </p>
+          )}
+        </div>
+      )}
+      {/* A chef-editable order already exists for this date. A submit from
+          here MERGES into it (matching lines are summed), which is what a
+          second cook on a shared account usually wants — but say so, and
+          offer the edit path for anyone who meant to change the order. */}
+      {!editingOrderId && existingOrder && (
+        <div className="bg-pf-master-blue/[0.06] border-b border-pf-master-blue/20 px-4 py-2.5 flex items-center gap-3">
+          <p className="flex-1 min-w-0 text-xs text-pf-master-blue leading-snug">
+            <span className="font-semibold">
+              You already have {existingOrder.lineCount} item{existingOrder.lineCount === 1 ? "" : "s"} on this date.
+            </span>{" "}
+            Anything you submit here is added to that order.
+          </p>
+          <Link
+            href={`/order?edit=${existingOrder.id}`}
+            className="flex-shrink-0 inline-flex items-center justify-center min-h-[44px] px-3 rounded-lg border border-pf-master-blue/30 bg-white text-xs font-semibold text-pf-master-blue hover:bg-pf-master-blue/[0.08] transition-colors"
+          >
+            Edit order
+          </Link>
         </div>
       )}
       {/* Sticky search bar — shared with the Events order form */}
@@ -433,7 +507,7 @@ export function OrderForm({
                   type="button"
                   onClick={() => setChip(on && c.key !== "all" ? "all" : c.key)}
                   aria-pressed={on}
-                  className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full border px-3 min-h-[36px] text-xs font-medium transition-colors ${
+                  className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full border px-3 min-h-[44px] text-xs font-medium transition-colors ${
                     on
                       ? "bg-farm-dark text-white border-farm-dark"
                       : "bg-white text-farm-muted border-farm-dark/10 hover:border-farm-dark/30"
@@ -471,7 +545,7 @@ export function OrderForm({
             type="button"
             onClick={() => setReorderDismissed(true)}
             aria-label="Dismiss"
-            className="w-9 h-9 -mr-2 -mt-1 flex items-center justify-center text-farm-muted hover:text-farm-dark"
+            className="w-11 h-11 -mr-3 -mt-2 flex items-center justify-center text-farm-muted hover:text-farm-dark"
           >
             ✕
           </button>
@@ -517,9 +591,7 @@ export function OrderForm({
                       onColorChange={picker.sectionHandlers.onColorChange}
                       onVarietyChange={picker.sectionHandlers.onVarietyChange}
                       eventChecked={eventChecked}
-                      onEventToggle={(id, checked) =>
-                        setEventChecked((prev) => ({ ...prev, [id]: checked }))
-                      }
+                      onEventToggle={onEventToggle}
                       splitOpen={splitOpen}
                       onOpenSplit={openSplit}
                       onCloseSplit={closeSplit}
@@ -604,7 +676,7 @@ export function OrderForm({
           disabled={!hasAnyOrdered}
           className="w-full bg-farm-green text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px] transition-opacity"
         >
-          {editingOrderId ? "Review Changes" : "Review Order"}
+          {editingOrderId ? "Review Changes" : existingOrder ? "Add to order" : "Review Order"}
         </button>
       </div>
     </div>

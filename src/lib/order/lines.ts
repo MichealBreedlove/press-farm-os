@@ -89,7 +89,17 @@ export function collectOrderedLines(
   const out: OrderedLine[] = [];
   for (const { ai, section } of sources) {
     const itemNote = maps.itemNotes[ai.id] ?? "";
-    const firstUnit = String(ai.item.unit_type ?? "").split(",")[0]?.trim() || String(ai.item.unit_type ?? "");
+    // A single-unit cell carries no unit in its key, so the line's unit is
+    // the row's ONLY exposed unit — which is the per-cycle override
+    // (available_units) ∩ the master list, exactly what enumerateCells walks.
+    // Taking the master list's first entry here was wrong: a "sm,lg" item
+    // overridden to "lg" rendered as LG but submitted (and priced) as SM.
+    // The master list is only a fallback when the override resolves to
+    // nothing at all (then the row has no cells anyway).
+    const resolvedUnits = resolveUnits(ai.item, ai.available_units);
+    const firstUnit =
+      resolvedUnits[0] ??
+      (String(ai.item.unit_type ?? "").split(",")[0]?.trim() || String(ai.item.unit_type ?? ""));
     for (const { key, unit, size } of enumerateCells(ai)) {
       const quantity = maps.quantities[key] ?? 0;
       if (quantity <= 0) continue;

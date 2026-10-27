@@ -60,8 +60,15 @@ export default function OrderReviewPage() {
     );
   }
 
-  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId, idempotencyKey } = orderData;
+  const { items, freeformNotes, deliveryDateFormatted, restaurantId, deliveryDate, editingOrderId, addingToOrderId, idempotencyKey } = orderData;
   const isEditing = !!editingOrderId;
+  // The route merges a non-edit submit into the date's existing order; the
+  // form already said so, and the button here should match.
+  const isAdding = !isEditing && !!addingToOrderId;
+  // Back keeps the chef on the date they chose. Without ?date= the form
+  // falls to the next open date, the draft (keyed by date) doesn't restore,
+  // and a Saturday order looks like it vanished.
+  const backHref = isEditing ? `/order?edit=${editingOrderId}` : `/order?date=${deliveryDate}`;
 
   async function handleSubmit() {
     if (!orderData) return;
@@ -124,7 +131,7 @@ export default function OrderReviewPage() {
     <main className="min-h-screen bg-farm-cream pb-32">
       <header className="page-header flex items-center gap-3">
         <button
-          onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
+          onClick={() => router.push(backHref)}
           className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/70 hover:text-white -ml-2"
           aria-label="Go back"
         >
@@ -207,6 +214,12 @@ export default function OrderReviewPage() {
           </div>
         </div>
 
+        {isAdding && (
+          <p className="text-xs text-pf-master-blue leading-snug px-1">
+            These lines will be added to the order you already have for this date.
+          </p>
+        )}
+
         {/* Notes */}
         {freeformNotes && (
           <div className="card px-4 py-4">
@@ -227,7 +240,7 @@ export default function OrderReviewPage() {
       <div className="fixed bottom-nav-safe inset-x-0 bg-white shadow-nav px-4 py-3 z-40">
         <div className="flex gap-3 max-w-2xl mx-auto">
           <button
-            onClick={() => router.push(isEditing ? `/order?edit=${editingOrderId}` : '/order')}
+            onClick={() => router.push(backHref)}
             disabled={isSubmitting}
             className="btn-ghost flex-1 bg-white border border-farm-dark/10 text-sm py-3"
           >
@@ -238,7 +251,9 @@ export default function OrderReviewPage() {
             disabled={isSubmitting}
             className="btn-primary flex-[2] text-sm py-3"
           >
-            {isSubmitting ? (isEditing ? "Updating..." : "Submitting...") : (isEditing ? "Update Order" : "Submit Order")}
+            {isSubmitting
+              ? (isEditing ? "Updating..." : isAdding ? "Adding..." : "Submitting...")
+              : (isEditing ? "Update Order" : isAdding ? "Add to Order" : "Submit Order")}
           </button>
         </div>
       </div>

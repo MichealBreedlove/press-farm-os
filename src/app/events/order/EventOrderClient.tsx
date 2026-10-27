@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_ORDER, MAX_NOTES_LENGTH } from "@/lib/constants";
 import { CategorySection } from "@/components/order/category-section";
@@ -8,6 +8,7 @@ import { ItemSearchBar } from "@/components/order/ItemSearchBar";
 import { useItemPicker } from "@/components/order/useItemPicker";
 import { collectOrderedLines, groupByCategory } from "@/lib/order/lines";
 import type { PickerSource } from "@/lib/order/lines";
+import { mintIdempotencyKey } from "@/lib/order/idempotency";
 import type { AvailabilityItemWithItem } from "@/types";
 
 interface DeliveryDateOption {
@@ -48,6 +49,10 @@ export function EventOrderClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // One idempotency token per submission attempt-set: minted on the first
+  // Submit, kept across retries (a lost response → tap again must be a
+  // no-op, not a second order), cleared only once the server confirms.
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   // Navigate to load a delivery date's availability, preserving event metadata.
   function loadDeliveryDate(date: string) {
@@ -81,6 +86,8 @@ export function EventOrderClient({
       size_label: l.size,
       color_key: l.colors.length > 0 ? l.colors.join(",") : null,
       variety_key: l.varieties.length > 0 ? l.varieties.join(",") : null,
+      // The row's "Add a note..." text — persisted to order_items.notes.
+      notes: l.itemNote.trim() || null,
     }));
   }
 
@@ -107,14 +114,13 @@ export function EventOrderClient({
           event_name: eventName.trim() || null,
           freeform_notes: freeformNotes.trim() || null,
           items,
-          idempotency_key:
-            typeof crypto !== "undefined" && "randomUUID" in crypto
-              ? crypto.randomUUID()
-              : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          idempotency_key: (idempotencyKeyRef.current ??= mintIdempotencyKey()),
         }),
       });
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error ?? "Something went wrong.");
+      // Confirmed — the next submission is a genuinely new order.
+      idempotencyKeyRef.current = null;
       setSuccess(
         `Order confirmed for delivery on ${
           deliveryDates.find((d) => d.date === selectedDeliveryDate)?.label ?? selectedDeliveryDate
@@ -154,8 +160,9 @@ export function EventOrderClient({
         </div>
 
         <div>
-          <label className="block text-xs text-farm-muted mb-1">Event name</label>
+          <label htmlFor="event-name" className="block text-xs text-farm-muted mb-1">Event name</label>
           <input
+            id="event-name"
             type="text"
             value={eventName}
             required
@@ -167,8 +174,9 @@ export function EventOrderClient({
         </div>
 
         <div>
-          <label className="block text-xs text-farm-muted mb-1">Event date</label>
+          <label htmlFor="event-date" className="block text-xs text-farm-muted mb-1">Event date</label>
           <input
+            id="event-date"
             type="date"
             value={eventDate}
             min={today}
@@ -181,8 +189,9 @@ export function EventOrderClient({
         <hr className="border-farm-dark/10" />
 
         <div>
-          <label className="block text-xs text-farm-muted mb-1">Deliver on</label>
+          <label htmlFor="event-delivery-date" className="block text-xs text-farm-muted mb-1">Deliver on</label>
           <select
+            id="event-delivery-date"
             value={selectedDeliveryDate ?? ""}
             onChange={(e) => loadDeliveryDate(e.target.value)}
             className="input-field"

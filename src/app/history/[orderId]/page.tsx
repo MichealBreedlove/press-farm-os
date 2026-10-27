@@ -59,6 +59,7 @@ export default async function OrderDetailPage({
         color_key,
         variety_key,
         menu_section,
+        notes,
         availability_items(
           id,
           status,
@@ -153,14 +154,14 @@ export default async function OrderDetailPage({
           {canEdit ? (
             <Link
               href={`/order?edit=${order.id}`}
-              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[40px] inline-flex items-center hover:bg-white/20 transition-colors"
+              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[44px] inline-flex items-center hover:bg-white/20 transition-colors"
             >
               Edit
             </Link>
           ) : (
             <Link
               href={`/order?reorder=${order.id}`}
-              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[40px] inline-flex items-center hover:bg-white/20 transition-colors whitespace-nowrap"
+              className="text-sm font-medium text-white border border-white/40 rounded-lg px-3 min-h-[44px] inline-flex items-center hover:bg-white/20 transition-colors whitespace-nowrap"
               title="Start a new order with these items"
             >
               Order again
@@ -184,7 +185,7 @@ export default async function OrderDetailPage({
               <p className="text-sm text-farm-dark mt-1 leading-snug">
                 Thank you — your order for <strong>{formatDeliveryDate(order.delivery_date)}</strong> is with Press Farm. A confirmation email is on its way.
               </p>
-              <Link href="/order" className="inline-flex items-center mt-2 text-sm font-semibold text-farm-green hover:underline min-h-[36px]">
+              <Link href="/order" className="inline-flex items-center mt-1 text-sm font-semibold text-farm-green hover:underline min-h-[44px]">
                 Place another order →
               </Link>
             </div>
@@ -220,6 +221,7 @@ export default async function OrderDetailPage({
               const colorKey: string | null = oi.color_key ?? null;
               const varietyKey: string | null = oi.variety_key ?? null;
               const isEvent = oi.menu_section === "events";
+              const chefNote: string = typeof oi.notes === "string" ? oi.notes.trim() : "";
               const ordered = Number(oi.quantity_requested ?? 0);
               const fulfilled = oi.quantity_fulfilled != null ? Number(oi.quantity_fulfilled) : null;
               const isShorted = Boolean(oi.is_shorted);
@@ -273,6 +275,14 @@ export default async function OrderDetailPage({
                       <p className="text-xs text-farm-muted mt-0.5">
                         {UNIT_LABELS[unit] ?? unit}
                       </p>
+                      {/* The chef's per-line note (order_items.notes) — so a
+                          note typed on the form can be confirmed after
+                          submitting, for chef and Events orders alike. */}
+                      {chefNote && (
+                        <p className="text-xs text-farm-muted italic mt-0.5 whitespace-pre-wrap break-words">
+                          &ldquo;{chefNote}&rdquo;
+                        </p>
+                      )}
                       {isShorted && oi.shortage_reason && (
                         <p className="text-xs text-pf-master-orange mt-1 italic">
                           {oi.shortage_reason}

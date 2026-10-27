@@ -83,7 +83,7 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1"
+          className="text-xs text-farm-green font-medium hover:underline inline-flex items-center gap-1 min-h-[44px]"
         >
           <span aria-hidden="true">📅</span>
           Order for a different date
@@ -105,8 +105,9 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
               </p>
             </div>
             <div>
-              <label className="form-label">Delivery date</label>
+              <label htmlFor="custom-delivery-date" className="form-label">Delivery date</label>
               <input
+                id="custom-delivery-date"
                 type="date"
                 value={date}
                 min={minDate}
@@ -130,7 +131,7 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
                   setError(null);
                   setSubmitting(false);
                 }}
-                className="px-4 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
+                className="px-4 min-h-[44px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
               >
                 Cancel
               </button>
@@ -138,7 +139,7 @@ export function PickCustomDateLink({ currentDate }: { currentDate: string }) {
                 type="button"
                 onClick={confirm}
                 disabled={submitting || isPending || !date}
-                className="px-4 min-h-[40px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-green-dark disabled:opacity-50"
+                className="px-4 min-h-[44px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-green-dark disabled:opacity-50"
               >
                 {submitting || isPending ? "Opening…" : "Switch date"}
               </button>

@@ -61,6 +61,26 @@ describe("collectOrderedLines", () => {
     ]);
   });
 
+  it("takes the unit from the per-cycle override when only one unit is exposed", () => {
+    // "sm,lg" item with SM toggled off for this cycle: the row renders a
+    // single LG cell under the bare id key, and the line must say LG — not
+    // the master list's first entry (SM), which priced and harvested wrong.
+    const src = [{ ai: ai("a", { available_units: "lg" }, { unit_type: "sm,lg" }), section: "regular" as const }];
+    const lines = collectOrderedLines(src, { quantities: { a: 2 }, itemNotes: {}, itemColors: {}, itemVarieties: {} });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({ availabilityItemId: "a", key: "a", unit: "lg", unitExplicit: false, quantity: 2 });
+  });
+
+  it("falls back to the master unit list when the override resolves to nothing", () => {
+    // An override that matches none of the master units resolves to [] — the
+    // row still exposes its bare-id cell, and the line falls back to the
+    // master list's first entry.
+    const src = [{ ai: ai("b", { available_units: "gb" }, { unit_type: "sm,lg" }), section: "regular" as const }];
+    const lines = collectOrderedLines(src, { quantities: { b: 1, "b__unit:sm": 4 }, itemNotes: {}, itemColors: {}, itemVarieties: {} });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({ key: "b", unit: "sm", unitExplicit: false, quantity: 1 });
+  });
+
   it("countOrderedLines matches the number of lines collected", () => {
     const src = [{ ai: ai("a", {}, { unit_type: "sm,lg" }), section: "regular" as const }];
     const q = { "a__unit:sm": 1, "a__unit:lg": 4 };

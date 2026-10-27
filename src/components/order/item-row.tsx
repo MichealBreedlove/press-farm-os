@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
+import Image from "next/image";
 import type { AvailabilityItemWithItem } from "@/types";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -11,11 +12,16 @@ import { buildOrderKey } from "@/lib/order-keys";
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
-  quantities: Record<string, number>; // keyed by availId or availId__size
+  /** THIS row's quantities only — keyed by availId / availId__size /
+   *  availId__unit:U / availId__unit:U__size (see lib/order-keys). The
+   *  parent slices the form-wide map down to the row's keys so the memo
+   *  below can skip rows a keystroke elsewhere didn't touch. */
+  quantities: Record<string, number>;
   itemNote: string;
-  /** Multi-select colors keyed by availId (no-sizes) or availId__size (per-size). */
+  /** This row's multi-select colors, keyed by availId (no-sizes) or
+   *  availId__size (per-size) — a per-row slice like `quantities`. */
   itemColors: Record<string, string[]>;
-  /** Multi-select varieties, keyed exactly like itemColors. */
+  /** This row's multi-select varieties, keyed exactly like itemColors. */
   itemVarieties: Record<string, string[]>;
   onQuantityChange: (key: string, qty: number) => void;
   onNoteChange: (id: string, note: string) => void;
@@ -43,8 +49,12 @@ function QuantityStepper({ value, onChange, disabled, maxQty, label }: {
         aria-label={`Decrease ${label}`}>&minus;</button>
       <input
         type="number"
+        // Numeric keypad on iOS instead of the full keyboard.
+        inputMode="numeric"
+        pattern="[0-9]*"
         min="0"
-        max={maxQty}
+        // `max={Infinity}` renders max="Infinity", an invalid attribute.
+        max={Number.isFinite(maxQty) ? maxQty : undefined}
         value={value || ""}
         onChange={(e) => {
           const v = parseInt(e.target.value) || 0;
@@ -120,7 +130,45 @@ function OptionPicker({
   );
 }
 
-export function ItemRow({
+/** Same keys, same values (===) — enough for the per-row slices, whose
+ *  color/variety arrays are replaced (never mutated) on change. */
+function shallowRecordEqual<T>(a: Record<string, T>, b: Record<string, T>): boolean {
+  if (a === b) return true;
+  const ak = Object.keys(a);
+  const bk = Object.keys(b);
+  if (ak.length !== bk.length) return false;
+  for (const k of ak) if (!(k in b) || a[k] !== b[k]) return false;
+  return true;
+}
+
+/** Memo comparator: a row re-renders only when ITS props changed. The three
+ *  keyed maps are compared by content because the parent rebuilds the slice
+ *  objects every render; everything else by reference (handlers are stable
+ *  from useItemPicker / useCallback, availability rows come from props). */
+function areRowPropsEqual(prev: ItemRowProps, next: ItemRowProps): boolean {
+  return (
+    prev.availabilityItem === next.availabilityItem &&
+    prev.itemNote === next.itemNote &&
+    prev.onQuantityChange === next.onQuantityChange &&
+    prev.onNoteChange === next.onNoteChange &&
+    prev.onColorChange === next.onColorChange &&
+    prev.onVarietyChange === next.onVarietyChange &&
+    prev.eventChecked === next.eventChecked &&
+    prev.onEventToggle === next.onEventToggle &&
+    prev.isEventCopy === next.isEventCopy &&
+    prev.splitOpen === next.splitOpen &&
+    prev.onOpenSplit === next.onOpenSplit &&
+    shallowRecordEqual(prev.quantities, next.quantities) &&
+    shallowRecordEqual(prev.itemColors, next.itemColors) &&
+    shallowRecordEqual(prev.itemVarieties, next.itemVarieties)
+  );
+}
+
+/** One order-form row. Memoized (see areRowPropsEqual): without it every
+ *  keystroke in any row's note re-rendered the whole 100–300 row list. */
+export const ItemRow = memo(ItemRowInner, areRowPropsEqual);
+
+function ItemRowInner({
   availabilityItem,
   quantities,
   itemNote,
@@ -195,31 +243,40 @@ export function ItemRow({
     <div className={cn("py-3 border-b border-farm-dark/5 last:border-0", isUnavailable && "opacity-50")}>
       {/* Main row: photo + name + badges + stepper (only for items WITHOUT sizes) */}
       <div className="flex items-center gap-3">
-        {/* Photo — admin-set photo, auto-matched brand flower, or wreath placeholder */}
+        {/* Photo — admin-set photo, auto-matched brand flower, or wreath
+            placeholder. Local /assets/* art (the 768px brand flowers and the
+            1.9 MB wreath master) goes through next/image so the browser gets
+            a 64px/40px optimized variant, lazy by default. Remote uploads
+            (Supabase storage) stay a plain <img>: next.config.js declares no
+            images.remotePatterns, and next/image refuses unlisted hosts. */}
         {(() => {
           const imgUrl = getItemImageUrl({ name: item.name, image_url: item.image_url });
           const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
           if (imgUrl) {
+            const imgClass = cn("w-full h-full", isFlower ? "object-contain p-1.5" : "object-cover");
             return (
               <div className={cn(
                 "w-16 h-16 rounded-lg overflow-hidden flex-shrink-0",
                 isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-farm-cream/60"
               )}>
-                <img
-                  src={imgUrl}
-                  alt={item.name}
-                  className={cn("w-full h-full", isFlower ? "object-contain p-1.5" : "object-cover")}
-                  loading="lazy"
-                />
+                {imgUrl.startsWith("/") ? (
+                  <Image src={imgUrl} alt={item.name} width={64} height={64} sizes="64px" className={imgClass} />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- remote host not in images.remotePatterns
+                  <img src={imgUrl} alt={item.name} className={imgClass} loading="lazy" decoding="async" />
+                )}
               </div>
             );
           }
           return (
             <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-farm-cream/60 border border-farm-dark/5 flex items-center justify-center">
-              <img
+              <Image
                 src={PLACEHOLDER_WREATH}
                 alt=""
                 aria-hidden="true"
+                width={40}
+                height={40}
+                sizes="40px"
                 className="w-10 h-10 object-contain opacity-25"
               />
             </div>
@@ -309,6 +366,7 @@ export function ItemRow({
             onClick={() => setSizesExpanded(true)}
             className="flex-shrink-0 min-h-[44px] min-w-[44px] px-3 rounded-full bg-farm-green-light text-farm-green text-sm font-semibold hover:bg-farm-green hover:text-white transition-colors"
             aria-label={`Pick options for ${item.name}`}
+            aria-expanded={false}
           >
             {hasMultiUnits && hasSizes
               ? `${units.length}×${sizes.length}`
@@ -405,7 +463,7 @@ export function ItemRow({
             );
           })}
           {totalQty === 0 && (
-            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
+            <button type="button" onClick={() => setSizesExpanded(false)} aria-expanded={true} aria-label={`Hide options for ${item.name}`} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
               Hide options
             </button>
           )}
@@ -442,7 +500,7 @@ export function ItemRow({
             );
           })}
           {totalQty === 0 && (
-            <button type="button" onClick={() => setSizesExpanded(false)} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
+            <button type="button" onClick={() => setSizesExpanded(false)} aria-expanded={true} aria-label={`Hide sizes for ${item.name}`} className="text-xs text-farm-muted hover:text-farm-muted/90 mt-1 min-h-[44px] px-3 inline-flex items-center">
               Hide sizes
             </button>
           )}
@@ -506,6 +564,7 @@ export function ItemRow({
             value={itemNote}
             onChange={(e) => onNoteChange(availabilityItem.id, e.target.value)}
             placeholder="Add a note..."
+            aria-label={`Note for ${item.name}`}
             maxLength={200}
             className="w-full text-base border border-farm-dark/10 rounded-lg px-3 py-2 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-farm-green focus:border-transparent placeholder:text-farm-muted/70"
           />

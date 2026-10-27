@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDeliveryDate, minOrderableDatePacific, closesTodayPacific, ORDER_CUTOFF_LABEL } from "@/lib/utils";
-import { EVENT_MENU_KEY_PREFIX } from "@/lib/constants";
+import { EVENT_MENU_KEY_PREFIX, UNIT_LABELS } from "@/lib/constants";
 import { OrderForm } from "@/components/order/OrderForm";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import { GreenhouseReadyBanner } from "@/components/shared/GreenhouseReadyBanner";
@@ -15,6 +15,8 @@ import { getReadyMicrogreens } from "@/lib/microgreens/getReadyToHarvest";
 import { PlanterBedsBanner } from "@/components/shared/PlanterBedsBanner";
 import { getPlanterBedsForOrder } from "@/lib/planter-beds/server";
 import { buildOrderKey } from "@/lib/order-keys";
+import { enumerateCells } from "@/lib/order/lines";
+import { resolveUnits } from "@/lib/order-availability";
 import type { AvailabilityItemWithItem } from "@/types";
 
 /**
@@ -82,15 +84,24 @@ export default async function OrderPage({
   let initialItemNotes: Record<string, string> = {};
   let initialNotes = "";
   let targetDate: string | null = null;
+  // Every hydrated line's quantity key + a human label, so that once this
+  // date's availability is known we can name the lines the form can't place
+  // (and would therefore drop on a replace-save).
+  const hydratedLines: { key: string; label: string }[] = [];
 
   if (editOrderId) {
+    // available_units is part of the join on purpose: the form decides
+    // "multi-unit" from resolveUnits(item, available_units), so hydration
+    // must too, or a "sm,lg" item overridden to "lg" hydrates under
+    // id__unit:lg while the form only renders the bare id — the quantity is
+    // invisible and lost on save.
     const { data: existingOrder } = await supabase
       .from("orders")
       .select(`
         id, delivery_date, freeform_notes, status,
         order_items(
           quantity_requested, unit_type, size_label, color_key, variety_key, menu_section, notes,
-          availability_items(id, item:items(unit_type))
+          availability_items(id, status, available_units, item:items(name, unit_type))
         )
       `)
       .eq("id", editOrderId)
@@ -111,9 +122,10 @@ export default async function OrderPage({
         const ai = oi.availability_items;
         const aiId = ai?.id;
         if (!aiId) continue;
-        const itemUnits = String(ai.item?.unit_type ?? "")
-          .split(",").map((u: string) => u.trim()).filter(Boolean);
-        const hasMultiUnits = itemUnits.length > 1;
+        const hasMultiUnits = resolveUnits(
+          { unit_type: String(ai.item?.unit_type ?? "") },
+          ai.available_units,
+        ).length > 1;
         const persistedUnit: string | null = oi.unit_type ?? null;
         const persistedSize: string | null = oi.size_label ?? null;
 
@@ -139,6 +151,13 @@ export default async function OrderPage({
         }
 
         initialQuantities[key] = (initialQuantities[key] ?? 0) + Number(oi.quantity_requested ?? 0);
+        const unitLabel = persistedUnit
+          ? ((UNIT_LABELS as Record<string, string>)[persistedUnit] ?? persistedUnit.toUpperCase())
+          : null;
+        hydratedLines.push({
+          key,
+          label: [String(ai.item?.name ?? "Item"), unitLabel, persistedSize].filter(Boolean).join(" · "),
+        });
         if (oi.color_key) {
           initialColors[key] = String(oi.color_key).split(",").filter(Boolean);
         }
@@ -246,6 +265,32 @@ export default async function OrderPage({
 
   const isEditing = editOrderId && targetDate === deliveryDate.date;
 
+  // ── Edit mode: which hydrated lines can the form actually place? ──
+  // The form only renders cells enumerateCells() yields for the rows it
+  // shows (status != unavailable, not archived). A line whose key isn't
+  // among them — unit/size no longer offered this cycle, or the item flipped
+  // to unavailable after the order was placed — would sit invisibly in the
+  // maps and vanish on the replace-save. Strip it and tell the chef instead.
+  let editingDropped: string[] = [];
+  if (isEditing && hydratedLines.length > 0) {
+    const placeable = new Set<string>();
+    for (const ai of availabilityItems) {
+      if (ai.status === "unavailable") continue;
+      for (const { key } of enumerateCells(ai)) placeable.add(key);
+    }
+    const realKey = (key: string) =>
+      key.startsWith(EVENT_MENU_KEY_PREFIX) ? key.slice(EVENT_MENU_KEY_PREFIX.length) : key;
+    const droppedLabels = new Set<string>();
+    for (const { key, label } of hydratedLines) {
+      if (placeable.has(realKey(key))) continue;
+      droppedLabels.add(label);
+      delete initialQuantities[key];
+      delete initialColors[key];
+      delete initialVarieties[key];
+    }
+    editingDropped = Array.from(droppedLabels);
+  }
+
   // ── Reorder: prefill from a past order, mapped onto THIS date's rows ──
   // (RLS scopes the read to the chef's own restaurant.)
   let reorderPrefill: ReturnType<typeof mapReorder> | null = null;
@@ -280,25 +325,54 @@ export default async function OrderPage({
     }
   }
 
-  // ── "Last order" filter + date chips (independent reads, in parallel) ──
-  const [{ data: lastOrder }, { data: openDates }] = await Promise.all([
-    supabase
-      .from("orders")
-      .select("id, delivery_date, order_items(availability_items(item_id))")
-      .eq("restaurant_id", restaurant.id)
-      .in("status", ["submitted", "in_progress", "fulfilled"])
-      .neq("id", editOrderId ?? reorderId ?? "00000000-0000-0000-0000-000000000000")
-      .order("delivery_date", { ascending: false })
-      .limit(1)
-      .maybeSingle() as any,
-    supabase
-      .from("delivery_dates")
-      .select("date, day_of_week")
-      .eq("ordering_open", true)
-      .gte("date", minOrderable)
-      .order("date", { ascending: true })
-      .limit(5) as any,
-  ]);
+  // ── Independent reads, in parallel: "Last order" filter, date chips, the
+  // order that already exists for this date, and the two pick-it-yourself
+  // banners (greenhouse microgreens + restaurant planter beds). None depends
+  // on another, so they share one round-trip instead of a serial waterfall.
+  const [{ data: lastOrder }, { data: openDates }, { data: sameDateOrder }, readyMicrogreens, planterBeds] =
+    await Promise.all([
+      supabase
+        .from("orders")
+        .select("id, delivery_date, order_items(availability_items(item_id))")
+        .eq("restaurant_id", restaurant.id)
+        .in("status", ["submitted", "in_progress", "fulfilled"])
+        .neq("id", editOrderId ?? reorderId ?? "00000000-0000-0000-0000-000000000000")
+        .order("delivery_date", { ascending: false })
+        .limit(1)
+        .maybeSingle() as any,
+      supabase
+        .from("delivery_dates")
+        .select("date, day_of_week")
+        .eq("ordering_open", true)
+        .gte("date", minOrderable)
+        .order("date", { ascending: true })
+        .limit(5) as any,
+      // The chef-editable order for (restaurant, date), if any — the same
+      // row POST /api/orders finds and MERGES into when a submit arrives
+      // without editing_order_id. Chef orders never carry event_date (the
+      // partial unique index in migration 070 keys on that), so this is at
+      // most one row. Skipped in edit mode: that order IS the one being
+      // edited.
+      isEditing
+        ? Promise.resolve({ data: null })
+        : (supabase
+            .from("orders")
+            .select("id, order_items(id)")
+            .eq("restaurant_id", restaurant.id)
+            .eq("delivery_date", deliveryDate.date)
+            .is("event_date", null)
+            .in("status", ["draft", "submitted"])
+            .limit(1)
+            .maybeSingle() as any),
+      // Microgreens ready to cut in the greenhouse right now — surfaced so
+      // chefs and the bar team harvest from our trays instead of ordering
+      // from Meadowood.
+      getReadyMicrogreens(),
+      getPlanterBedsForOrder(restaurant.slug),
+    ]);
+  const existingOrder: { id: string; lineCount: number } | null = sameDateOrder
+    ? { id: sameDateOrder.id as string, lineCount: ((sameDateOrder.order_items ?? []) as unknown[]).length }
+    : null;
   const lastOrderItemIds: string[] = Array.from(
     new Set(
       ((lastOrder?.order_items ?? []) as any[])
@@ -314,14 +388,6 @@ export default async function OrderPage({
     .map((d) => d.date);
 
   const deliveryDateFormatted = formatDeliveryDate(deliveryDate.date);
-  // Microgreens ready to cut in the greenhouse right now — surfaced so chefs and
-  // the bar team harvest from our trays instead of ordering from Meadowood.
-  // Microgreens + what is growing in the restaurant planter beds — both are
-  // pick-it-yourself, shown on every order so chefs check before ordering.
-  const [readyMicrogreens, planterBeds] = await Promise.all([
-    getReadyMicrogreens(),
-    getPlanterBedsForOrder(restaurant.slug),
-  ]);
 
   return (
     <main className="min-h-screen bg-farm-cream">
@@ -375,6 +441,8 @@ export default async function OrderPage({
         initialItemNotes={isEditing ? initialItemNotes : undefined}
         initialNotes={isEditing ? initialNotes : undefined}
         editingOrderId={isEditing ? editOrderId : undefined}
+        editingDropped={isEditing ? editingDropped : undefined}
+        existingOrder={isEditing ? null : existingOrder}
         reorderNotice={
           reorderPrefill && reorderFromDate
             ? { fromDate: reorderFromDate, placed: reorderPrefill.placed, missing: reorderPrefill.missing }
