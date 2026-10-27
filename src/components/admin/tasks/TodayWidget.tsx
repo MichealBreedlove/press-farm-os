@@ -38,7 +38,7 @@ export function TodayWidget({
     >
       <div className="flex items-center justify-between mb-3">
         <p
-          className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold font-medium inline-flex items-center gap-1.5"
+          className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 font-medium inline-flex items-center gap-1.5"
           style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
         >
           <CheckSquare className="w-3 h-3" /> Today

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const DISMISS_KEY = "press-farm:pwa-install-dismissed-at";
@@ -123,14 +124,18 @@ export function PwaInstallPrompt() {
     >
       <div className="bg-white rounded-2xl border border-farm-dark/10 shadow-lg overflow-hidden">
         <div className="px-4 py-3 bg-gradient-to-br from-farm-green/10 to-farm-cream/40 border-b border-farm-dark/5 flex items-start gap-3">
-          <img
-            src="/assets/pressfarm/logo/png/pressfarm-mandala-only.png"
+          {/* 240px email mandala (the 1024px master is 1.5MB for a 40px slot). */}
+          <Image
+            src="/assets/pressfarm/logo/png/pressfarm-mandala-240.png"
             alt=""
             aria-hidden="true"
+            width={40}
+            height={40}
+            sizes="40px"
             className="w-10 h-10 flex-shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green/80 font-semibold">
+            <p className="text-[10px] tracking-[0.18em] uppercase text-farm-green font-semibold">
               Press Farm
             </p>
             <p className="font-display text-sm text-farm-dark mt-0.5">
@@ -140,7 +145,7 @@ export function PwaInstallPrompt() {
           <button
             type="button"
             onClick={dismiss}
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center text-farm-muted hover:text-farm-dark"
+            className="min-w-[44px] min-h-[44px] -mr-2 -mt-1.5 flex items-center justify-center text-farm-muted hover:text-farm-dark"
             aria-label="Dismiss install prompt"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -175,14 +180,14 @@ export function PwaInstallPrompt() {
               <button
                 type="button"
                 onClick={dismiss}
-                className="flex-1 min-h-[40px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
+                className="flex-1 min-h-[44px] rounded-lg border border-farm-dark/15 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
               >
                 Not now
               </button>
               <button
                 type="button"
                 onClick={handleAndroidInstall}
-                className="flex-1 min-h-[40px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-dark transition-colors"
+                className="flex-1 min-h-[44px] rounded-lg bg-farm-green text-white text-sm font-semibold hover:bg-farm-dark transition-colors"
               >
                 Install
               </button>

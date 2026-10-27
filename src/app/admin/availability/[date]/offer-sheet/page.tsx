@@ -144,7 +144,7 @@ export default async function OfferSheetPage({ params, searchParams }: Props) {
           <p className="text-[11px] tracking-[0.32em] uppercase text-farm-green font-semibold">
             Press Farm
           </p>
-          <p className="text-[10px] tracking-[0.4em] uppercase text-pf-master-gold mt-1">
+          <p className="text-[10px] tracking-[0.4em] uppercase text-pf-gold-700 mt-1">
             Cultivated with Chefs
           </p>
           <p className="font-display text-4xl text-farm-dark mt-6 leading-tight print:text-3xl">

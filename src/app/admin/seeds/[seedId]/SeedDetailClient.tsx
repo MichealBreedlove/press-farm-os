@@ -227,7 +227,7 @@ export function SeedDetailClient({ seed, sowings, germTests, items, plantings }:
 
       {/* Sowing history */}
       <section className="space-y-2">
-        <h2 className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold font-medium px-1">
+        <h2 className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 font-medium px-1">
           Sowing log {sowings.length > 0 ? `(${sowings.length})` : ""}
         </h2>
         {sowings.length === 0 ? (
@@ -277,7 +277,7 @@ export function SeedDetailClient({ seed, sowings, germTests, items, plantings }:
 
       {/* Germination test history */}
       <section className="space-y-2">
-        <h2 className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold font-medium px-1">
+        <h2 className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 font-medium px-1">
           Germination tests {germTests.length > 0 ? `(${germTests.length})` : ""}
         </h2>
         {germTests.length === 0 ? (

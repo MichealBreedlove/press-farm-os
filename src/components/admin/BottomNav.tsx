@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { purgeServiceWorkerCache } from "@/components/shared/sw-purge";
 import { ADMIN_TABS, adminNavFor, resolveActiveHref } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +97,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
     if (!window.confirm("Sign out of Press Farm?")) return;
     const supabase = createClient();
     await supabase.auth.signOut();
+    purgeServiceWorkerCache();
     router.push("/login");
   }
 
@@ -138,7 +140,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
             {MENU_SECTIONS.map((section) => (
               <section key={section.eyebrow} className="mt-5 first:mt-2">
                 <p
-                  className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-2"
+                  className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-2"
                   style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
                 >
                   {section.eyebrow}
@@ -186,6 +188,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
       )}
 
       <nav
+        aria-label="Main"
         className="fixed bottom-0 left-0 right-0 bg-white shadow-nav z-50 safe-bottom"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -199,7 +202,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
                 href={href}
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-0 text-[10px] leading-3 font-medium transition-colors",
+                  "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] leading-3 font-medium transition-colors",
                   active ? "text-farm-green" : "text-farm-muted"
                 )}
               >
@@ -228,7 +231,7 @@ export function BottomNav({ inboxUnreadCount = 0, tasksOpenCount = 0 }: BottomNa
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
             className={cn(
-              "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-0 text-[10px] leading-3 font-medium transition-colors",
+              "relative flex-1 flex flex-col items-center justify-center gap-0.5 min-h-[44px] text-[10px] leading-3 font-medium transition-colors",
               menuOpen ? "text-farm-green" : "text-farm-muted"
             )}
           >

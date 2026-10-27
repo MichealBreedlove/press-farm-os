@@ -213,7 +213,7 @@ export default async function AdminDashboardPage() {
         <div className="flex items-start gap-4 max-w-3xl mx-auto">
           <div className="flex-1 min-w-0">
             <p
-              className="text-[11px] tracking-[0.22em] uppercase text-pf-master-gold font-medium mb-2"
+              className="text-[11px] tracking-[0.22em] uppercase text-pf-gold-700 font-medium mb-2"
               style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
             >
               {dayOfWeek} · {monthDay}
@@ -375,7 +375,7 @@ export default async function AdminDashboardPage() {
           <section key={section.title}>
             <div className="mb-4">
               <p
-                className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1"
+                className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-1"
                 style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
               >
                 {section.eyebrow}

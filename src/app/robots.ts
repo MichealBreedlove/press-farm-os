@@ -3,7 +3,8 @@ import type { MetadataRoute } from "next";
 /**
  * robots.txt — Press Farm OS is mostly an authenticated app. Only the public
  * marketing surface (/about) should be crawlable; everything behind sign-in
- * (admin, order portal, receiver, chef history, APIs, auth callbacks) is
+ * (admin, order portal, receiver, harvester, chef history, signup, APIs,
+ * auth callbacks) is
  * disallowed so it stays out of search results.
  */
 export default function robots(): MetadataRoute.Robots {
@@ -17,6 +18,8 @@ export default function robots(): MetadataRoute.Robots {
         "/receiver",
         "/history",
         "/events",
+        "/harvest",
+        "/signup",
         "/calendar",
         "/api",
         "/auth",

@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SignupForm } from "./SignupForm";
+
+export const metadata: Metadata = {
+  title: "Create a chef account",
+  robots: { index: false, follow: false },
+};
 
 /**
  * /signup — Public chef self-signup. Mirrors the /login layout. Unlike the

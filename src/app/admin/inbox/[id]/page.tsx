@@ -232,7 +232,7 @@ export default async function InboxDetailPage({ params }: { params: { id: string
             <div className="mt-3 pt-3 border-t border-pf-master-gold/15 text-xs">
               <Link
                 href="/admin/settings/suggestions"
-                className="text-pf-master-gold hover:text-pf-master-gold/80"
+                className="text-pf-gold-700 hover:text-pf-gold-700"
               >
                 Open suggestion box →
               </Link>
@@ -251,7 +251,7 @@ export default async function InboxDetailPage({ params }: { params: { id: string
               </div>
               <Link
                 href="/admin/tasks?tab=drafts"
-                className="text-[11px] text-pf-master-gold hover:text-pf-master-gold/80"
+                className="text-[11px] text-pf-gold-700 hover:text-pf-gold-700"
               >
                 All drafts →
               </Link>

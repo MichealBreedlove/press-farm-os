@@ -77,7 +77,7 @@ const serifFont = {
 function Eyebrow({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <p
-      className={`text-[10px] sm:text-[11px] tracking-[0.32em] uppercase text-pf-master-gold ${className}`}
+      className={`text-[10px] sm:text-[11px] tracking-[0.32em] uppercase text-pf-gold-700 ${className}`}
       style={eyebrowFont}
     >
       {children}
@@ -117,7 +117,7 @@ function CornerTicks({ className = "" }: { className?: string }) {
  */
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-farm-cream text-farm-dark">
+    <main id="main" className="min-h-screen bg-farm-cream text-farm-dark">
 
       {/* ============================================================
            HEADER — minimal sticky masthead for wayfinding
@@ -136,7 +136,7 @@ export default function AboutPage() {
           </Link>
           <Link
             href="/login"
-            className="text-[11px] tracking-[0.22em] uppercase text-farm-dark hover:text-pf-master-gold transition-colors"
+            className="text-[11px] tracking-[0.22em] uppercase text-farm-dark hover:text-pf-gold-700 transition-colors"
             style={eyebrowFont}
           >
             Chef sign in →
@@ -156,7 +156,7 @@ export default function AboutPage() {
 
             <div className="relative px-6 py-14 sm:px-12 sm:py-20 text-center">
               {/* Top register line */}
-              <div className="flex items-center justify-between text-[10px] tracking-[0.24em] uppercase text-pf-master-gold mb-10" style={eyebrowFont}>
+              <div className="flex items-center justify-between text-[10px] tracking-[0.24em] uppercase text-pf-gold-700 mb-10" style={eyebrowFont}>
                 <span>Press Farm</span>
                 <span>Est. 2024</span>
               </div>
@@ -193,7 +193,7 @@ export default function AboutPage() {
           </div>
 
           {/* Sheet caption, hung below the frame like a museum placard */}
-          <p className="text-center text-[11px] italic text-farm-muted/70 mt-4" style={serifFont}>
+          <p className="text-center text-[11px] italic text-farm-muted mt-4" style={serifFont}>
             Cultivated with chefs · a working catalogue of the half-acre
           </p>
         </div>
@@ -234,7 +234,7 @@ export default function AboutPage() {
               and pick one yourself. The next best way is to pick up the
               phone and order it the night before.&rdquo;
             </p>
-            <footer className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mt-4" style={eyebrowFont}>
+            <footer className="text-[10px] tracking-[0.28em] uppercase text-pf-gold-700 mt-4" style={eyebrowFont}>
               — Press Farm
             </footer>
           </blockquote>
@@ -267,7 +267,7 @@ export default function AboutPage() {
 
                 <div className="relative p-5 sm:p-6 flex flex-col h-full">
                   {/* specimen register row */}
-                  <div className="flex items-center justify-between text-[9px] tracking-[0.2em] uppercase text-pf-master-gold" style={eyebrowFont}>
+                  <div className="flex items-center justify-between text-[9px] tracking-[0.2em] uppercase text-pf-gold-700" style={eyebrowFont}>
                     <span>Specimen</span>
                     <span>No. {String(i + 1).padStart(2, "0")}</span>
                   </div>
@@ -284,12 +284,12 @@ export default function AboutPage() {
 
                   <figcaption className="text-center">
                     <h3 className="font-display text-lg sm:text-xl leading-tight">{f.name}</h3>
-                    <p className="text-[12px] italic text-farm-muted/80 mt-0.5" style={serifFont}>{f.latin}</p>
+                    <p className="text-[12px] italic text-farm-muted mt-0.5" style={serifFont}>{f.latin}</p>
                   </figcaption>
 
                   <div className="mt-4 pt-3 border-t border-dashed border-pf-master-gold/25 flex items-center justify-between text-[9px] tracking-[0.14em] uppercase text-farm-muted" style={eyebrowFont}>
                     <span>{f.family}</span>
-                    <span className="text-pf-master-gold/90">{f.note}</span>
+                    <span className="text-pf-gold-700">{f.note}</span>
                   </div>
                 </div>
               </figure>
@@ -307,7 +307,7 @@ export default function AboutPage() {
             <ul className="grid sm:grid-cols-2 gap-x-10 gap-y-0.5">
               {SUPPORTING_FLOWERS.map((f, i) => (
                 <li key={f.name} className="group flex items-center gap-3 py-2.5 border-b border-pf-master-gold/12">
-                  <span className="text-[10px] tabular-nums text-pf-master-gold/70 w-6 shrink-0" style={eyebrowFont}>
+                  <span className="text-[10px] tabular-nums text-pf-gold-700 w-6 shrink-0" style={eyebrowFont}>
                     {String(i + 5).padStart(2, "0")}
                   </span>
                   <div className="relative w-8 h-8 shrink-0 transition-transform group-hover:scale-110">
@@ -413,15 +413,15 @@ export default function AboutPage() {
             {/* calling-card details */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto pt-8 text-left sm:text-center">
               <div>
-                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1" style={eyebrowFont}>Email</p>
+                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-1" style={eyebrowFont}>Email</p>
                 <a href="mailto:PressFarm@PressNapaValley.com" className="text-sm text-farm-cream hover:underline break-words">PressFarm@PressNapaValley.com</a>
               </div>
               <div>
-                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1" style={eyebrowFont}>Find Us</p>
+                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-1" style={eyebrowFont}>Find Us</p>
                 <p className="text-sm text-farm-cream">Yountville, CA</p>
               </div>
               <div>
-                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1" style={eyebrowFont}>Delivery</p>
+                <p className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-1" style={eyebrowFont}>Delivery</p>
                 <p className="text-sm text-farm-cream">Thu · Sat · Mon</p>
               </div>
             </div>
@@ -446,7 +446,7 @@ export default function AboutPage() {
           <p className="text-[10px] tracking-[0.32em] uppercase text-farm-muted mt-4" style={eyebrowFont}>
             Press Farm · Yountville · California · Est. 2024
           </p>
-          <p className="text-[10px] text-farm-muted/60 mt-2 italic" style={serifFont}>
+          <p className="text-[10px] text-farm-muted mt-2 italic" style={serifFont}>
             Cultivated with chefs.
           </p>
         </div>

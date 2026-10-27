@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { purgeServiceWorkerCache } from "@/components/shared/sw-purge";
 import { cn } from "@/lib/utils";
 import { HarvestGrid } from "@/app/admin/orders/[date]/HarvestGrid";
 import {
@@ -136,7 +138,9 @@ export function HarvestClient({
   const orderable = restaurants.filter((r) => r.orderId);
 
   return (
-    <main className="pb-10">
+    // lang follows the toggle so VoiceOver / TalkBack read the Spanish UI
+    // with Spanish pronunciation instead of the root <html lang="en">.
+    <main id="main" lang={lang} className="pb-10">
       <header className="page-header sticky top-0 z-30">
         <div className="flex items-center justify-between gap-3">
           <h1 className="page-title">{t.harvestList}</h1>
@@ -185,7 +189,7 @@ export function HarvestClient({
 
         {itemCount === 0 ? (
           <div className="text-center py-12">
-            <img src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" className="mx-auto h-24 w-auto mb-4" />
+            <Image src="/assets/pressfarm/flowers/pea-flower.png" alt="" aria-hidden="true" width={96} height={96} sizes="96px" className="mx-auto h-24 w-auto mb-4" />
             <h2 className="text-base font-semibold text-farm-dark">{t.noOrders}</h2>
             <p className="text-sm text-farm-muted mt-1.5 max-w-sm mx-auto">{t.noOrdersHint}</p>
           </div>
@@ -202,7 +206,7 @@ export function HarvestClient({
                   ? t.allHarvested
                   : `${doneRows}/${allRows.length} ${t.harvestedCount}`}
               </p>
-              <p className="text-xs text-farm-muted/90">{t.tapToMark}</p>
+              <p className="text-xs text-farm-muted">{t.tapToMark}</p>
               {toggleError && <p className="text-xs text-red-700">{toggleError}</p>}
             </div>
 
@@ -230,7 +234,7 @@ export function HarvestClient({
               <h2 className="text-xs font-bold uppercase tracking-wider text-farm-muted">
                 {t.extrasHeading}
               </h2>
-              <p className="text-xs text-farm-muted/90 mt-1 leading-relaxed">{t.extrasHint}</p>
+              <p className="text-xs text-farm-muted mt-1 leading-relaxed">{t.extrasHint}</p>
             </div>
 
             {orderable.map((r) => (
@@ -299,7 +303,7 @@ function ExtrasForRestaurant({
                   type="button"
                   onClick={() => handleRemove(ex.id)}
                   disabled={removingId === ex.id}
-                  className="flex-shrink-0 min-h-[36px] px-2.5 rounded-lg text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50 disabled:opacity-50"
+                  className="flex-shrink-0 min-h-[44px] px-3 rounded-lg text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50 disabled:opacity-50"
                 >
                   {removingId === ex.id ? t.removing : t.remove}
                 </button>
@@ -414,7 +418,7 @@ function AddExtraForm({
           <button
             type="button"
             onClick={() => { setOpen(false); reset(); }}
-            className="text-xs text-farm-muted hover:text-farm-dark min-h-[32px]"
+            className="text-xs text-farm-muted hover:text-farm-dark min-h-[44px] min-w-[44px] px-2 -mr-2 -my-2"
           >
             {t.cancel}
           </button>
@@ -424,6 +428,7 @@ function AddExtraForm({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.searchItems}
+          aria-label={t.searchItems}
           autoFocus
           className="w-full text-sm border border-farm-dark/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-farm-green"
         />
@@ -436,7 +441,7 @@ function AddExtraForm({
               key={item.id}
               type="button"
               onClick={() => pick(item)}
-              className="w-full px-3 py-2 text-left text-sm text-farm-dark hover:bg-farm-cream/40 min-h-[40px] flex items-center justify-between gap-2"
+              className="w-full px-3 py-2 text-left text-sm text-farm-dark hover:bg-farm-cream/40 min-h-[44px] flex items-center justify-between gap-2"
             >
               <span className="truncate">{item.name}</span>
               <span className="text-[10px] text-farm-muted uppercase tracking-wider flex-shrink-0">
@@ -461,7 +466,7 @@ function AddExtraForm({
         <button
           type="button"
           onClick={reset}
-          className="text-xs text-farm-muted hover:text-farm-dark min-h-[32px]"
+          className="text-xs text-farm-muted hover:text-farm-dark min-h-[44px] min-w-[44px] px-2 -mr-2 -my-2"
         >
           {t.change}
         </button>
@@ -469,8 +474,9 @@ function AddExtraForm({
 
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-1">
-          <label className="block text-[10px] text-farm-muted uppercase tracking-wider mb-1">{t.qty}</label>
+          <label htmlFor={`extra-qty-${orderId}`} className="block text-[10px] text-farm-muted uppercase tracking-wider mb-1">{t.qty}</label>
           <input
+            id={`extra-qty-${orderId}`}
             type="number"
             min="0"
             step="0.01"
@@ -482,15 +488,16 @@ function AddExtraForm({
           />
         </div>
         <div className="col-span-2">
-          <label className="block text-[10px] text-farm-muted uppercase tracking-wider mb-1">{t.unit}</label>
-          <div className="flex flex-wrap gap-1">
+          <p id={`extra-unit-${orderId}`} className="block text-[10px] text-farm-muted uppercase tracking-wider mb-1">{t.unit}</p>
+          <div className="flex flex-wrap gap-1" role="group" aria-labelledby={`extra-unit-${orderId}`}>
             {availableUnits.map((u) => (
               <button
                 key={u}
                 type="button"
                 onClick={() => setUnit(u)}
+                aria-pressed={unit === u}
                 className={cn(
-                  "px-2.5 py-1.5 rounded-lg text-xs font-medium min-h-0 transition-colors",
+                  "px-3 rounded-lg text-xs font-medium min-h-[44px] min-w-[44px] transition-colors",
                   unit === u
                     ? "bg-farm-green text-white"
                     : "bg-white text-farm-dark/80 border border-farm-dark/10 hover:border-farm-green/30",
@@ -509,7 +516,7 @@ function AddExtraForm({
         <button
           type="button"
           onClick={reset}
-          className="flex-1 min-h-[40px] rounded-lg border border-farm-dark/10 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
+          className="flex-1 min-h-[44px] rounded-lg border border-farm-dark/10 text-sm font-medium text-farm-muted bg-white hover:bg-farm-cream/40"
         >
           {t.cancel}
         </button>
@@ -517,7 +524,7 @@ function AddExtraForm({
           type="button"
           onClick={handleSubmit}
           disabled={submitting || !quantity}
-          className="flex-1 min-h-[40px] rounded-lg bg-farm-green text-white text-sm font-semibold disabled:opacity-50 hover:bg-farm-green/90"
+          className="flex-1 min-h-[44px] rounded-lg bg-farm-green text-white text-sm font-semibold disabled:opacity-50 hover:bg-farm-green/90"
         >
           {submitting ? t.addingBusy : t.addToDelivery}
         </button>
@@ -532,6 +539,7 @@ function HarvestSignOut({ lang }: { lang: HarvestLang }) {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    purgeServiceWorkerCache();
     window.location.href = "/login";
   }
   return (

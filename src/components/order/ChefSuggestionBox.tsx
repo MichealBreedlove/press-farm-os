@@ -63,7 +63,7 @@ export function ChefSuggestionBox({ farmId }: ChefSuggestionBoxProps) {
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-farm-cream/40 transition-colors"
       >
-        <Sparkles className="w-4 h-4 text-pf-master-gold flex-shrink-0" />
+        <Sparkles className="w-4 h-4 text-pf-gold-700 flex-shrink-0" />
         <div className="flex-1 text-left min-w-0">
           <p className="text-sm font-semibold text-farm-dark">
             Suggestions &amp; crop requests

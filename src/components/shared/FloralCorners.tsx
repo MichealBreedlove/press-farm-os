@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 const FLOWER_POOL = [
   "alyssum", "anise-hyssop", "bachelor-button", "borage", "buttercup",
@@ -20,26 +21,42 @@ interface FloralCornersProps {
   excludePaths?: string[];
 }
 
+/** Day of year (1–366) in the browser's local time. */
+function dayOfYear(d: Date): number {
+  const start = Date.UTC(d.getFullYear(), 0, 0);
+  const today = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.floor((today - start) / 86400000);
+}
+
+/**
+ * Deterministic 4-flower pick seeded by the day of year: the same four
+ * species all day on every page, so the four PNGs are fetched once and then
+ * served from the HTTP / service-worker cache instead of four fresh random
+ * downloads on every hard load. Rotates daily so it still feels alive.
+ */
+function picksForToday(): string[] {
+  const seed = dayOfYear(new Date());
+  const n = FLOWER_POOL.length;
+  // Stride co-prime with the pool size gives 4 distinct picks.
+  const stride = 7;
+  return [0, 1, 2, 3].map((i) => FLOWER_POOL[(seed + i * stride) % n]);
+}
+
+// Biggest rendered width per corner (the clamp() max); feeds width/height
+// + sizes so next/image serves a ~240px asset instead of the 768px master.
+const MAX_PX = 240;
+
 /**
  * Global decorative floral accents in viewport corners.
  * Renders fixed-position flowers behind all page content at low opacity.
- * Picks species at random per mount so different sessions feel fresh.
  */
 export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/login"] }: FloralCornersProps) {
-  const [picks, setPicks] = useState<string[] | null>(null);
+  const pathname = usePathname();
 
-  useEffect(() => {
-    // Pick 4 distinct flowers — one per corner — once per mount
-    const shuffled = [...FLOWER_POOL].sort(() => Math.random() - 0.5);
-    setPicks(shuffled.slice(0, 4));
-  }, []);
+  // Login already has its own background florals.
+  if (excludePaths.some((p) => pathname?.startsWith(p))) return null;
 
-  // Skip during SSR + on excluded paths (login already has its own background florals)
-  if (typeof window !== "undefined" && excludePaths.some((p) => window.location.pathname.startsWith(p))) {
-    return null;
-  }
-
-  if (!picks) return null;
+  const picks = picksForToday();
 
   const corners = [
     { pos: "top-0 left-0",     rot: -18, size: "clamp(110px, 18vw, 200px)" },
@@ -81,10 +98,16 @@ export function FloralCorners({ density = 4, opacity = 0.1, excludePaths = ["/lo
           "bottom-0 right-0": { bottom: -60, right: -60 },
         };
         return (
-          <img
+          <Image
             key={`${flower}-${i}`}
             src={`/assets/pressfarm/flowers/${flower}.png`}
             alt=""
+            width={MAX_PX}
+            height={MAX_PX}
+            // Decoration must never compete with the page's LCP image.
+            sizes="(max-width: 640px) 130px, 22vw"
+            loading="lazy"
+            fetchPriority="low"
             className="absolute"
             style={{
               ...offsetMap[corner.pos],

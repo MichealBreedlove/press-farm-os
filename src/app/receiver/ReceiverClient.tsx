@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getItemImageUrl } from "@/lib/flower-images";
+import { getItemImageUrl, isOptimizableImage } from "@/lib/flower-images";
 import { laneStyle } from "@/lib/lanes";
 import { isEventOnlyItem } from "@/lib/order-availability";
 import { cn, formatDateTimePacific } from "@/lib/utils";
@@ -320,7 +321,7 @@ export function ReceiverClient({ selectedDate, dates, restaurants, orders, deliv
       {/* Per-restaurant blocks */}
       {isEmpty ? (
         <div className="bg-white rounded-2xl border border-farm-dark/5 p-8 text-center shadow-sm">
-          <img src="/assets/pressfarm/flowers/chamomile.png" alt="" aria-hidden="true" className="mx-auto h-20 w-auto mb-3 opacity-90" />
+          <Image src="/assets/pressfarm/flowers/chamomile.png" alt="" aria-hidden="true" width={80} height={80} sizes="80px" className="mx-auto h-20 w-auto mb-3 opacity-90" />
           <p className="font-display text-lg text-farm-dark">Nothing scheduled</p>
           <p className="text-sm text-farm-muted mt-1">No orders or deliveries on the books for this date.</p>
         </div>
@@ -562,7 +563,12 @@ function LineRow({ line, disabled = false }: { line: Line; disabled?: boolean })
       </button>
       {line.imageUrl ? (
         <div className="w-12 h-12 rounded-lg bg-farm-cream/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
-          <img src={line.imageUrl} alt="" aria-hidden="true" className="w-10 h-10 object-contain" />
+          {isOptimizableImage(line.imageUrl) ? (
+            <Image src={line.imageUrl} alt="" aria-hidden="true" width={40} height={40} sizes="40px" className="w-10 h-10 object-contain" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- unknown host, not in images.remotePatterns
+            <img src={line.imageUrl} alt="" aria-hidden="true" className="w-10 h-10 object-contain" loading="lazy" />
+          )}
         </div>
       ) : (
         <div className="w-12 h-12 rounded-lg bg-farm-cream/60 flex-shrink-0" />

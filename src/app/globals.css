@@ -158,7 +158,9 @@
     transform: translateY(-50%);
     width: 56px;
     height: 56px;
-    background-image: url("/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom-2.png");
+    /* 256px variant (scripts/optimize-images.mjs) — the 1024px master was
+       243KB for a 56–108px decoration on every admin page. */
+    background-image: url("/assets/pressfarm/logo/png/small/pressfarm-icon-squash-blossom-2.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -231,7 +233,9 @@
     height: 14px;
     margin-right: 8px;
     vertical-align: -2px;
-    background-image: url("/assets/pressfarm/flowers/marigold-2.png");
+    /* 128px variant (scripts/optimize-images.mjs) — the 768px master was
+       710KB for a 14px bullet. */
+    background-image: url("/assets/pressfarm/flowers/small/marigold-2.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -370,8 +374,10 @@
    Duplicate/Save bar, bottom nav); each is capped at 11% of the viewport
    height so together they never cover more than a third of the screen. */
 :root {
-  --admin-nav-h: min(48px, 11vh);
-  --admin-nav-h: min(48px, 11dvh);
+  /* Floored at 44px so the tabs keep a WCAG-size hit area in landscape
+     (11vh of a 375px-tall viewport was ~41px). */
+  --admin-nav-h: max(44px, min(48px, 11vh));
+  --admin-nav-h: max(44px, min(48px, 11dvh));
   /* Control height inside a bar with 6px top/bottom padding + 1px border */
   --admin-bar-ctl-h: min(36px, calc(11vh - 13px));
   --admin-bar-ctl-h: min(36px, calc(11dvh - 13px));
@@ -539,7 +545,7 @@
   letter-spacing: 0.32em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: rgba(13, 42, 30, 0.55);
+  color: rgba(13, 42, 30, 0.7);
 }
 
 .login-eyebrow {
@@ -564,7 +570,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: rgba(13, 42, 30, 0.55);
+  color: rgba(13, 42, 30, 0.7);
   background: transparent;
   border-radius: 8px;
   transition: all 200ms ease;
@@ -585,7 +591,8 @@
   font-size: 0.65rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(13, 42, 30, 0.55);
+  /* 0.7 alpha ≈ #566A62 on white → 5.8:1 (0.55 was 3.6:1, under AA). */
+  color: rgba(13, 42, 30, 0.7);
   margin-bottom: 0.5rem;
 }
 
@@ -639,7 +646,7 @@
   font-size: 0.65rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(13, 42, 30, 0.6);
+  color: rgba(13, 42, 30, 0.7);
   text-decoration: underline;
   text-underline-offset: 6px;
   text-decoration-color: rgba(181, 139, 72, 0.5);
@@ -656,7 +663,8 @@
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(13, 42, 30, 0.35);
+  /* 0.7 alpha on cream ≈ 5.4:1 (0.35 was 2.1:1). */
+  color: rgba(13, 42, 30, 0.7);
   text-align: center;
 }
 
@@ -706,4 +714,31 @@
 .login-bg > * {
   position: relative;
   z-index: 1;
+}
+
+
+/* ==========================================================
+   Motion
+   ========================================================== */
+/* FlowerSpinner rotation (was an inline <style> per spinner). */
+.pf-flower-spinner {
+  animation: pf-flower-spin 2.4s linear infinite;
+}
+@keyframes pf-flower-spin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  50%  { transform: rotate(180deg) scale(1.06); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Respect the OS "Reduce Motion" setting (iOS: Accessibility → Motion).
+   Collapses every animation/transition to a single frame — spinners,
+   animate-spin, the flower spinner, hover transitions — without removing
+   them from the DOM, so loading states still render their final frame. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

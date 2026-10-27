@@ -120,7 +120,7 @@ export function SuggestionBoxClient({ suggestions, farmId }: { suggestions: Sugg
                       s.inbound_message_id ? (
                         <Link
                           href={`/admin/inbox/${s.inbound_message_id}`}
-                          className="inline-flex items-center gap-1 text-[10px] text-pf-master-gold hover:text-pf-master-gold/80 px-1.5 py-0.5 rounded-full bg-pf-master-gold/10"
+                          className="inline-flex items-center gap-1 text-[10px] text-pf-gold-700 hover:text-pf-gold-700 px-1.5 py-0.5 rounded-full bg-pf-master-gold/10"
                           title="View original email"
                         >
                           <Mail className="w-3 h-3" />

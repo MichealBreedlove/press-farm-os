@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 interface EditorialHeroProps {
@@ -31,11 +32,13 @@ export function EditorialHero({
 }: EditorialHeroProps) {
   return (
     <section className="px-5 pt-7 pb-5 bg-farm-cream/60 border-b border-pf-master-gold/20">
-      <div className="flex items-start gap-4 max-w-3xl mx-auto">
+      <div className="flex items-start gap-3 max-w-3xl mx-auto">
         {backHref && (
+          // 44×44 hit area; the negative margins keep the glyph optically
+          // aligned where the old 32px box sat.
           <Link
             href={backHref}
-            className="min-w-[32px] min-h-[32px] flex items-center justify-center text-farm-muted hover:text-farm-dark mt-1 -ml-1"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-farm-muted hover:text-farm-dark -mt-2 -ml-3 text-xl"
             aria-label="Back"
           >
             ‹
@@ -43,8 +46,10 @@ export function EditorialHero({
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
+            {/* pf-gold-700 (not the brass master gold): 10px caps text needs
+                4.5:1 on cream; the brass stays on the hairline + dot below. */}
             <p
-              className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold font-medium"
+              className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 font-medium"
               style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
             >
               {eyebrow}
@@ -61,10 +66,13 @@ export function EditorialHero({
           )}
         </div>
         {flower && (
-          <img
+          <Image
             src={`/assets/pressfarm/flowers/${flower}.png`}
             alt=""
             aria-hidden="true"
+            width={96}
+            height={96}
+            sizes="96px"
             className="w-20 sm:w-24 h-auto opacity-90 -mt-1 flex-shrink-0"
           />
         )}

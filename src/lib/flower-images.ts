@@ -15,7 +15,10 @@
 const FLOWERS_BASE = "/assets/pressfarm/flowers";
 
 /** Path to the floral wreath placeholder shown when an item has no photo and no auto-match. */
-export const PLACEHOLDER_WREATH = "/assets/logo/png/logo-floral-only-transparent.png";
+// 128px variant of logo-floral-only-transparent.png (1024px / 1.9MB) —
+// rendered at 40px on the order form + offer sheet. Regenerate with
+// `node scripts/optimize-images.mjs --small-only`.
+export const PLACEHOLDER_WREATH = "/assets/pressfarm/logo/logo-floral-only-128.png";
 
 /**
  * Map of normalized item names → flower slug.
@@ -120,4 +123,16 @@ export function flowerImageForName(name: string): string | null {
 export function getItemImageUrl(item: { name: string; image_url?: string | null }): string | null {
   if (item.image_url) return item.image_url;
   return flowerImageForName(item.name);
+}
+
+/**
+ * True when next/image may optimize this URL: a local /assets path or a
+ * public object in this project's Supabase storage bucket (the only remote
+ * host listed in next.config.js images.remotePatterns). Anything else must
+ * render as a plain <img> or next/image throws at render.
+ */
+export function isOptimizableImage(url: string | null | undefined): url is string {
+  if (!url) return false;
+  if (url.startsWith("/")) return true;
+  return /^https:\/\/rxdfjaseilmjvcwamqyk\.supabase\.co\/storage\/v1\/object\/public\//.test(url);
 }

@@ -71,7 +71,7 @@ export function WeatherWidget() {
   if (!w) {
     return (
       <div className="text-right">
-        <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold/60" style={{ fontFamily: "'Bank Gothic LT', sans-serif" }}>
+        <p className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700/70" style={{ fontFamily: "'Bank Gothic LT', sans-serif" }}>
           Yountville
         </p>
         <p className="text-2xl font-display text-farm-dark/40 mt-0.5">—°</p>
@@ -84,7 +84,7 @@ export function WeatherWidget() {
   return (
     <div className="text-right">
       <p
-        className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-1"
+        className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-1"
         style={{ fontFamily: "'Bank Gothic LT', 'BankGothic Lt BT', 'Bank Gothic', sans-serif" }}
       >
         Yountville
@@ -94,7 +94,7 @@ export function WeatherWidget() {
         <span className="font-display text-3xl text-farm-dark leading-none">{w.temp}°</span>
       </div>
       <p className="text-[11px] text-farm-muted mt-1">{label}</p>
-      <p className="text-[10px] text-farm-muted/80 mt-0.5">
+      <p className="text-[10px] text-farm-muted mt-0.5">
         H {w.high}° · L {w.low}° · {w.wind} mph
       </p>
     </div>

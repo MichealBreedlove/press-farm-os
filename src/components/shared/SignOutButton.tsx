@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { LogOut } from "lucide-react";
+import { purgeServiceWorkerCache } from "./sw-purge";
 
 /**
  * Card-style sign-out button. Matches the design pattern used on the
@@ -14,6 +15,9 @@ export function SignOutButton() {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    // Drop the SW page cache so the next account on this device can't see
+    // this one's cached pages offline.
+    purgeServiceWorkerCache();
     window.location.href = "/login";
   }
 

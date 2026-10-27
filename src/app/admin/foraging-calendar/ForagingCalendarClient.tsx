@@ -94,7 +94,7 @@ export function ForagingCalendarClient({ defaultMonth }: ForagingCalendarClientP
         <div className="flex items-center gap-2.5">
           <span className="w-1.5 h-1.5 rounded-full bg-pf-master-gold" />
           <p
-            className="text-[10px] tracking-[0.25em] uppercase text-pf-master-gold font-medium"
+            className="text-[10px] tracking-[0.25em] uppercase text-pf-gold-700 font-medium"
             style={BANK_GOTHIC}
           >
             Now Foraging
@@ -306,14 +306,14 @@ function ForageCard({
       {/* Eyebrow row */}
       <div className="flex items-center gap-2 flex-wrap">
         <p
-          className="text-[9.5px] tracking-[0.24em] uppercase text-pf-master-gold font-medium"
+          className="text-[9.5px] tracking-[0.24em] uppercase text-pf-gold-700 font-medium"
           style={BANK_GOTHIC}
         >
           {category}
         </p>
         {peakNow && (
           <>
-            <span className="text-pf-master-gold/40 text-[10px]">·</span>
+            <span className="text-pf-gold-700 text-[10px]">·</span>
             <p
               className="text-[9.5px] tracking-[0.24em] uppercase text-farm-green font-semibold"
               style={BANK_GOTHIC}
@@ -324,7 +324,7 @@ function ForageCard({
         )}
         {!peakNow && shoulderNow && (
           <>
-            <span className="text-pf-master-gold/40 text-[10px]">·</span>
+            <span className="text-pf-gold-700 text-[10px]">·</span>
             <p
               className="text-[9.5px] tracking-[0.24em] uppercase text-farm-green/70 font-medium"
               style={BANK_GOTHIC}
@@ -389,7 +389,7 @@ function ForageCard({
                 key={m}
                 className={cn(
                   "text-[9px] text-center tracking-wide tabular-nums uppercase",
-                  isCurrent ? "text-pf-master-gold font-semibold" : "text-farm-muted/70",
+                  isCurrent ? "text-pf-gold-700 font-semibold" : "text-farm-muted/70",
                 )}
               >
                 {m}
@@ -429,7 +429,7 @@ function ForageCard({
 
       {/* Habitat */}
       <div className="mt-5 flex items-start gap-2">
-        <MapPin className="w-3.5 h-3.5 text-pf-master-gold/80 mt-0.5 flex-shrink-0" />
+        <MapPin className="w-3.5 h-3.5 text-pf-gold-700 mt-0.5 flex-shrink-0" />
         <p className="text-[12px] text-farm-dark/70 leading-relaxed">{item.habitat}</p>
       </div>
 

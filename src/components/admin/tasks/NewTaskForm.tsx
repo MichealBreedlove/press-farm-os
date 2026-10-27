@@ -178,7 +178,7 @@ export function NewTaskForm({ items }: { items: Item[] }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-master-gold font-medium mb-1">
+      <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-1">
         {label}
       </span>
       {children}

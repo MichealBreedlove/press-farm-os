@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Baskervville, Inter, Cormorant_Garamond, JetBrains_Mono } from "next/font/google";
+import { Roboto, Baskervville, Cormorant_Garamond } from "next/font/google";
 import { ServiceWorkerRegistrar } from "@/components/shared/ServiceWorkerRegistrar";
 import { FloralCorners } from "@/components/shared/FloralCorners";
+import { SkipLink } from "@/components/shared/SkipLink";
 import "./globals.css";
 import "./pressfarm-tokens.css";
 
@@ -21,25 +22,19 @@ const baskervville = Baskervville({
   display: "swap",
 });
 
-// PressFarm OS design system fonts
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
+// PressFarm OS display serif. Only the weights actually used ship:
+// 400 (font-pf-serif, incl. italic lane labels) + 600 (.pf-heading-1/-2).
+// Inter + JetBrains Mono were removed 2026-10-27 — --pf-font-sans now rides
+// on Roboto and --pf-font-mono on the system monospace stack
+// (pressfarm-tokens.css / tailwind.config.ts). preload:false — it's used on
+// a handful of admin pages, not the chef order form.
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
   display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  display: "swap",
+  preload: false,
 });
 
 
@@ -111,17 +106,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${inter.variable} ${cormorant.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${roboto.variable} ${baskervville.variable} ${cormorant.variable}`}>
       <head>
-        {/* Bank Gothic LT — local @font-face is preferred (see globals.css).
-            CDN kept as fallback in case the licensed file isn't yet in /public/assets/fonts/ */}
-        <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/bank-gothic" />
+        {/* Bank Gothic LT is served from the local @font-face in globals.css
+            (/assets/fonts/BankGothicLT.woff2). The old fonts.cdnfonts.com
+            stylesheet was a render-blocking duplicate — don't re-add it. */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
       </head>
       <body>
+        <SkipLink />
         <FloralCorners opacity={0.09} />
         {children}
         <ServiceWorkerRegistrar />

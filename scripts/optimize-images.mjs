@@ -11,11 +11,61 @@
  * Idempotent: skips files already within the cap, and never enlarges or writes
  * a result that isn't smaller than the source.
  *
- * Usage: node scripts/optimize-images.mjs
+ * Second pass — SMALL VARIANTS: a few brand images are used as tiny CSS
+ * decorations or placeholders (a 14px eyebrow bullet, the 56–108px
+ * page-header blossom, the 40px order-form placeholder wreath). Serving the
+ * 768–1024px masters there cost 0.2–1.9MB per page for nothing, so this
+ * writes a capped copy next to the source (see SMALL_VARIANTS) that CSS /
+ * code point at. Also idempotent: a variant is only (re)written when it's
+ * missing or older than its source.
+ *
+ * Usage: node scripts/optimize-images.mjs            # both passes
+ *        node scripts/optimize-images.mjs --small-only  # just the variants
  */
 import sharp from "sharp";
-import { readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+
+// source -> { out, max } (max = longest side in px; 2x the rendered size).
+const SMALL_VARIANTS = [
+  {
+    // .section-eyebrow.with-flower::before — 14px bullet (globals.css)
+    src: "public/assets/pressfarm/flowers/marigold-2.png",
+    out: "public/assets/pressfarm/flowers/small/marigold-2.png",
+    max: 128,
+  },
+  {
+    // .page-header::after — 56px phone / 108px tablet (globals.css)
+    src: "public/assets/pressfarm/logo/png/pressfarm-icon-squash-blossom-2.png",
+    out: "public/assets/pressfarm/logo/png/small/pressfarm-icon-squash-blossom-2.png",
+    max: 256,
+  },
+  {
+    // PLACEHOLDER_WREATH (src/lib/flower-images.ts) — 40px order-form /
+    // offer-sheet placeholder for items with no photo
+    src: "public/assets/logo/png/logo-floral-only-transparent.png",
+    out: "public/assets/pressfarm/logo/logo-floral-only-128.png",
+    max: 128,
+  },
+];
+
+async function writeSmallVariants() {
+  let written = 0;
+  for (const { src, out, max } of SMALL_VARIANTS) {
+    const srcStat = await stat(src);
+    const outStat = await stat(out).catch(() => null);
+    if (outStat && outStat.mtimeMs >= srcStat.mtimeMs) continue;
+    await mkdir(path.dirname(out), { recursive: true });
+    const buf = await sharp(src)
+      .resize({ width: max, height: max, fit: "inside", withoutEnlargement: true })
+      .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false })
+      .toBuffer();
+    await writeFile(out, buf);
+    written++;
+    console.log(`  small ${kb(srcStat.size)} -> ${kb(buf.length)} (${max}px)  ${out}`);
+  }
+  console.log(`Small variants: ${written} written, ${SMALL_VARIANTS.length - written} up to date.`);
+}
 
 const kb = (n) => `${(n / 1024).toFixed(0)}KB`;
 
@@ -37,7 +87,9 @@ async function* walk(dir) {
 
 let totalBefore = 0, totalAfter = 0, changed = 0, skipped = 0;
 
-for (const { dir, max } of TARGETS) {
+const smallOnly = process.argv.includes("--small-only");
+
+for (const { dir, max } of smallOnly ? [] : TARGETS) {
   for await (const file of walk(dir)) {
     const before = (await stat(file)).size;
     totalBefore += before;
@@ -66,8 +118,12 @@ for (const { dir, max } of TARGETS) {
   }
 }
 
-console.log(
-  `\nOptimized ${changed} file(s), skipped ${skipped}. ` +
-  `Total ${(totalBefore / 1e6).toFixed(1)}MB -> ${(totalAfter / 1e6).toFixed(1)}MB ` +
-  `(-${Math.round((1 - totalAfter / totalBefore) * 100)}%).`,
-);
+if (!smallOnly) {
+  console.log(
+    `\nOptimized ${changed} file(s), skipped ${skipped}. ` +
+    `Total ${(totalBefore / 1e6).toFixed(1)}MB -> ${(totalAfter / 1e6).toFixed(1)}MB ` +
+    `(-${Math.round((1 - totalAfter / totalBefore) * 100)}%).`,
+  );
+}
+
+await writeSmallVariants();

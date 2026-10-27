@@ -126,7 +126,7 @@ export function TaskDraftCard({ draft }: Props) {
             </li>
           ) : (
             <li key={idx} className="flex items-start gap-2 text-sm">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-pf-master-gold w-20 flex-shrink-0 mt-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-pf-gold-700 w-20 flex-shrink-0 mt-0.5">
                 {TASK_TYPE_LABEL[item.task_type] ?? item.task_type}
               </span>
               <span className="flex-1 text-farm-dark">{item.title}</span>

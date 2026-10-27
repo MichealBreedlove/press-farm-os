@@ -9,7 +9,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: `${base}/about`,
-      lastModified: new Date(),
+      // Fixed date: `new Date()` told crawlers the page changed on every
+      // request. Bump when /about actually changes.
+      lastModified: new Date("2026-10-27"),
       changeFrequency: "monthly",
       priority: 1,
     },

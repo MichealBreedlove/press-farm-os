@@ -111,7 +111,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
   const lastNotifiedAt = (lastNotifyRaw as { sent_at: string } | null)?.sent_at ?? null;
 
   return (
-    <main className="min-h-screen pb-24 bg-farm-cream">
+    <main id="main" className="min-h-screen pb-24 bg-farm-cream">
       <PwaInstallPrompt />
       <header className="page-header">
         <h1 className="page-title">Receiving</h1>

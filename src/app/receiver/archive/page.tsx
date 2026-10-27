@@ -77,7 +77,7 @@ export default async function ReceiverArchivePage() {
   const monthKeys = Array.from(byMonth.keys()); // already in DESC order from sort above
 
   return (
-    <main className="min-h-screen pb-24 bg-farm-cream">
+    <main id="main" className="min-h-screen pb-24 bg-farm-cream">
       <header className="page-header">
         <div className="flex items-center gap-3">
           <Link href="/receiver" className="min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2 text-white/70 hover:text-white">
@@ -141,7 +141,7 @@ export default async function ReceiverArchivePage() {
                                 <span>{d.orderCount} order{d.orderCount === 1 ? "" : "s"}</span>
                               )}
                               {d.deliveryCount > 0 && d.orderCount > 0 && (
-                                <span className="text-farm-muted/40">·</span>
+                                <span className="text-farm-muted" aria-hidden="true">·</span>
                               )}
                               {d.deliveryCount > 0 && (
                                 <span>{d.deliveryCount} deliver{d.deliveryCount === 1 ? "y" : "ies"}</span>

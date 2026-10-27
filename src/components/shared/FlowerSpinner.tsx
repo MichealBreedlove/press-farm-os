@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
 
 // Only stem-less flowers — they read cleaner when rotating since
 // there's no off-axis weight from a stem flopping around.
@@ -24,38 +24,45 @@ interface FlowerSpinnerProps {
 }
 
 /**
+ * Pick the flower deterministically from the UTC day of year. `loading.tsx`
+ * renders this on the server, so a Math.random() pick hydrated with a
+ * different flower than the SSR markup (hydration mismatch warning on every
+ * suspense fallback). A date seed is identical on server and client (bar
+ * the midnight-UTC instant), rotates daily, and means one spinner PNG a
+ * day is fetched instead of a new random one per load.
+ */
+function flowerForNow(): string {
+  const d = new Date();
+  const start = Date.UTC(d.getUTCFullYear(), 0, 0);
+  const today = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const day = Math.floor((today - start) / 86400000);
+  return SPINNER_FLOWERS[day % SPINNER_FLOWERS.length];
+}
+
+/**
  * Branded loading indicator — rotates a gently-spinning flower illustration
- * picked at random from the 28-flower system.
+ * from the stem-less subset of the flower system.
  */
 export function FlowerSpinner({ size = 64, label = "Loading…" }: FlowerSpinnerProps) {
-  // Pick once on mount so it doesn't churn during a long load
-  const [flower] = useState(() => SPINNER_FLOWERS[Math.floor(Math.random() * SPINNER_FLOWERS.length)]);
+  const flower = flowerForNow();
 
   return (
-    <div className="text-center space-y-3">
+    <div className="text-center space-y-3" role="status" aria-live="polite">
       <div
-        className="mx-auto"
-        style={{
-          width: size,
-          height: size,
-          animation: "pf-flower-spin 2.4s linear infinite",
-        }}
+        className="mx-auto pf-flower-spinner"
+        style={{ width: size, height: size }}
       >
-        <img
+        <Image
           src={`/assets/pressfarm/flowers/${flower}.png`}
           alt=""
           aria-hidden="true"
+          width={size * 2}
+          height={size * 2}
+          sizes={`${size}px`}
           className="w-full h-full object-contain"
         />
       </div>
       {label && <p className="text-sm text-farm-muted">{label}</p>}
-      <style>{`
-        @keyframes pf-flower-spin {
-          0%   { transform: rotate(0deg)   scale(1); }
-          50%  { transform: rotate(180deg) scale(1.06); }
-          100% { transform: rotate(360deg) scale(1); }
-        }
-      `}</style>
     </div>
   );
 }

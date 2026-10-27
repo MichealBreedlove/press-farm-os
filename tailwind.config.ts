@@ -41,6 +41,11 @@ const config: Config = {
             "bottle-green": "#4B6B38",
             violet: "#5E2B7A",
             blue: "#2E5FA1",
+            // Brass hairline gold — the hex globals.css already uses for the
+            // login dividers / tagline rules. ~2.9:1 on cream, so keep it for
+            // hairlines, dots and borders; small TEXT should use pf-gold-700
+            // (#7a6a43, 4.9:1) instead.
+            gold: "#B58B48",
           },
           cream: {
             50: "#fffdf8",
@@ -111,9 +116,13 @@ const config: Config = {
         display: ["var(--font-baskervville)", "Georgia", "serif"],
         // PressFarm OS design system fonts
         "pf-brand": ["Bank Gothic LT", "BankGothic Md BT", "Arial Narrow", "sans-serif"],
-        "pf-sans": ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        // pf-sans rides on Roboto (the real body font) — Inter was only ever
+        // used on /admin/ui-kit, not worth a second webfont download.
+        "pf-sans": ["var(--font-roboto)", "ui-sans-serif", "system-ui", "sans-serif"],
         "pf-serif": ["var(--font-cormorant)", "Cormorant Garamond", "Georgia", "serif"],
-        "pf-mono": ["var(--font-jetbrains)", "JetBrains Mono", "Consolas", "monospace"],
+        // System monospace stack — three code-ish call sites don't justify
+        // shipping JetBrains Mono.
+        "pf-mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       borderRadius: {
         pf: "1.5rem",

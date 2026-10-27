@@ -237,7 +237,7 @@ export function CalendarView({ batches }: Props) {
                 : "border-farm-muted/15"
             } ${day.inMonth ? (day.isToday ? "" : "bg-white") : "bg-farm-muted/5"}`}
           >
-            <div className={`text-[10px] ${day.isToday ? "text-pf-master-gold font-bold" : "text-farm-muted"}`}>
+            <div className={`text-[10px] ${day.isToday ? "text-pf-gold-700 font-bold" : "text-farm-muted"}`}>
               {day.iso.slice(-2)}
             </div>
             <div className="space-y-0.5">

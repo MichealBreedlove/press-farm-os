@@ -48,7 +48,7 @@ export function ContactForm() {
   if (status === "sent") {
     return (
       <div className="pt-8 max-w-md mx-auto text-center">
-        <p className="text-[10px] tracking-[0.22em] uppercase text-pf-master-gold mb-2" style={eyebrowFont}>
+        <p className="text-[10px] tracking-[0.22em] uppercase text-pf-gold-700 mb-2" style={eyebrowFont}>
           Message sent
         </p>
         <p className="text-farm-cream/80 leading-relaxed">

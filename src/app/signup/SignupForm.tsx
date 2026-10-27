@@ -80,12 +80,12 @@ export function SignupForm({ restaurants }: Props) {
   }
 
   return (
-    <main className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
+    <main id="main" className="login-bg min-h-screen flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
         <div className="login-card px-8 py-10 sm:px-12 sm:py-12 space-y-7">
           <div className="text-center">
             <PressFarmLogo size="lg" />
-            <p className="mt-4 text-[11px] tracking-[0.18em] uppercase text-farm-muted/80">
+            <p className="mt-4 text-[11px] tracking-[0.18em] uppercase text-farm-muted">
               Create a chef account
             </p>
           </div>
@@ -144,7 +144,7 @@ export function SignupForm({ restaurants }: Props) {
                   ))}
                 </select>
               )}
-              <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted/80">
+              <p className="mt-1.5 text-[11px] tracking-wide text-farm-muted">
                 Event items will appear in your order form automatically.
               </p>
             </div>
@@ -205,7 +205,7 @@ export function SignupForm({ restaurants }: Props) {
             </button>
           </form>
 
-          <p className="text-[11px] tracking-wide text-center text-farm-muted/80">
+          <p className="text-[11px] tracking-wide text-center text-farm-muted">
             Already have an account?{" "}
             <Link href="/login" className="underline hover:text-farm-dark">
               Sign in

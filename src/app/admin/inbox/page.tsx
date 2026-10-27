@@ -148,7 +148,7 @@ export default async function InboxPage() {
             body="When a chef replies to any Press Farm email, it lands here."
           >
             <p className="text-xs text-farm-muted/70 mt-3">
-              Replies route to <code className="text-pf-master-gold">replies@pressfarm.io</code>.
+              Replies route to <code className="text-pf-gold-700">replies@pressfarm.io</code>.
             </p>
           </EmptyState>
         ) : (

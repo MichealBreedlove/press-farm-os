@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function NotFound() {
@@ -6,10 +7,14 @@ export default function NotFound() {
       <div className="text-center max-w-sm">
         {/* Hero floral mark — wandering pansy as the "lost flower" motif */}
         <div className="relative mx-auto w-56 h-56 sm:w-72 sm:h-72 mb-2">
-          <img
+          <Image
             src="/assets/pressfarm/flowers/pansy.png"
             alt=""
             aria-hidden="true"
+            width={288}
+            height={288}
+            sizes="(max-width: 640px) 224px, 288px"
+            priority
             className="w-full h-full object-contain"
           />
           {/* Subtle 404 badge over the bottom-right of the flower */}

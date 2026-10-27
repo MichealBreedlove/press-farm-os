@@ -6,7 +6,7 @@ import type { AvailabilityItemWithItem } from "@/types";
 import { UNIT_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
+import { isOptimizableImage, getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 import { resolveUnits, resolveSizes, resolveColors, resolveVarieties, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
 
@@ -245,10 +245,10 @@ function ItemRowInner({
       <div className="flex items-center gap-3">
         {/* Photo — admin-set photo, auto-matched brand flower, or wreath
             placeholder. Local /assets/* art (the 768px brand flowers and the
-            1.9 MB wreath master) goes through next/image so the browser gets
-            a 64px/40px optimized variant, lazy by default. Remote uploads
-            (Supabase storage) stay a plain <img>: next.config.js declares no
-            images.remotePatterns, and next/image refuses unlisted hosts. */}
+            1.9 MB wreath master) and Supabase-storage uploads (host listed in
+            next.config.js images.remotePatterns) go through next/image so the
+            browser gets a 64px/40px optimized variant, lazy by default. Any
+            other host falls back to a plain <img>. */}
         {(() => {
           const imgUrl = getItemImageUrl({ name: item.name, image_url: item.image_url });
           const isFlower = imgUrl?.startsWith("/assets/pressfarm/flowers/");
@@ -259,10 +259,10 @@ function ItemRowInner({
                 "w-16 h-16 rounded-lg overflow-hidden flex-shrink-0",
                 isFlower ? "bg-farm-cream border border-farm-dark/5 flex items-center justify-center" : "bg-farm-cream/60"
               )}>
-                {imgUrl.startsWith("/") ? (
+                {isOptimizableImage(imgUrl) ? (
                   <Image src={imgUrl} alt={item.name} width={64} height={64} sizes="64px" className={imgClass} />
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element -- remote host not in images.remotePatterns
+                  // eslint-disable-next-line @next/next/no-img-element -- unknown host, not in images.remotePatterns
                   <img src={imgUrl} alt={item.name} className={imgClass} loading="lazy" decoding="async" />
                 )}
               </div>

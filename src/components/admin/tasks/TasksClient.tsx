@@ -305,7 +305,7 @@ function GroupedByDate({
     <div className="space-y-5">
       {dates.map((d) => (
         <div key={d}>
-          <h3 className="text-[10px] tracking-[0.18em] uppercase text-pf-master-gold font-medium mb-2">
+          <h3 className="text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-2">
             {formatDateHeading(d)}
           </h3>
           <ul className="space-y-2">
@@ -521,7 +521,7 @@ function DraftList({
       )}
       {rest.length > 0 && (
         <div>
-          <h3 className="text-[10px] tracking-[0.18em] uppercase text-pf-master-gold font-medium mb-2">
+          <h3 className="text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-2">
             Suggested
           </h3>
           <div className="space-y-3">

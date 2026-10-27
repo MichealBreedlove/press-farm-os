@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface RestaurantCardProps {
   name: string;
@@ -27,7 +28,7 @@ export function RestaurantCard({ name, note, logo, website }: RestaurantCardProp
   const inner = (
     <>
       <p
-        className="text-[10px] tracking-[0.28em] uppercase text-pf-master-gold mb-4"
+        className="text-[10px] tracking-[0.28em] uppercase text-pf-gold-700 mb-4"
         style={eyebrowFont}
       >
         Restaurant
@@ -36,10 +37,13 @@ export function RestaurantCard({ name, note, logo, website }: RestaurantCardProp
         {logoFailed ? (
           <h3 className="font-display text-3xl text-farm-dark">{name}</h3>
         ) : (
-          <img
+          <Image
             src={logo}
             alt={`${name} logo`}
-            className="max-h-full max-w-full object-contain"
+            width={240}
+            height={96}
+            sizes="240px"
+            className="max-h-full max-w-full w-auto h-auto object-contain"
             onError={() => setLogoFailed(true)}
           />
         )}
@@ -51,7 +55,7 @@ export function RestaurantCard({ name, note, logo, website }: RestaurantCardProp
       </div>
       <p className="text-xs text-farm-muted mt-3">{note}</p>
       {website && (
-        <p className="text-[10px] tracking-[0.18em] uppercase text-pf-master-gold/80 mt-3" style={eyebrowFont}>
+        <p className="text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 mt-3" style={eyebrowFont}>
           Visit site →
         </p>
       )}
