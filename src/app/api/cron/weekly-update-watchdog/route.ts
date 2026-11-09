@@ -11,8 +11,8 @@ export const maxDuration = 60;
 /**
  * GET /api/cron/weekly-update-watchdog
  *
- * Fires an hour after the chef Weekly Update cron (see vercel.json) and asks
- * one question: did this week's update actually reach anybody?
+ * Fires after the chef Weekly Update's 3:30 PM Pacific send (see vercel.json)
+ * and asks one question: did this week's update actually reach anybody?
  *
  * This exists because of the 2026-08-17 miss. The update silently did not go
  * out and nothing surfaced it — `weekly_update_last_sent_week` is only
@@ -30,9 +30,11 @@ export const maxDuration = 60;
  * hasSuccessfulWeeklyUpdate) — so a lost log row alone never raises a false
  * "chefs did NOT get the update" alarm.
  *
- * Runs twice (Mon 23:30 UTC and Tue 06:45 UTC — still Monday in Pacific):
- * when the admin pushed the send to a later slot, the first run waits and
- * the second one checks.
+ * Runs twice (Tue 00:30 UTC and Tue 06:45 UTC — both still Monday evening in
+ * Pacific, PDT or PST): the first is 1–2 hours after the default send; when
+ * the admin pushed the send to a later slot it waits and the second one
+ * checks. `watchdogShouldWait` works from the Pacific-anchored slot list, so
+ * it never alerts before the send has had its chance.
  *
  * Alerts at most once per week (farm_settings.weekly_update_alert_sent_week)
  * so a broken week doesn't turn into a daily nag.

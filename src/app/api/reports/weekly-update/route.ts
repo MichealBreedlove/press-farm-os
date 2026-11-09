@@ -12,7 +12,7 @@ import {
   type WeeklyUpdateData,
 } from "@/lib/weekly-update";
 import WeeklyUpdate from "@/emails/weekly-update";
-import { slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
+import { isDefaultSlotFire, slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
 import { requireCronSecret } from "@/lib/api-auth";
 
 // One Resend call per recipient (parallel) on top of a possible live build;
@@ -23,15 +23,18 @@ export const maxDuration = 60;
 /**
  * Chef-facing "Press Farm – Weekly Update" email.
  *
- *   GET  — Vercel Cron trigger (Monday mornings). Requires
- *          `Authorization: Bearer ${CRON_SECRET}`; fail-closed in production.
- *          Sends the saved draft when one exists for this week (so admin
- *          edits go out verbatim), otherwise builds from live data. Skips
- *          entirely if this week's update was already sent manually.
- *          `?late=1` marks the hourly Monday-evening runs, which only send
- *          when the admin pushed this week's send to a later time
- *          (farm_settings.weekly_update_send_after — see
- *          src/lib/weekly-update-schedule.ts).
+ *   GET  — Vercel Cron trigger. Requires `Authorization: Bearer
+ *          ${CRON_SECRET}`; fail-closed in production. Fires HOURLY at :30
+ *          from Mon 22:30 UTC to Tue 06:30 UTC (the query string only keeps
+ *          the vercel.json entries distinct); each run sends only when the
+ *          clock is at this week's slot — 3:30 PM Pacific by default, or the
+ *          later time the admin picked (farm_settings.weekly_update_send_after
+ *          — see src/lib/weekly-update-schedule.ts). Crons are UTC-fixed, so
+ *          deciding by the Pacific clock is what keeps the send at 3:30 PM
+ *          through daylight-saving changes. Sends the saved draft when one
+ *          exists for this week (so admin edits go out verbatim), otherwise
+ *          builds from live data. Skips entirely if this week's update was
+ *          already sent manually.
  *   POST — Manual admin trigger from /admin/weekly-update. An optional
  *          `data` body sends exactly that (edited) content; without it the
  *          same draft-then-live resolution as the cron applies.
@@ -44,8 +47,7 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const denied = requireCronSecret(request);
   if (denied) return denied;
-  const isLateRun = new URL(request.url).searchParams.has("late");
-  return sendWeeklyUpdate({ isCron: true, isLateRun });
+  return sendWeeklyUpdate({ isCron: true });
 }
 
 export async function POST(request: Request) {
@@ -69,11 +71,9 @@ export async function POST(request: Request) {
 
 async function sendWeeklyUpdate({
   isCron,
-  isLateRun = false,
   edited,
   testTo = null,
 }: {
-  isLateRun?: boolean;
   isCron: boolean;
   edited?: WeeklyUpdateData | null;
   testTo?: string | null;
@@ -97,24 +97,28 @@ async function sendWeeklyUpdate({
 
   const triggeredBy = isCron ? "cron" : "manual";
 
-  // "Send later": the default run waits for the admin's chosen slot, and the
-  // hourly late runs do nothing on a normal week. Checked before logging so
-  // an ordinary Monday doesn't write seven idle rows.
+  // The cron fires hourly across the whole evening window; only the fire that
+  // lands on this week's slot (3:30 PM Pacific, or the admin's later pick)
+  // sends. Checked before logging so an ordinary Monday doesn't write a row
+  // per idle fire.
+  const nowMs = Date.now();
+  const isDefaultSlot = isCron && isDefaultSlotFire(nowMs, weekAnchor);
   if (isCron) {
     const sendAfter = settingsMap.weekly_update_send_after || null;
     const decision = weeklyUpdateCronDecision({
-      nowMs: Date.now(),
+      nowMs,
       mondayISO: weekAnchor,
-      isLateRun,
       sendAfter,
     });
     if (decision === "idle") {
-      return NextResponse.json({ success: true, skipped: true, message: "No delayed send this week." });
+      return NextResponse.json({ success: true, skipped: true, message: "Not this week's send time." });
     }
     if (decision === "wait") {
-      const message = `Delayed by admin — sending at ${slotTimeLabel(sendAfter!)} instead.`;
-      // One log row for the default run is enough; the hourly waits are silent.
-      if (!isLateRun) {
+      const message = sendAfter
+        ? `Delayed by admin — sending at ${slotTimeLabel(sendAfter)} instead.`
+        : "Before this week's send time.";
+      // One log row for the default-slot fire is enough; the other waits are silent.
+      if (isDefaultSlot) {
         await recordWeeklyUpdateAttempt(admin, {
           weekOf: weekAnchor,
           triggeredBy,
@@ -129,14 +133,12 @@ async function sendWeeklyUpdate({
   // Cron never double-sends a week the admin already sent manually.
   if (isCron && settingsMap.weekly_update_last_sent_week === weekAnchor) {
     const message = `Already sent for week of ${weekAnchor} — skipping scheduled send.`;
-    if (!isLateRun) {
-      await recordWeeklyUpdateAttempt(admin, {
-        weekOf: weekAnchor,
-        triggeredBy,
-        status: "skipped",
-        error: message,
-      });
-    }
+    await recordWeeklyUpdateAttempt(admin, {
+      weekOf: weekAnchor,
+      triggeredBy,
+      status: "skipped",
+      error: message,
+    });
     return NextResponse.json({ success: true, skipped: true, message });
   }
 
@@ -144,14 +146,12 @@ async function sendWeeklyUpdate({
   // automatic send honors it — Send Now still goes out whenever they're ready.
   if (isCron && settingsMap.weekly_update_postponed_week === weekAnchor) {
     const message = `Postponed by admin for week of ${weekAnchor} — skipping scheduled send.`;
-    if (!isLateRun) {
-      await recordWeeklyUpdateAttempt(admin, {
-        weekOf: weekAnchor,
-        triggeredBy,
-        status: "skipped",
-        error: message,
-      });
-    }
+    await recordWeeklyUpdateAttempt(admin, {
+      weekOf: weekAnchor,
+      triggeredBy,
+      status: "skipped",
+      error: message,
+    });
     return NextResponse.json({ success: true, skipped: true, message });
   }
 
