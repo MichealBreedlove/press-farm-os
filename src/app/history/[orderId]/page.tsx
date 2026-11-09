@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatDeliveryDate, formatDateTimePacific } from "@/lib/utils";
 import { ORDER_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
+import { formatSizeLabel } from "@/lib/leaf-sizes";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { OrderActivity } from "@/components/shared/OrderActivity";
 import type { OrderStatus, UnitType } from "@/types";
@@ -242,7 +243,7 @@ export default async function OrderDetailPage({
                           {(sizeLabel || colorKey || varietyKey) && (
                             <span className="ml-1.5 text-xs font-normal text-farm-muted">
                               {[
-                                sizeLabel,
+                                sizeLabel ? formatSizeLabel(sizeLabel, item.category) : null,
                                 varietyKey ? varietyKey.split(",").join(" / ") : null,
                                 colorKey ? colorKey.split(",").join(" / ") : null,
                               ]

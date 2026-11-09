@@ -5,6 +5,9 @@ export interface HarvestGridRow {
   itemId: string;
   name: string;
   unit: UnitType;
+  /** Size the chef picked ("Baby", "Large", "Quarter"…); null if the item has no sizes.
+   *  Different sizes of the same leaf are picked separately, so they are separate rows. */
+  sizeLabel?: string | null;
   /** Specific color the chef requested (e.g. "Red, Yellow"); null if none. */
   colorKey?: string | null;
   /** Specific variety the chef requested (e.g. "Genovese, Thai"); null if none. */
@@ -18,9 +21,9 @@ export interface HarvestGridRow {
   resolvedLineCount: number;
 }
 
-/** Stable identity for a grid row — item × container × color × variety. */
-export function harvestRowKey(row: Pick<HarvestGridRow, "itemId" | "unit" | "colorKey" | "varietyKey">): string {
-  return `${row.itemId}|${row.unit}|${row.colorKey ?? ""}|${row.varietyKey ?? ""}`;
+/** Stable identity for a grid row — item × container × size × color × variety. */
+export function harvestRowKey(row: Pick<HarvestGridRow, "itemId" | "unit" | "sizeLabel" | "colorKey" | "varietyKey">): string {
+  return `${row.itemId}|${row.unit}|${row.sizeLabel ?? ""}|${row.colorKey ?? ""}|${row.varietyKey ?? ""}`;
 }
 
 /** A row is "harvested" when every contributing line is picked or shorted. */
@@ -52,6 +55,7 @@ export interface HarvestOrderItem {
   quantity_fulfilled: number | null;
   is_shorted: boolean | null;
   unit_type: string | null;
+  size_label?: string | null;
   color_key?: string | null;
   variety_key?: string | null;
   picked_at?: string | null;
@@ -116,13 +120,14 @@ export function harvestRestaurantOrder(name: string): number {
 
 /**
  * Roll up every order_item across every restaurant into (item, container,
- * color, variety) buckets — the combined cross-restaurant pick list for a
+ * size, color, variety) buckets — the combined cross-restaurant pick list for a
  * delivery date. Pure function extracted from /admin/orders/[date] so the
  * harvester portal (/harvest) renders the exact same list.
  *
- * Different containers/varieties/colors of the same crop stay on separate
- * rows (you pick each one separately); regular + events lines of the same
- * (crop, container, variety, color) sum together.
+ * Different containers/sizes/varieties/colors of the same crop stay on
+ * separate rows (you pick each one separately — a Baby leaf and a Large leaf
+ * are different picks); regular + events lines of the same (crop, container,
+ * size, variety, color) sum together.
  */
 export function aggregateHarvest(orders: HarvestOrder[]): HarvestAggregate {
   const restaurantsInPlay: { id: string; name: string }[] = [];
@@ -161,10 +166,11 @@ export function aggregateHarvest(orders: HarvestOrder[]): HarvestAggregate {
       const qty = oi.is_shorted ? Number(oi.quantity_fulfilled ?? 0) : Number(oi.quantity_requested ?? 0);
       if (qty <= 0 || !restaurantId) continue;
 
+      const sizeLabel = (oi.size_label ?? "").trim();
       const colorKey = (oi.color_key ?? "").trim();
       const varietyKey = (oi.variety_key ?? "").trim();
 
-      const key = `${item.id}|${lineUnit}|${colorKey}|${varietyKey}`;
+      const key = `${item.id}|${lineUnit}|${sizeLabel}|${colorKey}|${varietyKey}`;
       let row = itemMap.get(key);
       if (!row) {
         row = {
@@ -172,6 +178,7 @@ export function aggregateHarvest(orders: HarvestOrder[]): HarvestAggregate {
           name: item.name,
           category: (item.category ?? "other") as ItemCategory,
           unit: lineUnit,
+          sizeLabel: sizeLabel || null,
           colorKey: colorKey || null,
           varietyKey: varietyKey || null,
           qtyByRestaurant: {},

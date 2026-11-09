@@ -9,6 +9,19 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { isOptimizableImage, getItemImageUrl, PLACEHOLDER_WREATH } from "@/lib/flower-images";
 import { resolveUnits, resolveSizes, resolveColors, resolveVarieties, isEventOnlyItem } from "@/lib/order-availability";
 import { buildOrderKey } from "@/lib/order-keys";
+import { leafSizeInches } from "@/lib/leaf-sizes";
+
+/** Size word plus, for leaf items, the inch range chefs asked for
+ *  (`Baby · 1–2"`). The stored label stays the bare word. */
+function SizeLabel({ size, category, className }: { size: string; category: string; className?: string }) {
+  const inches = leafSizeInches(size, category);
+  return (
+    <span className={className}>
+      {size}
+      {inches && <span className="text-farm-muted font-normal"> · {inches}</span>}
+    </span>
+  );
+}
 
 interface ItemRowProps {
   availabilityItem: AvailabilityItemWithItem;
@@ -385,9 +398,14 @@ function ItemRowInner({
               {UNIT_LABELS[u] ?? u.toUpperCase()}
             </span>
           ))}
-          {!hasMultiUnits && sizes.map((s: string) => (
-            <span key={s} className="text-[10px] bg-farm-cream/40 text-farm-muted px-2 py-1 rounded-md">{s}</span>
-          ))}
+          {!hasMultiUnits && sizes.map((s: string) => {
+            const inches = leafSizeInches(s, item.category);
+            return (
+              <span key={s} className="text-[10px] bg-farm-cream/40 text-farm-muted px-2 py-1 rounded-md">
+                {s}{inches ? ` ${inches}` : ""}
+              </span>
+            );
+          })}
         </div>
       )}
 
@@ -441,7 +459,7 @@ function ItemRowInner({
                   return (
                     <div key={size} className="bg-white/70 rounded-md px-2.5 py-1.5 space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
+                        <SizeLabel size={size} category={item.category} className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")} />
                         <QuantityStepper
                           value={sizeQty}
                           onChange={(v) => onQuantityChange(key, v)}
@@ -481,7 +499,7 @@ function ItemRowInner({
             return (
               <div key={size} className="bg-farm-cream/40 rounded-lg px-3 py-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")}>{size}</span>
+                  <SizeLabel size={size} category={item.category} className={cn("text-sm", sizeQty > 0 ? "text-farm-dark font-medium" : "text-farm-muted/90")} />
                   <QuantityStepper
                     value={sizeQty}
                     onChange={(v) => onQuantityChange(key, v)}

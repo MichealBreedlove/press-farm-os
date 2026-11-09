@@ -12,7 +12,7 @@ import {
  * aggregateHarvest builds the combined cross-restaurant pick list rendered
  * on /admin/orders/[date] AND the harvester portal (/harvest). It was
  * extracted verbatim from the admin page — these tests pin the merge keys
- * (item × unit × color × variety), the shortage/picked accounting, and the
+ * (item × unit × size × color × variety), the shortage/picked accounting, and the
  * container tallies so both pages keep agreeing.
  */
 
@@ -85,6 +85,30 @@ describe("aggregateHarvest", () => {
     expect(genovese?.total).toBe(2);
     const purple = rows.find((r) => r.colorKey === "Purple");
     expect(purple?.total).toBe(4);
+  });
+
+  it("keeps different sizes of the same leaf on separate rows (a Baby and a Large leaf are different picks)", () => {
+    // Before 2026-11-09 the roll-up ignored size_label, so Press's 2 LG Baby
+    // and Under-Study's 1 LG Large Red Frills merged into one "3 LG" row and
+    // the harvester had no idea which leaves to cut.
+    const frills = item("i-frills", "Red Frills Mustard", "herbs_leaves", "sm,lg");
+    const orders: HarvestOrder[] = [
+      { status: "submitted", restaurant: press, order_items: [line(frills, { unit_type: "lg", size_label: "Baby", quantity_requested: 2 })] },
+      { status: "submitted", restaurant: understudy, order_items: [
+        line(frills, { unit_type: "lg", size_label: "Large", quantity_requested: 1 }),
+        line(frills, { unit_type: "lg", size_label: "Baby", quantity_requested: 1 }),
+      ] },
+    ];
+    const agg = aggregateHarvest(orders);
+    const rows = agg.categories[0].rows;
+    expect(rows).toHaveLength(2);
+    const baby = rows.find((r) => r.sizeLabel === "Baby");
+    expect(baby?.total).toBe(3);
+    expect(baby?.qtyByRestaurant).toEqual({ "r-press": 2, "r-us": 1 });
+    expect(rows.find((r) => r.sizeLabel === "Large")?.total).toBe(1);
+    // A size-less line stays its own row with sizeLabel null.
+    const plain = aggregateHarvest([{ status: "submitted", restaurant: press, order_items: [line(frills, { unit_type: "lg" })] }]);
+    expect(plain.categories[0].rows[0].sizeLabel).toBeNull();
   });
 
   it("uses quantity_fulfilled for shorted lines and drops zero-qty rows", () => {
@@ -227,15 +251,16 @@ describe("row pick state (tap-to-harvest on /harvest)", () => {
     expect(isRowResolved(row)).toBe(false);
   });
 
-  it("harvestRowKey distinguishes unit, color, and variety", () => {
-    const base = { itemId: "i-basil", unit: "lg" as const, colorKey: null, varietyKey: null };
+  it("harvestRowKey distinguishes unit, size, color, and variety", () => {
+    const base = { itemId: "i-basil", unit: "lg" as const, sizeLabel: null, colorKey: null, varietyKey: null };
     const keys = new Set([
       harvestRowKey(base),
       harvestRowKey({ ...base, unit: "sm" as const }),
+      harvestRowKey({ ...base, sizeLabel: "Baby" }),
       harvestRowKey({ ...base, colorKey: "Purple" }),
       harvestRowKey({ ...base, varietyKey: "Genovese" }),
     ]);
-    expect(keys.size).toBe(4);
+    expect(keys.size).toBe(5);
     expect(harvestRowKey(base)).toBe(harvestRowKey({ ...base }));
   });
 });

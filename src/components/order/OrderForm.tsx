@@ -73,6 +73,8 @@ export interface OrderFormData {
   items: {
     availabilityItemId: string;
     itemName: string;
+    /** Catalog category — lets the review page show the leaf-size inch hint. */
+    category?: string | null;
     unitType: string;
     /** Size descriptor when item has sizes ("Quarter", "Palm", ...). null otherwise. */
     sizeLabel: string | null;
@@ -417,6 +419,7 @@ export function OrderForm({
         return {
           availabilityItemId: line.availabilityItemId,
           itemName,
+          category: ai.item.category ?? null,
           unitType: unit,
           sizeLabel: size,
           colorKey: colors.length > 0 ? colors.join(",") : null,

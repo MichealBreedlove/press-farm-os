@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UNIT_LABELS } from "@/lib/constants";
+import { formatSizeLabel } from "@/lib/leaf-sizes";
 import { flowerImageForName } from "@/lib/flower-images";
 import { DeliveryWeatherBanner } from "@/components/shared/DeliveryWeatherBanner";
 import type { OrderFormData } from "@/components/order/OrderForm";
@@ -172,7 +173,7 @@ export default function OrderReviewPage() {
                       <p className="text-sm font-medium text-farm-dark truncate">{item.itemName}</p>
                       <p className="text-xs text-farm-muted mt-0.5">
                         {UNIT_LABELS[item.unitType as UnitType] ?? item.unitType} container
-                        {item.sizeLabel ? ` · ${item.sizeLabel}` : ""}
+                        {item.sizeLabel ? ` · ${formatSizeLabel(item.sizeLabel, item.category)}` : ""}
                       </p>
                       {item.varietyKey && (
                         <div className="flex items-center gap-1 mt-1 flex-wrap">

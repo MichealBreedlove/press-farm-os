@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, X, Repeat } from "lucide-react";
 import { formatQty } from "@/lib/utils";
 import { UNIT_LABELS } from "@/lib/constants";
+import { formatSizeLabel } from "@/lib/leaf-sizes";
 
 interface OrderItemForRow {
   id: string;
@@ -367,7 +368,7 @@ export function InlineShortageRow({ orderId, orderItem, canEdit, catalogItems }:
           </span>
           {orderItem.sizeLabel && (
             <span className="inline-block px-1.5 py-0.5 mr-2 rounded text-[10px] font-medium bg-farm-cream text-farm-muted align-middle">
-              {orderItem.sizeLabel}
+              {formatSizeLabel(orderItem.sizeLabel, orderItem.category)}
             </span>
           )}
           {isShorted ? (

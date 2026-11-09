@@ -66,7 +66,7 @@ export default async function HarvestPage({ searchParams }: Props) {
         id, status,
         restaurant:restaurants(id, name),
         order_items(
-          id, quantity_requested, quantity_fulfilled, is_shorted, unit_type, color_key, variety_key, picked_at,
+          id, quantity_requested, quantity_fulfilled, is_shorted, unit_type, size_label, color_key, variety_key, picked_at,
           availability_item:availability_items(
             item:items(id, name, category, unit_type)
           )

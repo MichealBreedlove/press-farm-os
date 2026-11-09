@@ -1,6 +1,7 @@
 import { formatQty, cn } from "@/lib/utils";
 import { laneStyle } from "@/lib/lanes";
 import { CATEGORY_LABELS, UNIT_LABELS } from "@/lib/constants";
+import { formatSizeLabel } from "@/lib/leaf-sizes";
 import {
   harvestRowKey,
   isRowResolved,
@@ -168,6 +169,11 @@ export function HarvestGrid({
                   )}
                   <span className={cn("truncate", done && "line-through decoration-farm-muted/60")}>
                   {row.name}
+                  {row.sizeLabel && (
+                    <span className="text-farm-muted font-medium">
+                      {" "}· {formatSizeLabel(row.sizeLabel, key)}
+                    </span>
+                  )}
                   {row.varietyKey && (
                     <span className="text-pf-master-blue font-medium">
                       {" "}· {row.varietyKey.split(",").map((v) => v.trim()).filter(Boolean).join(", ")}
