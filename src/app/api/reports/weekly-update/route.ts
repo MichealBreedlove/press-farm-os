@@ -15,10 +15,12 @@ import WeeklyUpdate from "@/emails/weekly-update";
 import { isDefaultSlotFire, slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
 import { requireCronSecret } from "@/lib/api-auth";
 
-// One Resend call per recipient (parallel) on top of a possible live build;
-// the plan-default budget (10 s on Hobby) is too tight. 60 s is allowed on
-// every Vercel plan.
+// A Resend call on top of a possible live build; the plan-default budget
+// (10 s on Hobby) is too tight. 60 s is allowed on every Vercel plan.
 export const maxDuration = 60;
+
+/** Resend's limit on `to` addresses in a single email. */
+const MAX_TO_PER_EMAIL = 50;
 
 /**
  * Chef-facing "Press Farm – Weekly Update" email.
@@ -42,7 +44,8 @@ export const maxDuration = 60;
  * Recipients: ONLY the addresses stored comma-separated in
  * farm_settings.weekly_update_recipients — chosen per-person on
  * /admin/weekly-update (chefs are offered as a picker but are not
- * auto-included).
+ * auto-included). The whole list goes in the `to` line of a single email
+ * (one shared thread), not one email per address.
  */
 export async function GET(request: Request) {
   const denied = requireCronSecret(request);
@@ -260,26 +263,31 @@ async function sendWeeklyUpdate({
     await upsertFarmSetting(admin, "weekly_update_last_sent_week", weekAnchor);
   }
 
-  const sendResults = await Promise.allSettled(
-    list.map((to) =>
-      safeResendSend({
+  // ONE email addressed to the whole list, so everyone is on the same thread
+  // and a reply-all reaches the group. The saved recipients are mostly group
+  // addresses whose members overlap — a separate email per address meant
+  // people in two groups got two unrelated copies. Resend caps `to` at 50
+  // addresses per email, so a longer list goes out as consecutive groups.
+  const sent: string[] = [];
+  const failed: Array<{ to: string; error: string }> = [];
+  for (let i = 0; i < list.length; i += MAX_TO_PER_EMAIL) {
+    const group = list.slice(i, i + MAX_TO_PER_EMAIL);
+    let error: string | null = null;
+    try {
+      const res = await safeResendSend({
         from: FROM_ADDRESSES.forecast,
-        to,
+        to: group,
         subject,
         text: fallbackText,
         react: reactEl,
-      }).then((res) => {
-        if (res.error) throw new Error(res.error.message);
-      }),
-    ),
-  );
-
-  const sent: string[] = [];
-  const failed: Array<{ to: string; error: string }> = [];
-  sendResults.forEach((r, i) => {
-    if (r.status === "fulfilled") sent.push(list[i]);
-    else failed.push({ to: list[i], error: String(r.reason) });
-  });
+      });
+      if (res.error) error = res.error.message || "send failed";
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    }
+    if (error) for (const to of group) failed.push({ to, error });
+    else sent.push(...group);
+  }
   if (failed.length > 0) console.error("[WEEKLY-UPDATE] Some sends failed:", failed);
 
   // A test send is not this week's update: no log row, no sent-week stamp.
