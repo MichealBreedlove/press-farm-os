@@ -15,10 +15,12 @@ import WeeklyUpdate from "@/emails/weekly-update";
 import { isDefaultSlotFire, slotTimeLabel, weeklyUpdateCronDecision } from "@/lib/weekly-update-schedule";
 import { requireCronSecret } from "@/lib/api-auth";
 
-// One Resend call per recipient (parallel) on top of a possible live build;
-// the plan-default budget (10 s on Hobby) is too tight. 60 s is allowed on
-// every Vercel plan.
+// A Resend call on top of a possible live build; the plan-default budget
+// (10 s on Hobby) is too tight. 60 s is allowed on every Vercel plan.
 export const maxDuration = 60;
+
+/** Resend's per-message recipient cap. */
+const MAX_RECIPIENTS_PER_EMAIL = 50;
 
 /**
  * Chef-facing "Press Farm – Weekly Update" email.
@@ -42,7 +44,8 @@ export const maxDuration = 60;
  * Recipients: ONLY the addresses stored comma-separated in
  * farm_settings.weekly_update_recipients — chosen per-person on
  * /admin/weekly-update (chefs are offered as a picker but are not
- * auto-included).
+ * auto-included). They all go on the To line of ONE email, so everyone is
+ * on the same thread and can see who else received it.
  */
 export async function GET(request: Request) {
   const denied = requireCronSecret(request);
@@ -260,8 +263,16 @@ async function sendWeeklyUpdate({
     await upsertFarmSetting(admin, "weekly_update_last_sent_week", weekAnchor);
   }
 
+  // ONE email addressed to everyone (all recipients on the To line), so the
+  // chefs share a single thread and a reply-all reaches the whole group.
+  // Before 2026-11-16 this was one separate email per recipient. Resend caps
+  // a message at 50 recipients, so a longer list goes out in groups of 50.
+  const groups: string[][] = [];
+  for (let i = 0; i < list.length; i += MAX_RECIPIENTS_PER_EMAIL) {
+    groups.push(list.slice(i, i + MAX_RECIPIENTS_PER_EMAIL));
+  }
   const sendResults = await Promise.allSettled(
-    list.map((to) =>
+    groups.map((to) =>
       safeResendSend({
         from: FROM_ADDRESSES.forecast,
         to,
@@ -277,8 +288,8 @@ async function sendWeeklyUpdate({
   const sent: string[] = [];
   const failed: Array<{ to: string; error: string }> = [];
   sendResults.forEach((r, i) => {
-    if (r.status === "fulfilled") sent.push(list[i]);
-    else failed.push({ to: list[i], error: String(r.reason) });
+    if (r.status === "fulfilled") sent.push(...groups[i]);
+    else for (const to of groups[i]) failed.push({ to, error: String(r.reason) });
   });
   if (failed.length > 0) console.error("[WEEKLY-UPDATE] Some sends failed:", failed);
 
