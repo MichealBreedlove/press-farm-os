@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types";
 import { sendOrderConfirmedEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { orderEmailLine } from "@/lib/order-email-lines";
 import { materializeDeliveryItems } from "@/lib/materialize-deliveries";
 
 /**
@@ -151,8 +152,12 @@ export async function PATCH(
             quantity_requested,
             quantity_fulfilled,
             is_shorted,
+            unit_type,
+            size_label,
+            color_key,
+            variety_key,
             availability_item:availability_items(
-              item:items(name, unit_type)
+              item:items(name, category, unit_type)
             )
           )
         `)
@@ -166,14 +171,11 @@ export async function PATCH(
 
         if (chefEmail) {
           const items = (fullOrder.order_items ?? []).map((oi: any) => {
-            const item = oi.availability_item?.item;
-            // unit_type may be comma-separated; use the first as display unit
-            const unit = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
             return {
-              itemName: item?.name ?? "Unknown item",
+              // Ordered unit + size / color / variety, not the catalog's first unit.
+              ...orderEmailLine({ ...oi, menu_section: null, item: oi.availability_item?.item }),
               requestedQty: oi.quantity_requested,
               fulfilledQty: oi.quantity_fulfilled ?? oi.quantity_requested,
-              unit,
               isShorted: oi.is_shorted ?? false,
             };
           });

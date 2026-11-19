@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/api-auth";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { orderEmailLine } from "@/lib/order-email-lines";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { MAX_LINE_TEXT, capText, isIsoDate, validateLineOptions } from "@/lib/order-line-validation";
 import { sendOrderSubmittedEmail } from "@/lib/email";
@@ -319,17 +320,13 @@ export async function POST(request: Request) {
     const orderedAvailIds = lines.map((l) => l.availability_item_id);
     const { data: availDetails } = await (admin as any)
       .from("availability_items")
-      .select("id, item:items(name, unit_type)")
+      .select("id, item:items(name, category, unit_type)")
       .in("id", orderedAvailIds);
     const nameMap = new Map((availDetails ?? []).map((a: any) => [a.id, a.item]));
-    const emailItems = lines.map((l) => {
-      const item = nameMap.get(l.availability_item_id) as any;
-      return {
-        itemName: item?.name ?? "Unknown item",
-        quantity: l.quantity_requested,
-        unit: l.unit_type ?? String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "",
-      };
-    });
+    const emailItems = lines.map((l) => ({
+      ...orderEmailLine({ ...(l as any), menu_section: null, item: nameMap.get(l.availability_item_id) as any }),
+      quantity: l.quantity_requested,
+    }));
     await sendOrderSubmittedEmail({
       restaurantName: `Events${eventLabel ? ` · ${eventLabel}` : ""}`,
       chefName: actorName ?? "Events team",

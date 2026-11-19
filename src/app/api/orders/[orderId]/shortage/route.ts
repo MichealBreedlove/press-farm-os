@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { sendShortageEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { orderEmailLine } from "@/lib/order-email-lines";
 
 /**
  * PATCH /api/orders/[orderId]/shortage — Mark order items as shorted (admin only)
@@ -150,8 +151,12 @@ export async function PATCH(
         replacement_label,
         replacement_quantity,
         replacement_unit,
+        unit_type,
+        size_label,
+        color_key,
+        variety_key,
         availability_item:availability_items(
-          item:items(name, unit_type)
+          item:items(name, category, unit_type)
         )
       )
     `)
@@ -172,9 +177,6 @@ export async function PATCH(
 
       if (chefEmail) {
         const shortages = shortedItems.map((oi: any) => {
-          const item = oi.availability_item?.item;
-          // unit_type may be comma-separated; surface the first as the email's display unit
-          const unit = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
           // Substitution copy for the chef: "Miracle" or "Miracle (2 BU)".
           const replacementLabel = (oi.replacement_label ?? "").trim();
           let replacement: string | null = null;
@@ -187,10 +189,10 @@ export async function PATCH(
                 : replacementLabel;
           }
           return {
-            itemName: item?.name ?? "Unknown item",
+            // Ordered unit + size / color / variety, not the catalog's first unit.
+            ...orderEmailLine({ ...oi, menu_section: null, item: oi.availability_item?.item }),
             requestedQty: oi.quantity_requested,
             fulfilledQty: oi.quantity_fulfilled ?? 0,
-            unit,
             reason: oi.shortage_reason ?? "",
             replacement,
           };

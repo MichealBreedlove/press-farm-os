@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireUser } from "@/lib/api-auth";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 import { recordOrderAudit } from "@/lib/order-audit";
+import { orderEmailLine } from "@/lib/order-email-lines";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { capText, validateLineOptions } from "@/lib/order-line-validation";
 import { planOrderItemMerge, resolveStaleAvailabilityIds, type MergeUpdate } from "@/lib/orders";
@@ -520,7 +521,7 @@ export async function POST(request: Request) {
     const orderedAvailIds = orderItems.map((oi) => oi.availability_item_id);
     const { data: availDetails } = orderedAvailIds.length > 0
       ? await (supabase.from("availability_items") as any)
-          .select("id, item:items(name, unit_type)")
+          .select("id, item:items(name, category, unit_type)")
           .in("id", orderedAvailIds)
       : { data: [] };
 
@@ -528,19 +529,13 @@ export async function POST(request: Request) {
       (availDetails ?? []).map((a: any) => [a.id, a.item])
     );
 
-    const emailItems = orderItems.map((oi) => {
-      const item = availMap.get(oi.availability_item_id) as any;
-      // unit_type may be comma-separated (e.g. "sm,lg") — surface the first
-      // for the email line. The actual ordered unit is stored on the line
-      // item itself (via the OrderForm's enumerateKeys flow).
-      const unitFirst = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
-      const baseName = item?.name ?? "Unknown item";
-      return {
-        itemName: (oi as any).menu_section === "events" ? `${baseName} (Events)` : baseName,
-        quantity: oi.quantity_requested,
-        unit: unitFirst,
-      };
-    });
+    // The ORDERED unit + size / color / variety come off the line itself —
+    // see orderEmailLine (the email used to print the item's first catalog
+    // unit, so an LG order of a "sm,lg" item read "SM").
+    const emailItems = orderItems.map((oi) => ({
+      ...orderEmailLine({ ...oi, item: availMap.get(oi.availability_item_id) as any }),
+      quantity: oi.quantity_requested,
+    }));
 
     // 1. Admin notification — per-line chef notes ride on the item name so
     // they reach the farm even before anyone opens the order page.
