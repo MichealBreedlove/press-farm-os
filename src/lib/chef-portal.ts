@@ -6,10 +6,11 @@ import { createClient } from "@/lib/supabase/server";
  *
  * The middleware only checks for a session. Without this, a receiver or
  * harvester who types /history lands on a "No restaurant found" dead end
- * instead of their own home. Chefs and admins (who may peek) pass through;
- * everyone else is sent where they belong.
+ * instead of their own home. Chefs, the Farm Liaison (who orders under
+ * Press) and admins (who may peek) pass through; everyone else is sent where
+ * they belong. Returns the role so the layout can pick the right bottom nav.
  */
-export async function gateChefPortal(): Promise<void> {
+export async function gateChefPortal(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,6 +29,7 @@ export async function gateChefPortal(): Promise<void> {
     case "harvester":
       redirect("/harvest");
     default:
-      return; // chef, admin, or no profile yet (page handles the rest)
+      // chef, liaison, admin, or no profile yet (page handles the rest)
+      return (profile?.role as string | undefined) ?? null;
   }
 }

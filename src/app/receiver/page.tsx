@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { getOpenTaskCount } from "@/lib/tasks/queries";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
@@ -110,6 +113,12 @@ export default async function ReceiverPage({ searchParams }: Props) {
     .maybeSingle();
   const lastNotifiedAt = (lastNotifyRaw as { sent_at: string } | null)?.sent_at ?? null;
 
+  // Open farm tasks due by today — the count on the "Farm tasks" link.
+  const { data: farmRows } = await (admin as any).from("farms").select("id").limit(1);
+  const openTaskCount = farmRows?.[0]?.id
+    ? await getOpenTaskCount(admin, farmRows[0].id, new Date(`${today}T12:00:00Z`))
+    : 0;
+
   return (
     <main id="main" className="min-h-screen pb-24 bg-farm-cream">
       <PwaInstallPrompt />
@@ -162,6 +171,23 @@ export default async function ReceiverPage({ searchParams }: Props) {
         </div>
 
         {/* Sign out — same card pattern used on /admin/settings */}
+        {/* Farm task list — English + Spanish, so the receiver can translate
+            for the farm hands. Read-only. */}
+        <Link
+          href="/receiver/tasks"
+          className="card-interactive mt-6 flex items-center justify-between gap-3 px-4 py-4"
+        >
+          <span>
+            <span className="block text-sm font-semibold text-farm-dark">Farm tasks</span>
+            <span className="block text-xs text-farm-muted mt-0.5">
+              {openTaskCount > 0
+                ? `${openTaskCount} to do at the farm · English and Spanish`
+                : "What needs to be done at the farm · English and Spanish"}
+            </span>
+          </span>
+          <ChevronRight className="w-5 h-5 text-farm-muted flex-shrink-0" aria-hidden="true" />
+        </Link>
+
         <div className="mt-6">
           <p className="section-eyebrow text-farm-muted mb-2">Account</p>
           <SignOutButton />

@@ -7,6 +7,7 @@ import { WeeklyUpdateClient } from "./WeeklyUpdateClient";
 import {
   buildWeeklyUpdateData,
   parseWeeklyUpdateDraft,
+  reconcileTaskLines,
   upcomingMondayISO,
 } from "@/lib/weekly-update";
 
@@ -37,7 +38,12 @@ export default async function WeeklyUpdatePage() {
   const weekAnchor = upcomingMondayISO();
   const liveData = await buildWeeklyUpdateData(admin);
   const savedDraft = parseWeeklyUpdateDraft(settingsMap.weekly_update_draft);
-  const draftData = savedDraft && savedDraft.weekOf === weekAnchor ? savedDraft.data : null;
+  // A saved draft keeps its edits, but tasks finished since it was saved
+  // move from "on the list" to "done" so the page never shows stale status.
+  const draftData =
+    savedDraft && savedDraft.weekOf === weekAnchor
+      ? reconcileTaskLines(savedDraft.data, liveData)
+      : null;
 
   const { data: farms } = await admin.from("farms").select("id").limit(1);
   const farmId = farms?.[0]?.id ?? "";

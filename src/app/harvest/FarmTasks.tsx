@@ -9,25 +9,10 @@ import { addDaysISO } from "@/lib/utils";
 import { TASK_TYPE_ICONS } from "@/lib/tasks/constants";
 import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize";
 import { HARVEST_STRINGS, formatHarvestDate, type HarvestLang } from "@/lib/i18n/harvest";
-import type { FarmTaskType } from "@/types/database";
+import type { BoardTask } from "@/lib/tasks/board";
 
-/** The slice of a farm task the Farm Hand portal needs — no admin metadata. */
-export interface FarmHandTask {
-  id: string;
-  title: string;
-  title_es: string | null;
-  description: string | null;
-  description_es: string | null;
-  type: FarmTaskType;
-  due_date: string;
-  due_time: string | null;
-  priority: 1 | 2 | 3 | 4;
-  photo_urls: string[];
-  completed_at: string | null;
-  completed_by_name: string | null;
-  /** Linked crop / item name, when the task has one. */
-  subject: string | null;
-}
+/** A farm task as the portal sees it — shared shape, see src/lib/tasks/board.ts. */
+export type FarmHandTask = BoardTask;
 
 interface Props {
   lang: HarvestLang;

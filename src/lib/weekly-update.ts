@@ -207,6 +207,92 @@ export function compareBoxNames(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+/** How far back an unfinished task still counts as "carried over" news. */
+const CARRY_OVER_DAYS = 7;
+
+/**
+ * The two farm-task lists of the update, straight from `farm_tasks`:
+ *   - tasksCompleted: finished in the last 7 days
+ *   - tasksUpcoming:  NOT finished yet — first the ones that were due in the
+ *     last week and are still open ("not finished — was due …"), then
+ *     everything due within the update week.
+ * Anything older than a week overdue stays out: that is internal backlog,
+ * not chef news (long-dead July sow jobs used to reappear in every build).
+ */
+export async function buildWeeklyTaskLines(
+  admin: SupabaseClient,
+  today: string = todayPacific(),
+): Promise<Pick<WeeklyUpdateData, "tasksCompleted" | "tasksUpcoming">> {
+  const weekAnchor = upcomingMondayISO(today);
+  const [{ data: doneTasks }, { data: openTasks }] = await Promise.all([
+    (admin as any)
+      .from("farm_tasks")
+      .select("title, completed_at")
+      .eq("status", "completed")
+      .gte("completed_at", addDaysISO(today, -7) + "T00:00:00Z")
+      .order("completed_at", { ascending: true })
+      .limit(50),
+    (admin as any)
+      .from("farm_tasks")
+      .select("title, due_date, status")
+      .in("status", ["open", "snoozed"])
+      .gte("due_date", addDaysISO(today, -CARRY_OVER_DAYS))
+      .lte("due_date", addDaysISO(weekAnchor, 6))
+      .order("due_date", { ascending: true })
+      .limit(50),
+  ]);
+
+  const tasksCompleted: string[] = (doneTasks ?? []).map((t: any) => {
+    const day = t.completed_at
+      ? new Date(t.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" })
+      : null;
+    return day ? `${t.title} (${day})` : t.title;
+  });
+  const tasksUpcoming: string[] = (openTasks ?? []).map((t: any) =>
+    t.due_date < today
+      ? `${t.title} (not finished — was due ${shortDate(t.due_date)})`
+      : `${t.title} (due ${shortDate(t.due_date)})`,
+  );
+  return { tasksCompleted, tasksUpcoming };
+}
+
+/** "Weed the bed (due Nov 24)" → "Weed the bed". */
+export function taskLineTitle(line: string): string {
+  return line.replace(/\s*\([^()]*\)\s*$/, "").trim();
+}
+
+/**
+ * Bring a SAVED draft's task lists up to date with the farm before it is
+ * shown or sent: a task the draft still lists as "on the list" that has
+ * since been finished moves to "done". Everything else in the draft —
+ * hand-written lines, deletions, wording — is left exactly as saved, so an
+ * edit is never undone. Pure.
+ */
+export function reconcileTaskLines<T extends Pick<WeeklyUpdateData, "tasksCompleted" | "tasksUpcoming">>(
+  draft: T,
+  live: Pick<WeeklyUpdateData, "tasksCompleted" | "tasksUpcoming">,
+): T {
+  const liveDone = new Map(live.tasksCompleted.map((l) => [taskLineTitle(l).toLowerCase(), l]));
+  const liveOpen = new Set(live.tasksUpcoming.map((l) => taskLineTitle(l).toLowerCase()));
+  const doneTitles = new Set(draft.tasksCompleted.map((l) => taskLineTitle(l).toLowerCase()));
+  const tasksCompleted = [...draft.tasksCompleted];
+  const tasksUpcoming: string[] = [];
+  for (const line of draft.tasksUpcoming) {
+    const key = taskLineTitle(line).toLowerCase();
+    const finished = liveDone.get(key);
+    // Same title both finished AND still open = a repeating task; keep it.
+    if (!finished || liveOpen.has(key)) {
+      tasksUpcoming.push(line);
+      continue;
+    }
+    if (!doneTitles.has(key)) {
+      tasksCompleted.push(finished);
+      doneTitles.add(key);
+    }
+  }
+  return { ...draft, tasksCompleted, tasksUpcoming };
+}
+
 /** Assemble a fresh draft from live data. `admin` must be the service-role client. */
 export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<WeeklyUpdateData> {
   const today = todayPacific();
@@ -225,37 +311,9 @@ export async function buildWeeklyUpdateData(admin: SupabaseClient): Promise<Week
     { label: "~2 Months", items: names(buckets.in2Months) },
   ];
 
-  // ---- Farm tasks: done last 7 days + due through end of update week -----
+  // ---- Farm tasks: done / carried over / on the list ---------------------
   const weekAnchor = upcomingMondayISO(today);
-  const { data: doneTasks } = await (admin as any)
-    .from("farm_tasks")
-    .select("title, completed_at")
-    .eq("status", "completed")
-    .gte("completed_at", addDaysISO(today, -7) + "T00:00:00Z")
-    .order("completed_at", { ascending: true })
-    .limit(50);
-  const tasksCompleted: string[] = (doneTasks ?? []).map((t: any) => {
-    const day = t.completed_at
-      ? new Date(t.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" })
-      : null;
-    return day ? `${t.title} (${day})` : t.title;
-  });
-
-  // Only tasks due WITHIN the update week (Mon-Sun). Older overdue tasks are
-  // an internal backlog, not chef news — including them made long-dead items
-  // (e.g. July sow jobs) reappear in every live build.
-  const { data: openTasks } = await (admin as any)
-    .from("farm_tasks")
-    .select("title, due_date, status")
-    .in("status", ["open", "snoozed"])
-    .gte("due_date", weekAnchor)
-    .lte("due_date", addDaysISO(weekAnchor, 6))
-    .order("due_date", { ascending: true })
-    .limit(50);
-  const tasksUpcoming: string[] = (openTasks ?? []).map((t: any) => {
-    const overdue = t.due_date < today;
-    return `${t.title} (${overdue ? "overdue — " : "due "}${shortDate(t.due_date)})`;
-  });
+  const { tasksCompleted, tasksUpcoming } = await buildWeeklyTaskLines(admin, today);
 
   // ---- General note ------------------------------------------------------
   const { data: noteRow } = await (admin as any)

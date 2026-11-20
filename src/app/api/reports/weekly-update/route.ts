@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildWeeklyUpdateData,
   parseWeeklyUpdateDraft,
+  buildWeeklyTaskLines,
+  reconcileTaskLines,
   recordWeeklyUpdateAttempt,
   sanitizeWeeklyUpdateData,
   upcomingMondayISO,
@@ -188,6 +190,14 @@ async function sendWeeklyUpdate({
     if (draft && draft.weekOf === weekAnchor) {
       data = draft.data;
       source = "draft";
+      // The draft may have been saved days ago: tasks finished since then
+      // move from "on the list" to "done". Best-effort — a failed lookup
+      // sends the draft as saved rather than blocking the update.
+      try {
+        data = reconcileTaskLines(draft.data, await buildWeeklyTaskLines(admin));
+      } catch (err) {
+        console.error("[WEEKLY-UPDATE] task status refresh failed", err);
+      }
     } else {
       // A live build touches availability and the forecast —
       // any of which can throw. Without this catch the run dies here and

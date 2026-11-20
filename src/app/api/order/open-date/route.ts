@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .single();
   const role = (profileRow as { role: string } | null)?.role ?? null;
-  if (!role || (role !== "chef" && role !== "admin")) {
+  if (!role || (role !== "chef" && role !== "liaison" && role !== "admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

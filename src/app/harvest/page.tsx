@@ -4,9 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregateHarvest, type HarvestOrder } from "@/lib/harvest";
 import { addDaysISO, todayPacific } from "@/lib/utils";
 import { HarvestClient, type HarvestExtra } from "./HarvestClient";
-import type { FarmHandTask } from "./FarmTasks";
-import { listTodayTasks, listUpcomingTasks, listCompletedTasks } from "@/lib/tasks/queries";
-import type { FarmTask } from "@/types/database";
+import { loadTaskBoard } from "@/lib/tasks/board";
 
 export const dynamic = "force-dynamic";
 
@@ -65,19 +63,11 @@ export default async function HarvestPage({ searchParams }: Props) {
 
   // Orders for the selected date — just the fields the harvest roll-up needs
   // (no prices, no chef notes). Admin client: cross-restaurant by design.
-  // Task windows are anchored to the PACIFIC date (the task helpers default
-  // to the UTC date, which is already "tomorrow" by late afternoon here).
-  const taskNow = new Date(`${today}T12:00:00Z`);
-  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
-  const farmId: string | undefined = farms?.[0]?.id;
-
   const [
     { data: ordersRaw },
     { data: deliveriesRaw },
     { data: catalogRaw },
-    tasksToday,
-    tasksUpcoming,
-    tasksDone,
+    board,
   ] = await Promise.all([
     (admin as any)
       .from("orders")
@@ -108,47 +98,9 @@ export default async function HarvestPage({ searchParams }: Props) {
       .select("id, name, unit_type")
       .eq("is_archived", false)
       .order("name"),
-    farmId ? listTodayTasks(admin, farmId, taskNow) : Promise.resolve([] as FarmTask[]),
-    farmId ? listUpcomingTasks(admin, farmId, taskNow, 14) : Promise.resolve([] as FarmTask[]),
-    farmId ? listCompletedTasks(admin, farmId, taskNow, 7) : Promise.resolve([] as FarmTask[]),
+    // Farm tasks for the Tasks tab (due now / next 14 days / done last 7).
+    loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7 }),
   ]);
-
-  // Names for the task cards: linked crop / item, and who finished it.
-  const allTasks = [...tasksToday, ...tasksUpcoming, ...tasksDone];
-  const cropIds = Array.from(new Set(allTasks.map((t) => t.microgreen_crop_id).filter((v): v is string => !!v)));
-  const completerIds = Array.from(new Set(tasksDone.map((t) => t.completed_by).filter((v): v is string => !!v)));
-  const [{ data: cropRows }, { data: peopleRows }] = await Promise.all([
-    cropIds.length > 0
-      ? admin.from("microgreen_crops").select("id, name").in("id", cropIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    completerIds.length > 0
-      ? admin.from("profiles").select("id, full_name").in("id", completerIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
-  ]);
-  const itemNameById = new Map<string, string>(((catalogRaw ?? []) as any[]).map((i) => [i.id, i.name]));
-  const cropNameById = new Map<string, string>((cropRows ?? []).map((c) => [c.id, c.name]));
-  const personNameById = new Map<string, string>(
-    (peopleRows ?? []).filter((p) => p.full_name).map((p) => [p.id, p.full_name as string]),
-  );
-  // Only what the crew needs — no source refs, generator keys or notes.
-  const toFarmHandTask = (t: FarmTask): FarmHandTask => ({
-    id: t.id,
-    title: t.title,
-    title_es: t.title_es,
-    description: t.description,
-    description_es: t.description_es,
-    type: t.type,
-    due_date: t.due_date,
-    due_time: t.due_time,
-    priority: t.priority,
-    photo_urls: t.photo_urls ?? [],
-    completed_at: t.completed_at,
-    completed_by_name: t.completed_by ? personNameById.get(t.completed_by) ?? null : null,
-    subject:
-      (t.microgreen_crop_id && cropNameById.get(t.microgreen_crop_id)) ||
-      (t.item_id && itemNameById.get(t.item_id)) ||
-      null,
-  });
 
   const orders: any[] = ordersRaw ?? [];
   const agg = aggregateHarvest(orders as HarvestOrder[]);
@@ -194,9 +146,9 @@ export default async function HarvestPage({ searchParams }: Props) {
       catalog={(catalogRaw ?? []) as { id: string; name: string; unit_type: string }[]}
       initialTab={tabParam === "tasks" ? "tasks" : "harvest"}
       today={today}
-      todayTasks={tasksToday.map(toFarmHandTask)}
-      upcomingTasks={tasksUpcoming.map(toFarmHandTask)}
-      doneTasks={tasksDone.map(toFarmHandTask)}
+      todayTasks={board.todo}
+      upcomingTasks={board.upcoming}
+      doneTasks={board.done}
     />
   );
 }

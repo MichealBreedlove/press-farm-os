@@ -171,7 +171,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       restaurants.find((r) => u.restaurants.includes(r.name))?.id ?? restaurants[0]?.id ?? "";
     setEditForm({
       full_name: u.full_name ?? "",
-      role: u.role === "receiver" || u.role === "harvester" ? u.role : "chef",
+      role: u.role === "receiver" || u.role === "harvester" || u.role === "liaison" ? u.role : "chef",
       restaurant_id: currentRid,
     });
   }
@@ -227,6 +227,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const admins = users.filter((u) => u.role === "admin");
   const receivers = users.filter((u) => u.role === "receiver");
   const harvesters = users.filter((u) => u.role === "harvester");
+  const liaisons = users.filter((u) => u.role === "liaison");
 
   // Shared account card with the full management controls (edit / welcome /
   // reset password / deactivate / delete). Rendered for chefs AND harvesters —
@@ -326,7 +327,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             </div>
             <div>
               <label className="block text-xs text-farm-muted mb-1">Role</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setEditForm((f) => ({ ...f, role: "chef" }))}
@@ -359,6 +360,17 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                   }`}
                 >
                   Farm Hand
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, role: "liaison" }))}
+                  className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                    editForm.role === "liaison"
+                      ? "bg-pf-master-orange text-white border-pf-master-orange"
+                      : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-orange/30"
+                  }`}
+                >
+                  Farm Liaison
                 </button>
               </div>
             </div>
@@ -521,7 +533,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
           </div>
           <div>
             <label className="block text-xs text-farm-muted mb-1">Role</label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, role: "chef" }))}
@@ -564,6 +576,20 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                   Harvest list + farm tasks (English/Spanish)
                 </p>
               </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, role: "liaison" }))}
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 py-2 ${
+                  form.role === "liaison"
+                    ? "bg-pf-master-orange text-white border-pf-master-orange shadow-sm"
+                    : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-orange/30"
+                }`}
+              >
+                <p className="font-semibold">Farm Liaison</p>
+                <p className={`text-[11px] mt-0.5 ${form.role === "liaison" ? "text-white/80" : "text-farm-muted"}`}>
+                  Orders for Press, production, farm tasks
+                </p>
+              </button>
             </div>
           </div>
 
@@ -590,6 +616,17 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               Receivers don&apos;t need a restaurant assignment — they see incoming
               from both Press and Under-Study, plus event items, on a single dashboard.
               Read-only: they can&apos;t place or edit orders.
+            </p>
+          )}
+
+          {form.role === "liaison" && (
+            <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-pf-master-orange/[0.06] border border-pf-master-orange/15 rounded-lg p-3">
+              The Farm Liaison gets a simple dashboard with three pages:
+              ordering (placed under Press), production (what the farm
+              delivered, in product and dollars, plus the microgreens
+              available) and farm tasks (to do and accomplished, read-only).
+              No restaurant to pick — the account is linked to Press
+              automatically.
             </p>
           )}
 
@@ -674,6 +711,16 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Farm Liaison — same management controls */}
+      {liaisons.length > 0 && (
+        <div>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">
+            Farm Liaison ({liaisons.length})
+          </p>
+          <div className="space-y-2">{liaisons.map(renderManagedCard)}</div>
         </div>
       )}
 

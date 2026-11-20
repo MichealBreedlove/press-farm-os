@@ -5,6 +5,8 @@ import {
   sanitizeWeeklyUpdateData,
   parseWeeklyUpdateDraft,
   compareBoxNames,
+  reconcileTaskLines,
+  taskLineTitle,
 } from "@/lib/weekly-update";
 
 describe("upcomingMondayISO", () => {
@@ -111,5 +113,39 @@ describe("compareBoxNames", () => {
   it("puts ST first, then other series, each in number order", () => {
     const names = ["U2", "ST10", "G1", "ST2", "U10", "ST1", "G4", "U1"];
     expect([...names].sort(compareBoxNames)).toEqual(["ST1", "ST2", "ST10", "G1", "G4", "U1", "U2", "U10"]);
+  });
+});
+
+describe("reconcileTaskLines", () => {
+  const live = {
+    tasksCompleted: ["Weed the bed (Nov 19)", "Sow Radish (recurring every 14d) (Nov 18)"],
+    tasksUpcoming: ["Sow Radish (recurring every 14d) (due Dec 2)", "Plant the garlic (due Nov 24)"],
+  };
+  it("strips only the trailing status note from a line", () => {
+    expect(taskLineTitle("Weed the bed (due Nov 24)")).toBe("Weed the bed");
+    expect(taskLineTitle("Sow Radish (recurring every 14d) (due Dec 2)")).toBe("Sow Radish (recurring every 14d)");
+    expect(taskLineTitle("No note")).toBe("No note");
+  });
+  it("moves a task finished since the draft was saved to done", () => {
+    const out = reconcileTaskLines(
+      { tasksCompleted: ["Fixed the gate (Nov 17)"], tasksUpcoming: ["Weed the bed (due Nov 20)", "Plant the garlic (due Nov 24)"] },
+      live,
+    );
+    expect(out.tasksUpcoming).toEqual(["Plant the garlic (due Nov 24)"]);
+    expect(out.tasksCompleted).toEqual(["Fixed the gate (Nov 17)", "Weed the bed (Nov 19)"]);
+  });
+  it("keeps hand-written lines, deletions and repeating tasks as saved", () => {
+    const draft = {
+      tasksCompleted: ["Weed the bed — looks great"],
+      tasksUpcoming: ["My own note", "Sow Radish (recurring every 14d) (due Dec 2)", "Weed the bed (due Nov 20)"],
+    };
+    const out = reconcileTaskLines(draft, live);
+    expect(out.tasksUpcoming).toEqual(["My own note", "Sow Radish (recurring every 14d) (due Dec 2)"]);
+    // "Weed the bed — looks great" has a different title, so the live line is added once.
+    expect(out.tasksCompleted).toEqual(["Weed the bed — looks great", "Weed the bed (Nov 19)"]);
+  });
+  it("preserves the other draft fields", () => {
+    const out = reconcileTaskLines({ tasksCompleted: [], tasksUpcoming: [], generalNote: "hi" } as any, live);
+    expect((out as any).generalNote).toBe("hi");
   });
 });

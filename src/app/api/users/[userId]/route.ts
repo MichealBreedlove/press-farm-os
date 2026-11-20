@@ -80,7 +80,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     if (!name) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
     profileUpdate.full_name = name;
   }
-  if (body.role === "chef" || body.role === "receiver" || body.role === "harvester") {
+  if (
+    body.role === "chef" ||
+    body.role === "receiver" ||
+    body.role === "harvester" ||
+    body.role === "liaison"
+  ) {
     profileUpdate.role = body.role;
   }
   if (typeof body.is_active === "boolean") profileUpdate.is_active = body.is_active;
@@ -93,6 +98,15 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   //    clear theirs; a chef is scoped to exactly one — replace any existing link.
   if (body.role === "receiver" || body.role === "harvester") {
     await admin.from("restaurant_users").delete().eq("user_id", userId);
+  } else if (body.role === "liaison") {
+    // A Farm Liaison always orders under Press.
+    const { data: press } = await admin.from("restaurants").select("id").eq("slug", "press").maybeSingle();
+    if (!press) return NextResponse.json({ error: "Press restaurant not found" }, { status: 500 });
+    await admin.from("restaurant_users").delete().eq("user_id", userId);
+    const { error } = await admin
+      .from("restaurant_users")
+      .upsert({ user_id: userId, restaurant_id: press.id }, { onConflict: "user_id,restaurant_id" });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   } else if (body.restaurant_id) {
     await admin.from("restaurant_users").delete().eq("user_id", userId);
     const { error } = await admin

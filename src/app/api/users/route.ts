@@ -89,8 +89,10 @@ export async function POST(request: Request) {
   const full_name = body.full_name;
   // Default role is "chef" for back-compat with the original form
   const role =
-    body.role === "receiver" || body.role === "harvester" ? body.role : "chef";
-  const restaurant_id = body.restaurant_id;
+    body.role === "receiver" || body.role === "harvester" || body.role === "liaison"
+      ? body.role
+      : "chef";
+  let restaurant_id = body.restaurant_id;
 
   if (!email || !full_name?.trim()) {
     return NextResponse.json({ error: "email and full_name required" }, { status: 400 });
@@ -109,6 +111,14 @@ export async function POST(request: Request) {
   const password = suppliedPassword || generateTempPassword();
 
   const admin = createAdminClient();
+
+  // A Farm Liaison always orders under Press — link them there so the chef
+  // order form (and its membership-based RLS) works for them.
+  if (role === "liaison") {
+    const { data: press } = await admin.from("restaurants").select("id").eq("slug", "press").maybeSingle();
+    if (!press) return NextResponse.json({ error: "Press restaurant not found" }, { status: 500 });
+    restaurant_id = press.id;
+  }
 
   // Create the auth user directly with a password. email_confirm:true so the
   // account is immediately usable at /login (no confirmation email round-trip).
@@ -142,7 +152,7 @@ export async function POST(request: Request) {
 
   // Link to restaurant only when chef — receivers/harvesters see all
   // restaurants by role.
-  if (role === "chef" && restaurant_id) {
+  if ((role === "chef" || role === "liaison") && restaurant_id) {
     const { error: linkErr } = await admin
       .from("restaurant_users")
       .upsert({ user_id: newUserId, restaurant_id }, { onConflict: "user_id,restaurant_id" });
