@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin as requireAdminSession } from "@/lib/api-auth";
+import { requireAdmin as requireAdminSession, requireRole } from "@/lib/api-auth";
 
 export type AuthOk = { ok: true; userId: string; farmId: string };
 export type AuthErr = { ok: false; res: NextResponse };
@@ -34,4 +34,33 @@ export async function requireAdmin(): Promise<AuthOk | AuthErr> {
     };
   }
   return { ok: true, userId: user.id, farmId };
+}
+
+export type WorkerOk = AuthOk & { role: "admin" | "harvester" };
+
+/**
+ * Gate for the two task actions the Farm Hand account may take — marking a
+ * task finished and undoing that. Admin + active harvester ("Farm Hand");
+ * everything else about tasks (create, edit, snooze, cancel) stays admin-only.
+ */
+export async function requireTaskWorker(): Promise<WorkerOk | AuthErr> {
+  const supabase = await createClient();
+  const auth = await requireRole(supabase, ["admin", "harvester"]);
+  if (!auth.ok) return { ok: false, res: auth.response };
+
+  const admin = createAdminClient();
+  const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
+  const farmId = farms?.[0]?.id;
+  if (!farmId) {
+    return {
+      ok: false,
+      res: NextResponse.json({ error: "Farm not seeded" }, { status: 500 }),
+    };
+  }
+  return {
+    ok: true,
+    userId: auth.user.id,
+    farmId,
+    role: auth.role === "admin" ? "admin" : "harvester",
+  };
 }

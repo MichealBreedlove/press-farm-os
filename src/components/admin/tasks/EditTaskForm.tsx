@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { FarmTask, FarmTaskType } from "@/types/database";
 import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
+import { TaskPhotoField } from "./TaskPhotoField";
 
 interface Item {
   id: string;
@@ -35,6 +36,10 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(task.priority);
   const [itemId, setItemId] = useState<string>(task.item_id ?? "");
   const [completionNotes, setCompletionNotes] = useState(task.completion_notes ?? "");
+  const [photoUrls, setPhotoUrls] = useState<string[]>(task.photo_urls ?? []);
+  const [uploading, setUploading] = useState(false);
+  const [titleEs, setTitleEs] = useState(task.title_es ?? "");
+  const [descriptionEs, setDescriptionEs] = useState(task.description_es ?? "");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +48,12 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
       setError("Title required");
       return;
     }
+    // Spanish: if Micheal edited it by hand, save his text. If only the
+    // English changed, re-translate in the background instead.
+    const englishChanged =
+      title.trim() !== task.title || (description.trim() || null) !== (task.description ?? null);
+    const spanishEdited =
+      titleEs.trim() !== (task.title_es ?? "") || descriptionEs.trim() !== (task.description_es ?? "");
     startTransition(async () => {
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
@@ -56,12 +67,19 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
           priority,
           item_id: itemId || null,
           completion_notes: completionNotes.trim() || null,
+          photo_urls: photoUrls,
+          ...(spanishEdited
+            ? { title_es: titleEs.trim() || null, description_es: descriptionEs.trim() || null }
+            : {}),
         }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         setError(j.error ?? "Save failed");
         return;
+      }
+      if (!spanishEdited && (englishChanged || !task.title_es)) {
+        void fetch(`/api/tasks/${task.id}/translate`, { method: "POST", keepalive: true }).catch(() => {});
       }
       router.push("/admin/tasks");
       router.refresh();
@@ -132,6 +150,39 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
           className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold resize-none"
         />
       </Field>
+
+      <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />
+
+      <details className="rounded-md border border-pf-master-gold/20 bg-white">
+        <summary className="px-3 py-3 text-sm text-farm-dark cursor-pointer select-none">
+          Spanish (what the farm team reads)
+        </summary>
+        <div className="px-3 pb-3 space-y-3">
+          <p className="text-[11px] text-farm-muted leading-relaxed">
+            Translated automatically when you save. Edit here to correct it;
+            leave it alone and it follows the English.
+          </p>
+          <Field label="Título">
+            <input
+              type="text"
+              lang="es"
+              value={titleEs}
+              onChange={(e) => setTitleEs(e.target.value)}
+              maxLength={500}
+              className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
+            />
+          </Field>
+          <Field label="Descripción">
+            <textarea
+              lang="es"
+              value={descriptionEs}
+              onChange={(e) => setDescriptionEs(e.target.value)}
+              rows={3}
+              className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold resize-none"
+            />
+          </Field>
+        </div>
+      </details>
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Type">
@@ -229,7 +280,7 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
           </button>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || uploading}
             className="px-4 py-2 text-sm rounded-md bg-farm-green text-white hover:bg-farm-green/90 disabled:opacity-50"
           >
             {pending ? "Saving…" : "Save changes"}

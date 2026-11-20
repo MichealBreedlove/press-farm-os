@@ -73,6 +73,21 @@ export default async function TasksPage() {
     for (const r of crops ?? []) cropMap.set(r.id, r.name);
   }
 
+  // Who finished each task (admin or a farm hand on /harvest).
+  const userNames: Record<string, string> = {};
+  const completerIds = Array.from(
+    new Set(done.map((t) => t.completed_by).filter((v): v is string => !!v)),
+  );
+  if (completerIds.length > 0) {
+    const { data: people } = await admin
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", completerIds);
+    for (const r of people ?? []) {
+      if (r.full_name) userNames[r.id] = r.full_name;
+    }
+  }
+
   return (
     <div className="relative min-h-screen">
       <FloralCorners />
@@ -91,6 +106,7 @@ export default async function TasksPage() {
         initialDrafts={drafts}
         itemNames={Object.fromEntries(itemMap)}
         cropNames={Object.fromEntries(cropMap)}
+        userNames={userNames}
       />
     </div>
   );

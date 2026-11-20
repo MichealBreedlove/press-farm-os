@@ -358,7 +358,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                       : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-blue/30"
                   }`}
                 >
-                  Harvester
+                  Farm Hand
                 </button>
               </div>
             </div>
@@ -559,9 +559,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                     : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-pf-master-blue/30"
                 }`}
               >
-                <p className="font-semibold">Harvester</p>
+                <p className="font-semibold">Farm Hand</p>
                 <p className={`text-[11px] mt-0.5 ${form.role === "harvester" ? "text-white/80" : "text-farm-muted"}`}>
-                  Harvest list only (English/Spanish)
+                  Harvest list + farm tasks (English/Spanish)
                 </p>
               </button>
             </div>
@@ -595,12 +595,14 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
 
           {form.role === "harvester" && (
             <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-pf-master-blue/[0.06] border border-pf-master-blue/15 rounded-lg p-3">
-              Harvesters see one screen: the combined harvest list for each
-              delivery date, with the ability to add extra items. No prices,
-              orders, or reports. The page has an English/Spanish toggle.
+              Farm hands see one screen with two tabs: the combined harvest
+              list for each delivery date (they can add extra items), and the
+              farm task list — every open task with its photos, which they
+              mark finished. No prices, orders, or reports. English/Spanish
+              toggle on the page.
               Tip: use a username-style email like
-              {" "}<span className="font-mono">harvest@accounts.pressfarm.app</span>{" "}
-              so the crew signs in with just &quot;harvest&quot; + password.
+              {" "}<span className="font-mono">luis@accounts.pressfarm.app</span>{" "}
+              so he signs in with just &quot;luis&quot; + password.
             </p>
           )}
 
@@ -675,11 +677,11 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
         </div>
       )}
 
-      {/* Harvesters — full management controls (crew rotates like kitchen staff) */}
+      {/* Farm hands (harvester role) — full management controls (crew rotates like kitchen staff) */}
       {harvesters.length > 0 && (
         <div>
           <p className="section-eyebrow with-flower text-farm-muted mb-2">
-            Harvesters ({harvesters.length})
+            Farm Hands ({harvesters.length})
           </p>
           <div className="space-y-2">{harvesters.map(renderManagedCard)}</div>
         </div>

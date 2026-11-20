@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/tasks/auth";
+import { requireTaskWorker } from "@/lib/tasks/auth";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -11,9 +11,12 @@ interface RouteCtx {
  *
  * Marks task completed. If the task is a 'recurring-item' source, the
  * slide_recurring_anchor trigger advances the item's recurring_sow_anchor_date.
+ *
+ * Admin + Farm Hand (harvester role). A farm hand can only finish a task
+ * that is still open; `completed_by` records who did it.
  */
 export async function POST(request: Request, ctx: RouteCtx) {
-  const auth = await requireAdmin();
+  const auth = await requireTaskWorker();
   if (!auth.ok) return auth.res;
   const { id } = await ctx.params;
 
@@ -28,21 +31,25 @@ export async function POST(request: Request, ctx: RouteCtx) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
+  let query = admin
     .from("farm_tasks")
     .update({
       status: "completed",
       completed_at: new Date().toISOString(),
+      completed_by: auth.userId,
       completion_notes: notes,
     })
     .eq("farm_id", auth.farmId)
-    .eq("id", id)
-    .select("*")
-    .single();
+    .eq("id", id);
+  if (auth.role !== "admin") query = query.eq("status", "open");
+  const { data, error } = await query.select("*").maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     console.error("[TASKS] complete failed", error);
     return NextResponse.json({ error: "Complete failed" }, { status: 500 });
+  }
+  if (!data) {
+    return NextResponse.json({ error: "Task not found or no longer open" }, { status: 409 });
   }
   return NextResponse.json({ task: data });
 }

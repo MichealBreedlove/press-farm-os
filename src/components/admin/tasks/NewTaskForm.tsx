@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { FarmTaskType } from "@/types/database";
 import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
-import { todayIso } from "@/lib/tasks/dates";
+import { addDays } from "@/lib/tasks/dates";
+import { todayPacific } from "@/lib/utils";
+import { TaskPhotoField } from "./TaskPhotoField";
 
 interface Item {
   id: string;
@@ -31,7 +33,12 @@ export function NewTaskForm({ items }: { items: Item[] }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<FarmTaskType>("custom");
-  const [dueDate, setDueDate] = useState(todayIso());
+  // Pacific "today" — the UTC date is already tomorrow by late afternoon.
+  const today = todayPacific();
+  const tomorrow = addDays(today, 1);
+  const [dueDate, setDueDate] = useState(today);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(2);
   const [itemId, setItemId] = useState<string>("");
@@ -55,12 +62,18 @@ export function NewTaskForm({ items }: { items: Item[] }) {
           due_time: dueTime || null,
           priority,
           item_id: itemId || null,
+          photo_urls: photoUrls,
         }),
       });
+      const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
         setError(j.error ?? "Save failed");
         return;
+      }
+      // Spanish text for the crew — filled in the background so saving is
+      // instant (keepalive lets it finish after we navigate away).
+      if (j.task?.id) {
+        void fetch(`/api/tasks/${j.task.id}/translate`, { method: "POST", keepalive: true }).catch(() => {});
       }
       router.push("/admin/tasks");
       router.refresh();
@@ -69,26 +82,75 @@ export function NewTaskForm({ items }: { items: Item[] }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <Field label="Title">
+      <Field label="What needs to be done">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
           maxLength={500}
-          className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
+          autoFocus
+          placeholder="e.g. Weed the bed by the greenhouse door"
+          className="w-full text-base px-3 py-2.5 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
         />
       </Field>
 
-      <Field label="Description">
+      <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />
+
+      <Field label="Details (optional)">
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
+          placeholder="Where, how, how much…"
           className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold resize-none"
         />
       </Field>
 
+      <div>
+        <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-1">
+          When
+        </span>
+        <div className="flex gap-2">
+          {[
+            { label: "Today", value: today },
+            { label: "Tomorrow", value: tomorrow },
+          ].map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => setDueDate(o.value)}
+              aria-pressed={dueDate === o.value}
+              className={`min-h-[44px] px-4 rounded-md border text-sm font-medium transition-colors ${
+                dueDate === o.value
+                  ? "bg-farm-green text-white border-farm-green"
+                  : "bg-white text-farm-dark border-pf-master-gold/30 hover:bg-farm-cream"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            required
+            aria-label="Due date"
+            className="flex-1 min-w-0 text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
+          />
+        </div>
+      </div>
+
+      <p className="text-[11px] text-farm-muted leading-relaxed">
+        The farm team sees this on their task list right away. A Spanish
+        translation is added automatically.
+      </p>
+
+      <details className="rounded-md border border-pf-master-gold/20 bg-white">
+        <summary className="px-3 py-3 text-sm text-farm-dark cursor-pointer select-none">
+          More options
+        </summary>
+        <div className="px-3 pb-3 space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <Field label="Type">
           <select
@@ -118,25 +180,14 @@ export function NewTaskForm({ items }: { items: Item[] }) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Due date">
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            required
-            className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
-          />
-        </Field>
-        <Field label="Due time (optional)">
-          <input
-            type="time"
-            value={dueTime}
-            onChange={(e) => setDueTime(e.target.value)}
-            className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
-          />
-        </Field>
-      </div>
+      <Field label="Due time (optional)">
+        <input
+          type="time"
+          value={dueTime}
+          onChange={(e) => setDueTime(e.target.value)}
+          className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
+        />
+      </Field>
 
       <Field label="Linked item (optional)">
         <select
@@ -152,6 +203,8 @@ export function NewTaskForm({ items }: { items: Item[] }) {
           ))}
         </select>
       </Field>
+        </div>
+      </details>
 
       {error && <p className="text-xs text-red-700">{error}</p>}
 
@@ -159,16 +212,16 @@ export function NewTaskForm({ items }: { items: Item[] }) {
         <button
           type="button"
           onClick={() => router.push("/admin/tasks")}
-          className="px-3 py-2 text-sm rounded-md border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream"
+          className="px-3 py-2 min-h-[44px] text-sm rounded-md border border-pf-master-gold/30 text-farm-dark hover:bg-farm-cream"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={pending}
-          className="px-4 py-2 text-sm rounded-md bg-farm-green text-white hover:bg-farm-green/90 disabled:opacity-50"
+          disabled={pending || uploading}
+          className="px-5 py-2 min-h-[44px] text-sm font-medium rounded-md bg-farm-green text-white hover:bg-farm-green/90 disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Create task"}
+          {pending ? "Saving…" : uploading ? "Uploading photo…" : "Create task"}
         </button>
       </div>
     </form>

@@ -13,6 +13,9 @@ const EXT_BY_MIME: Record<string, string> = {
 
 const BUCKET = "item-photos";
 const FOLDER = "items";
+// Folders a caller may target. "tasks" = pictures attached to farm tasks
+// (kept apart from the catalog photos the photo manager lists).
+const ALLOWED_FOLDERS = new Set(["items", "tasks"]);
 // 15MB final cap. Client-side autoresize compresses anything over ~5MB
 // down to fit within 2400x2400 JPEG, so this is a safety net for files
 // the resizer can't handle (HEIC the browser refused to decode, etc.).
@@ -29,7 +32,7 @@ const MAX_FILES_PER_REQUEST = 50;
  * PUT each file straight to Supabase Storage, bypassing Vercel entirely
  * for the actual bytes.
  *
- * Body: { files: [{ name, type, size }] }
+ * Body: { files: [{ name, type, size }], folder?: "items" | "tasks" }
  * Returns: { signed: [{ name, path, token, sourceName }], errors: [...] }
  *
  * The client then calls supabase.storage.uploadToSignedUrl(path, token, file)
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
   const auth = await requireAdmin(supabase);
   if (!auth.ok) return auth.response;
 
-  let body: { files: { name: string; type: string; size: number }[] };
+  let body: { files: { name: string; type: string; size: number }[]; folder?: string };
   try {
     body = await request.json();
   } catch {
@@ -56,6 +59,8 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  const folder = body.folder && ALLOWED_FOLDERS.has(body.folder) ? body.folder : FOLDER;
 
   const admin = createAdminClient();
   const batchTs = Date.now();
@@ -89,7 +94,7 @@ export async function POST(request: Request) {
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
         .slice(0, 50);
-      const path = `${FOLDER}/${cleanName}-${batchTs}-${idx}.${ext}`;
+      const path = `${folder}/${cleanName || "photo"}-${batchTs}-${idx}.${ext}`;
 
       try {
         const { data, error } = await (admin.storage.from(BUCKET) as any)

@@ -58,14 +58,19 @@ export function isTransientUploadError(err: unknown): boolean {
  * upload (and let the server reject with a clear "too large" message)
  * than to silently drop the file.
  */
-export async function maybeResize(file: File): Promise<File> {
-  if (file.size <= RESIZE_THRESHOLD_BYTES) return file;
+export async function maybeResize(
+  file: File,
+  opts: { thresholdBytes?: number; maxDim?: number } = {},
+): Promise<File> {
+  const threshold = opts.thresholdBytes ?? RESIZE_THRESHOLD_BYTES;
+  const maxDim = opts.maxDim ?? RESIZE_MAX_DIM;
+  if (file.size <= threshold) return file;
   if (typeof createImageBitmap !== "function") return file; // very old browsers
 
   try {
     const bitmap = await createImageBitmap(file);
     const longest = Math.max(bitmap.width, bitmap.height);
-    const scale = longest > RESIZE_MAX_DIM ? RESIZE_MAX_DIM / longest : 1;
+    const scale = longest > maxDim ? maxDim / longest : 1;
     const w = Math.max(1, Math.round(bitmap.width * scale));
     const h = Math.max(1, Math.round(bitmap.height * scale));
 
@@ -102,12 +107,14 @@ export async function maybeResize(file: File): Promise<File> {
  */
 export async function signPhotoUploads(
   files: File[],
+  folder?: "items" | "tasks",
 ): Promise<{ signed: SignedUploadEntry[]; errors: Array<{ name: string; error: string }> }> {
   const res = await fetch("/api/upload/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       files: files.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+      ...(folder ? { folder } : {}),
     }),
   });
   const ct = res.headers.get("content-type") ?? "";
@@ -167,6 +174,26 @@ export async function uploadSinglePhoto(file: File): Promise<string> {
   const { signed, errors } = await signPhotoUploads([sized]);
   const entry = signed[0];
   if (!entry) throw new Error(errors[0]?.error ?? "Sign failed");
+  await putSignedPhoto(entry, sized);
+  return entry.url;
+}
+
+/**
+ * Upload a picture for a farm task ("this area, this is what needs doing").
+ * Phone-camera shots are shrunk harder than catalog photos (1600px, anything
+ * over ~600KB) — they're read on a phone in the field, often on cell data.
+ */
+export async function uploadTaskPhoto(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("That file isn't an image");
+  }
+  const sized = await maybeResize(file, { thresholdBytes: 600 * 1024, maxDim: 1600 });
+  if (sized.size > MAX_FILE_BYTES) {
+    throw new Error("Photo is too large (max 15MB even after resize)");
+  }
+  const { signed, errors } = await signPhotoUploads([sized], "tasks");
+  const entry = signed[0];
+  if (!entry) throw new Error(errors[0]?.error ?? "Upload failed");
   await putSignedPhoto(entry, sized);
   return entry.url;
 }

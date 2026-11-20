@@ -6,6 +6,7 @@ import {
   listUpcomingTasks,
   listCompletedTasks,
 } from "@/lib/tasks/queries";
+import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 
 /**
  * GET /api/tasks?view=today|upcoming|done
@@ -32,6 +33,10 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/tasks — create a manual task.
+ *
+ * `photo_urls` are pictures uploaded through /api/upload/sign (folder
+ * "tasks"). Spanish text is filled in afterwards by
+ * POST /api/tasks/[id]/translate, which the form fires once the task exists.
  */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
@@ -53,6 +58,7 @@ export async function POST(request: Request) {
     priority = 2,
     item_id = null,
     microgreen_crop_id = null,
+    photo_urls,
   } = body ?? {};
 
   if (!title || !due_date) {
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
       priority,
       item_id,
       microgreen_crop_id,
+      photo_urls: sanitizeTaskPhotoUrls(photo_urls),
     })
     .select("*")
     .single();

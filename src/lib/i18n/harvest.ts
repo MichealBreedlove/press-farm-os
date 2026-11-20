@@ -49,6 +49,31 @@ export interface HarvestStrings {
   signOut: string;
   signOutHint: string;
   language: string;
+  // ── Tasks tab (farm-hand task list) ──
+  tabHarvest: string;
+  tabTasks: string;
+  tasksTitle: string;
+  tasksToday: string;
+  tasksUpcoming: string;
+  tasksDone: string;
+  tasksNoneToday: string;
+  tasksNoneTodayHint: string;
+  tasksNoneUpcoming: string;
+  tasksNoneDone: string;
+  taskMarkDone: string;
+  taskDoneAria: string;
+  taskUndo: string;
+  taskOverdue: string;
+  taskUrgent: string;
+  taskToday: string;
+  taskTomorrow: string;
+  taskDue: string;
+  taskPhoto: string;
+  taskClosePhoto: string;
+  taskSaveFailed: string;
+  taskDoneBy: string;
+  taskOpenCount: string;
+  taskTypeLabels: Record<string, string>;
 }
 
 export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
@@ -102,6 +127,40 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     signOut: "Sign Out",
     signOutHint: "Sign out of Press Farm OS",
     language: "Language",
+    tabHarvest: "Harvest",
+    tabTasks: "Tasks",
+    tasksTitle: "Farm Tasks",
+    tasksToday: "To do now",
+    tasksUpcoming: "Coming up",
+    tasksDone: "Finished",
+    tasksNoneToday: "Nothing to do right now",
+    tasksNoneTodayHint: "Everything for today is finished. Check what's coming up below.",
+    tasksNoneUpcoming: "Nothing scheduled for the next two weeks.",
+    tasksNoneDone: "Nothing finished in the last week.",
+    taskMarkDone: "Finished",
+    taskDoneAria: "Mark as finished",
+    taskUndo: "Undo",
+    taskOverdue: "Overdue",
+    taskUrgent: "Urgent",
+    taskToday: "Today",
+    taskTomorrow: "Tomorrow",
+    taskDue: "Due",
+    taskPhoto: "Photo",
+    taskClosePhoto: "Close photo",
+    taskSaveFailed: "Couldn't save — try again",
+    taskDoneBy: "by",
+    taskOpenCount: "to do",
+    taskTypeLabels: {
+      sow: "Sow",
+      transplant: "Transplant",
+      harvest: "Harvest",
+      terminate: "Terminate",
+      maintenance: "Maintenance",
+      inventory: "Inventory",
+      "delivery-prep": "Delivery prep",
+      "chef-request": "Chef request",
+      custom: "Task",
+    },
   },
   es: {
     harvestList: "Lista de Cosecha",
@@ -160,6 +219,40 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     signOut: "Cerrar sesión",
     signOutHint: "Salir de Press Farm OS",
     language: "Idioma",
+    tabHarvest: "Cosecha",
+    tabTasks: "Tareas",
+    tasksTitle: "Tareas de la Granja",
+    tasksToday: "Por hacer ahora",
+    tasksUpcoming: "Próximas",
+    tasksDone: "Terminadas",
+    tasksNoneToday: "No hay nada pendiente ahora",
+    tasksNoneTodayHint: "Todo lo de hoy está terminado. Revise abajo lo que viene.",
+    tasksNoneUpcoming: "No hay nada programado para las próximas dos semanas.",
+    tasksNoneDone: "No se terminó nada en la última semana.",
+    taskMarkDone: "Terminada",
+    taskDoneAria: "Marcar como terminada",
+    taskUndo: "Deshacer",
+    taskOverdue: "Atrasada",
+    taskUrgent: "Urgente",
+    taskToday: "Hoy",
+    taskTomorrow: "Mañana",
+    taskDue: "Para el",
+    taskPhoto: "Foto",
+    taskClosePhoto: "Cerrar foto",
+    taskSaveFailed: "No se pudo guardar — intente de nuevo",
+    taskDoneBy: "por",
+    taskOpenCount: "por hacer",
+    taskTypeLabels: {
+      sow: "Siembra",
+      transplant: "Trasplante",
+      harvest: "Cosecha",
+      terminate: "Terminar",
+      maintenance: "Mantenimiento",
+      inventory: "Inventario",
+      "delivery-prep": "Preparar entrega",
+      "chef-request": "Pedido del chef",
+      custom: "Tarea",
+    },
   },
 };
 

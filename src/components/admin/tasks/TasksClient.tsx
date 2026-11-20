@@ -3,7 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, RefreshCw, CheckCircle, Clock3, X, ChevronRight, Pencil, RotateCcw } from "lucide-react";
+import Image from "next/image";
+import { Plus, RefreshCw, CheckCircle, Clock3, X, ChevronRight, Pencil, RotateCcw, Camera } from "lucide-react";
 import type {
   FarmTask,
   FarmTaskSource,
@@ -29,6 +30,7 @@ interface Props {
   initialDrafts: InboxTaskDraft[];
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
+  userNames: Record<string, string>;
 }
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -53,6 +55,7 @@ export function TasksClient({
   initialDrafts,
   itemNames,
   cropNames,
+  userNames,
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("today");
@@ -187,6 +190,7 @@ export function TasksClient({
         <TaskList
           tasks={today}
           itemNames={itemNames}
+          userNames={userNames}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -199,6 +203,7 @@ export function TasksClient({
         <GroupedByDate
           tasks={upcoming}
           itemNames={itemNames}
+          userNames={userNames}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -216,6 +221,7 @@ export function TasksClient({
         <TaskList
           tasks={done}
           itemNames={itemNames}
+          userNames={userNames}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -233,6 +239,7 @@ interface ListProps {
   tasks: FarmTask[];
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
+  userNames: Record<string, string>;
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
@@ -245,6 +252,7 @@ function TaskList({
   tasks,
   itemNames,
   cropNames,
+  userNames,
   onComplete,
   onSnooze,
   onCancel,
@@ -266,6 +274,7 @@ function TaskList({
           key={t.id}
           task={t}
           itemNames={itemNames}
+          userNames={userNames}
           cropNames={cropNames}
           onComplete={onComplete}
           onSnooze={onSnooze}
@@ -282,6 +291,7 @@ function GroupedByDate({
   tasks,
   itemNames,
   cropNames,
+  userNames,
   onComplete,
   onSnooze,
   onCancel,
@@ -314,6 +324,7 @@ function GroupedByDate({
                 key={t.id}
                 task={t}
                 itemNames={itemNames}
+                userNames={userNames}
                 cropNames={cropNames}
                 onComplete={onComplete}
                 onSnooze={onSnooze}
@@ -332,6 +343,7 @@ interface RowProps {
   task: FarmTask;
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
+  userNames: Record<string, string>;
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
@@ -343,6 +355,7 @@ function TaskRow({
   task,
   itemNames,
   cropNames,
+  userNames,
   onComplete,
   onSnooze,
   onCancel,
@@ -401,6 +414,11 @@ function TaskRow({
                     {PRIORITY_LABELS[task.priority]}
                   </span>
                 )}
+                {task.photo_urls?.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-farm-cream text-farm-muted inline-flex items-center gap-1">
+                    <Camera className="w-3 h-3" aria-hidden /> {task.photo_urls.length}
+                  </span>
+                )}
                 {isOverdue && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded badge-red">
                     Overdue
@@ -409,6 +427,9 @@ function TaskRow({
                 {variant === "done" && task.completed_at && (
                   <span className="text-[10px] text-farm-muted">
                     {formatRelative(task.completed_at)}
+                    {task.completed_by && userNames[task.completed_by]
+                      ? ` · ${userNames[task.completed_by]}`
+                      : ""}
                   </span>
                 )}
               </div>
@@ -425,6 +446,27 @@ function TaskRow({
           {task.description && (
             <p className="text-xs text-farm-muted whitespace-pre-wrap">
               {task.description}
+            </p>
+          )}
+          {task.photo_urls?.length > 0 && (
+            <ul className="flex gap-2 overflow-x-auto">
+              {task.photo_urls.map((url) => (
+                <li key={url} className="flex-shrink-0">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block relative w-24 h-24 rounded-lg overflow-hidden border border-pf-master-gold/20 bg-farm-cream"
+                  >
+                    <Image src={url} alt="Task photo" fill sizes="96px" className="object-cover" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {task.title_es && (
+            <p className="text-[11px] text-farm-muted" lang="es">
+              ES: {task.title_es}
             </p>
           )}
           <div className="text-[10px] text-farm-muted">

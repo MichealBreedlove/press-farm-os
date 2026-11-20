@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/tasks/auth";
+import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -51,9 +52,12 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
     "completion_notes",
     "item_id",
     "microgreen_crop_id",
+    "title_es",
+    "description_es",
   ]) {
     if (k in body) updates[k] = body[k];
   }
+  if ("photo_urls" in body) updates.photo_urls = sanitizeTaskPhotoUrls(body.photo_urls);
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }

@@ -22,6 +22,7 @@ import {
   formatHarvestDateShort,
   type HarvestLang,
 } from "@/lib/i18n/harvest";
+import { FarmTasks, type FarmHandTask } from "./FarmTasks";
 
 export interface HarvestExtra {
   id: string;
@@ -46,14 +47,23 @@ interface Props {
   itemCount: number;
   extrasByRestaurant: Record<string, HarvestExtra[]>;
   catalog: CatalogItem[];
+  initialTab: PortalTab;
+  /** Pacific YYYY-MM-DD — "overdue" is measured against this. */
+  today: string;
+  todayTasks: FarmHandTask[];
+  upcomingTasks: FarmHandTask[];
+  doneTasks: FarmHandTask[];
 }
+
+type PortalTab = "harvest" | "tasks";
 
 const LANG_KEY = "pf-harvest-lang";
 
 /**
- * Harvester portal client shell — holds the EN/ES language state (persisted
+ * Farm Hand portal client shell — holds the EN/ES language state (persisted
  * per device in localStorage; defaults to Spanish since the crew this portal
- * was built for works in Spanish) and renders the pick list + extras flow.
+ * was built for works in Spanish) and switches between the two tabs: the
+ * pick list + extras flow, and the farm task list.
  */
 export function HarvestClient({
   date,
@@ -64,7 +74,23 @@ export function HarvestClient({
   itemCount,
   extrasByRestaurant,
   catalog,
+  initialTab,
+  today,
+  todayTasks,
+  upcomingTasks,
+  doneTasks,
 }: Props) {
+  const [tab, setTab] = useState<PortalTab>(initialTab);
+  function pickTab(next: PortalTab) {
+    setTab(next);
+    // Keep the URL in step so a reload / shared link opens the same tab,
+    // without a server round-trip.
+    const url = new URL(window.location.href);
+    if (next === "tasks") url.searchParams.set("tab", "tasks");
+    else url.searchParams.delete("tab");
+    window.history.replaceState(null, "", url);
+  }
+
   const [lang, setLang] = useState<HarvestLang>("es");
   useEffect(() => {
     const stored = window.localStorage.getItem(LANG_KEY);
@@ -143,7 +169,7 @@ export function HarvestClient({
     <main id="main" lang={lang} className="pb-10">
       <header className="page-header sticky top-0 z-30">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="page-title">{t.harvestList}</h1>
+          <h1 className="page-title">{tab === "tasks" ? t.tasksTitle : t.harvestList}</h1>
           <div className="flex rounded-lg overflow-hidden border border-white/25" role="group" aria-label={t.language}>
             {(["en", "es"] as const).map((code) => (
               <button
@@ -164,6 +190,49 @@ export function HarvestClient({
       </header>
 
       <div className="px-4 py-5 max-w-3xl mx-auto space-y-6">
+        {/* Tabs — what to pick / what else needs doing */}
+        <div className="grid grid-cols-2 gap-2" role="tablist">
+          {(["harvest", "tasks"] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => pickTab(key)}
+              className={cn(
+                "min-h-[48px] rounded-xl border text-base font-semibold transition-colors flex items-center justify-center gap-2",
+                tab === key
+                  ? "bg-farm-green text-white border-farm-green shadow-sm"
+                  : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/40",
+              )}
+            >
+              {key === "harvest" ? t.tabHarvest : t.tabTasks}
+              {key === "tasks" && todayTasks.length > 0 && (
+                <span
+                  className={cn(
+                    "min-w-[24px] h-6 px-1.5 rounded-full text-xs font-bold tabular-nums flex items-center justify-center",
+                    tab === key ? "bg-white text-farm-green" : "bg-farm-green text-white",
+                  )}
+                  aria-label={`${todayTasks.length} ${t.taskOpenCount}`}
+                >
+                  {todayTasks.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {tab === "tasks" && (
+          <FarmTasks
+            lang={lang}
+            today={today}
+            todayTasks={todayTasks}
+            upcomingTasks={upcomingTasks}
+            doneTasks={doneTasks}
+          />
+        )}
+
+        {tab === "harvest" && (<>
         {/* Date picker — pill per nearby delivery date */}
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-farm-muted mb-2">
@@ -248,6 +317,7 @@ export function HarvestClient({
             ))}
           </section>
         )}
+        </>)}
 
         <HarvestSignOut lang={lang} />
       </div>

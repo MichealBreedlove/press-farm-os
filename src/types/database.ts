@@ -514,9 +514,13 @@ export type Database = {
       farm_tasks: {
         Row: {
           completed_at: string | null
+          completed_by: string | null
           completion_notes: string | null
           created_at: string
           description: string | null
+          description_es: string | null
+          photo_urls: string[]
+          title_es: string | null
           due_date: string
           due_time: string | null
           farm_id: string
@@ -540,9 +544,13 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          completed_by?: string | null
           completion_notes?: string | null
           created_at?: string
           description?: string | null
+          description_es?: string | null
+          photo_urls?: string[]
+          title_es?: string | null
           due_date: string
           due_time?: string | null
           farm_id: string
@@ -566,9 +574,13 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          completed_by?: string | null
           completion_notes?: string | null
           created_at?: string
           description?: string | null
+          description_es?: string | null
+          photo_urls?: string[]
+          title_es?: string | null
           due_date?: string
           due_time?: string | null
           farm_id?: string
@@ -2868,6 +2880,13 @@ export interface FarmTask {
   superseded_at: string | null;
   superseded_reason: string | null;
   completion_notes: string | null;
+  /** Who marked it finished (admin or farm hand). Migration 098. */
+  completed_by: string | null;
+  /** Pictures attached to the task (public storage URLs). Migration 098. */
+  photo_urls: string[];
+  /** Spanish text for the Farm Hand portal; null = fall back to English. */
+  title_es: string | null;
+  description_es: string | null;
   item_id: string | null;
   microgreen_crop_id: string | null;
   microgreen_batch_id: string | null;
