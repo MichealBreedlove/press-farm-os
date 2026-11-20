@@ -207,17 +207,13 @@ export function compareBoxNames(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-/** How far back an unfinished task still counts as "carried over" news. */
-const CARRY_OVER_DAYS = 7;
-
 /**
  * The two farm-task lists of the update, straight from `farm_tasks`:
  *   - tasksCompleted: finished in the last 7 days
- *   - tasksUpcoming:  NOT finished yet — first the ones that were due in the
- *     last week and are still open ("not finished — was due …"), then
- *     everything due within the update week.
- * Anything older than a week overdue stays out: that is internal backlog,
- * not chef news (long-dead July sow jobs used to reappear in every build).
+ *   - tasksUpcoming:  still open and due WITHIN the update week (Mon-Sun).
+ * Overdue / unfinished tasks from earlier weeks stay out on purpose — that
+ * is internal backlog for /admin/tasks, not chef news (Micheal 2026-11-20;
+ * long-dead July sow jobs also used to reappear in every build).
  */
 export async function buildWeeklyTaskLines(
   admin: SupabaseClient,
@@ -236,7 +232,7 @@ export async function buildWeeklyTaskLines(
       .from("farm_tasks")
       .select("title, due_date, status")
       .in("status", ["open", "snoozed"])
-      .gte("due_date", addDaysISO(today, -CARRY_OVER_DAYS))
+      .gte("due_date", weekAnchor)
       .lte("due_date", addDaysISO(weekAnchor, 6))
       .order("due_date", { ascending: true })
       .limit(50),
@@ -248,10 +244,8 @@ export async function buildWeeklyTaskLines(
       : null;
     return day ? `${t.title} (${day})` : t.title;
   });
-  const tasksUpcoming: string[] = (openTasks ?? []).map((t: any) =>
-    t.due_date < today
-      ? `${t.title} (not finished — was due ${shortDate(t.due_date)})`
-      : `${t.title} (due ${shortDate(t.due_date)})`,
+  const tasksUpcoming: string[] = (openTasks ?? []).map(
+    (t: any) => `${t.title} (due ${shortDate(t.due_date)})`,
   );
   return { tasksCompleted, tasksUpcoming };
 }
