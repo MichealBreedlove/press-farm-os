@@ -89,7 +89,10 @@ export async function POST(request: Request) {
   const full_name = body.full_name;
   // Default role is "chef" for back-compat with the original form
   const role =
-    body.role === "receiver" || body.role === "harvester" || body.role === "liaison"
+    body.role === "receiver" ||
+    body.role === "harvester" ||
+    body.role === "liaison" ||
+    body.role === "head_farmhand"
       ? body.role
       : "chef";
   let restaurant_id = body.restaurant_id;

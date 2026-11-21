@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
  * - Receiver  → /receiver
  * - Harvester → /harvest
  * - Liaison   → /liaison
+ * - Head Farm Hand → /farm-tasks
  * - Chef      → /order
  * - Unauthenticated → /login (handled by middleware)
  */
@@ -35,6 +36,7 @@ export default async function RootPage() {
   if (role === "receiver") redirect("/receiver");
   if (role === "harvester") redirect("/harvest");
   if (role === "liaison") redirect("/liaison");
+  if (role === "head_farmhand") redirect("/farm-tasks");
 
   // The Events team has its own ordering system. Route the shared Events
   // account (restaurant slug 'events') there instead of the chef order form.

@@ -84,7 +84,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     body.role === "chef" ||
     body.role === "receiver" ||
     body.role === "harvester" ||
-    body.role === "liaison"
+    body.role === "liaison" ||
+    body.role === "head_farmhand"
   ) {
     profileUpdate.role = body.role;
   }
@@ -96,7 +97,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
 
   // 3. Restaurant assignment. Receivers/harvesters see all restaurants, so
   //    clear theirs; a chef is scoped to exactly one — replace any existing link.
-  if (body.role === "receiver" || body.role === "harvester") {
+  if (body.role === "receiver" || body.role === "harvester" || body.role === "head_farmhand") {
     await admin.from("restaurant_users").delete().eq("user_id", userId);
   } else if (body.role === "liaison") {
     // A Farm Liaison always orders under Press.

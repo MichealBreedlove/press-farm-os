@@ -28,6 +28,8 @@ export async function gateChefPortal(): Promise<string | null> {
       redirect("/receiver");
     case "harvester":
       redirect("/harvest");
+    case "head_farmhand":
+      redirect("/farm-tasks");
     default:
       // chef, liaison, admin, or no profile yet (page handles the rest)
       return (profile?.role as string | undefined) ?? null;

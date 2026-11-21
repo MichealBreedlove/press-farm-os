@@ -171,7 +171,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
       restaurants.find((r) => u.restaurants.includes(r.name))?.id ?? restaurants[0]?.id ?? "";
     setEditForm({
       full_name: u.full_name ?? "",
-      role: u.role === "receiver" || u.role === "harvester" || u.role === "liaison" ? u.role : "chef",
+      role: ["receiver", "harvester", "liaison", "head_farmhand"].includes(u.role) ? u.role : "chef",
       restaurant_id: currentRid,
     });
   }
@@ -228,6 +228,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
   const receivers = users.filter((u) => u.role === "receiver");
   const harvesters = users.filter((u) => u.role === "harvester");
   const liaisons = users.filter((u) => u.role === "liaison");
+  const headFarmHands = users.filter((u) => u.role === "head_farmhand");
 
   // Shared account card with the full management controls (edit / welcome /
   // reset password / deactivate / delete). Rendered for chefs AND harvesters —
@@ -371,6 +372,17 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                   }`}
                 >
                   Farm Liaison
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditForm((f) => ({ ...f, role: "head_farmhand" }))}
+                  className={`min-h-[44px] rounded-lg border text-xs font-medium px-3 transition-colors ${
+                    editForm.role === "head_farmhand"
+                      ? "bg-farm-green text-white border-farm-green"
+                      : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
+                  }`}
+                >
+                  Head Farm Hand
                 </button>
               </div>
             </div>
@@ -590,6 +602,20 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
                   Orders for Press, production, farm tasks
                 </p>
               </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, role: "head_farmhand" }))}
+                className={`min-h-[48px] rounded-xl border text-sm font-medium transition-colors text-left px-3 py-2 ${
+                  form.role === "head_farmhand"
+                    ? "bg-farm-green text-white border-farm-green shadow-sm"
+                    : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-green/30"
+                }`}
+              >
+                <p className="font-semibold">Head Farm Hand</p>
+                <p className={`text-[11px] mt-0.5 ${form.role === "head_farmhand" ? "text-white/80" : "text-farm-muted"}`}>
+                  Farm task board only (read-only)
+                </p>
+              </button>
             </div>
           </div>
 
@@ -616,6 +642,14 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               Receivers don&apos;t need a restaurant assignment — they see incoming
               from both Press and Under-Study, plus event items, on a single dashboard.
               Read-only: they can&apos;t place or edit orders.
+            </p>
+          )}
+
+          {form.role === "head_farmhand" && (
+            <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-farm-green/[0.06] border border-farm-green/15 rounded-lg p-3">
+              The Head Farm Hand sees one page: the farm task board — what the
+              farm hands are working on, one step at a time, in English and
+              Spanish, with who has each task. Read-only. No restaurant to pick.
             </p>
           )}
 
@@ -711,6 +745,15 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {headFarmHands.length > 0 && (
+        <div>
+          <p className="section-eyebrow with-flower text-farm-muted mb-2">
+            Head Farm Hand ({headFarmHands.length})
+          </p>
+          <div className="space-y-2">{headFarmHands.map(renderManagedCard)}</div>
         </div>
       )}
 
