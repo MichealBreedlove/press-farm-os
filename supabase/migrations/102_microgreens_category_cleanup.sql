@@ -54,3 +54,14 @@ WHERE category = 'fruit_veg' AND name = 'Onions';
 -- delivered, so nothing else references the old name).
 UPDATE items SET name = 'Onion Micro', updated_at = now()
 WHERE category = 'micros_leaves' AND name = 'Onions';
+
+-- Every microgreen now reads as one (Micheal 2026-11-21): 13 names that
+-- collided with, or sat next to, a field / flower item gain a " Micro"
+-- suffix (Kale Mix → Kale Mix Micro, Borage → Borage Micro, …). Already
+-- unambiguous and left alone: Cilantro Micro, Onion Micro, Fava Sprout,
+-- Radish Shoots, Sunflower Sprouts. Ids unchanged; microgreen_crops links by
+-- item_id, and every renamed item has its own image_url.
+UPDATE items SET name = name || ' Micro', updated_at = now()
+WHERE category = 'micros_leaves' AND is_archived = false
+  AND name IN ('Kale Mix','Borage','Beet','Celery','Amaranth','Anise Hyssop','Cress',
+               'Pea Tendrils','Fava Leaf','Gem Marigold Leaf','Citrus Leaf Shoots','Chervil','Dill');
