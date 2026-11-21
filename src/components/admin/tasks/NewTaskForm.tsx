@@ -8,6 +8,8 @@ import { addDays } from "@/lib/tasks/dates";
 import { todayPacific } from "@/lib/utils";
 import { TaskPhotoField } from "./TaskPhotoField";
 import { AssigneePicker } from "./AssigneePicker";
+import { LocationPicker } from "./LocationPicker";
+import { NO_LOCATION, type TaskLocation } from "@/lib/tasks/location";
 import { StagesEditor, stageDraftsToPayload, type StageDraft } from "./StagesEditor";
 import type { TaskPerson } from "@/lib/tasks/people";
 
@@ -43,6 +45,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [location, setLocation] = useState<TaskLocation>({ ...NO_LOCATION });
   const [stageDrafts, setStageDrafts] = useState<StageDraft[]>([]);
   const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(2);
@@ -75,6 +78,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           item_id: itemId || null,
           photo_urls: photoUrls,
           assignee_ids: assigneeIds,
+          ...location,
           stages,
         }),
       });
@@ -108,6 +112,8 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           className="w-full text-base px-3 py-2.5 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold"
         />
       </Field>
+
+      <LocationPicker value={location} onChange={(l) => setLocation(l ?? { ...NO_LOCATION })} />
 
       <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />
 

@@ -5,6 +5,7 @@ import { TASK_TYPE_ICONS, TASK_TYPE_LABELS } from "@/lib/tasks/constants";
 import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize";
 import { formatDeliveryDate } from "@/lib/utils";
 import { ANYONE_LABEL, summarizeWorkload } from "@/lib/tasks/assign";
+import { formatLocation } from "@/lib/tasks/location";
 
 /**
  * Read-only farm task board — what needs doing, what's coming, what was
@@ -147,6 +148,14 @@ function TaskRow({
           {bilingual && es.title !== en.title && (
             <p lang="es" className="text-sm text-pf-master-blue leading-snug mt-0.5">
               {es.title}
+            </p>
+          )}
+          {!done && formatLocation(task) && (
+            <p className="text-sm font-medium text-farm-green mt-1">
+              {formatLocation(task)}
+              {bilingual && formatLocation(task, "es") !== formatLocation(task) && (
+                <span lang="es" className="text-pf-master-blue font-normal"> · {formatLocation(task, "es")}</span>
+              )}
             </p>
           )}
           <p className="text-xs text-farm-muted mt-1">{meta.join(" · ")}</p>

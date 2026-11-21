@@ -35,7 +35,7 @@ export async function POST(request: Request, ctx: RouteCtx) {
   const admin = createAdminClient();
   const { data: parent } = await (admin as any)
     .from("farm_tasks")
-    .select("id, farm_id, type, priority, assigned_to, assignee_ids, item_id, due_date, stage_group_id, stage_index, source, microgreen_crop_id, microgreen_batch_id")
+    .select("id, farm_id, type, priority, assigned_to, assignee_ids, location_place, location_quadrant, location_rows, item_id, due_date, stage_group_id, stage_index, source, microgreen_crop_id, microgreen_batch_id")
     .eq("farm_id", auth.farmId)
     .eq("id", id)
     .maybeSingle();

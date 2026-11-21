@@ -10,7 +10,7 @@ import type { FarmTask, InboxTaskDraft } from "@/types/database";
 type AdminClient = ReturnType<typeof createAdminClient>;
 
 const TASK_COLUMNS =
-  "id, farm_id, title, description, type, source, source_ref, generator_key, due_date, due_time, priority, status, snoozed_until, completed_at, superseded_at, superseded_reason, completion_notes, completed_by, assigned_to, assignee_ids, stage_group_id, stage_index, stage_offset_days, photo_urls, title_es, description_es, item_id, microgreen_crop_id, microgreen_batch_id, inbound_message_id, suggestion_id, created_at, updated_at";
+  "id, farm_id, title, description, type, source, source_ref, generator_key, due_date, due_time, priority, status, snoozed_until, completed_at, superseded_at, superseded_reason, completion_notes, completed_by, assigned_to, assignee_ids, location_place, location_quadrant, location_rows, stage_group_id, stage_index, stage_offset_days, photo_urls, title_es, description_es, item_id, microgreen_crop_id, microgreen_batch_id, inbound_message_id, suggestion_id, created_at, updated_at";
 
 export async function getOpenTaskCount(
   admin: AdminClient,

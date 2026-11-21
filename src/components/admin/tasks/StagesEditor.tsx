@@ -2,6 +2,8 @@
 
 import { Plus, X } from "lucide-react";
 import { AssigneePicker } from "./AssigneePicker";
+import { LocationPicker } from "./LocationPicker";
+import type { TaskLocation } from "@/lib/tasks/location";
 import type { TaskPerson } from "@/lib/tasks/people";
 
 export interface StageDraft {
@@ -13,6 +15,8 @@ export interface StageDraft {
   dueDate: string;
   /** null = same people as step 1. */
   assigneeIds: string[] | null;
+  /** null = same place as step 1. */
+  location: TaskLocation | null;
 }
 
 export function newStageDraft(): StageDraft {
@@ -24,6 +28,7 @@ export function newStageDraft(): StageDraft {
     offsetDays: "21",
     dueDate: "",
     assigneeIds: null,
+    location: null,
   };
 }
 
@@ -37,6 +42,7 @@ export function stageDraftsToPayload(drafts: StageDraft[]) {
       offset_days: d.when === "after" ? Number(d.offsetDays) : null,
       due_date: d.when === "date" ? d.dueDate || null : null,
       assignee_ids: d.assigneeIds,
+      location: d.location,
     }));
 }
 
@@ -143,6 +149,12 @@ export function StagesEditor({
               className={field}
             />
           )}
+          <LocationPicker
+            value={d.location}
+            onChange={(l) => update(d.key, { location: l })}
+            inheritLabel="Same as step 1"
+            label={`Step ${firstStepNumber + i} — where`}
+          />
           <AssigneePicker
             people={people}
             value={d.assigneeIds}

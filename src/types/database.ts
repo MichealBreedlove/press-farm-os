@@ -513,6 +513,9 @@ export type Database = {
       }
       farm_tasks: {
         Row: {
+          location_place: string | null
+          location_quadrant: number | null
+          location_rows: string | null
           assignee_ids: string[]
           stage_group_id: string | null
           stage_index: number | null
@@ -548,6 +551,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          location_place?: string | null
+          location_quadrant?: number | null
+          location_rows?: string | null
           assignee_ids?: string[]
           stage_group_id?: string | null
           stage_index?: number | null
@@ -583,6 +589,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          location_place?: string | null
+          location_quadrant?: number | null
+          location_rows?: string | null
           assignee_ids?: string[]
           stage_group_id?: string | null
           stage_index?: number | null
@@ -2904,6 +2913,10 @@ export interface FarmTask {
   assignee_ids: string[];
   /** Who marked it finished (admin or farm hand). Migration 098. */
   completed_by: string | null;
+  /** Where it happens (migration 106) — see src/lib/tasks/location.ts. */
+  location_place: "farm" | "greenhouse" | "press" | "understudy" | null;
+  location_quadrant: number | null;
+  location_rows: string | null;
   /** Multi-step chain (migration 104): shared id, 1-based step number, and
    *  "days after the previous step is finished" (null = fixed date). */
   stage_group_id: string | null;

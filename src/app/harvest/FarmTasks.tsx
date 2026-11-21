@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, RotateCcw, X } from "lucide-react";
+import { Check, MapPin, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addDaysISO } from "@/lib/utils";
 import { TASK_TYPE_ICONS } from "@/lib/tasks/constants";
 import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize";
 import { isForPerson } from "@/lib/tasks/assign";
+import { formatLocation } from "@/lib/tasks/location";
 import { HARVEST_STRINGS, formatHarvestDate, type HarvestLang } from "@/lib/i18n/harvest";
 import type { BoardTask } from "@/lib/tasks/board";
 
@@ -245,6 +246,12 @@ function TaskCard({
           <p className={cn("text-base font-semibold text-farm-dark leading-snug", isDone && "line-through decoration-farm-muted/60")}>
             {title}
           </p>
+          {!isDone && formatLocation(task, lang) && (
+            <p className="text-sm font-semibold text-farm-green mt-1 flex items-center gap-1">
+              <MapPin className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+              {formatLocation(task, lang)}
+            </p>
+          )}
           <p className="text-xs text-farm-muted mt-0.5">{meta.join(" · ")}</p>
           {!isDone && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">

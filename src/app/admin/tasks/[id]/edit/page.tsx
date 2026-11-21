@@ -42,7 +42,7 @@ export default async function EditTaskPage({ params }: PageProps) {
   const { data: chainRows } = task.stage_group_id
     ? await (admin as any)
         .from("farm_tasks")
-        .select("id, title, description, stage_index, status, due_date, stage_offset_days, assignee_ids, assigned_to")
+        .select("id, title, description, stage_index, status, due_date, stage_offset_days, assignee_ids, assigned_to, location_place, location_quadrant, location_rows")
         .eq("stage_group_id", task.stage_group_id)
         .order("stage_index", { ascending: true })
     : { data: null };

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/tasks/auth";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 import { resolveAssignees } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
+import { sanitizeLocation } from "@/lib/tasks/location";
 import { detachAndRenumber, dueFromPreviousStep } from "@/lib/tasks/stage-server";
 
 interface RouteCtx {
@@ -61,6 +62,9 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
     if (k in body) updates[k] = body[k];
   }
   if ("photo_urls" in body) updates.photo_urls = sanitizeTaskPhotoUrls(body.photo_urls);
+  if ("location_place" in body || "location_quadrant" in body || "location_rows" in body) {
+    Object.assign(updates, sanitizeLocation(body));
+  }
   const admin = createAdminClient();
 
   // A step's timing: "N days after the previous step" (re-dated from the

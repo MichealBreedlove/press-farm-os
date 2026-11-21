@@ -13,8 +13,8 @@ describe("sanitizeStages", () => {
         "junk",
       ]),
     ).toEqual([
-      { title: "Transplant to the field", description: null, offset_days: 21, due_date: null, assignee_ids: null },
-      { title: "Harvest", description: null, offset_days: null, due_date: "2027-01-15", assignee_ids: ["luis"] },
+      { title: "Transplant to the field", description: null, offset_days: 21, due_date: null, assignee_ids: null, location: null },
+      { title: "Harvest", description: null, offset_days: null, due_date: "2027-01-15", assignee_ids: ["luis"], location: null },
     ]);
     expect(sanitizeStages(undefined)).toEqual([]);
   });

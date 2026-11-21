@@ -53,6 +53,9 @@ export async function appendStages(
     priority: number;
     assigned_to: string | null;
     assignee_ids?: string[] | null;
+    location_place?: string | null;
+    location_quadrant?: number | null;
+    location_rows?: string | null;
     item_id: string | null;
     due_date: string;
     stage_group_id: string | null;
@@ -97,6 +100,12 @@ export async function appendStages(
       const ids = s.assignee_ids ?? parent.assignee_ids ?? (parent.assigned_to ? [parent.assigned_to] : []);
       return { assignee_ids: ids, assigned_to: ids[0] ?? null };
     })(),
+    // A step with its own place keeps it; otherwise it is where step 1 is.
+    ...(s.location ?? {
+      location_place: parent.location_place ?? null,
+      location_quadrant: parent.location_quadrant ?? null,
+      location_rows: parent.location_rows ?? null,
+    }),
     item_id: parent.item_id,
     stage_group_id: groupId,
     stage_index: lastIndex + 1 + i,

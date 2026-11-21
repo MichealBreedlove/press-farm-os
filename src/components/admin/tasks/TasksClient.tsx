@@ -21,6 +21,7 @@ import { TaskDraftCard } from "./TaskDraftCard";
 import { todayPacific } from "@/lib/utils";
 import { ANYONE_LABEL, effectiveAssigneeIds, shortPersonName } from "@/lib/tasks/assign";
 import type { TaskPerson } from "@/lib/tasks/people";
+import { formatLocation } from "@/lib/tasks/location";
 
 type Tab = "today" | "upcoming" | "drafts" | "done";
 type SourceFilter = "all" | FarmTaskSource;
@@ -429,6 +430,8 @@ function TaskRow({
     } else if (task.item_id && itemNames[task.item_id]) {
       parts.push(itemNames[task.item_id]);
     }
+    const where = formatLocation(task);
+    if (where) parts.push(where);
     if (task.due_time) parts.push(task.due_time.slice(0, 5));
     return parts.join(" · ");
   }, [task, itemNames, cropNames]);

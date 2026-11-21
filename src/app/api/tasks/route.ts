@@ -10,6 +10,7 @@ import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 import { resolveAssignees } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
 import { sanitizeStages } from "@/lib/tasks/stages";
+import { sanitizeLocation } from "@/lib/tasks/location";
 import { appendStages } from "@/lib/tasks/stage-server";
 
 /**
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
       item_id,
       microgreen_crop_id,
       photo_urls: sanitizeTaskPhotoUrls(photo_urls),
+      ...sanitizeLocation(body),
       assignee_ids: assignees.ids,
       assigned_to: assignees.ids[0] ?? null,
     })

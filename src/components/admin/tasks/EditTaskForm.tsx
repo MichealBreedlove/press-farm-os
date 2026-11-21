@@ -6,6 +6,8 @@ import type { FarmTask, FarmTaskType } from "@/types/database";
 import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
 import { TaskPhotoField } from "./TaskPhotoField";
 import { AssigneePicker } from "./AssigneePicker";
+import { LocationPicker } from "./LocationPicker";
+import { NO_LOCATION, type TaskLocation } from "@/lib/tasks/location";
 import { StagesEditor, stageDraftsToPayload, type StageDraft } from "./StagesEditor";
 import { StepListEditor, type ChainStep } from "./StepListEditor";
 import type { TaskPerson } from "@/lib/tasks/people";
@@ -56,6 +58,11 @@ export function EditTaskForm({
   const [completionNotes, setCompletionNotes] = useState(task.completion_notes ?? "");
   const [photoUrls, setPhotoUrls] = useState<string[]>(task.photo_urls ?? []);
   const [uploading, setUploading] = useState(false);
+  const [location, setLocation] = useState<TaskLocation>({
+    location_place: task.location_place ?? null,
+    location_quadrant: task.location_quadrant ?? null,
+    location_rows: task.location_rows ?? null,
+  });
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
     task.assignee_ids?.length ? task.assignee_ids : task.assigned_to ? [task.assigned_to] : [],
   );
@@ -123,6 +130,7 @@ export function EditTaskForm({
           completion_notes: completionNotes.trim() || null,
           photo_urls: photoUrls,
           assignee_ids: assigneeIds,
+          ...location,
           ...(spanishEdited
             ? { title_es: titleEs.trim() || null, description_es: descriptionEs.trim() || null }
             : {}),
@@ -212,6 +220,12 @@ export function EditTaskForm({
         onChange={(ids) => setAssigneeIds(ids ?? [])}
         autoHint={task.source === "manual" ? "Anyone" : `Automatic${ownerName ? ` (${ownerName})` : ""}`}
         label={chain.length > 1 ? `Step ${task.stage_index ?? 1} — who` : "Assign to"}
+      />
+
+      <LocationPicker
+        value={location}
+        onChange={(l) => setLocation(l ?? { ...NO_LOCATION })}
+        label={chain.length > 1 ? `Step ${task.stage_index ?? 1} — where` : "Where"}
       />
 
       <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />

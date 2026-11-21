@@ -1,3 +1,5 @@
+import { sanitizeLocation, type TaskLocation } from "./location";
+
 /**
  * Multi-step farm tasks ("stages") — pure helpers, tested in
  * tests/lib/tasks/stages.test.ts. Each step is its own farm_tasks row; steps
@@ -13,6 +15,8 @@ export interface StageInput {
   due_date: string | null;
   /** This step's own people; null = same people as step 1. */
   assignee_ids: string[] | null;
+  /** This step's own place; null = same place as step 1. */
+  location: TaskLocation | null;
 }
 
 export interface StagedRow {
@@ -45,7 +49,8 @@ export function sanitizeStages(input: unknown, max = 9): StageInput[] {
     const assignees = Array.isArray(r.assignee_ids)
       ? Array.from(new Set(r.assignee_ids.filter((v): v is string => typeof v === "string" && v.length > 0)))
       : null;
-    out.push({ title, description, offset_days: offset, due_date: due, assignee_ids: assignees });
+    const location = r.location && typeof r.location === "object" ? sanitizeLocation(r.location) : null;
+    out.push({ title, description, offset_days: offset, due_date: due, assignee_ids: assignees, location });
     if (out.length >= max) break;
   }
   return out;

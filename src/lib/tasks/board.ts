@@ -4,6 +4,7 @@ import { listCompletedTasks, listTodayTasks, listUpcomingTasks } from "./queries
 import { effectiveAssigneeIds, isMicrogreenTask, shortPersonName } from "./assign";
 import { listTaskPeople, ownerOf } from "./people";
 import { currentStagesOnly } from "./stages";
+import type { TaskPlace } from "./location";
 import { lowestOpenStages, stageCounts } from "./stage-server";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -30,6 +31,10 @@ export interface BoardTask {
   assignee_ids: string[];
   /** Short names, same order as assignee_ids. */
   assignee_names: string[];
+  /** Where — place / quadrant / rows (see src/lib/tasks/location.ts). */
+  location_place: TaskPlace | null;
+  location_quadrant: number | null;
+  location_rows: string | null;
   /** Multi-step task: this step's number and the chain's length (else null). */
   stage_index: number | null;
   stage_count: number | null;
@@ -125,6 +130,9 @@ export async function loadTaskBoard(
     photo_urls: t.photo_urls ?? [],
     completed_at: t.completed_at,
     completed_by_name: t.completed_by ? personName.get(t.completed_by) ?? null : null,
+    location_place: t.location_place,
+    location_quadrant: t.location_quadrant,
+    location_rows: t.location_rows,
     stage_index: t.stage_group_id ? t.stage_index : null,
     stage_count: t.stage_group_id ? chainLength.get(t.stage_group_id) ?? null : null,
     is_microgreen: isMicrogreenTask(t),

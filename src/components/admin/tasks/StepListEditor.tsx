@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Check, ChevronRight, RotateCcw, Trash2 } from "lucide-react";
 import { AssigneePicker } from "./AssigneePicker";
 import type { TaskPerson } from "@/lib/tasks/people";
+import { LocationPicker } from "./LocationPicker";
+import { formatLocation, NO_LOCATION, type TaskLocation, type TaskPlace } from "@/lib/tasks/location";
 
 export interface ChainStep {
   id: string;
@@ -16,6 +18,9 @@ export interface ChainStep {
   stage_offset_days: number | null;
   assignee_ids: string[];
   assigned_to: string | null;
+  location_place: TaskPlace | null;
+  location_quadrant: number | null;
+  location_rows: string | null;
 }
 
 /**
@@ -69,6 +74,7 @@ export function StepListEditor({
                 <span className="block text-[11px] text-farm-muted mt-0.5">
                   {done ? "Done" : s.due_date}
                   {s.stage_offset_days != null && !done ? ` · ${s.stage_offset_days} days after step ${(s.stage_index ?? 2) - 1}` : ""}
+                  {formatLocation(s) ? ` · ${formatLocation(s)}` : ""}
                   {" · "}
                   {who(s)}
                 </span>
@@ -118,6 +124,11 @@ function StepEditor({
   const [assignees, setAssignees] = useState<string[]>(
     step.assignee_ids?.length ? step.assignee_ids : step.assigned_to ? [step.assigned_to] : [],
   );
+  const [location, setLocation] = useState<TaskLocation>({
+    location_place: step.location_place,
+    location_quadrant: step.location_quadrant,
+    location_rows: step.location_rows,
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,6 +160,7 @@ function StepEditor({
       title: title.trim(),
       description: description.trim() || null,
       assignee_ids: assignees,
+      ...location,
     };
     if (when === "after") body.stage_offset_days = Number(offsetDays);
     else body.due_date = dueDate;
@@ -230,6 +242,7 @@ function StepEditor({
           ) : (
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} aria-label="Date" className={field} />
           )}
+          <LocationPicker value={location} onChange={(l) => setLocation(l ?? { ...NO_LOCATION })} />
           <AssigneePicker
             people={people}
             value={assignees}
