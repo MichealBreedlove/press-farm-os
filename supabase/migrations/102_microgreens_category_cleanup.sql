@@ -49,3 +49,8 @@ WHERE category = 'herbs_leaves' AND name IN ('Onions', 'Brussel Sprouts');
 -- "Onion" (thumb-sized) and "Spring Onion" (scallion type).
 UPDATE items SET category = 'micros_leaves', updated_at = now()
 WHERE category = 'fruit_veg' AND name = 'Onions';
+
+-- Renamed so it can't be confused with the field "Onion" (never ordered or
+-- delivered, so nothing else references the old name).
+UPDATE items SET name = 'Onion Micro', updated_at = now()
+WHERE category = 'micros_leaves' AND name = 'Onions';
