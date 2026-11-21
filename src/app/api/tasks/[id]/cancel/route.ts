@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/tasks/auth";
+import { detachAndRenumber } from "@/lib/tasks/stage-server";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -21,5 +22,6 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   if (error) {
     return NextResponse.json({ error: "Cancel failed" }, { status: 500 });
   }
+  await detachAndRenumber(admin, id);
   return NextResponse.json({ ok: true });
 }

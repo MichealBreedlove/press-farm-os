@@ -7,6 +7,7 @@ import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
 import { TaskPhotoField } from "./TaskPhotoField";
 import { AssigneePicker } from "./AssigneePicker";
 import { StagesEditor, stageDraftsToPayload, type StageDraft } from "./StagesEditor";
+import { StepListEditor, type ChainStep } from "./StepListEditor";
 import type { TaskPerson } from "@/lib/tasks/people";
 
 interface Item {
@@ -39,7 +40,7 @@ export function EditTaskForm({
   /** Who an automated task falls to when nobody is picked. */
   ownerName: string | null;
   /** Every step of this task's chain (just this task when it has none). */
-  chain: { id: string; title: string; stage_index: number | null; status: string; due_date: string }[];
+  chain: ChainStep[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -326,24 +327,10 @@ export function EditTaskForm({
           Steps
         </span>
         {chain.length > 1 && (
-          <ol className="mb-3 rounded-lg border border-pf-master-gold/20 bg-white divide-y divide-pf-master-gold/10">
-            {chain.map((s) => (
-              <li key={s.id} className="px-3 py-2 flex items-start justify-between gap-3 text-sm">
-                {s.id === task.id ? (
-                  <span className="font-semibold text-farm-dark">
-                    {s.stage_index}. {s.title} <span className="font-normal text-farm-muted">(this step)</span>
-                  </span>
-                ) : (
-                  <a href={`/admin/tasks/${s.id}/edit`} className="text-farm-green underline underline-offset-2">
-                    {s.stage_index}. {s.title}
-                  </a>
-                )}
-                <span className="text-[11px] text-farm-muted flex-shrink-0">
-                  {s.status === "completed" ? "Done" : s.status === "cancelled" ? "Cancelled" : s.due_date}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <>
+            <p className="text-[11px] text-farm-muted mb-2">Tap any step to change it — done or not.</p>
+            <StepListEditor chain={chain} currentId={task.id} people={people} />
+          </>
         )}
         <StagesEditor
           drafts={stageDrafts}

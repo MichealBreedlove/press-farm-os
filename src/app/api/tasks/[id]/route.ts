@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/tasks/auth";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 import { resolveAssignees } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
+import { detachAndRenumber, dueFromPreviousStep } from "@/lib/tasks/stage-server";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -61,6 +62,29 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
   }
   if ("photo_urls" in body) updates.photo_urls = sanitizeTaskPhotoUrls(body.photo_urls);
   const admin = createAdminClient();
+
+  // A step's timing: "N days after the previous step" (re-dated from the
+  // previous step's finish / due date) or a fixed date (offset cleared).
+  if ("stage_offset_days" in body) {
+    const raw = body.stage_offset_days;
+    const off = raw === null || raw === "" ? null : Number(raw);
+    if (off !== null && (!Number.isFinite(off) || off < 0 || off > 365)) {
+      return NextResponse.json({ error: "Days must be between 0 and 365" }, { status: 400 });
+    }
+    updates.stage_offset_days = off === null ? null : Math.round(off);
+    if (off !== null && !("due_date" in body)) {
+      const { data: me } = await (admin as any)
+        .from("farm_tasks")
+        .select("stage_group_id, stage_index")
+        .eq("farm_id", auth.farmId)
+        .eq("id", id)
+        .maybeSingle();
+      if (me) updates.due_date = await dueFromPreviousStep(admin, me, Math.round(off));
+    }
+  } else if ("due_date" in body) {
+    // Picking a date by hand makes it a fixed-date step.
+    updates.stage_offset_days = null;
+  }
   if ("assignee_ids" in body || "assigned_to" in body) {
     const { data: current } = await admin
       .from("farm_tasks")
@@ -110,7 +134,8 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
 
 /**
  * DELETE /api/tasks/[id] — soft-delete via status='cancelled'. Generator
- * keys live forever so cron supersession logic stays consistent.
+ * keys live forever so cron supersession logic stays consistent. A step of
+ * a multi-step task leaves its chain and the remaining steps are renumbered.
  */
 export async function DELETE(_req: Request, ctx: RouteCtx) {
   const auth = await requireAdmin();
@@ -127,5 +152,6 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
   if (error) {
     return NextResponse.json({ error: "Cancel failed" }, { status: 500 });
   }
+  await detachAndRenumber(admin, id);
   return NextResponse.json({ ok: true });
 }

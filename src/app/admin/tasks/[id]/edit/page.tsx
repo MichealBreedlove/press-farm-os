@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { listTaskPeople, ownerOf } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
+import type { ChainStep } from "@/components/admin/tasks/StepListEditor";
 import { EditTaskForm } from "@/components/admin/tasks/EditTaskForm";
 import type { FarmTask } from "@/types/database";
 
@@ -41,13 +42,12 @@ export default async function EditTaskPage({ params }: PageProps) {
   const { data: chainRows } = task.stage_group_id
     ? await (admin as any)
         .from("farm_tasks")
-        .select("id, title, stage_index, status, due_date")
+        .select("id, title, description, stage_index, status, due_date, stage_offset_days, assignee_ids, assigned_to")
         .eq("stage_group_id", task.stage_group_id)
         .order("stage_index", { ascending: true })
     : { data: null };
-  const chain = (chainRows ?? [
-    { id: task.id, title: task.title, stage_index: 1, status: task.status, due_date: task.due_date },
-  ]) as { id: string; title: string; stage_index: number | null; status: string; due_date: string }[];
+  // Steps still in the chain (cancelled ones are detached when removed).
+  const chain = ((chainRows ?? [task]) as ChainStep[]).filter((s) => s.status !== "cancelled");
   // Microgreen tasks stay with the farm owner — farm hands aren't offered.
 
   return (

@@ -128,3 +128,95 @@ export async function scheduleNextStage(
     .update({ due_date: nextStageDueDate(todayPacific(), next.stage_offset_days) })
     .eq("id", next.id);
 }
+
+/**
+ * Removes a cancelled step from its chain and closes the gap, so the steps
+ * left read 1, 2, 3 … again. The cancelled row keeps its history but no
+ * longer belongs to the chain.
+ */
+export async function detachAndRenumber(admin: AdminClient, taskId: string): Promise<void> {
+  const { data: row } = await (admin as any)
+    .from("farm_tasks")
+    .select("stage_group_id")
+    .eq("id", taskId)
+    .maybeSingle();
+  const groupId: string | null = row?.stage_group_id ?? null;
+  if (!groupId) return;
+  await (admin as any).from("farm_tasks").update({ stage_group_id: null, stage_index: null }).eq("id", taskId);
+  await renumberChain(admin, groupId);
+}
+
+/** Rewrites stage_index as 1..n in the chain's current order. */
+export async function renumberChain(admin: AdminClient, groupId: string): Promise<void> {
+  const { data } = await (admin as any)
+    .from("farm_tasks")
+    .select("id, stage_index")
+    .eq("stage_group_id", groupId)
+    .order("stage_index", { ascending: true });
+  const rows = (data ?? []) as { id: string; stage_index: number }[];
+  await Promise.all(
+    rows.map((r, i) =>
+      r.stage_index === i + 1
+        ? null
+        : (admin as any).from("farm_tasks").update({ stage_index: i + 1 }).eq("id", r.id),
+    ),
+  );
+}
+
+/** Swaps a step with its neighbour. Returns false when it can't move that way. */
+export async function moveStage(
+  admin: AdminClient,
+  taskId: string,
+  direction: "up" | "down",
+): Promise<boolean> {
+  const { data: row } = await (admin as any)
+    .from("farm_tasks")
+    .select("id, stage_group_id, stage_index")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (!row?.stage_group_id || row.stage_index == null) return false;
+  const { data: nb } = await (admin as any)
+    .from("farm_tasks")
+    .select("id, stage_index")
+    .eq("stage_group_id", row.stage_group_id)
+    [direction === "up" ? "lt" : "gt"]("stage_index", row.stage_index)
+    .order("stage_index", { ascending: direction !== "up" })
+    .limit(1)
+    .maybeSingle();
+  if (!nb) return false;
+  await Promise.all([
+    (admin as any).from("farm_tasks").update({ stage_index: nb.stage_index }).eq("id", row.id),
+    (admin as any).from("farm_tasks").update({ stage_index: row.stage_index }).eq("id", nb.id),
+  ]);
+  return true;
+}
+
+/**
+ * Due date for "N days after the previous step": from the day the previous
+ * step was finished, else from its own due date. A first step (no previous)
+ * counts from today.
+ */
+export async function dueFromPreviousStep(
+  admin: AdminClient,
+  task: { stage_group_id: string | null; stage_index: number | null },
+  offsetDays: number,
+): Promise<string> {
+  let base = todayPacific();
+  if (task.stage_group_id && task.stage_index != null && task.stage_index > 1) {
+    const { data: prev } = await (admin as any)
+      .from("farm_tasks")
+      .select("status, completed_at, due_date")
+      .eq("stage_group_id", task.stage_group_id)
+      .lt("stage_index", task.stage_index)
+      .order("stage_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prev) {
+      base =
+        prev.status === "completed" && prev.completed_at
+          ? new Date(prev.completed_at).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" })
+          : prev.due_date;
+    }
+  }
+  return nextStageDueDate(base, offsetDays);
+}
