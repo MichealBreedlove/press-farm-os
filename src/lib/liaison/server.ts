@@ -78,14 +78,11 @@ export async function loadMicrogreenStatus(admin: AdminClient): Promise<Microgre
   );
 }
 
-/**
- * Microgreens Press can order right now — the micros on the order form for
- * the next delivery date that are available or limited.
- */
-export async function loadOrderableMicrogreens(
+/** The next delivery date and whether ordering is open — for the Order door. */
+export async function loadNextDelivery(
   admin: AdminClient,
   today: string,
-): Promise<{ date: string | null; orderingOpen: boolean; items: { name: string; limited: boolean }[] }> {
+): Promise<{ date: string | null; orderingOpen: boolean }> {
   const { data: next } = await (admin as any)
     .from("delivery_dates")
     .select("date, ordering_open")
@@ -93,21 +90,5 @@ export async function loadOrderableMicrogreens(
     .order("date", { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (!next) return { date: null, orderingOpen: false, items: [] };
-
-  const { data: press } = await admin.from("restaurants").select("id").eq("slug", "press").maybeSingle();
-  if (!press) return { date: next.date, orderingOpen: !!next.ordering_open, items: [] };
-
-  const { data: rows } = await (admin as any)
-    .from("availability_items")
-    .select("status, item:items!inner ( name, category )")
-    .eq("restaurant_id", press.id)
-    .eq("delivery_date", next.date)
-    .in("status", ["available", "limited"])
-    .eq("item.category", "micros_leaves");
-  const items = ((rows ?? []) as any[])
-    .map((r) => ({ name: r.item?.name as string, limited: r.status === "limited" }))
-    .filter((r) => r.name)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  return { date: next.date, orderingOpen: !!next.ordering_open, items };
+  return { date: next?.date ?? null, orderingOpen: !!next?.ordering_open };
 }

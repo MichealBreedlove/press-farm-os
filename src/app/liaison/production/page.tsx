@@ -3,7 +3,6 @@ import { EditorialHero } from "@/components/shared/EditorialHero";
 import { ProductionView } from "@/components/shared/ProductionView";
 import {
   loadMicrogreenStatus,
-  loadOrderableMicrogreens,
   loadProductionSummary,
 } from "@/lib/liaison/server";
 import { todayPacific } from "@/lib/utils";
@@ -19,10 +18,9 @@ export const dynamic = "force-dynamic";
 export default async function LiaisonProductionPage() {
   const admin = createAdminClient();
   const today = todayPacific();
-  const [p, micro, orderable] = await Promise.all([
+  const [p, micro] = await Promise.all([
     loadProductionSummary(admin, today),
     loadMicrogreenStatus(admin),
-    loadOrderableMicrogreens(admin, today),
   ]);
 
   return (
@@ -35,7 +33,7 @@ export default async function LiaisonProductionPage() {
         backHref="/liaison"
       />
 
-      <ProductionView p={p} micro={micro} orderable={orderable} />
+      <ProductionView p={p} micro={micro} />
     </main>
   );
 }

@@ -7,7 +7,7 @@ import { PwaInstallPrompt } from "@/components/shared/PwaInstallPrompt";
 import { MicrogreensCard } from "@/components/shared/MicrogreensCard";
 import {
   loadMicrogreenStatus,
-  loadOrderableMicrogreens,
+  loadNextDelivery,
   loadProductionSummary,
   requireLiaisonPage,
 } from "@/lib/liaison/server";
@@ -30,7 +30,7 @@ export default async function LiaisonHome() {
     loadProductionSummary(admin, today),
     loadTaskBoard(admin, today, { doneDays: 7 }),
     loadMicrogreenStatus(admin),
-    loadOrderableMicrogreens(admin, today),
+    loadNextDelivery(admin, today),
   ]);
 
   const doors = [
@@ -88,7 +88,7 @@ export default async function LiaisonHome() {
           ))}
         </nav>
 
-        <MicrogreensCard status={micro} orderable={orderable} />
+        <MicrogreensCard status={micro} />
 
         <div>
           <p className="section-eyebrow text-farm-muted mb-2">Account</p>

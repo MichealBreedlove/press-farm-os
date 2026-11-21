@@ -4,17 +4,15 @@ import { formatCurrencyWhole, formatDeliveryDate } from "@/lib/utils";
 
 /**
  * Body of /liaison/production — period totals, by restaurant, six-month
- * trend, top items, latest drop-offs and the microgreens on hand. Pure
+ * trend, top items, latest drop-offs and the self-harvest microgreens on hand. Pure
  * presentation; the page loads the numbers.
  */
 export function ProductionView({
   p,
   micro,
-  orderable,
 }: {
   p: ProductionSummary;
   micro: MicrogreenStatus;
-  orderable: { date: string | null; items: { name: string; limited: boolean }[] };
 }) {
   const peak = Math.max(1, ...p.months.map((m) => m.total));
   return (
@@ -116,7 +114,7 @@ export function ProductionView({
           )}
         </section>
 
-        <MicrogreensCard status={micro} orderable={orderable} />
+        <MicrogreensCard status={micro} />
       </div>
   );
 }
