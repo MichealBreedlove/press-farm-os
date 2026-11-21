@@ -42,3 +42,10 @@ WHERE category = 'micros_leaves' AND name IN ('Lovage','Carrots');
 -- vegetables — they go to Fruit & Veg, not Herbs & Leaves.
 UPDATE items SET category = 'fruit_veg', updated_at = now()
 WHERE category = 'herbs_leaves' AND name IN ('Onions', 'Brussel Sprouts');
+
+-- Correction (Micheal, same day): the "Onions" row (sizes Tiny, Micro) is the
+-- TRAY-onion placeholder — not grown yet, kept for when it is — so it goes
+-- back to Microgreens. The field onions are the separate fruit_veg rows:
+-- "Onion" (thumb-sized) and "Spring Onion" (scallion type).
+UPDATE items SET category = 'micros_leaves', updated_at = now()
+WHERE category = 'fruit_veg' AND name = 'Onions';
