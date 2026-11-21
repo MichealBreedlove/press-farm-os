@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireUser } from "@/lib/api-auth";
 import { sendOrderSubmittedEmail, sendOrderConfirmationEmail } from "@/lib/email";
+import { buildOrderEmailItems } from "@/lib/order/email-lines";
 import { recordOrderAudit } from "@/lib/order-audit";
 import { resolveOrderUnitPrice } from "@/lib/pricing";
 import { capText, validateLineOptions } from "@/lib/order-line-validation";
@@ -528,19 +529,10 @@ export async function POST(request: Request) {
       (availDetails ?? []).map((a: any) => [a.id, a.item])
     );
 
-    const emailItems = orderItems.map((oi) => {
-      const item = availMap.get(oi.availability_item_id) as any;
-      // unit_type may be comma-separated (e.g. "sm,lg") — surface the first
-      // for the email line. The actual ordered unit is stored on the line
-      // item itself (via the OrderForm's enumerateKeys flow).
-      const unitFirst = String(item?.unit_type ?? "").split(",")[0]?.trim() ?? "";
-      const baseName = item?.name ?? "Unknown item";
-      return {
-        itemName: (oi as any).menu_section === "events" ? `${baseName} (Events)` : baseName,
-        quantity: oi.quantity_requested,
-        unit: unitFirst,
-      };
-    });
+    // Unit / size / color / variety come from the ORDERED line — the item
+    // master's unit_type is "sm,lg" for multi-unit items, and reading its
+    // first entry emailed every LG line as SM (see lib/order/email-lines).
+    const emailItems = buildOrderEmailItems(orderItems, availMap as any);
 
     // 1. Admin notification — per-line chef notes ride on the item name so
     // they reach the farm even before anyone opens the order page.
