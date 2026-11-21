@@ -151,7 +151,9 @@ export default async function HarvestPage({ searchParams }: Props) {
       itemCount={agg.itemCount}
       extrasByRestaurant={extrasByRestaurant}
       catalog={(catalogRaw ?? []) as { id: string; name: string; unit_type: string }[]}
-      initialTab={tabParam === "tasks" ? "tasks" : "harvest"}
+      // Tasks first: a farm hand's day is the task list. Harvest is the
+      // second tab, for the days they cover the pick (a date link opens it).
+      initialTab={tabParam === "harvest" || (dateParam && tabParam !== "tasks") ? "harvest" : "tasks"}
       today={today}
       todayTasks={board.todo}
       upcomingTasks={board.upcoming}

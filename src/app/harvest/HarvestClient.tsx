@@ -90,8 +90,11 @@ export function HarvestClient({
     // Keep the URL in step so a reload / shared link opens the same tab,
     // without a server round-trip.
     const url = new URL(window.location.href);
-    if (next === "tasks") url.searchParams.set("tab", "tasks");
-    else url.searchParams.delete("tab");
+    if (next === "harvest") url.searchParams.set("tab", "harvest");
+    else {
+      url.searchParams.delete("tab");
+      url.searchParams.delete("date");
+    }
     window.history.replaceState(null, "", url);
   }
 
@@ -196,7 +199,7 @@ export function HarvestClient({
       <div className="px-4 py-5 max-w-3xl mx-auto space-y-6">
         {/* Tabs — what to pick / what else needs doing */}
         <div className="grid grid-cols-2 gap-2" role="tablist">
-          {(["harvest", "tasks"] as const).map((key) => (
+          {(["tasks", "harvest"] as const).map((key) => (
             <button
               key={key}
               type="button"
@@ -247,7 +250,7 @@ export function HarvestClient({
             {dates.map((d) => (
               <Link
                 key={d}
-                href={`/harvest?date=${d}`}
+                href={`/harvest?tab=harvest&date=${d}`}
                 className={cn(
                   "flex-shrink-0 min-h-[44px] px-4 rounded-xl border text-sm font-medium flex items-center capitalize transition-colors",
                   d === date
