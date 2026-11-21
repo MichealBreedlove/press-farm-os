@@ -28,7 +28,7 @@ export const EVENT_MENU_KEY_PREFIX = "evt::";
 
 export const ITEM_CATEGORIES: { value: ItemCategory; label: string }[] = [
   { value: "flowers", label: "Flowers" },
-  { value: "micros_leaves", label: "Micros & Leaves" },
+  { value: "micros_leaves", label: "Microgreens" },
   { value: "herbs_leaves", label: "Herbs & Leaves" },
   { value: "fruit_veg", label: "Fruit & Veg" },
   { value: "kits", label: "Kits" },
@@ -37,7 +37,7 @@ export const ITEM_CATEGORIES: { value: ItemCategory; label: string }[] = [
 
 export const CATEGORY_LABELS: Record<ItemCategory, string> = {
   flowers: "Flowers",
-  micros_leaves: "Micros & Leaves",
+  micros_leaves: "Microgreens",
   herbs_leaves: "Herbs & Leaves",
   fruit_veg: "Fruit & Veg",
   kits: "Kits",

@@ -187,7 +187,7 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     total: "Tot",
     categoryLabels: {
       flowers: "Flores",
-      micros_leaves: "Micros y Hojas",
+      micros_leaves: "Microgreens",
       herbs_leaves: "Hierbas y Hojas",
       fruit_veg: "Frutas y Verduras",
       kits: "Kits",
