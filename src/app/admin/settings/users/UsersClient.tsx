@@ -613,7 +613,7 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
               >
                 <p className="font-semibold">Head Farm Hand</p>
                 <p className={`text-[11px] mt-0.5 ${form.role === "head_farmhand" ? "text-white/80" : "text-farm-muted"}`}>
-                  Farm task board only (read-only)
+                  Farm task board — can finish tasks
                 </p>
               </button>
             </div>
@@ -649,7 +649,9 @@ export function UsersClient({ users, restaurants, currentUserId }: Props) {
             <p className="text-[11px] text-farm-muted/80 leading-relaxed bg-farm-green/[0.06] border border-farm-green/15 rounded-lg p-3">
               The Head Farm Hand sees one page: the farm task board — what the
               farm hands are working on, one step at a time, in English and
-              Spanish, with who has each task. Read-only. No restaurant to pick.
+              Spanish, with who has each task. They can mark tasks finished
+              and be assigned tasks, but can&apos;t create or edit them. No
+              restaurant to pick.
             </p>
           )}
 

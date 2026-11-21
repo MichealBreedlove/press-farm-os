@@ -5,26 +5,30 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 export interface TaskPerson {
   id: string;
   name: string;
-  role: "admin" | "harvester";
+  role: "admin" | "harvester" | "head_farmhand";
 }
 
 /**
- * People a farm task can be assigned to: the farm owner (admin) and every
- * active farm hand. Owner first, then farm hands by name.
+ * People a farm task can be assigned to: the farm owner (admin), the Head
+ * Farm Hand, and every active farm hand. Owner first, then the rest by name.
  */
 export async function listTaskPeople(admin: AdminClient): Promise<TaskPerson[]> {
   const { data } = await admin
     .from("profiles")
     .select("id, full_name, role, is_active")
-    .in("role", ["admin", "harvester"]);
+    .in("role", ["admin", "harvester", "head_farmhand"]);
   return ((data ?? []) as any[])
     .filter((p) => p.is_active !== false)
     .map((p) => ({
       id: p.id as string,
       name: (p.full_name as string | null)?.trim() || (p.role === "admin" ? "Farm owner" : "Farm hand"),
-      role: p.role as "admin" | "harvester",
+      role: p.role as "admin" | "harvester" | "head_farmhand",
     }))
-    .sort((a, b) => (a.role === b.role ? a.name.localeCompare(b.name) : a.role === "admin" ? -1 : 1));
+    .sort((a, b) => {
+      const aOwner = a.role === "admin";
+      const bOwner = b.role === "admin";
+      return aOwner === bOwner ? a.name.localeCompare(b.name) : aOwner ? -1 : 1;
+    });
 }
 
 /** The farm owner automated tasks default to (the first admin). */

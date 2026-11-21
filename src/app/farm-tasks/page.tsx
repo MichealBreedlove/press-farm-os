@@ -11,9 +11,10 @@ import { todayPacific } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 /**
- * /farm-tasks — the Head Farm Hand's only page: the farm task board, read
- * only. Same board the receiver sees (what the farm hands are working on,
- * one step at a time, English + Spanish), with nothing else around it.
+ * /farm-tasks — the Head Farm Hand's only page: the farm task board. Same
+ * board the receiver sees (what the farm hands are working on, one step at
+ * a time, English + Spanish), with nothing else around it — plus Finished /
+ * Undo buttons, since the Head Farm Hand may close tasks (not microgreens).
  */
 export default async function FarmTasksPage() {
   const supabase = await createClient();
@@ -53,7 +54,7 @@ export default async function FarmTasksPage() {
         flower="green-leaf"
       />
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-8">
-        <TaskBoardView board={board} today={today} bilingual whoHasWhat />
+        <TaskBoardView board={board} today={today} bilingual whoHasWhat canComplete />
         <div>
           <p className="section-eyebrow text-farm-muted mb-2">Account</p>
           <SignOutButton />

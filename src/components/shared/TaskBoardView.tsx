@@ -6,6 +6,7 @@ import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize
 import { formatDeliveryDate } from "@/lib/utils";
 import { ANYONE_LABEL, summarizeWorkload } from "@/lib/tasks/assign";
 import { formatLocation } from "@/lib/tasks/location";
+import { TaskActionButton } from "./TaskActionButton";
 
 /**
  * Read-only farm task board — what needs doing, what's coming, what was
@@ -21,12 +22,15 @@ export function TaskBoardView({
   today,
   bilingual = false,
   whoHasWhat = false,
+  canComplete = false,
 }: {
   board: TaskBoard;
   today: string;
   bilingual?: boolean;
   /** Adds the per-person summary card at the top (Farm Liaison). */
   whoHasWhat?: boolean;
+  /** Shows Finished / Undo buttons (Head Farm Hand). Read-only without it. */
+  canComplete?: boolean;
 }) {
   const workload = whoHasWhat ? summarizeWorkload(board.todo, board.upcoming) : [];
   const byDate = new Map<string, BoardTask[]>();
@@ -59,7 +63,7 @@ export function TaskBoardView({
         ) : (
           <ul className="space-y-3">
             {board.todo.map((t) => (
-              <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} />
+              <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} canComplete={canComplete} />
             ))}
           </ul>
         )}
@@ -76,7 +80,7 @@ export function TaskBoardView({
                 <h3 className="text-sm font-semibold text-farm-dark mb-2">{formatDeliveryDate(d)}</h3>
                 <ul className="space-y-3">
                   {byDate.get(d)!.map((t) => (
-                    <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} />
+                    <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} canComplete={canComplete} />
                   ))}
                 </ul>
               </div>
@@ -92,7 +96,7 @@ export function TaskBoardView({
         ) : (
           <ul className="space-y-2">
             {board.done.map((t) => (
-              <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} done />
+              <TaskRow key={t.id} task={t} today={today} bilingual={bilingual} canComplete={canComplete} done />
             ))}
           </ul>
         )}
@@ -114,11 +118,13 @@ function TaskRow({
   task,
   today,
   bilingual,
+  canComplete,
   done = false,
 }: {
   task: BoardTask;
   today: string;
   bilingual: boolean;
+  canComplete: boolean;
   done?: boolean;
 }) {
   const en = { title: localizeTaskTitle(task, "en"), description: localizeTaskDescription(task, "en") };
@@ -209,6 +215,7 @@ function TaskRow({
               ))}
             </ul>
           )}
+          {canComplete && <TaskActionButton taskId={task.id} action={done ? "reopen" : "complete"} />}
         </div>
       </div>
     </li>

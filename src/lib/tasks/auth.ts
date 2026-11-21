@@ -36,16 +36,17 @@ export async function requireAdmin(): Promise<AuthOk | AuthErr> {
   return { ok: true, userId: user.id, farmId };
 }
 
-export type WorkerOk = AuthOk & { role: "admin" | "harvester" };
+export type WorkerOk = AuthOk & { role: "admin" | "harvester" | "head_farmhand" };
 
 /**
  * Gate for the two task actions the Farm Hand account may take — marking a
- * task finished and undoing that. Admin + active harvester ("Farm Hand");
+ * task finished and undoing that. Admin + active harvester ("Farm Hand") +
+ * active Head Farm Hand;
  * everything else about tasks (create, edit, snooze, cancel) stays admin-only.
  */
 export async function requireTaskWorker(): Promise<WorkerOk | AuthErr> {
   const supabase = await createClient();
-  const auth = await requireRole(supabase, ["admin", "harvester"]);
+  const auth = await requireRole(supabase, ["admin", "harvester", "head_farmhand"]);
   if (!auth.ok) return { ok: false, res: auth.response };
 
   const admin = createAdminClient();
@@ -61,6 +62,6 @@ export async function requireTaskWorker(): Promise<WorkerOk | AuthErr> {
     ok: true,
     userId: auth.user.id,
     farmId,
-    role: auth.role === "admin" ? "admin" : "harvester",
+    role: auth.role === "admin" ? "admin" : auth.role === "head_farmhand" ? "head_farmhand" : "harvester",
   };
 }
