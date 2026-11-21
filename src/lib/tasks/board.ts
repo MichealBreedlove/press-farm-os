@@ -3,6 +3,8 @@ import type { FarmTask, FarmTaskType } from "@/types/database";
 import { listCompletedTasks, listTodayTasks, listUpcomingTasks } from "./queries";
 import { effectiveAssigneeId, isMicrogreenTask, shortPersonName } from "./assign";
 import { listTaskPeople, ownerOf } from "./people";
+import { currentStagesOnly } from "./stages";
+import { lowestOpenStages, stageCounts } from "./stage-server";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -27,6 +29,9 @@ export interface BoardTask {
   /** Who the task belongs to; null = anyone on the farm team. */
   assignee_id: string | null;
   assignee_name: string | null;
+  /** Multi-step task: this step's number and the chain's length (else null). */
+  stage_index: number | null;
+  stage_count: number | null;
   /** Microgreen work — never shown to farm hands. */
   is_microgreen: boolean;
   /** Linked crop / item name, when the task has one. */
@@ -50,7 +55,14 @@ export interface TaskBoard {
 export async function loadTaskBoard(
   admin: AdminClient,
   today: string,
-  opts: { upcomingDays?: number; doneDays?: number; hideMicrogreens?: boolean; farmHandsOnly?: boolean } = {},
+  opts: {
+    upcomingDays?: number;
+    doneDays?: number;
+    hideMicrogreens?: boolean;
+    farmHandsOnly?: boolean;
+    /** Only the current step of each multi-step task (farm hand / receiver). */
+    currentStageOnly?: boolean;
+  } = {},
 ): Promise<TaskBoard> {
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
   const farmId: string | undefined = farms?.[0]?.id;
@@ -64,6 +76,11 @@ export async function loadTaskBoard(
   ]);
 
   const all = [...todo, ...upcoming, ...done];
+  const groupIds = Array.from(new Set(all.map((t) => t.stage_group_id).filter((v): v is string => !!v)));
+  const [lowestOpen, chainLength] = await Promise.all([
+    opts.currentStageOnly ? lowestOpenStages(admin, groupIds) : Promise.resolve(new Map<string, number>()),
+    stageCounts(admin, groupIds),
+  ]);
   const ids = (pick: (t: FarmTask) => string | null) =>
     Array.from(new Set(all.map(pick).filter((v): v is string => !!v)));
   const itemIds = ids((t) => t.item_id);
@@ -105,6 +122,8 @@ export async function loadTaskBoard(
     photo_urls: t.photo_urls ?? [],
     completed_at: t.completed_at,
     completed_by_name: t.completed_by ? personName.get(t.completed_by) ?? null : null,
+    stage_index: t.stage_group_id ? t.stage_index : null,
+    stage_count: t.stage_group_id ? chainLength.get(t.stage_group_id) ?? null : null,
     is_microgreen: isMicrogreenTask(t),
     assignee_id: assigneeId,
     // A deactivated / removed person no longer resolves — show it as anyone's.
@@ -120,9 +139,9 @@ export async function loadTaskBoard(
   // The farm owner's own tasks and all microgreen work are left out.
   const forFarmHands = (t: FarmTask) =>
     !isMicrogreenTask(t) && effectiveAssigneeId(t, ownerId) !== ownerId;
-  const visible = (list: FarmTask[]) =>
-    list
+  const visible = (list: FarmTask[], open: boolean) =>
+    (open && opts.currentStageOnly ? currentStagesOnly(list, lowestOpen) : list)
       .filter((t) => (opts.farmHandsOnly ? forFarmHands(t) : !opts.hideMicrogreens || !isMicrogreenTask(t)))
       .map(toBoard);
-  return { todo: visible(todo), upcoming: visible(upcoming), done: visible(done) };
+  return { todo: visible(todo, true), upcoming: visible(upcoming, true), done: visible(done, false) };
 }

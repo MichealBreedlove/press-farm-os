@@ -8,6 +8,7 @@ import { addDays } from "@/lib/tasks/dates";
 import { todayPacific } from "@/lib/utils";
 import { TaskPhotoField } from "./TaskPhotoField";
 import { AssigneePicker } from "./AssigneePicker";
+import { StagesEditor, stageDraftsToPayload, type StageDraft } from "./StagesEditor";
 import type { TaskPerson } from "@/lib/tasks/people";
 
 interface Item {
@@ -42,6 +43,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [assignedTo, setAssignedTo] = useState("");
+  const [stageDrafts, setStageDrafts] = useState<StageDraft[]>([]);
   const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(2);
   const [itemId, setItemId] = useState<string>("");
@@ -51,6 +53,12 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
     setError(null);
     if (!title.trim()) {
       setError("Title required");
+      return;
+    }
+    const stages = stageDraftsToPayload(stageDrafts);
+    const missingWhen = stages.find((s) => s.offset_days === null && !s.due_date);
+    if (missingWhen) {
+      setError(`Pick a date for "${missingWhen.title}"`);
       return;
     }
     startTransition(async () => {
@@ -67,6 +75,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           item_id: itemId || null,
           photo_urls: photoUrls,
           assigned_to: assignedTo || null,
+          stages,
         }),
       });
       const j = await res.json().catch(() => ({}));
@@ -76,8 +85,9 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
       }
       // Spanish text for the crew — filled in the background so saving is
       // instant (keepalive lets it finish after we navigate away).
-      if (j.task?.id) {
-        void fetch(`/api/tasks/${j.task.id}/translate`, { method: "POST", keepalive: true }).catch(() => {});
+      const ids = [j.task?.id, ...((j.stages ?? []) as { id: string }[]).map((s) => s.id)].filter(Boolean);
+      for (const id of ids) {
+        void fetch(`/api/tasks/${id}/translate`, { method: "POST", keepalive: true }).catch(() => {});
       }
       router.push("/admin/tasks");
       router.refresh();
@@ -146,6 +156,17 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
       </div>
 
       <AssigneePicker people={people} value={assignedTo} onChange={setAssignedTo} autoHint="Anyone" />
+
+      <div>
+        <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-1">
+          Next steps <span className="normal-case tracking-normal text-farm-muted">· optional</span>
+        </span>
+        <p className="text-[11px] text-farm-muted mb-2 leading-relaxed">
+          For work in stages — e.g. sow in a 50-cell tray, then transplant to the field 21 days later.
+          The farm team sees one step at a time.
+        </p>
+        <StagesEditor drafts={stageDrafts} onChange={setStageDrafts} />
+      </div>
 
       <p className="text-[11px] text-farm-muted leading-relaxed">
         The farm team sees this on their task list right away. A Spanish
@@ -227,7 +248,13 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           disabled={pending || uploading}
           className="px-5 py-2 min-h-[44px] text-sm font-medium rounded-md bg-farm-green text-white hover:bg-farm-green/90 disabled:opacity-50"
         >
-          {pending ? "Saving…" : uploading ? "Uploading photo…" : "Create task"}
+          {pending
+            ? "Saving…"
+            : uploading
+              ? "Uploading photo…"
+              : stageDraftsToPayload(stageDrafts).length > 0
+                ? `Create ${stageDraftsToPayload(stageDrafts).length + 1}-step task`
+                : "Create task"}
         </button>
       </div>
     </form>

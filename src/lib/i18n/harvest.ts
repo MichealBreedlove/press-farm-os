@@ -78,6 +78,7 @@ export interface HarvestStrings {
   taskEveryone: string;
   taskAnyone: string;
   taskShowing: string;
+  taskStep: (n: number, of: number) => string;
 }
 
 export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
@@ -169,6 +170,7 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     taskEveryone: "Everyone's",
     taskAnyone: "Anyone",
     taskShowing: "Whose tasks",
+    taskStep: (n, of) => `Step ${n} of ${of}`,
   },
   es: {
     harvestList: "Lista de Cosecha",
@@ -265,6 +267,7 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
     taskEveryone: "De todos",
     taskAnyone: "Cualquiera",
     taskShowing: "Tareas de quién",
+    taskStep: (n, of) => `Paso ${n} de ${of}`,
   },
 };
 

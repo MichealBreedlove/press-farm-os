@@ -6,6 +6,7 @@ import type { FarmTask, FarmTaskType } from "@/types/database";
 import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
 import { TaskPhotoField } from "./TaskPhotoField";
 import { AssigneePicker } from "./AssigneePicker";
+import { StagesEditor, stageDraftsToPayload, type StageDraft } from "./StagesEditor";
 import type { TaskPerson } from "@/lib/tasks/people";
 
 interface Item {
@@ -30,12 +31,15 @@ export function EditTaskForm({
   items,
   people,
   ownerName,
+  chain,
 }: {
   task: FarmTask;
   items: Item[];
   people: TaskPerson[];
   /** Who an automated task falls to when nobody is picked. */
   ownerName: string | null;
+  /** Every step of this task's chain (just this task when it has none). */
+  chain: { id: string; title: string; stage_index: number | null; status: string; due_date: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -54,6 +58,39 @@ export function EditTaskForm({
   const [assignedTo, setAssignedTo] = useState(task.assigned_to ?? "");
   const [titleEs, setTitleEs] = useState(task.title_es ?? "");
   const [descriptionEs, setDescriptionEs] = useState(task.description_es ?? "");
+  const [stageDrafts, setStageDrafts] = useState<StageDraft[]>([]);
+  const [addingSteps, setAddingSteps] = useState(false);
+
+  async function addSteps() {
+    const stages = stageDraftsToPayload(stageDrafts);
+    if (stages.length === 0) return;
+    const missingWhen = stages.find((s) => s.offset_days === null && !s.due_date);
+    if (missingWhen) {
+      setError(`Pick a date for "${missingWhen.title}"`);
+      return;
+    }
+    setError(null);
+    setAddingSteps(true);
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/stages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stages }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(j.error ?? "Couldn't add the steps");
+        return;
+      }
+      for (const s of (j.stages ?? []) as { id: string }[]) {
+        void fetch(`/api/tasks/${s.id}/translate`, { method: "POST", keepalive: true }).catch(() => {});
+      }
+      setStageDrafts([]);
+      router.refresh();
+    } finally {
+      setAddingSteps(false);
+    }
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -280,6 +317,41 @@ export function EditTaskForm({
           />
         </Field>
       )}
+
+      <div>
+        <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-1">
+          Steps
+        </span>
+        {chain.length > 1 && (
+          <ol className="mb-3 rounded-lg border border-pf-master-gold/20 bg-white divide-y divide-pf-master-gold/10">
+            {chain.map((s) => (
+              <li key={s.id} className="px-3 py-2 flex items-start justify-between gap-3 text-sm">
+                <span className={s.id === task.id ? "font-semibold text-farm-dark" : "text-farm-dark"}>
+                  {s.stage_index}. {s.title}
+                </span>
+                <span className="text-[11px] text-farm-muted flex-shrink-0">
+                  {s.status === "completed" ? "Done" : s.status === "cancelled" ? "Cancelled" : s.due_date}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+        <StagesEditor
+          drafts={stageDrafts}
+          onChange={setStageDrafts}
+          firstStepNumber={Math.max(1, ...chain.map((s) => s.stage_index ?? 1)) + 1}
+        />
+        {stageDraftsToPayload(stageDrafts).length > 0 && (
+          <button
+            type="button"
+            onClick={addSteps}
+            disabled={addingSteps}
+            className="mt-2 w-full min-h-[44px] rounded-md bg-farm-green text-white text-sm font-medium disabled:opacity-50"
+          >
+            {addingSteps ? "Adding…" : "Save the new steps"}
+          </button>
+        )}
+      </div>
 
       {error && <p className="text-xs text-red-700">{error}</p>}
 

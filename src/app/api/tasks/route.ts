@@ -9,6 +9,8 @@ import {
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 import { resolveAssignee } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
+import { sanitizeStages } from "@/lib/tasks/stages";
+import { appendStages } from "@/lib/tasks/stage-server";
 
 /**
  * GET /api/tasks?view=today|upcoming|done
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
     microgreen_crop_id = null,
     photo_urls,
     assigned_to,
+    stages,
   } = body ?? {};
 
   if (!title || !due_date) {
@@ -98,5 +101,17 @@ export async function POST(request: Request) {
     console.error("[TASKS] insert failed", error);
     return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
-  return NextResponse.json({ task: data });
+
+  // Follow-on steps ("then 21 days later, transplant to the field").
+  const next = sanitizeStages(stages);
+  let stageRows: any[] = [];
+  if (next.length > 0) {
+    const res = await appendStages(admin, data as any, next);
+    if (res.error) {
+      console.error("[TASKS] stage insert failed", res.error);
+      return NextResponse.json({ error: "Task saved, but its later steps failed — add them again" }, { status: 500 });
+    }
+    stageRows = res.rows;
+  }
+  return NextResponse.json({ task: data, stages: stageRows });
 }

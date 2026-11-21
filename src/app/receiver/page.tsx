@@ -114,7 +114,7 @@ export default async function ReceiverPage({ searchParams }: Props) {
   const lastNotifiedAt = (lastNotifyRaw as { sent_at: string } | null)?.sent_at ?? null;
 
   // Farm-hand tasks due by today — the count on the "Farm tasks" link.
-  const openTaskCount = (await loadTaskBoard(admin, today, { farmHandsOnly: true })).todo.length;
+  const openTaskCount = (await loadTaskBoard(admin, today, { farmHandsOnly: true, currentStageOnly: true })).todo.length;
 
   return (
     <main id="main" className="min-h-screen pb-24 bg-farm-cream">

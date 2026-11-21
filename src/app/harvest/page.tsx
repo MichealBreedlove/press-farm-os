@@ -106,6 +106,8 @@ export default async function HarvestPage({ searchParams }: Props) {
       upcomingDays: 14,
       doneDays: 7,
       hideMicrogreens: profile.role !== "admin",
+      // One step at a time for multi-step tasks.
+      currentStageOnly: true,
     }),
   ]);
 

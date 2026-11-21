@@ -28,7 +28,7 @@ export default async function ReceiverTasksPage() {
 
   const admin = createAdminClient();
   const today = todayPacific();
-  const board = await loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7, farmHandsOnly: true });
+  const board = await loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7, farmHandsOnly: true, currentStageOnly: true });
 
   return (
     <main id="main" className="min-h-screen pb-24 bg-farm-cream">

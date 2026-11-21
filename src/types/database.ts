@@ -513,6 +513,9 @@ export type Database = {
       }
       farm_tasks: {
         Row: {
+          stage_group_id: string | null
+          stage_index: number | null
+          stage_offset_days: number | null
           assigned_to: string | null
           completed_at: string | null
           completed_by: string | null
@@ -544,6 +547,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          stage_group_id?: string | null
+          stage_index?: number | null
+          stage_offset_days?: number | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -575,6 +581,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          stage_group_id?: string | null
+          stage_index?: number | null
+          stage_offset_days?: number | null
           assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -2890,6 +2899,11 @@ export interface FarmTask {
   assigned_to: string | null;
   /** Who marked it finished (admin or farm hand). Migration 098. */
   completed_by: string | null;
+  /** Multi-step chain (migration 104): shared id, 1-based step number, and
+   *  "days after the previous step is finished" (null = fixed date). */
+  stage_group_id: string | null;
+  stage_index: number | null;
+  stage_offset_days: number | null;
   /** Pictures attached to the task (public storage URLs). Migration 098. */
   photo_urls: string[];
   /** Spanish text for the Farm Hand portal; null = fall back to English. */

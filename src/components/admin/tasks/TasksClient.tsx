@@ -475,6 +475,11 @@ function TaskRow({
                 <span className="text-[10px] px-1.5 py-0.5 rounded badge-blue">
                   {assigneeLabel(task)}
                 </span>
+                {task.stage_group_id && task.stage_index && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-farm-cream text-farm-muted">
+                    Step {task.stage_index}
+                  </span>
+                )}
                 {task.photo_urls?.length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-farm-cream text-farm-muted inline-flex items-center gap-1">
                     <Camera className="w-3 h-3" aria-hidden /> {task.photo_urls.length}

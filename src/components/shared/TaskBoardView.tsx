@@ -123,7 +123,14 @@ function TaskRow({
   const en = { title: localizeTaskTitle(task, "en"), description: localizeTaskDescription(task, "en") };
   const es = { title: localizeTaskTitle(task, "es"), description: localizeTaskDescription(task, "es") };
   const overdue = !done && task.due_date < today;
-  const meta = [TASK_TYPE_LABELS[task.type], task.subject, task.due_time?.slice(0, 5)].filter(Boolean);
+  const meta = [
+    TASK_TYPE_LABELS[task.type],
+    task.subject,
+    task.stage_index && task.stage_count && task.stage_count > 1
+      ? `Step ${task.stage_index} of ${task.stage_count}`
+      : null,
+    task.due_time?.slice(0, 5),
+  ].filter(Boolean);
 
   return (
     <li className="card p-4">

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireTaskWorker } from "@/lib/tasks/auth";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
+import { scheduleNextStage } from "@/lib/tasks/stage-server";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -15,6 +16,9 @@ interface RouteCtx {
  *
  * Admin + Farm Hand (harvester role). A farm hand can only finish a task
  * that is still open; `completed_by` records who did it.
+ *
+ * Multi-step tasks: finishing a step dates the next one when it is
+ * "N days after the previous step" (counted from today, Pacific).
  */
 export async function POST(request: Request, ctx: RouteCtx) {
   const auth = await requireTaskWorker();
@@ -64,5 +68,6 @@ export async function POST(request: Request, ctx: RouteCtx) {
   if (!data) {
     return NextResponse.json({ error: "Task not found or no longer open" }, { status: 409 });
   }
+  await scheduleNextStage(admin, data);
   return NextResponse.json({ task: data });
 }

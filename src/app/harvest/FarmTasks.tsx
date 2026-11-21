@@ -231,6 +231,7 @@ function TaskCard({
 
   const meta: string[] = [t.taskTypeLabels[task.type] ?? task.type];
   if (task.subject) meta.push(task.subject);
+  if (task.stage_index && task.stage_count && task.stage_count > 1) meta.push(t.taskStep(task.stage_index, task.stage_count));
   if (task.due_time) meta.push(task.due_time.slice(0, 5));
 
   return (
