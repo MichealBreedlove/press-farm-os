@@ -37,3 +37,8 @@ WHERE category = 'micros_leaves'
 
 UPDATE items SET is_archived = true, updated_at = now()
 WHERE category = 'micros_leaves' AND name IN ('Lovage','Carrots');
+
+-- Follow-up the same day (Micheal): Onions and Brussel Sprouts are
+-- vegetables — they go to Fruit & Veg, not Herbs & Leaves.
+UPDATE items SET category = 'fruit_veg', updated_at = now()
+WHERE category = 'herbs_leaves' AND name IN ('Onions', 'Brussel Sprouts');
