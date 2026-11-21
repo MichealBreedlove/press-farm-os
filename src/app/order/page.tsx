@@ -54,7 +54,32 @@ export default async function OrderPage({
     redirect("/events/order");
   }
 
-  if (!restaurantUser?.restaurants) {
+  // An admin has no restaurant of their own. Rather than a dead end, show
+  // them Press's order form as a read-only PREVIEW (this is what a Press
+  // chef or the Farm Liaison sees). Submitting stays refused by /api/orders,
+  // which requires a real restaurant membership.
+  let adminPreview = false;
+  let restaurant = restaurantUser?.restaurants ?? null;
+  if (!restaurant) {
+    const { data: me } = (await (supabase as any)
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()) as any;
+    if (me?.role === "admin") {
+      const { data: press } = (await (supabase as any)
+        .from("restaurants")
+        .select("id, name, slug")
+        .eq("slug", "press")
+        .maybeSingle()) as any;
+      if (press) {
+        restaurant = press;
+        adminPreview = true;
+      }
+    }
+  }
+
+  if (!restaurant) {
     return (
       <main className="min-h-screen bg-farm-cream flex items-center justify-center px-4">
         <EmptyState
@@ -65,7 +90,6 @@ export default async function OrderPage({
     );
   }
 
-  const restaurant = restaurantUser.restaurants;
   // Earliest orderable date, farm-local. Before 3:30 PM Pacific that's today;
   // after that it rolls to tomorrow — today's harvest is done, so a late
   // order must land on the NEXT harvest day, not a still-open same-day date.
@@ -391,6 +415,15 @@ export default async function OrderPage({
 
   return (
     <main className="min-h-screen bg-farm-cream">
+      {adminPreview && (
+        <p
+          role="status"
+          className="bg-amber-50 border-b border-amber-700/15 text-amber-800 text-sm px-4 py-2.5 text-center"
+        >
+          Admin preview — this is the order form as {restaurant.name} sees it. Orders can&apos;t be
+          placed from your admin login.
+        </p>
+      )}
       <header className="page-header">
         <h1 className="page-title">{isEditing ? "Edit Order" : "Order"} for {deliveryDateFormatted}</h1>
         <p className="text-base sm:text-sm font-semibold sm:font-medium text-white/90">{restaurant.name}</p>
