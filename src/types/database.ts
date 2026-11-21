@@ -1951,6 +1951,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean
+          must_change_password: boolean
           role: string
           updated_at: string
         }
@@ -1959,6 +1960,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean
+          must_change_password?: boolean
           role?: string
           updated_at?: string
         }
@@ -1967,6 +1969,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean
+          must_change_password?: boolean
           role?: string
           updated_at?: string
         }

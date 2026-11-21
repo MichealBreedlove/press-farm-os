@@ -65,3 +65,12 @@ UPDATE items SET name = name || ' Micro', updated_at = now()
 WHERE category = 'micros_leaves' AND is_archived = false
   AND name IN ('Kale Mix','Borage','Beet','Celery','Amaranth','Anise Hyssop','Cress',
                'Pea Tendrils','Fava Leaf','Gem Marigold Leaf','Citrus Leaf Shoots','Chervil','Dill');
+
+-- Gem Marigold Leaf is grown both ways (Micheal 2026-11-21): the tray crop
+-- stays "Gem Marigold Leaf Micro" (Microgreens) and a field "Gem Marigold
+-- Leaf" is added under Herbs & Leaves as a copy of it. Gem Marigold FLOWERS
+-- are field-only — the existing flowers "Gem Marigold" row, no micro twin.
+INSERT INTO items (farm_id,name,category,unit_type,default_price,chef_notes,internal_notes,source,is_archived,sort_order,image_url,season_status,season_note,size,variety,color,unit_prices,is_event_item,is_press_bar_item,show_in_regular_menu,parent_item_id,seasonal_months,size_prices)
+SELECT farm_id,'Gem Marigold Leaf','herbs_leaves',unit_type,default_price,chef_notes,internal_notes,source,false,sort_order,image_url,season_status,season_note,size,variety,color,unit_prices,is_event_item,is_press_bar_item,show_in_regular_menu,parent_item_id,seasonal_months,size_prices
+FROM items WHERE name='Gem Marigold Leaf Micro' AND category='micros_leaves'
+ON CONFLICT (farm_id,name,category) DO UPDATE SET is_archived=false, updated_at=now();

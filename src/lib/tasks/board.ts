@@ -50,7 +50,7 @@ export interface TaskBoard {
 export async function loadTaskBoard(
   admin: AdminClient,
   today: string,
-  opts: { upcomingDays?: number; doneDays?: number; hideMicrogreens?: boolean } = {},
+  opts: { upcomingDays?: number; doneDays?: number; hideMicrogreens?: boolean; farmHandsOnly?: boolean } = {},
 ): Promise<TaskBoard> {
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
   const farmId: string | undefined = farms?.[0]?.id;
@@ -115,7 +115,14 @@ export async function loadTaskBoard(
       null,
   });
 
+  // `farmHandsOnly` (the receiver, who translates for the crew): just the
+  // work farm hands do — tasks assigned to a farm hand or left for anyone.
+  // The farm owner's own tasks and all microgreen work are left out.
+  const forFarmHands = (t: FarmTask) =>
+    !isMicrogreenTask(t) && effectiveAssigneeId(t, ownerId) !== ownerId;
   const visible = (list: FarmTask[]) =>
-    (opts.hideMicrogreens ? list.filter((t) => !isMicrogreenTask(t)) : list).map(toBoard);
+    list
+      .filter((t) => (opts.farmHandsOnly ? forFarmHands(t) : !opts.hideMicrogreens || !isMicrogreenTask(t)))
+      .map(toBoard);
   return { todo: visible(todo), upcoming: visible(upcoming), done: visible(done) };
 }

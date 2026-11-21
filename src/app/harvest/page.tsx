@@ -34,8 +34,9 @@ export default async function HarvestPage({ searchParams }: Props) {
   if (!user) redirect("/login");
 
   const { data: profile } = await (supabase as any)
-    .from("profiles").select("role, is_active, full_name").eq("id", user.id).single();
+    .from("profiles").select("role, is_active, full_name, must_change_password").eq("id", user.id).single();
   if (!profile) redirect("/login");
+  if (profile.must_change_password) redirect("/set-password");
   // Harvesters (active) live here; admins can peek. Everyone else goes home.
   if (profile.role !== "admin" && !(profile.role === "harvester" && profile.is_active)) {
     redirect("/");

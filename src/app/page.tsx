@@ -23,9 +23,12 @@ export default async function RootPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, must_change_password")
     .eq("id", user.id)
     .single() as any;
+
+  // A starter password only works once — pick a new one before anything else.
+  if ((profile as any)?.must_change_password) redirect("/set-password");
 
   const role = (profile as any)?.role;
   if (role === "admin") redirect("/admin/dashboard");

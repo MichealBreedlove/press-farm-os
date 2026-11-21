@@ -9,9 +9,10 @@ import { todayPacific } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 /**
- * /receiver/tasks — the farm task list, read-only, with each task in
- * English AND the Spanish the farm hands read, so the receiver can
- * translate for the crew when needed. Finishing tasks stays on the Farm
+ * /receiver/tasks — the FARM HANDS' task list, read-only, with each task in
+ * English AND the Spanish the farm hands read: the receiver is the crew's
+ * translator (Micheal isn't fluent in Spanish). Micheal's own tasks and all
+ * microgreen work are left out — only what the farm hands are doing. Finishing tasks stays on the Farm
  * Hand portal and /admin/tasks.
  */
 export default async function ReceiverTasksPage() {
@@ -27,14 +28,14 @@ export default async function ReceiverTasksPage() {
 
   const admin = createAdminClient();
   const today = todayPacific();
-  const board = await loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7 });
+  const board = await loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7, farmHandsOnly: true });
 
   return (
     <main id="main" className="min-h-screen pb-24 bg-farm-cream">
       <EditorialHero
         eyebrow="Receiving"
         title="Farm Tasks"
-        subtitle="What needs to be done at the farm — English and Spanish"
+        subtitle="What the farm hands are working on — English and Spanish"
         flower="green-leaf"
         backHref="/receiver"
       />
