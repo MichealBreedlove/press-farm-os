@@ -11,6 +11,8 @@ export interface StageInput {
   offset_days: number | null;
   /** A fixed date instead of an offset. */
   due_date: string | null;
+  /** This step's own people; null = same people as step 1. */
+  assignee_ids: string[] | null;
 }
 
 export interface StagedRow {
@@ -40,7 +42,10 @@ export function sanitizeStages(input: unknown, max = 9): StageInput[] {
     const off = Number(r.offset_days);
     const offset = !due && Number.isFinite(off) && off >= 0 && off <= 365 ? Math.round(off) : null;
     if (!due && offset === null) continue; // a step needs a "when"
-    out.push({ title, description, offset_days: offset, due_date: due });
+    const assignees = Array.isArray(r.assignee_ids)
+      ? Array.from(new Set(r.assignee_ids.filter((v): v is string => typeof v === "string" && v.length > 0)))
+      : null;
+    out.push({ title, description, offset_days: offset, due_date: due, assignee_ids: assignees });
     if (out.length >= max) break;
   }
   return out;

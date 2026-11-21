@@ -52,6 +52,7 @@ export async function appendStages(
     type: string;
     priority: number;
     assigned_to: string | null;
+    assignee_ids?: string[] | null;
     item_id: string | null;
     due_date: string;
     stage_group_id: string | null;
@@ -91,7 +92,11 @@ export async function appendStages(
     source: "manual",
     due_date: dates[i],
     priority: parent.priority,
-    assigned_to: parent.assigned_to,
+    // A step with its own people keeps them; otherwise it inherits step 1's.
+    ...(() => {
+      const ids = s.assignee_ids ?? parent.assignee_ids ?? (parent.assigned_to ? [parent.assigned_to] : []);
+      return { assignee_ids: ids, assigned_to: ids[0] ?? null };
+    })(),
     item_id: parent.item_id,
     stage_group_id: groupId,
     stage_index: lastIndex + 1 + i,

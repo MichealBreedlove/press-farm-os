@@ -1,7 +1,7 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FarmTask, FarmTaskType } from "@/types/database";
 import { listCompletedTasks, listTodayTasks, listUpcomingTasks } from "./queries";
-import { effectiveAssigneeId, isMicrogreenTask, shortPersonName } from "./assign";
+import { effectiveAssigneeIds, isMicrogreenTask, shortPersonName } from "./assign";
 import { listTaskPeople, ownerOf } from "./people";
 import { currentStagesOnly } from "./stages";
 import { lowestOpenStages, stageCounts } from "./stage-server";
@@ -26,9 +26,10 @@ export interface BoardTask {
   photo_urls: string[];
   completed_at: string | null;
   completed_by_name: string | null;
-  /** Who the task belongs to; null = anyone on the farm team. */
-  assignee_id: string | null;
-  assignee_name: string | null;
+  /** Who the task belongs to (one or more people); empty = anyone. */
+  assignee_ids: string[];
+  /** Short names, same order as assignee_ids. */
+  assignee_names: string[];
   /** Multi-step task: this step's number and the chain's length (else null). */
   stage_index: number | null;
   stage_count: number | null;
@@ -106,10 +107,12 @@ export async function loadTaskBoard(
   );
 
   const toBoard = (t: FarmTask): BoardTask => {
-    const assigneeId = effectiveAssigneeId(t, ownerId);
-    return toBoardRow(t, assigneeId);
+    // A deactivated / removed person no longer resolves — drop them; if
+    // nobody is left the task reads as anyone's.
+    const ids = effectiveAssigneeIds(t, ownerId).filter((id) => assigneeName.has(id));
+    return toBoardRow(t, ids);
   };
-  const toBoardRow = (t: FarmTask, assigneeId: string | null): BoardTask => ({
+  const toBoardRow = (t: FarmTask, ids: string[]): BoardTask => ({
     id: t.id,
     title: t.title,
     title_es: t.title_es,
@@ -125,9 +128,8 @@ export async function loadTaskBoard(
     stage_index: t.stage_group_id ? t.stage_index : null,
     stage_count: t.stage_group_id ? chainLength.get(t.stage_group_id) ?? null : null,
     is_microgreen: isMicrogreenTask(t),
-    assignee_id: assigneeId,
-    // A deactivated / removed person no longer resolves — show it as anyone's.
-    assignee_name: assigneeId ? assigneeName.get(assigneeId) ?? null : null,
+    assignee_ids: ids,
+    assignee_names: ids.map((id) => assigneeName.get(id) as string),
     subject:
       (t.microgreen_crop_id && cropName.get(t.microgreen_crop_id)) ||
       (t.item_id && itemName.get(t.item_id)) ||
@@ -135,10 +137,13 @@ export async function loadTaskBoard(
   });
 
   // `farmHandsOnly` (the receiver, who translates for the crew): just the
-  // work farm hands do — tasks assigned to a farm hand or left for anyone.
-  // The farm owner's own tasks and all microgreen work are left out.
-  const forFarmHands = (t: FarmTask) =>
-    !isMicrogreenTask(t) && effectiveAssigneeId(t, ownerId) !== ownerId;
+  // work farm hands do — tasks with a farm hand on them or left for anyone.
+  // Tasks only the farm owner holds, and all microgreen work, are left out.
+  const forFarmHands = (t: FarmTask) => {
+    if (isMicrogreenTask(t)) return false;
+    const ids = effectiveAssigneeIds(t, ownerId);
+    return ids.length === 0 || ids.some((id) => id !== ownerId);
+  };
   const visible = (list: FarmTask[], open: boolean) =>
     (open && opts.currentStageOnly ? currentStagesOnly(list, lowestOpen) : list)
       .filter((t) => (opts.farmHandsOnly ? forFarmHands(t) : !opts.hideMicrogreens || !isMicrogreenTask(t)))

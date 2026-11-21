@@ -1,18 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { effectiveAssigneeId, shortPersonName, summarizeWorkload } from "@/lib/tasks/assign";
+import { effectiveAssigneeIds, isForPerson, shortPersonName, summarizeWorkload } from "@/lib/tasks/assign";
 
-describe("effectiveAssigneeId", () => {
-  it("uses the explicit assignee when there is one", () => {
-    expect(effectiveAssigneeId({ assigned_to: "luis", source: "microgreens-auto" }, "micheal")).toBe("luis");
-    expect(effectiveAssigneeId({ assigned_to: "luis", source: "manual" }, "micheal")).toBe("luis");
+describe("effectiveAssigneeIds", () => {
+  it("uses the explicit people when there are any", () => {
+    expect(effectiveAssigneeIds({ assigned_to: null, assignee_ids: ["luis", "ana"], source: "manual" }, "m")).toEqual(["luis", "ana"]);
+    expect(effectiveAssigneeIds({ assigned_to: "x", assignee_ids: ["luis", "luis"], source: "microgreens-auto" }, "m")).toEqual(["luis"]);
+  });
+  it("falls back to the older single assigned_to", () => {
+    expect(effectiveAssigneeIds({ assigned_to: "luis", assignee_ids: [], source: "manual" }, "m")).toEqual(["luis"]);
   });
   it("gives unassigned automated tasks to the farm owner", () => {
     for (const source of ["microgreens-auto", "recurring-item", "inbox-confirmed"]) {
-      expect(effectiveAssigneeId({ assigned_to: null, source }, "micheal")).toBe("micheal");
+      expect(effectiveAssigneeIds({ assigned_to: null, source }, "m")).toEqual(["m"]);
     }
   });
   it("leaves an unassigned manual task for anyone", () => {
-    expect(effectiveAssigneeId({ assigned_to: null, source: "manual" }, "micheal")).toBeNull();
+    expect(effectiveAssigneeIds({ assigned_to: null, assignee_ids: [], source: "manual" }, "m")).toEqual([]);
+  });
+  it("puts anyone's tasks and the person's own on their list", () => {
+    expect(isForPerson([], "luis")).toBe(true);
+    expect(isForPerson(["ana", "luis"], "luis")).toBe(true);
+    expect(isForPerson(["ana"], "luis")).toBe(false);
   });
 });
 
@@ -26,15 +34,15 @@ describe("shortPersonName", () => {
 });
 
 describe("summarizeWorkload", () => {
-  const t = (assignee_id: string | null, assignee_name: string | null) => ({ assignee_id, assignee_name });
-  it("counts per person, busiest first, anyone last", () => {
+  const t = (ids: string[], names: string[]) => ({ assignee_ids: ids, assignee_names: names });
+  it("counts per person, a shared task once for each, anyone last", () => {
     const rows = summarizeWorkload(
-      [t("m", "Micheal"), t(null, null), t("l", "Luis"), t("l", "Luis")],
-      [t("l", "Luis"), t(null, null), t(null, null), t(null, null)],
+      [t(["m"], ["Micheal"]), t([], []), t(["l"], ["Luis"]), t(["l", "m"], ["Luis", "Micheal"])],
+      [t(["l"], ["Luis"]), t([], []), t([], []), t([], [])],
     );
     expect(rows).toEqual([
       { id: "l", name: "Luis", todo: 2, upcoming: 1 },
-      { id: "m", name: "Micheal", todo: 1, upcoming: 0 },
+      { id: "m", name: "Micheal", todo: 2, upcoming: 0 },
       { id: null, name: "Anyone", todo: 1, upcoming: 3 },
     ]);
   });

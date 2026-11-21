@@ -513,6 +513,7 @@ export type Database = {
       }
       farm_tasks: {
         Row: {
+          assignee_ids: string[]
           stage_group_id: string | null
           stage_index: number | null
           stage_offset_days: number | null
@@ -547,6 +548,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assignee_ids?: string[]
           stage_group_id?: string | null
           stage_index?: number | null
           stage_offset_days?: number | null
@@ -581,6 +583,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assignee_ids?: string[]
           stage_group_id?: string | null
           stage_index?: number | null
           stage_offset_days?: number | null
@@ -2895,8 +2898,10 @@ export interface FarmTask {
   superseded_at: string | null;
   superseded_reason: string | null;
   completion_notes: string | null;
-  /** Explicit assignee; null is resolved by src/lib/tasks/assign.ts. Migration 101. */
+  /** First explicit assignee (kept in step with assignee_ids). Migration 101. */
   assigned_to: string | null;
+  /** Every explicit assignee; empty is resolved by src/lib/tasks/assign.ts. Migration 105. */
+  assignee_ids: string[];
   /** Who marked it finished (admin or farm hand). Migration 098. */
   completed_by: string | null;
   /** Multi-step chain (migration 104): shared id, 1-based step number, and

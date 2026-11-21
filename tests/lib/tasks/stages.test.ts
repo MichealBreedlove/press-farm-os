@@ -6,15 +6,15 @@ describe("sanitizeStages", () => {
     expect(
       sanitizeStages([
         { title: " Transplant to the field ", offset_days: 21 },
-        { title: "Harvest", due_date: "2027-01-15", offset_days: 5 },
+        { title: "Harvest", due_date: "2027-01-15", offset_days: 5, assignee_ids: ["luis", "luis", 7] },
         { title: "", offset_days: 3 },
         { title: "No when" },
         { title: "Bad offset", offset_days: -2 },
         "junk",
       ]),
     ).toEqual([
-      { title: "Transplant to the field", description: null, offset_days: 21, due_date: null },
-      { title: "Harvest", description: null, offset_days: null, due_date: "2027-01-15" },
+      { title: "Transplant to the field", description: null, offset_days: 21, due_date: null, assignee_ids: null },
+      { title: "Harvest", description: null, offset_days: null, due_date: "2027-01-15", assignee_ids: ["luis"] },
     ]);
     expect(sanitizeStages(undefined)).toEqual([]);
   });

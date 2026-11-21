@@ -1,6 +1,8 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import { AssigneePicker } from "./AssigneePicker";
+import type { TaskPerson } from "@/lib/tasks/people";
 
 export interface StageDraft {
   key: string;
@@ -9,6 +11,8 @@ export interface StageDraft {
   when: "after" | "date";
   offsetDays: string;
   dueDate: string;
+  /** null = same people as step 1. */
+  assigneeIds: string[] | null;
 }
 
 export function newStageDraft(): StageDraft {
@@ -19,6 +23,7 @@ export function newStageDraft(): StageDraft {
     when: "after",
     offsetDays: "21",
     dueDate: "",
+    assigneeIds: null,
   };
 }
 
@@ -31,6 +36,7 @@ export function stageDraftsToPayload(drafts: StageDraft[]) {
       description: d.description.trim() || null,
       offset_days: d.when === "after" ? Number(d.offsetDays) : null,
       due_date: d.when === "date" ? d.dueDate || null : null,
+      assignee_ids: d.assigneeIds,
     }));
 }
 
@@ -44,9 +50,12 @@ export function StagesEditor({
   drafts,
   onChange,
   firstStepNumber = 2,
+  people,
 }: {
   drafts: StageDraft[];
   onChange: (next: StageDraft[]) => void;
+  /** Who a step can be given to. */
+  people: TaskPerson[];
   /** Number shown on the first draft (2 on a new task; after the chain on edit). */
   firstStepNumber?: number;
 }) {
@@ -134,6 +143,14 @@ export function StagesEditor({
               className={field}
             />
           )}
+          <AssigneePicker
+            people={people}
+            value={d.assigneeIds}
+            onChange={(ids) => update(d.key, { assigneeIds: ids })}
+            autoHint="Anyone"
+            inheritLabel="Same as step 1"
+            label={`Step ${firstStepNumber + i} — who`}
+          />
         </div>
       ))}
 

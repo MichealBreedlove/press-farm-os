@@ -7,7 +7,7 @@ import {
   listCompletedTasks,
 } from "@/lib/tasks/queries";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
-import { resolveAssignee } from "@/lib/tasks/people";
+import { resolveAssignees } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
 import { sanitizeStages } from "@/lib/tasks/stages";
 import { appendStages } from "@/lib/tasks/stage-server";
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     microgreen_crop_id = null,
     photo_urls,
     assigned_to,
+    assignee_ids,
     stages,
   } = body ?? {};
 
@@ -72,11 +73,20 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const assignee = await resolveAssignee(admin, assigned_to, {
-    ownerOnly: isMicrogreenTask({ source: "manual", microgreen_crop_id }),
-  });
-  if (!assignee.ok) {
+  // One or more people (`assignee_ids`); the older single `assigned_to` still works.
+  const microTask = isMicrogreenTask({ source: "manual", microgreen_crop_id });
+  const assignees = await resolveAssignees(admin, assignee_ids ?? assigned_to, { ownerOnly: microTask });
+  if (!assignees.ok) {
     return NextResponse.json({ error: "That person can't be assigned this task" }, { status: 400 });
+  }
+  // Each later step's people must be valid too.
+  const next = sanitizeStages(stages);
+  for (const st of next) {
+    if (st.assignee_ids === null) continue;
+    const r = await resolveAssignees(admin, st.assignee_ids, { ownerOnly: microTask });
+    if (!r.ok) {
+      return NextResponse.json({ error: `A person on "${st.title}" can't be assigned` }, { status: 400 });
+    }
   }
   const { data, error } = await admin
     .from("farm_tasks")
@@ -92,7 +102,8 @@ export async function POST(request: Request) {
       item_id,
       microgreen_crop_id,
       photo_urls: sanitizeTaskPhotoUrls(photo_urls),
-      assigned_to: assignee.id,
+      assignee_ids: assignees.ids,
+      assigned_to: assignees.ids[0] ?? null,
     })
     .select("*")
     .single();
@@ -103,7 +114,6 @@ export async function POST(request: Request) {
   }
 
   // Follow-on steps ("then 21 days later, transplant to the field").
-  const next = sanitizeStages(stages);
   let stageRows: any[] = [];
   if (next.length > 0) {
     const res = await appendStages(admin, data as any, next);

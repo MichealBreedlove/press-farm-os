@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { addDaysISO } from "@/lib/utils";
 import { TASK_TYPE_ICONS } from "@/lib/tasks/constants";
 import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize";
+import { isForPerson } from "@/lib/tasks/assign";
 import { HARVEST_STRINGS, formatHarvestDate, type HarvestLang } from "@/lib/i18n/harvest";
 import type { BoardTask } from "@/lib/tasks/board";
 
@@ -78,7 +79,7 @@ export function FarmTasks({ lang, today, todayTasks, upcomingTasks, doneTasks, m
   // whole farm, each card naming who it belongs to.
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const inScope = (x: FarmHandTask) =>
-    scope === "all" || x.assignee_id === null || x.assignee_id === meId;
+    scope === "all" || isForPerson(x.assignee_ids, meId);
   const openToday = todayTasks.filter((x) => !justDone.has(x.id) && inScope(x));
   const openUpcoming = upcomingTasks.filter((x) => !justDone.has(x.id) && inScope(x));
   const done = doneTasks.filter((x) => !justReopened.has(x.id));
@@ -248,7 +249,7 @@ function TaskCard({
           {!isDone && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
               <span className="badge-blue text-[11px] px-2 py-0.5 rounded">
-                {task.assignee_name ?? t.taskAnyone}
+                {task.assignee_names.length > 0 ? task.assignee_names.join(", ") : t.taskAnyone}
               </span>
               {overdue && (
                 <span className="badge-red text-[11px] px-2 py-0.5 rounded">

@@ -42,7 +42,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
   const [dueDate, setDueDate] = useState(today);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [assignedTo, setAssignedTo] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [stageDrafts, setStageDrafts] = useState<StageDraft[]>([]);
   const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(2);
@@ -74,7 +74,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           priority,
           item_id: itemId || null,
           photo_urls: photoUrls,
-          assigned_to: assignedTo || null,
+          assignee_ids: assigneeIds,
           stages,
         }),
       });
@@ -155,7 +155,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
         </div>
       </div>
 
-      <AssigneePicker people={people} value={assignedTo} onChange={setAssignedTo} autoHint="Anyone" />
+      <AssigneePicker people={people} value={assigneeIds} onChange={(ids) => setAssigneeIds(ids ?? [])} autoHint="Anyone" />
 
       <div>
         <span className="block text-[10px] tracking-[0.18em] uppercase text-pf-gold-700 font-medium mb-1">
@@ -165,7 +165,7 @@ export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPers
           For work in stages — e.g. sow in a 50-cell tray, then transplant to the field 21 days later.
           The farm team sees one step at a time.
         </p>
-        <StagesEditor drafts={stageDrafts} onChange={setStageDrafts} />
+        <StagesEditor drafts={stageDrafts} onChange={setStageDrafts} people={people} />
       </div>
 
       <p className="text-[11px] text-farm-muted leading-relaxed">

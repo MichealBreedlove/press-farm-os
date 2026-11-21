@@ -154,7 +154,7 @@ function TaskRow({
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {!done && (
               <span className="badge-blue text-[11px] px-2 py-0.5 rounded">
-                {task.assignee_name ?? ANYONE_LABEL}
+                {task.assignee_names.length > 0 ? task.assignee_names.join(", ") : ANYONE_LABEL}
               </span>
             )}
             {done ? (

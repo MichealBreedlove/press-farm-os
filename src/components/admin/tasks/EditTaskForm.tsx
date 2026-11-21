@@ -55,7 +55,9 @@ export function EditTaskForm({
   const [completionNotes, setCompletionNotes] = useState(task.completion_notes ?? "");
   const [photoUrls, setPhotoUrls] = useState<string[]>(task.photo_urls ?? []);
   const [uploading, setUploading] = useState(false);
-  const [assignedTo, setAssignedTo] = useState(task.assigned_to ?? "");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task.assignee_ids?.length ? task.assignee_ids : task.assigned_to ? [task.assigned_to] : [],
+  );
   const [titleEs, setTitleEs] = useState(task.title_es ?? "");
   const [descriptionEs, setDescriptionEs] = useState(task.description_es ?? "");
   const [stageDrafts, setStageDrafts] = useState<StageDraft[]>([]);
@@ -119,7 +121,7 @@ export function EditTaskForm({
           item_id: itemId || null,
           completion_notes: completionNotes.trim() || null,
           photo_urls: photoUrls,
-          assigned_to: assignedTo || null,
+          assignee_ids: assigneeIds,
           ...(spanishEdited
             ? { title_es: titleEs.trim() || null, description_es: descriptionEs.trim() || null }
             : {}),
@@ -205,9 +207,10 @@ export function EditTaskForm({
 
       <AssigneePicker
         people={people}
-        value={assignedTo}
-        onChange={setAssignedTo}
+        value={assigneeIds}
+        onChange={(ids) => setAssigneeIds(ids ?? [])}
         autoHint={task.source === "manual" ? "Anyone" : `Automatic${ownerName ? ` (${ownerName})` : ""}`}
+        label={chain.length > 1 ? `Step ${task.stage_index ?? 1} — who` : "Assign to"}
       />
 
       <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />
@@ -326,9 +329,15 @@ export function EditTaskForm({
           <ol className="mb-3 rounded-lg border border-pf-master-gold/20 bg-white divide-y divide-pf-master-gold/10">
             {chain.map((s) => (
               <li key={s.id} className="px-3 py-2 flex items-start justify-between gap-3 text-sm">
-                <span className={s.id === task.id ? "font-semibold text-farm-dark" : "text-farm-dark"}>
-                  {s.stage_index}. {s.title}
-                </span>
+                {s.id === task.id ? (
+                  <span className="font-semibold text-farm-dark">
+                    {s.stage_index}. {s.title} <span className="font-normal text-farm-muted">(this step)</span>
+                  </span>
+                ) : (
+                  <a href={`/admin/tasks/${s.id}/edit`} className="text-farm-green underline underline-offset-2">
+                    {s.stage_index}. {s.title}
+                  </a>
+                )}
                 <span className="text-[11px] text-farm-muted flex-shrink-0">
                   {s.status === "completed" ? "Done" : s.status === "cancelled" ? "Cancelled" : s.due_date}
                 </span>
@@ -340,6 +349,7 @@ export function EditTaskForm({
           drafts={stageDrafts}
           onChange={setStageDrafts}
           firstStepNumber={Math.max(1, ...chain.map((s) => s.stage_index ?? 1)) + 1}
+          people={people}
         />
         {stageDraftsToPayload(stageDrafts).length > 0 && (
           <button

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/tasks/auth";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
-import { resolveAssignee } from "@/lib/tasks/people";
+import { resolveAssignees } from "@/lib/tasks/people";
 import { isMicrogreenTask } from "@/lib/tasks/assign";
 
 interface RouteCtx {
@@ -61,7 +61,7 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
   }
   if ("photo_urls" in body) updates.photo_urls = sanitizeTaskPhotoUrls(body.photo_urls);
   const admin = createAdminClient();
-  if ("assigned_to" in body) {
+  if ("assignee_ids" in body || "assigned_to" in body) {
     const { data: current } = await admin
       .from("farm_tasks")
       .select("source, microgreen_crop_id, microgreen_batch_id")
@@ -75,14 +75,19 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
             "microgreen_crop_id" in body ? body.microgreen_crop_id : current.microgreen_crop_id,
         })
       : false;
-    const assignee = await resolveAssignee(admin, body.assigned_to, { ownerOnly: micro });
-    if (!assignee.ok) {
+    const assignees = await resolveAssignees(
+      admin,
+      "assignee_ids" in body ? body.assignee_ids : body.assigned_to,
+      { ownerOnly: micro },
+    );
+    if (!assignees.ok) {
       return NextResponse.json(
         { error: micro ? "Microgreen tasks can't be assigned to farm hands" : "That person can't be assigned this task" },
         { status: 400 },
       );
     }
-    updates.assigned_to = assignee.id;
+    updates.assignee_ids = assignees.ids;
+    updates.assigned_to = assignees.ids[0] ?? null;
   }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

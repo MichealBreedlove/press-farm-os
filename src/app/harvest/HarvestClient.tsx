@@ -23,6 +23,7 @@ import {
   type HarvestLang,
 } from "@/lib/i18n/harvest";
 import { FarmTasks, type FarmHandTask } from "./FarmTasks";
+import { isForPerson } from "@/lib/tasks/assign";
 
 export interface HarvestExtra {
   id: string;
@@ -84,7 +85,7 @@ export function HarvestClient({
 }: Props) {
   const [tab, setTab] = useState<PortalTab>(initialTab);
   // Badge = what THIS person has to do now (theirs + anyone's).
-  const myOpenCount = todayTasks.filter((x) => x.assignee_id === null || x.assignee_id === meId).length;
+  const myOpenCount = todayTasks.filter((x) => isForPerson(x.assignee_ids, meId)).length;
   function pickTab(next: PortalTab) {
     setTab(next);
     // Keep the URL in step so a reload / shared link opens the same tab,

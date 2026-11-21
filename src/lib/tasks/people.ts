@@ -32,6 +32,26 @@ export function ownerOf(people: TaskPerson[]): TaskPerson | null {
   return people.find((p) => p.role === "admin") ?? null;
 }
 
+/**
+ * Validates a list of assignees from a request body. Empty / missing = for
+ * anyone (or the owner, for an automated task). Every id must be a real
+ * assignable person; `ownerOnly` (microgreen tasks) allows only the owner.
+ */
+export async function resolveAssignees(
+  admin: AdminClient,
+  value: unknown,
+  opts: { ownerOnly?: boolean } = {},
+): Promise<{ ok: true; ids: string[] } | { ok: false }> {
+  if (value === null || value === undefined || value === "") return { ok: true, ids: [] };
+  const list = Array.isArray(value) ? value : [value];
+  if (list.some((v) => typeof v !== "string")) return { ok: false };
+  const ids = Array.from(new Set((list as string[]).filter(Boolean)));
+  if (ids.length === 0) return { ok: true, ids: [] };
+  const people = await listTaskPeople(admin);
+  const allowed = new Set((opts.ownerOnly ? people.filter((p) => p.role === "admin") : people).map((p) => p.id));
+  return ids.every((id) => allowed.has(id)) ? { ok: true, ids } : { ok: false };
+}
+
 /** Validates an `assigned_to` from a request body: null, or a real assignable person. */
 export async function resolveAssignee(
   admin: AdminClient,

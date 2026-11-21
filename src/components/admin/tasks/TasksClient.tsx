@@ -19,7 +19,7 @@ import {
 } from "@/lib/tasks/constants";
 import { TaskDraftCard } from "./TaskDraftCard";
 import { todayPacific } from "@/lib/utils";
-import { ANYONE_LABEL, effectiveAssigneeId, shortPersonName } from "@/lib/tasks/assign";
+import { ANYONE_LABEL, effectiveAssigneeIds, shortPersonName } from "@/lib/tasks/assign";
 import type { TaskPerson } from "@/lib/tasks/people";
 
 type Tab = "today" | "upcoming" | "drafts" | "done";
@@ -71,10 +71,10 @@ export function TasksClient({
     for (const p of people) m[p.id] = shortPersonName(p.name) ?? p.name;
     return m;
   }, [people]);
-  const assigneeOf = (t: FarmTask) => effectiveAssigneeId(t, ownerId);
+  const assigneesOf = (t: FarmTask) => effectiveAssigneeIds(t, ownerId).filter((id) => assigneeNames[id]);
   const assigneeLabel = (t: FarmTask) => {
-    const id = assigneeOf(t);
-    return id ? assigneeNames[id] ?? ANYONE_LABEL : ANYONE_LABEL;
+    const ids = assigneesOf(t);
+    return ids.length > 0 ? ids.map((id) => assigneeNames[id]).join(", ") : ANYONE_LABEL;
   };
 
   const router = useRouter();
@@ -87,7 +87,8 @@ export function TasksClient({
     list.filter(
       (t) =>
         (sourceFilter === "all" || sourceOf(t) === sourceFilter) &&
-        (personFilter === "all" || (assigneeOf(t) ?? "anyone") === personFilter),
+        (personFilter === "all" ||
+          (personFilter === "anyone" ? assigneesOf(t).length === 0 : assigneesOf(t).includes(personFilter))),
     );
 
   const today = useMemo(() => filterBySource(initialToday), [initialToday, sourceFilter, personFilter, ownerId]);
