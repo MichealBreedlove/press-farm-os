@@ -24,6 +24,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { addDays, todayIso } from "./dates";
 import { RECURRING_HORIZON_DAYS } from "./constants";
+import { parseLocationFromText } from "./location";
 import type { RegenerateResult } from "./regenerate-microgreens";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -50,6 +51,9 @@ interface RecurringTaskRow {
   priority: 1 | 2;
   status: "open";
   item_id: string;
+  location_place: string | null;
+  location_quadrant: number | null;
+  location_rows: string | null;
 }
 
 export function computeRecurringSowDates(
@@ -126,6 +130,8 @@ export async function regenerateRecurringItemTasks(
         priority: sowDate <= today ? 1 : 2,
         status: "open",
         item_id: item.id,
+        // "Where: Quadrant 1, rows 4-5" in the item's sow notes → location.
+        ...parseLocationFromText(item.recurring_sow_notes),
       });
     }
   }

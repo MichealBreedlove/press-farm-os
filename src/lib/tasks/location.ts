@@ -48,3 +48,24 @@ export function formatLocation(l: Partial<TaskLocation>, lang: "en" | "es" = "en
   }
   return parts.length ? parts.join(" · ") : null;
 }
+
+/**
+ * Reads a location out of task text written as "Where: Quadrant 1, rows 4-5.
+ * How: …" (the job list and the recurring-sow notes use that shape). Only
+ * the "Where:" part is read when there is one. Returns NO_LOCATION when
+ * nothing recognisable is there — never guesses a quadrant.
+ */
+export function parseLocationFromText(text: string | null | undefined): TaskLocation {
+  if (!text) return { ...NO_LOCATION };
+  const where = /Where:\s*([^]*?)(?:\s+(?:How|How much|ES):|$)/i.exec(text)?.[1] ?? text;
+  const quadrant = /quadrant\s+(\d{1,2})/i.exec(where);
+  const rows = /rows?\s+(\d+(?:\s*[-–,]\s*\d+)*)/i.exec(where);
+  const greenhouseOnly = /greenhouse/i.test(where) && !quadrant;
+  if (greenhouseOnly) return { location_place: "greenhouse", location_quadrant: null, location_rows: null };
+  if (!quadrant && !rows) return { ...NO_LOCATION };
+  return {
+    location_place: "farm",
+    location_quadrant: quadrant ? Number(quadrant[1]) : null,
+    location_rows: rows ? rows[1].replace(/\s+/g, "").replace("–", "-") : null,
+  };
+}

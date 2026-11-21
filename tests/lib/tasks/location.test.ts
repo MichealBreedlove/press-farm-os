@@ -27,3 +27,30 @@ describe("formatLocation", () => {
     expect(formatLocation({})).toBeNull();
   });
 });
+
+import { parseLocationFromText } from "@/lib/tasks/location";
+
+describe("parseLocationFromText", () => {
+  it("reads quadrant and rows from the Where: part", () => {
+    expect(parseLocationFromText("Where: Quadrant 1, rows 4-5. How: Direct seed. ES: Sembrar …")).toEqual({
+      location_place: "farm",
+      location_quadrant: 1,
+      location_rows: "4-5",
+    });
+    expect(parseLocationFromText("Where: Quadrant 3, rows 5-6. How much: 2 trays worth.").location_rows).toBe("5-6");
+  });
+  it("treats greenhouse work as the greenhouse", () => {
+    expect(parseLocationFromText("Where: Greenhouse trays; these go to Quadrant 3 rows 5-6.").location_place).toBe(
+      "farm",
+    );
+    expect(parseLocationFromText("Where: Greenhouse bench 2.")).toEqual({
+      location_place: "greenhouse",
+      location_quadrant: null,
+      location_rows: null,
+    });
+  });
+  it("never guesses", () => {
+    expect(parseLocationFromText("Where: Oak woodland toward the Sonoma coast.").location_place).toBeNull();
+    expect(parseLocationFromText(null).location_place).toBeNull();
+  });
+});
