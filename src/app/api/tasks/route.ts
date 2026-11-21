@@ -103,7 +103,12 @@ export async function POST(request: Request) {
       item_id,
       microgreen_crop_id,
       photo_urls: sanitizeTaskPhotoUrls(photo_urls),
-      ...sanitizeLocation(body),
+      // A task linked to a microgreen crop happens in the greenhouse unless
+      // a place was picked.
+      ...(() => {
+        const loc = sanitizeLocation(body);
+        return microTask && !loc.location_place ? { ...loc, location_place: "greenhouse" as const } : loc;
+      })(),
       assignee_ids: assignees.ids,
       assigned_to: assignees.ids[0] ?? null,
     })

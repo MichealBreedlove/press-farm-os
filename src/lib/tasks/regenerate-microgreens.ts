@@ -39,6 +39,8 @@ interface TaskRow {
   microgreen_crop_id: string | null;
   microgreen_batch_id: string | null;
   item_id: string | null;
+  /** Every microgreen task happens in the greenhouse (Micheal 2026-11-21). */
+  location_place: "greenhouse";
 }
 
 function sowTaskRow(farmId: string, task: SowTask, today: string): TaskRow {
@@ -65,6 +67,7 @@ function sowTaskRow(farmId: string, task: SowTask, today: string): TaskRow {
     due_date: task.sow_date,
     priority: task.sow_date <= today ? 1 : 2,
     status: "open",
+    location_place: "greenhouse",
     microgreen_crop_id: task.crop.id,
     microgreen_batch_id: null,
     item_id: task.crop.item_id,
@@ -87,6 +90,7 @@ function advanceTaskRow(farmId: string, task: AdvanceTask, today: string): TaskR
     due_date: today,
     priority: 1,
     status: "open",
+    location_place: "greenhouse",
     microgreen_crop_id: task.crop.id,
     microgreen_batch_id: task.tray.batch_id,
     item_id: task.crop.item_id,
@@ -112,6 +116,7 @@ function harvestTaskRow(farmId: string, task: HarvestTask, today: string): TaskR
     due_date: today,
     priority: 1,
     status: "open",
+    location_place: "greenhouse",
     microgreen_crop_id: task.crop.id,
     microgreen_batch_id: task.tray.batch_id,
     item_id: task.crop.item_id,
