@@ -11,12 +11,13 @@ const TEXT = {
     intro: "Your starter password only works once. Pick your own password to continue.",
     password: "New password",
     again: "Type it again",
-    hint: "At least 8 letters or numbers.",
+    hint: "At least 8 characters. Common passwords are refused — two words and a number work well, like Tomato-Barn-58.",
     save: "Save password",
     saving: "Saving…",
     tooShort: "The password needs at least 8 characters.",
     mismatch: "The two passwords don't match.",
     rejected: "That password can't be used. Try a different one.",
+    weak: "That password is too common — it appears on lists of leaked passwords. Try two words and a number, like Tomato-Barn-58.",
     failed: "Couldn't save — try again.",
     show: "Show",
     hide: "Hide",
@@ -27,12 +28,13 @@ const TEXT = {
     intro: "Su contraseña inicial solo sirve una vez. Elija su propia contraseña para continuar.",
     password: "Contraseña nueva",
     again: "Escríbala otra vez",
-    hint: "Al menos 8 letras o números.",
+    hint: "Al menos 8 caracteres. No se aceptan contraseñas comunes — dos palabras y un número funcionan bien, como Tomate-Granero-58.",
     save: "Guardar contraseña",
     saving: "Guardando…",
     tooShort: "La contraseña necesita al menos 8 caracteres.",
     mismatch: "Las dos contraseñas no son iguales.",
     rejected: "Esa contraseña no se puede usar. Pruebe con otra.",
+    weak: "Esa contraseña es muy común — aparece en listas de contraseñas filtradas. Pruebe dos palabras y un número, como Tomate-Granero-58.",
     failed: "No se pudo guardar — intente de nuevo.",
     show: "Ver",
     hide: "Ocultar",
@@ -81,7 +83,7 @@ export function SetPasswordForm({ defaultLang }: { defaultLang: Lang }) {
         return;
       }
       const j = await res.json().catch(() => ({}));
-      setError(j.error === "too_short" ? t.tooShort : j.error === "rejected" ? t.rejected : t.failed);
+      setError(j.error === "too_short" ? t.tooShort : j.error === "weak" ? t.weak : j.error === "rejected" ? t.rejected : t.failed);
     } catch {
       setError(t.failed);
     } finally {

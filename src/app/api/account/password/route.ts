@@ -35,8 +35,10 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.updateUserById(auth.user.id, { password });
   if (error) {
-    // Supabase rejects e.g. reusing the current password or a leaked one.
-    return NextResponse.json({ error: "rejected", detail: error.message }, { status: 400 });
+    // Supabase's leaked-password protection refuses common passwords
+    // ("Password is known to be weak and easy to guess"). Say so plainly.
+    const weak = /weak|easy to guess|pwned|leaked/i.test(error.message);
+    return NextResponse.json({ error: weak ? "weak" : "rejected", detail: error.message }, { status: 400 });
   }
 
   const { error: flagErr } = await admin
