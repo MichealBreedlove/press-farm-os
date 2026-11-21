@@ -149,6 +149,7 @@ export default async function HarvestPage({ searchParams }: Props) {
       todayTasks={board.todo}
       upcomingTasks={board.upcoming}
       doneTasks={board.done}
+      meId={user.id}
     />
   );
 }

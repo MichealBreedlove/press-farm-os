@@ -2,6 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { listTaskPeople, ownerOf } from "@/lib/tasks/people";
 import { EditTaskForm } from "@/components/admin/tasks/EditTaskForm";
 import type { FarmTask } from "@/types/database";
 
@@ -31,6 +32,7 @@ export default async function EditTaskPage({ params }: PageProps) {
   ]);
 
   if (!taskRow) notFound();
+  const people = await listTaskPeople(admin);
   const task = taskRow as FarmTask;
 
   return (
@@ -54,7 +56,7 @@ export default async function EditTaskPage({ params }: PageProps) {
             changes.
           </div>
         )}
-        <EditTaskForm task={task} items={items ?? []} />
+        <EditTaskForm task={task} items={items ?? []} people={people} ownerName={ownerOf(people)?.name ?? null} />
       </div>
     </div>
   );

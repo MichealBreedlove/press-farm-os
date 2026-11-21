@@ -53,6 +53,7 @@ interface Props {
   todayTasks: FarmHandTask[];
   upcomingTasks: FarmHandTask[];
   doneTasks: FarmHandTask[];
+  meId: string;
 }
 
 type PortalTab = "harvest" | "tasks";
@@ -79,8 +80,11 @@ export function HarvestClient({
   todayTasks,
   upcomingTasks,
   doneTasks,
+  meId,
 }: Props) {
   const [tab, setTab] = useState<PortalTab>(initialTab);
+  // Badge = what THIS person has to do now (theirs + anyone's).
+  const myOpenCount = todayTasks.filter((x) => x.assignee_id === null || x.assignee_id === meId).length;
   function pickTab(next: PortalTab) {
     setTab(next);
     // Keep the URL in step so a reload / shared link opens the same tab,
@@ -207,15 +211,15 @@ export function HarvestClient({
               )}
             >
               {key === "harvest" ? t.tabHarvest : t.tabTasks}
-              {key === "tasks" && todayTasks.length > 0 && (
+              {key === "tasks" && myOpenCount > 0 && (
                 <span
                   className={cn(
                     "min-w-[24px] h-6 px-1.5 rounded-full text-xs font-bold tabular-nums flex items-center justify-center",
                     tab === key ? "bg-white text-farm-green" : "bg-farm-green text-white",
                   )}
-                  aria-label={`${todayTasks.length} ${t.taskOpenCount}`}
+                  aria-label={`${myOpenCount} ${t.taskOpenCount}`}
                 >
-                  {todayTasks.length}
+                  {myOpenCount}
                 </span>
               )}
             </button>
@@ -229,6 +233,7 @@ export function HarvestClient({
             todayTasks={todayTasks}
             upcomingTasks={upcomingTasks}
             doneTasks={doneTasks}
+            meId={meId}
           />
         )}
 

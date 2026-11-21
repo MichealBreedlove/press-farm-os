@@ -1,6 +1,8 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FarmTask, FarmTaskType } from "@/types/database";
 import { listCompletedTasks, listTodayTasks, listUpcomingTasks } from "./queries";
+import { effectiveAssigneeId, shortPersonName } from "./assign";
+import { listTaskPeople, ownerOf } from "./people";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -22,6 +24,9 @@ export interface BoardTask {
   photo_urls: string[];
   completed_at: string | null;
   completed_by_name: string | null;
+  /** Who the task belongs to; null = anyone on the farm team. */
+  assignee_id: string | null;
+  assignee_name: string | null;
   /** Linked crop / item name, when the task has one. */
   subject: string | null;
 }
@@ -63,6 +68,12 @@ export async function loadTaskBoard(
   const cropIds = ids((t) => t.microgreen_crop_id);
   const personIds = ids((t) => t.completed_by);
 
+  const taskPeople = await listTaskPeople(admin);
+  const ownerId = ownerOf(taskPeople)?.id ?? null;
+  const assigneeName = new Map<string, string>(
+    taskPeople.map((p) => [p.id, shortPersonName(p.name) ?? p.name]),
+  );
+
   const none = Promise.resolve({ data: [] as any[] });
   const [{ data: items }, { data: crops }, { data: people }] = await Promise.all([
     itemIds.length ? admin.from("items").select("id, name").in("id", itemIds) : none,
@@ -75,7 +86,11 @@ export async function loadTaskBoard(
     (people ?? []).filter((r: any) => r.full_name).map((r: any) => [r.id, r.full_name]),
   );
 
-  const toBoard = (t: FarmTask): BoardTask => ({
+  const toBoard = (t: FarmTask): BoardTask => {
+    const assigneeId = effectiveAssigneeId(t, ownerId);
+    return toBoardRow(t, assigneeId);
+  };
+  const toBoardRow = (t: FarmTask, assigneeId: string | null): BoardTask => ({
     id: t.id,
     title: t.title,
     title_es: t.title_es,
@@ -88,6 +103,9 @@ export async function loadTaskBoard(
     photo_urls: t.photo_urls ?? [],
     completed_at: t.completed_at,
     completed_by_name: t.completed_by ? personName.get(t.completed_by) ?? null : null,
+    assignee_id: assigneeId,
+    // A deactivated / removed person no longer resolves — show it as anyone's.
+    assignee_name: assigneeId ? assigneeName.get(assigneeId) ?? null : null,
     subject:
       (t.microgreen_crop_id && cropName.get(t.microgreen_crop_id)) ||
       (t.item_id && itemName.get(t.item_id)) ||

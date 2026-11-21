@@ -20,6 +20,8 @@ interface Props {
   todayTasks: FarmHandTask[];
   upcomingTasks: FarmHandTask[];
   doneTasks: FarmHandTask[];
+  /** The signed-in person — "My tasks" = assigned to them, or to anyone. */
+  meId: string;
 }
 
 /**
@@ -28,7 +30,7 @@ interface Props {
  * Spanish; one big button marks a task finished, "Undo" on the finished
  * list takes it back. Creating / editing tasks stays on /admin/tasks.
  */
-export function FarmTasks({ lang, today, todayTasks, upcomingTasks, doneTasks }: Props) {
+export function FarmTasks({ lang, today, todayTasks, upcomingTasks, doneTasks, meId }: Props) {
   const t = HARVEST_STRINGS[lang];
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -72,8 +74,13 @@ export function FarmTasks({ lang, today, todayTasks, upcomingTasks, doneTasks }:
     }
   }
 
-  const openToday = todayTasks.filter((x) => !justDone.has(x.id));
-  const openUpcoming = upcomingTasks.filter((x) => !justDone.has(x.id));
+  // "My tasks" (default): mine + the ones for anyone. "Everyone's" shows the
+  // whole farm, each card naming who it belongs to.
+  const [scope, setScope] = useState<"mine" | "all">("mine");
+  const inScope = (x: FarmHandTask) =>
+    scope === "all" || x.assignee_id === null || x.assignee_id === meId;
+  const openToday = todayTasks.filter((x) => !justDone.has(x.id) && inScope(x));
+  const openUpcoming = upcomingTasks.filter((x) => !justDone.has(x.id) && inScope(x));
   const done = doneTasks.filter((x) => !justReopened.has(x.id));
 
   // Upcoming, grouped by day.
@@ -89,6 +96,25 @@ export function FarmTasks({ lang, today, todayTasks, upcomingTasks, doneTasks }:
 
   return (
     <div className="space-y-7">
+      <div className="grid grid-cols-2 gap-2" role="group" aria-label={t.taskShowing}>
+        {(["mine", "all"] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setScope(key)}
+            aria-pressed={scope === key}
+            className={cn(
+              "min-h-[44px] rounded-xl border text-sm font-semibold transition-colors",
+              scope === key
+                ? "bg-farm-dark text-white border-farm-dark"
+                : "bg-white text-farm-dark/80 border-farm-dark/10 hover:border-farm-dark/30",
+            )}
+          >
+            {key === "mine" ? t.taskMine : t.taskEveryone}
+          </button>
+        ))}
+      </div>
+
       {error && (
         <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
@@ -218,8 +244,11 @@ function TaskCard({
             {title}
           </p>
           <p className="text-xs text-farm-muted mt-0.5">{meta.join(" · ")}</p>
-          {(overdue || (!isDone && task.priority === 1)) && (
+          {!isDone && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
+              <span className="badge-blue text-[11px] px-2 py-0.5 rounded">
+                {task.assignee_name ?? t.taskAnyone}
+              </span>
               {overdue && (
                 <span className="badge-red text-[11px] px-2 py-0.5 rounded">
                   {t.taskOverdue} · {formatHarvestDate(task.due_date, lang)}

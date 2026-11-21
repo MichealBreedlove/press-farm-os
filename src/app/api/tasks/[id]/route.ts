@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/tasks/auth";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
+import { resolveAssignee } from "@/lib/tasks/people";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -58,11 +59,18 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
     if (k in body) updates[k] = body[k];
   }
   if ("photo_urls" in body) updates.photo_urls = sanitizeTaskPhotoUrls(body.photo_urls);
+  const admin = createAdminClient();
+  if ("assigned_to" in body) {
+    const assignee = await resolveAssignee(admin, body.assigned_to);
+    if (!assignee.ok) {
+      return NextResponse.json({ error: "That person can't be assigned tasks" }, { status: 400 });
+    }
+    updates.assigned_to = assignee.id;
+  }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data, error } = await admin
     .from("farm_tasks")
     .update(updates)

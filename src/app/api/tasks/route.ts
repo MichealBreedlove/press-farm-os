@@ -7,6 +7,7 @@ import {
   listCompletedTasks,
 } from "@/lib/tasks/queries";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
+import { resolveAssignee } from "@/lib/tasks/people";
 
 /**
  * GET /api/tasks?view=today|upcoming|done
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
     item_id = null,
     microgreen_crop_id = null,
     photo_urls,
+    assigned_to,
   } = body ?? {};
 
   if (!title || !due_date) {
@@ -66,6 +68,10 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const assignee = await resolveAssignee(admin, assigned_to);
+  if (!assignee.ok) {
+    return NextResponse.json({ error: "That person can't be assigned tasks" }, { status: 400 });
+  }
   const { data, error } = await admin
     .from("farm_tasks")
     .insert({
@@ -80,6 +86,7 @@ export async function POST(request: Request) {
       item_id,
       microgreen_crop_id,
       photo_urls: sanitizeTaskPhotoUrls(photo_urls),
+      assigned_to: assignee.id,
     })
     .select("*")
     .single();

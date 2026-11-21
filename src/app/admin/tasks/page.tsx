@@ -11,6 +11,7 @@ import {
   listPendingDrafts,
 } from "@/lib/tasks/queries";
 import type { FarmTask, InboxTaskDraft } from "@/types/database";
+import { listTaskPeople, ownerOf } from "@/lib/tasks/people";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,8 @@ export default async function TasksPage() {
     for (const r of crops ?? []) cropMap.set(r.id, r.name);
   }
 
+  const people = await listTaskPeople(admin);
+
   // Who finished each task (admin or a farm hand on /harvest).
   const userNames: Record<string, string> = {};
   const completerIds = Array.from(
@@ -107,6 +110,8 @@ export default async function TasksPage() {
         itemNames={Object.fromEntries(itemMap)}
         cropNames={Object.fromEntries(cropMap)}
         userNames={userNames}
+        people={people}
+        ownerId={ownerOf(people)?.id ?? null}
       />
     </div>
   );

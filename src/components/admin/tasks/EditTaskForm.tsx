@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { FarmTask, FarmTaskType } from "@/types/database";
 import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
 import { TaskPhotoField } from "./TaskPhotoField";
+import { AssigneePicker } from "./AssigneePicker";
+import type { TaskPerson } from "@/lib/tasks/people";
 
 interface Item {
   id: string;
@@ -23,7 +25,18 @@ const TASK_TYPES: FarmTaskType[] = [
   "custom",
 ];
 
-export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] }) {
+export function EditTaskForm({
+  task,
+  items,
+  people,
+  ownerName,
+}: {
+  task: FarmTask;
+  items: Item[];
+  people: TaskPerson[];
+  /** Who an automated task falls to when nobody is picked. */
+  ownerName: string | null;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +51,7 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
   const [completionNotes, setCompletionNotes] = useState(task.completion_notes ?? "");
   const [photoUrls, setPhotoUrls] = useState<string[]>(task.photo_urls ?? []);
   const [uploading, setUploading] = useState(false);
+  const [assignedTo, setAssignedTo] = useState(task.assigned_to ?? "");
   const [titleEs, setTitleEs] = useState(task.title_es ?? "");
   const [descriptionEs, setDescriptionEs] = useState(task.description_es ?? "");
 
@@ -68,6 +82,7 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
           item_id: itemId || null,
           completion_notes: completionNotes.trim() || null,
           photo_urls: photoUrls,
+          assigned_to: assignedTo || null,
           ...(spanishEdited
             ? { title_es: titleEs.trim() || null, description_es: descriptionEs.trim() || null }
             : {}),
@@ -150,6 +165,13 @@ export function EditTaskForm({ task, items }: { task: FarmTask; items: Item[] })
           className="w-full text-sm px-3 py-2 border border-pf-master-gold/30 rounded-md focus:outline-none focus:ring-1 focus:ring-pf-master-gold resize-none"
         />
       </Field>
+
+      <AssigneePicker
+        people={people}
+        value={assignedTo}
+        onChange={setAssignedTo}
+        autoHint={task.source === "manual" ? "Anyone" : `Automatic${ownerName ? ` (${ownerName})` : ""}`}
+      />
 
       <TaskPhotoField urls={photoUrls} onChange={setPhotoUrls} onBusyChange={setUploading} />
 

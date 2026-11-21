@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
+import { listTaskPeople } from "@/lib/tasks/people";
 import { NewTaskForm } from "@/components/admin/tasks/NewTaskForm";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export default async function NewTaskPage() {
     .eq("is_archived", false)
     .order("name", { ascending: true });
 
+  const people = await listTaskPeople(admin);
+
   return (
     <div className="min-h-screen">
       <EditorialHero
@@ -30,7 +33,7 @@ export default async function NewTaskPage() {
         backHref="/admin/tasks"
       />
       <div className="max-w-md mx-auto px-4 py-6">
-        <NewTaskForm items={items ?? []} />
+        <NewTaskForm items={items ?? []} people={people} />
       </div>
     </div>
   );

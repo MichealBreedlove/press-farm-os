@@ -7,6 +7,8 @@ import { TASK_TYPE_LABELS, PRIORITY_LABELS } from "@/lib/tasks/constants";
 import { addDays } from "@/lib/tasks/dates";
 import { todayPacific } from "@/lib/utils";
 import { TaskPhotoField } from "./TaskPhotoField";
+import { AssigneePicker } from "./AssigneePicker";
+import type { TaskPerson } from "@/lib/tasks/people";
 
 interface Item {
   id: string;
@@ -25,7 +27,7 @@ const TASK_TYPES: FarmTaskType[] = [
   "custom",
 ];
 
-export function NewTaskForm({ items }: { items: Item[] }) {
+export function NewTaskForm({ items, people }: { items: Item[]; people: TaskPerson[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export function NewTaskForm({ items }: { items: Item[] }) {
   const [dueDate, setDueDate] = useState(today);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [assignedTo, setAssignedTo] = useState("");
   const [dueTime, setDueTime] = useState("");
   const [priority, setPriority] = useState<1 | 2 | 3 | 4>(2);
   const [itemId, setItemId] = useState<string>("");
@@ -63,6 +66,7 @@ export function NewTaskForm({ items }: { items: Item[] }) {
           priority,
           item_id: itemId || null,
           photo_urls: photoUrls,
+          assigned_to: assignedTo || null,
         }),
       });
       const j = await res.json().catch(() => ({}));
@@ -140,6 +144,8 @@ export function NewTaskForm({ items }: { items: Item[] }) {
           />
         </div>
       </div>
+
+      <AssigneePicker people={people} value={assignedTo} onChange={setAssignedTo} autoHint="Anyone" />
 
       <p className="text-[11px] text-farm-muted leading-relaxed">
         The farm team sees this on their task list right away. A Spanish

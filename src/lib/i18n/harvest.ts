@@ -74,6 +74,10 @@ export interface HarvestStrings {
   taskDoneBy: string;
   taskOpenCount: string;
   taskTypeLabels: Record<string, string>;
+  taskMine: string;
+  taskEveryone: string;
+  taskAnyone: string;
+  taskShowing: string;
 }
 
 export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
@@ -161,6 +165,10 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
       "chef-request": "Chef request",
       custom: "Task",
     },
+    taskMine: "My tasks",
+    taskEveryone: "Everyone's",
+    taskAnyone: "Anyone",
+    taskShowing: "Whose tasks",
   },
   es: {
     harvestList: "Lista de Cosecha",
@@ -253,6 +261,10 @@ export const HARVEST_STRINGS: Record<HarvestLang, HarvestStrings> = {
       "chef-request": "Pedido del chef",
       custom: "Tarea",
     },
+    taskMine: "Mis tareas",
+    taskEveryone: "De todos",
+    taskAnyone: "Cualquiera",
+    taskShowing: "Tareas de quién",
   },
 };
 

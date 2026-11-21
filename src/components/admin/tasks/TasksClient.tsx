@@ -19,6 +19,8 @@ import {
 } from "@/lib/tasks/constants";
 import { TaskDraftCard } from "./TaskDraftCard";
 import { todayPacific } from "@/lib/utils";
+import { ANYONE_LABEL, effectiveAssigneeId, shortPersonName } from "@/lib/tasks/assign";
+import type { TaskPerson } from "@/lib/tasks/people";
 
 type Tab = "today" | "upcoming" | "drafts" | "done";
 type SourceFilter = "all" | FarmTaskSource;
@@ -31,6 +33,9 @@ interface Props {
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
   userNames: Record<string, string>;
+  people: TaskPerson[];
+  /** Farm owner — automated tasks with nobody picked fall to them. */
+  ownerId: string | null;
 }
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -56,7 +61,22 @@ export function TasksClient({
   itemNames,
   cropNames,
   userNames,
+  people,
+  ownerId,
 }: Props) {
+  // Who each task belongs to → short name for the chip + the person filter.
+  const [personFilter, setPersonFilter] = useState<string>("all");
+  const assigneeNames = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of people) m[p.id] = shortPersonName(p.name) ?? p.name;
+    return m;
+  }, [people]);
+  const assigneeOf = (t: FarmTask) => effectiveAssigneeId(t, ownerId);
+  const assigneeLabel = (t: FarmTask) => {
+    const id = assigneeOf(t);
+    return id ? assigneeNames[id] ?? ANYONE_LABEL : ANYONE_LABEL;
+  };
+
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("today");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
@@ -64,11 +84,15 @@ export function TasksClient({
 
   const sourceOf = (t: FarmTask) => t.source;
   const filterBySource = (list: FarmTask[]) =>
-    sourceFilter === "all" ? list : list.filter((t) => sourceOf(t) === sourceFilter);
+    list.filter(
+      (t) =>
+        (sourceFilter === "all" || sourceOf(t) === sourceFilter) &&
+        (personFilter === "all" || (assigneeOf(t) ?? "anyone") === personFilter),
+    );
 
-  const today = useMemo(() => filterBySource(initialToday), [initialToday, sourceFilter]);
-  const upcoming = useMemo(() => filterBySource(initialUpcoming), [initialUpcoming, sourceFilter]);
-  const done = useMemo(() => filterBySource(initialDone), [initialDone, sourceFilter]);
+  const today = useMemo(() => filterBySource(initialToday), [initialToday, sourceFilter, personFilter, ownerId]);
+  const upcoming = useMemo(() => filterBySource(initialUpcoming), [initialUpcoming, sourceFilter, personFilter, ownerId]);
+  const done = useMemo(() => filterBySource(initialDone), [initialDone, sourceFilter, personFilter, ownerId]);
 
   async function regenerate() {
     startTransition(async () => {
@@ -185,12 +209,37 @@ export function TasksClient({
         </div>
       )}
 
+      {/* Person filter — whose tasks */}
+      {tab !== "drafts" && (
+        <div className="flex flex-wrap gap-1.5 mb-4" role="group" aria-label="Assigned to">
+          {[
+            { value: "all", label: "Everyone" },
+            ...people.map((p) => ({ value: p.id, label: assigneeNames[p.id] })),
+            { value: "anyone", label: ANYONE_LABEL },
+          ].map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setPersonFilter(f.value)}
+              aria-pressed={personFilter === f.value}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
+                personFilter === f.value
+                  ? "bg-farm-green text-white border-farm-green"
+                  : "bg-white text-farm-muted border-pf-master-gold/20 hover:border-pf-master-gold/40"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       {tab === "today" && (
         <TaskList
           tasks={today}
           itemNames={itemNames}
           userNames={userNames}
+          assigneeLabel={assigneeLabel}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -204,6 +253,7 @@ export function TasksClient({
           tasks={upcoming}
           itemNames={itemNames}
           userNames={userNames}
+          assigneeLabel={assigneeLabel}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -222,6 +272,7 @@ export function TasksClient({
           tasks={done}
           itemNames={itemNames}
           userNames={userNames}
+          assigneeLabel={assigneeLabel}
           cropNames={cropNames}
           onComplete={completeTask}
           onSnooze={snoozeTask}
@@ -240,6 +291,7 @@ interface ListProps {
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
   userNames: Record<string, string>;
+  assigneeLabel: (t: FarmTask) => string;
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
@@ -253,6 +305,7 @@ function TaskList({
   itemNames,
   cropNames,
   userNames,
+  assigneeLabel,
   onComplete,
   onSnooze,
   onCancel,
@@ -275,6 +328,7 @@ function TaskList({
           task={t}
           itemNames={itemNames}
           userNames={userNames}
+          assigneeLabel={assigneeLabel}
           cropNames={cropNames}
           onComplete={onComplete}
           onSnooze={onSnooze}
@@ -292,6 +346,7 @@ function GroupedByDate({
   itemNames,
   cropNames,
   userNames,
+  assigneeLabel,
   onComplete,
   onSnooze,
   onCancel,
@@ -325,6 +380,7 @@ function GroupedByDate({
                 task={t}
                 itemNames={itemNames}
                 userNames={userNames}
+                assigneeLabel={assigneeLabel}
                 cropNames={cropNames}
                 onComplete={onComplete}
                 onSnooze={onSnooze}
@@ -344,6 +400,7 @@ interface RowProps {
   itemNames: Record<string, string>;
   cropNames: Record<string, string>;
   userNames: Record<string, string>;
+  assigneeLabel: (t: FarmTask) => string;
   onComplete: (id: string) => void;
   onSnooze: (id: string, days: number) => void;
   onCancel: (id: string) => void;
@@ -356,6 +413,7 @@ function TaskRow({
   itemNames,
   cropNames,
   userNames,
+  assigneeLabel,
   onComplete,
   onSnooze,
   onCancel,
@@ -414,6 +472,9 @@ function TaskRow({
                     {PRIORITY_LABELS[task.priority]}
                   </span>
                 )}
+                <span className="text-[10px] px-1.5 py-0.5 rounded badge-blue">
+                  {assigneeLabel(task)}
+                </span>
                 {task.photo_urls?.length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-farm-cream text-farm-muted inline-flex items-center gap-1">
                     <Camera className="w-3 h-3" aria-hidden /> {task.photo_urls.length}

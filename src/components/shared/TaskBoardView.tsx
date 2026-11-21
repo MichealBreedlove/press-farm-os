@@ -4,6 +4,7 @@ import type { BoardTask, TaskBoard } from "@/lib/tasks/board";
 import { TASK_TYPE_ICONS, TASK_TYPE_LABELS } from "@/lib/tasks/constants";
 import { localizeTaskDescription, localizeTaskTitle } from "@/lib/tasks/localize";
 import { formatDeliveryDate } from "@/lib/utils";
+import { ANYONE_LABEL, summarizeWorkload } from "@/lib/tasks/assign";
 
 /**
  * Read-only farm task board — what needs doing, what's coming, what was
@@ -18,16 +19,38 @@ export function TaskBoardView({
   board,
   today,
   bilingual = false,
+  whoHasWhat = false,
 }: {
   board: TaskBoard;
   today: string;
   bilingual?: boolean;
+  /** Adds the per-person summary card at the top (Farm Liaison). */
+  whoHasWhat?: boolean;
 }) {
+  const workload = whoHasWhat ? summarizeWorkload(board.todo, board.upcoming) : [];
   const byDate = new Map<string, BoardTask[]>();
   for (const t of board.upcoming) byDate.set(t.due_date, [...(byDate.get(t.due_date) ?? []), t]);
 
   return (
     <div className="space-y-8">
+      {whoHasWhat && workload.length > 0 && (
+        <section aria-labelledby="board-who" className="card p-4">
+          <h2 id="board-who" className="section-eyebrow text-farm-muted mb-2">Who has what</h2>
+          <ul className="divide-y divide-farm-dark/5">
+            {workload.map((w) => (
+              <li key={w.id ?? "anyone"} className="py-2.5 flex items-baseline justify-between gap-3">
+                <span className="text-base font-semibold text-farm-dark">{w.name}</span>
+                <span className="text-sm text-farm-muted tabular-nums text-right">
+                  <span className={w.todo > 0 ? "font-semibold text-farm-dark" : ""}>{w.todo} to do now</span>
+                  {" · "}
+                  {w.upcoming} coming up
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="board-todo">
         <SectionHeading id="board-todo" label="Needs to be done" count={board.todo.length} />
         {board.todo.length === 0 ? (
@@ -122,6 +145,11 @@ function TaskRow({
           <p className="text-xs text-farm-muted mt-1">{meta.join(" · ")}</p>
 
           <div className="flex flex-wrap gap-1.5 mt-1.5">
+            {!done && (
+              <span className="badge-blue text-[11px] px-2 py-0.5 rounded">
+                {task.assignee_name ?? ANYONE_LABEL}
+              </span>
+            )}
             {done ? (
               <span className="badge-green text-[11px] px-2 py-0.5 rounded">
                 Finished {task.completed_at ? formatDeliveryDate(task.completed_at.slice(0, 10)) : ""}
@@ -132,7 +160,7 @@ function TaskRow({
                 Overdue · was due {formatDeliveryDate(task.due_date)}
               </span>
             ) : task.due_date === today ? (
-              <span className="badge-blue text-[11px] px-2 py-0.5 rounded">Due today</span>
+              <span className="badge-gold text-[11px] px-2 py-0.5 rounded">Due today</span>
             ) : null}
             {!done && task.priority === 1 && (
               <span className="badge-red text-[11px] px-2 py-0.5 rounded">Urgent</span>

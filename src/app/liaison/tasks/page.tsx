@@ -22,7 +22,7 @@ export default async function LiaisonTasksPage() {
         backHref="/liaison"
       />
       <div className="px-4 py-6 max-w-3xl mx-auto">
-        <TaskBoardView board={board} today={today} />
+        <TaskBoardView board={board} today={today} whoHasWhat />
       </div>
     </main>
   );

@@ -513,6 +513,7 @@ export type Database = {
       }
       farm_tasks: {
         Row: {
+          assigned_to: string | null
           completed_at: string | null
           completed_by: string | null
           completion_notes: string | null
@@ -543,6 +544,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
           completion_notes?: string | null
@@ -573,6 +575,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           completed_at?: string | null
           completed_by?: string | null
           completion_notes?: string | null
@@ -2880,6 +2883,8 @@ export interface FarmTask {
   superseded_at: string | null;
   superseded_reason: string | null;
   completion_notes: string | null;
+  /** Explicit assignee; null is resolved by src/lib/tasks/assign.ts. Migration 101. */
+  assigned_to: string | null;
   /** Who marked it finished (admin or farm hand). Migration 098. */
   completed_by: string | null;
   /** Pictures attached to the task (public storage URLs). Migration 098. */
