@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireTaskWorker } from "@/lib/tasks/auth";
+import { isMicrogreenTask } from "@/lib/tasks/assign";
 
 interface RouteCtx {
   params: Promise<{ id: string }>;
@@ -28,6 +29,18 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
 
   const admin = createAdminClient();
+  // Microgreen tasks are the farm owner's alone — farm hands can't touch them.
+  if (auth.role !== "admin") {
+    const { data: existing } = await admin
+      .from("farm_tasks")
+      .select("source, microgreen_crop_id, microgreen_batch_id")
+      .eq("farm_id", auth.farmId)
+      .eq("id", id)
+      .maybeSingle();
+    if (existing && isMicrogreenTask(existing)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   let query = admin
     .from("farm_tasks")
     .update({

@@ -8,6 +8,7 @@ import {
 } from "@/lib/tasks/queries";
 import { sanitizeTaskPhotoUrls } from "@/lib/tasks/photos";
 import { resolveAssignee } from "@/lib/tasks/people";
+import { isMicrogreenTask } from "@/lib/tasks/assign";
 
 /**
  * GET /api/tasks?view=today|upcoming|done
@@ -68,9 +69,11 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const assignee = await resolveAssignee(admin, assigned_to);
+  const assignee = await resolveAssignee(admin, assigned_to, {
+    ownerOnly: isMicrogreenTask({ source: "manual", microgreen_crop_id }),
+  });
   if (!assignee.ok) {
-    return NextResponse.json({ error: "That person can't be assigned tasks" }, { status: 400 });
+    return NextResponse.json({ error: "That person can't be assigned this task" }, { status: 400 });
   }
   const { data, error } = await admin
     .from("farm_tasks")

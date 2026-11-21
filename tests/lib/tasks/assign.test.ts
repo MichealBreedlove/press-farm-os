@@ -42,3 +42,17 @@ describe("summarizeWorkload", () => {
     expect(summarizeWorkload([], [])).toEqual([]);
   });
 });
+
+import { isMicrogreenTask } from "@/lib/tasks/assign";
+
+describe("isMicrogreenTask", () => {
+  it("covers the cron's tray tasks and anything linked to a crop or batch", () => {
+    expect(isMicrogreenTask({ source: "microgreens-auto" })).toBe(true);
+    expect(isMicrogreenTask({ source: "manual", microgreen_crop_id: "c1" })).toBe(true);
+    expect(isMicrogreenTask({ source: "manual", microgreen_batch_id: "b1" })).toBe(true);
+  });
+  it("leaves field tasks alone", () => {
+    expect(isMicrogreenTask({ source: "manual", microgreen_crop_id: null })).toBe(false);
+    expect(isMicrogreenTask({ source: "recurring-item" })).toBe(false);
+  });
+});

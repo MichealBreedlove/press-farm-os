@@ -1,7 +1,7 @@
 import type { createAdminClient } from "@/lib/supabase/admin";
 import type { FarmTask, FarmTaskType } from "@/types/database";
 import { listCompletedTasks, listTodayTasks, listUpcomingTasks } from "./queries";
-import { effectiveAssigneeId, shortPersonName } from "./assign";
+import { effectiveAssigneeId, isMicrogreenTask, shortPersonName } from "./assign";
 import { listTaskPeople, ownerOf } from "./people";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -27,6 +27,8 @@ export interface BoardTask {
   /** Who the task belongs to; null = anyone on the farm team. */
   assignee_id: string | null;
   assignee_name: string | null;
+  /** Microgreen work — never shown to farm hands. */
+  is_microgreen: boolean;
   /** Linked crop / item name, when the task has one. */
   subject: string | null;
 }
@@ -48,7 +50,7 @@ export interface TaskBoard {
 export async function loadTaskBoard(
   admin: AdminClient,
   today: string,
-  opts: { upcomingDays?: number; doneDays?: number } = {},
+  opts: { upcomingDays?: number; doneDays?: number; hideMicrogreens?: boolean } = {},
 ): Promise<TaskBoard> {
   const { data: farms } = await (admin as any).from("farms").select("id").limit(1);
   const farmId: string | undefined = farms?.[0]?.id;
@@ -103,6 +105,7 @@ export async function loadTaskBoard(
     photo_urls: t.photo_urls ?? [],
     completed_at: t.completed_at,
     completed_by_name: t.completed_by ? personName.get(t.completed_by) ?? null : null,
+    is_microgreen: isMicrogreenTask(t),
     assignee_id: assigneeId,
     // A deactivated / removed person no longer resolves — show it as anyone's.
     assignee_name: assigneeId ? assigneeName.get(assigneeId) ?? null : null,
@@ -112,5 +115,7 @@ export async function loadTaskBoard(
       null,
   });
 
-  return { todo: todo.map(toBoard), upcoming: upcoming.map(toBoard), done: done.map(toBoard) };
+  const visible = (list: FarmTask[]) =>
+    (opts.hideMicrogreens ? list.filter((t) => !isMicrogreenTask(t)) : list).map(toBoard);
+  return { todo: visible(todo), upcoming: visible(upcoming), done: visible(done) };
 }

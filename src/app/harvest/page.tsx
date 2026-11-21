@@ -99,7 +99,13 @@ export default async function HarvestPage({ searchParams }: Props) {
       .eq("is_archived", false)
       .order("name"),
     // Farm tasks for the Tasks tab (due now / next 14 days / done last 7).
-    loadTaskBoard(admin, today, { upcomingDays: 14, doneDays: 7 }),
+    // Microgreen tasks are Micheal's alone — a farm hand never sees them
+    // (an admin peeking at this page still does).
+    loadTaskBoard(admin, today, {
+      upcomingDays: 14,
+      doneDays: 7,
+      hideMicrogreens: profile.role !== "admin",
+    }),
   ]);
 
   const orders: any[] = ordersRaw ?? [];

@@ -36,9 +36,12 @@ export function ownerOf(people: TaskPerson[]): TaskPerson | null {
 export async function resolveAssignee(
   admin: AdminClient,
   value: unknown,
+  opts: { ownerOnly?: boolean } = {},
 ): Promise<{ ok: true; id: string | null } | { ok: false }> {
   if (value === null || value === undefined || value === "") return { ok: true, id: null };
   if (typeof value !== "string") return { ok: false };
   const people = await listTaskPeople(admin);
-  return people.some((p) => p.id === value) ? { ok: true, id: value } : { ok: false };
+  // Microgreen tasks (`ownerOnly`) can never go to a farm hand.
+  const allowed = opts.ownerOnly ? people.filter((p) => p.role === "admin") : people;
+  return allowed.some((p) => p.id === value) ? { ok: true, id: value } : { ok: false };
 }

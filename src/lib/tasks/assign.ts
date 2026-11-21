@@ -22,6 +22,20 @@ export function isAutomatedSource(source: string): boolean {
   return source !== "manual";
 }
 
+/**
+ * Microgreen work (the cron's sow / move / harvest tray tasks, or any task
+ * linked to a microgreen crop or batch) is the farm owner's alone: farm
+ * hands never see it, can't finish it, and it can't be assigned to them
+ * (Micheal 2026-11-21).
+ */
+export function isMicrogreenTask(task: {
+  source: string;
+  microgreen_crop_id?: string | null;
+  microgreen_batch_id?: string | null;
+}): boolean {
+  return task.source === "microgreens-auto" || !!task.microgreen_crop_id || !!task.microgreen_batch_id;
+}
+
 /** The profile id the task belongs to, or null when it is for anyone. */
 export function effectiveAssigneeId(task: AssignableTask, ownerId: string | null): string | null {
   if (task.assigned_to) return task.assigned_to;

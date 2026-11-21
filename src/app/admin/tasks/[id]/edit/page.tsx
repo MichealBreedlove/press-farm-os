@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditorialHero } from "@/components/shared/EditorialHero";
 import { listTaskPeople, ownerOf } from "@/lib/tasks/people";
+import { isMicrogreenTask } from "@/lib/tasks/assign";
 import { EditTaskForm } from "@/components/admin/tasks/EditTaskForm";
 import type { FarmTask } from "@/types/database";
 
@@ -32,7 +33,11 @@ export default async function EditTaskPage({ params }: PageProps) {
   ]);
 
   if (!taskRow) notFound();
-  const people = await listTaskPeople(admin);
+  const allPeople = await listTaskPeople(admin);
+  // Microgreen tasks stay with the farm owner — farm hands aren't offered.
+  const people = isMicrogreenTask(taskRow as FarmTask)
+    ? allPeople.filter((p) => p.role === "admin")
+    : allPeople;
   const task = taskRow as FarmTask;
 
   return (
