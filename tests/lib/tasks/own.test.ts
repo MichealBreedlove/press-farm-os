@@ -37,6 +37,23 @@ describe("buildOwnTask", () => {
     expect(r.ok && r.row.due_date).toBe("2026-11-22");
   });
 
+  it("takes a picked day, today or later, up to a year out", () => {
+    const pick = (date: unknown) => buildOwnTask({ title: "Water", when: "date", date }, ME, "2026-11-22");
+    const ok = pick("2026-12-05");
+    expect(ok.ok && ok.row.due_date).toBe("2026-12-05");
+    expect(pick("2026-11-22").ok).toBe(true);
+    expect(pick("2026-11-21").ok).toBe(false);
+    expect(pick("2028-01-01").ok).toBe(false);
+    expect(pick("2026-02-30").ok).toBe(false);
+    expect(pick("12/05/2026").ok).toBe(false);
+    expect(pick(undefined).ok).toBe(false);
+  });
+
+  it("ignores a date unless a day was picked", () => {
+    const r = buildOwnTask({ title: "Water", when: "today", date: "2026-12-05" }, ME, "2026-11-22");
+    expect(r.ok && r.row.due_date).toBe("2026-11-22");
+  });
+
   it("rejects empty, non-text and over-long titles", () => {
     expect(buildOwnTask({ title: "   " }, ME, "2026-11-22").ok).toBe(false);
     expect(buildOwnTask({ title: 5 }, ME, "2026-11-22").ok).toBe(false);

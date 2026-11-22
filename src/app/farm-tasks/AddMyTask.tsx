@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Plus } from "lucide-react";
-import { OWN_TASK_MAX_LENGTH, type OwnTaskWhen } from "@/lib/tasks/own";
+import { OWN_TASK_MAX_DAYS_AHEAD, OWN_TASK_MAX_LENGTH, type OwnTaskWhen } from "@/lib/tasks/own";
+import { addDaysISO, formatDeliveryDate } from "@/lib/utils";
 
 /**
  * "Add a task for myself" — the Head Farm Hand's only way to create a task.
- * Kept as plain as it can be: one box to type in, Today / Tomorrow, one big
- * button. The task always lands on his own list (the server decides who).
+ * Kept as plain as it can be: one box to type in, Today / Tomorrow / Pick a
+ * day (which opens the phone's own calendar), one big button. The task always lands on his own list (the server decides who).
  */
-export function AddMyTask() {
+export function AddMyTask({ today }: { today: string }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [when, setWhen] = useState<OwnTaskWhen>("today");
+  const [date, setDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState<string | null>(null);
@@ -26,6 +28,11 @@ export function AddMyTask() {
       setError("Type what you need to do first.");
       return;
     }
+    if (when === "date" && !date) {
+      setAdded(null);
+      setError("Pick the day first.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setAdded(null);
@@ -33,7 +40,7 @@ export function AddMyTask() {
       const res = await fetch("/api/tasks/mine", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, when }),
+        body: JSON.stringify({ title, when, date }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -42,9 +49,16 @@ export function AddMyTask() {
       }
       // Spanish for the crew's translator — best-effort, never waited on.
       if (json.id) void fetch(`/api/tasks/${json.id}/translate`, { method: "POST" }).catch(() => {});
-      setAdded(when === "tomorrow" ? "Added to your list for tomorrow." : "Added to your list for today.");
+      setAdded(
+        when === "date"
+          ? `Added to your list for ${formatDeliveryDate(date)}.`
+          : when === "tomorrow"
+            ? "Added to your list for tomorrow."
+            : "Added to your list for today.",
+      );
       setTitle("");
       setWhen("today");
+      setDate("");
       router.refresh();
     } catch {
       setError("Could not save — check your connection and try again.");
@@ -75,22 +89,45 @@ export function AddMyTask() {
       <fieldset>
         <legend className="text-lg font-semibold text-farm-dark mb-2">When?</legend>
         <div className="grid grid-cols-2 gap-3">
-          {(["today", "tomorrow"] as const).map((w) => (
+          {(["today", "tomorrow", "date"] as const).map((w) => (
             <button
               key={w}
               type="button"
               aria-pressed={when === w}
-              onClick={() => setWhen(w)}
-              className={`min-h-[56px] rounded-xl border-2 text-lg font-semibold transition-colors ${
+              onClick={() => {
+                setWhen(w);
+                setError(null);
+              }}
+              className={`${w === "date" ? "col-span-2 " : ""}min-h-[56px] rounded-xl border-2 text-lg font-semibold transition-colors ${
                 when === w
                   ? "bg-farm-green text-white border-farm-green"
                   : "bg-white text-farm-dark border-farm-dark/20"
               }`}
             >
-              {w === "today" ? "Today" : "Tomorrow"}
+              {w === "today" ? "Today" : w === "tomorrow" ? "Tomorrow" : "Pick another day"}
             </button>
           ))}
         </div>
+        {when === "date" && (
+          <div className="mt-3">
+            <label htmlFor="my-task-date" className="block text-lg font-semibold text-farm-dark mb-2">
+              Which day?
+            </label>
+            <input
+              id="my-task-date"
+              type="date"
+              value={date}
+              min={today}
+              max={addDaysISO(today, OWN_TASK_MAX_DAYS_AHEAD)}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setError(null);
+              }}
+              className="w-full min-h-[56px] rounded-xl border-2 border-farm-dark/20 bg-white px-4 text-xl text-farm-dark focus:border-farm-green focus:outline-none"
+            />
+            {date && <p className="text-lg text-farm-dark mt-2">{formatDeliveryDate(date)}</p>}
+          </div>
+        )}
       </fieldset>
 
       <button

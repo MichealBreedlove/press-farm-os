@@ -7,7 +7,7 @@ import { todayPacific } from "@/lib/utils";
 /**
  * POST /api/tasks/mine — the Head Farm Hand adds a task for HIMSELF.
  *
- * Body: `{ title, when?: "today" | "tomorrow" }`. The task always goes to
+ * Body: `{ title, when?: "today" | "tomorrow" | "date", date?: "YYYY-MM-DD" }`. The task always goes to
  * the signed-in person — any assignee in the body is ignored — so this can
  * never put work on someone else's list. Everything else about creating
  * tasks (other people, steps, photos, places) stays on the admin form.

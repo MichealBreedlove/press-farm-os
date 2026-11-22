@@ -73,7 +73,7 @@ export default async function FarmTasksPage({
         flower="green-leaf"
       />
       <div className="px-4 py-6 max-w-3xl mx-auto space-y-8">
-        <AddMyTask />
+        <AddMyTask today={today} />
         <nav aria-label="Whose tasks" className="grid grid-cols-2 gap-2">
           {[
             { href: "/farm-tasks", label: "Everyone's", active: !mineOnly, count: full.todo.length },
