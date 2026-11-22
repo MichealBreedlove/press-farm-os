@@ -26,3 +26,13 @@ UPDATE items SET unit_prices = unit_prices || '{"ea": 1.2}'::jsonb
 
 UPDATE items SET unit_type = 'ea,lg,sm,gb,lbs', default_price = 3.50   -- was 'lg,sm,gb,ea,lbs', 29.63
  WHERE id = '4d2c4de4-0ca2-4e06-af78-4b8a80b11cc2';
+
+-- Follow-up (Micheal, same day): 20 Oxheart carrots per LG, so the six
+-- January "1 lg @ $12" lines are counted as 20 ea @ $0.60 (still $12.00 each).
+UPDATE delivery_items di
+   SET quantity = 20, unit = 'ea', unit_price = 0.60
+  FROM deliveries d
+ WHERE d.id = di.delivery_id
+   AND di.item_id = '4d2c4de4-0ca2-4e06-af78-4b8a80b11cc2'
+   AND d.delivery_date BETWEEN '2026-01-01' AND '2026-01-31'
+   AND di.unit = 'lg' AND di.quantity = 1 AND di.unit_price = 12;
